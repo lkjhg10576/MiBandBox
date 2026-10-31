@@ -1,0 +1,24 @@
+package astrobox:main;
+
+// BandBox 插件专用最小 world：只导入插件源码实际使用的宿主接口。
+//
+// 上游 `psys-world-v4` 会声明整个宿主接口面（包括宿主尚未实现的
+// `canopusconnect`）。componentize-qjs 会把 world 里的所有 import 都编进
+// 最终组件，即使 JS 从未调用，导致 AstroBox 安装/加载时 linker 报：
+//
+//   component imports instance `astrobox:psys-host-v4/canopusconnect`,
+//   but a matching implementation was not found in the linker
+//
+// 因此这里显式只保留实际用到的 6 个接口。以后源码新增宿主接口时，
+// 需要同步在这里补一行；`test/world.test.mjs` 会检查两者是否一致。
+world bandbox-world-v4 {
+  import astrobox:psys-host-v4/ui;
+  import astrobox:psys-host-v4/dialog;
+  import astrobox:psys-host-v4/device;
+  import astrobox:psys-host-v4/register;
+  import astrobox:psys-host-v4/timer;
+  import astrobox:psys-host-v4/interconnect;
+
+  export astrobox:psys-plugin-v4/lifecycle;
+  export astrobox:psys-plugin-v4/event;
+}

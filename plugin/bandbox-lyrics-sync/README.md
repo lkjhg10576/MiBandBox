@@ -19,6 +19,8 @@ bandbox-lyrics-sync/
 ├── manifest.json         AstroBox 插件清单
 ├── icon.png              216×216 图标
 ├── wit/                  AstroBox 插件 WIT（npm run wit 拉取）
+├── world/
+│   └── bandbox.wit       本地最小 world（只导入实际用到的宿主接口）
 ├── src/
 │   ├── plugin.js         入口：导出 lifecycle / event 接口对象
 │   ├── lrc.js            LRC 解析（逐行/逐字/增强逐字，纯函数）
@@ -40,7 +42,7 @@ bandbox-lyrics-sync/
 npm install          # 装 componentize-qjs（预编译二进制，约 56 MB，无需 Rust）
 npm run wit          # 拉取 AstroBox 插件 WIT 到 wit/
 npm run gbk          # 重新生成 src/gbk-table.js（仅修改生成逻辑时需要）
-npm test             # 59 项单测
+npm test             # 61 项单测
 npm run package      # 产出 dist/plugin.wasm + dist/BandBox歌词同步.abp
 ```
 
@@ -48,6 +50,7 @@ npm run package      # 产出 dist/plugin.wasm + dist/BandBox歌词同步.abp
 （Linux x64/arm64、macOS x64/arm64、Windows x64），无需手工挑版本。
 
 把 `dist/BandBox歌词同步.abp` 装到手机上的 AstroBox 里即可。
+`.abp` 是标准 deflate zip（带合法 DOS 时间戳），可直接用系统解压工具查看内容。
 
 ### 为什么用 componentize-qjs 而不是官方的 componentize-js
 
@@ -68,11 +71,29 @@ v4 的宿主接口（`dialog.pick-file`、`interconnect.send-qaic-message` …�
 并且能正确 stub `async func` 导入。实测产物：
 
 - `plugin.wasm` 约 2.99 MB
-- 导入只含 `astrobox:psys-host-v4/*` 与 WASI，**没有 `local:` 导入**，宿主可满足
+- 只导入实际使用的 6 个 `astrobox:psys-host-v4/*` 接口与 WASI，**没有 `local:` 导入**，宿主可满足
 - 导出 `astrobox:psys-plugin-v4/lifecycle` 与 `astrobox:psys-plugin-v4/event`（外加一个无害的 `init`）
 
 > `componentize-qjs` 用 QuickJS 而非 SpiderMonkey，JS 运行时不同，但组件 ABI
 > （导入/导出签名）完全按 WIT 生成，宿主侧无感知。
+
+### 为什么用自定义最小 world
+
+上游 `AstroBox-Plugin-WIT` 的 `psys-world-v4` 声明了完整宿主接口面，其中
+`astrobox:psys-host-v4/canopusconnect` 在当前 AstroBox 宿主里还没有实现。
+`componentize-qjs` 会把 world 里的**所有 import** 都编进组件，即使 JS 从未调用，
+安装时就会在链接阶段失败：
+
+```
+Failed to link plugin component for api_level=4. detail:
+component imports instance `astrobox:psys-host-v4/canopusconnect`,
+but a matching implementation was not found in the linker
+```
+
+因此 `world/bandbox.wit` 定义了只包含实际用到的 6 个接口的 `bandbox-world-v4`。
+`scripts/build.mjs` 构建时把 `wit/`（上游，`npm run wit` 会重新拉取）与 `world/`
+（本地，入库）合并到临时目录再交给 `componentize-qjs`。
+`test/world.test.mjs` 会检查 world 的 import 与 `src/` 里的宿主 import 是否一致。
 
 ## 运行时限制（QuickJS）
 
@@ -181,6 +202,7 @@ export const event = {
 | 现象 | 排查 |
 |---|---|
 | 插件加载失败 | 宿主 AstroBox 版本要支持 API Level 4 |
+| 安装失败，日志含 `canopusconnect` | 用了上游完整 world，改用 `world/bandbox.wit` 构建 |
 | 收不到手环回执 | 手环是否停在「从手机传输」页；蓝牙是否连着 |
 | 提示「对端未安装」 | 手环端 BandBox 未安装或版本过旧 |
 | 中文乱码 | 宿主 TextDecoder 是否带 GBK；否则把 LRC 另存为 UTF-8 |

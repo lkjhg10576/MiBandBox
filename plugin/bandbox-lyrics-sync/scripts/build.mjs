@@ -22,12 +22,20 @@
  *
  *   注意：componentize-qjs 额外导出 local:init/init 与 module-loader，
  *   AstroBox 宿主只关心 astrobox:psys-plugin-v4/* 导出，不受影响。
+ *
+ *   world 说明（重要）：
+ *   上游 psys-world-v4 声明了宿主尚未实现的 canopusconnect 导入；
+ *   componentize-qjs 会把整个 world 的 import 都编进组件，导致安装时
+ *   linker 找不到实现。因此本插件使用 world/bandbox.wit 里的最小 world，
+ *   只导入源码实际使用的 6 个宿主接口。构建时把 wit/（上游）与 world/
+ *   （本地）合并到临时目录再传给 componentize-qjs。
  */
 import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import fs from 'node:fs'
+import os from 'node:os'
 import { deflateRawSync } from 'node:zlib'
 
 const require = createRequire(import.meta.url)
@@ -35,9 +43,10 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const root = path.resolve(here, '..')
 
 const WIT_DIR = path.join(root, 'wit')
+const LOCAL_WIT_DIR = path.join(root, 'world')
 const SRC = path.join(root, 'src', 'plugin.js')
 const DIST = path.join(root, 'dist')
-const WORLD = 'psys-world-v4'
+const WORLD = 'bandbox-world-v4'
 
 /**
  * 定位 componentize-qjs 原生可执行文件。
@@ -85,19 +94,36 @@ if (!fs.existsSync(WIT_DIR)) {
   fail('缺少 WIT 目录：' + WIT_DIR + '\n        请先执行：npm run wit')
 }
 
+if (!fs.existsSync(path.join(LOCAL_WIT_DIR, 'bandbox.wit'))) {
+  fail('缺少本地 world：' + path.join(LOCAL_WIT_DIR, 'bandbox.wit'))
+}
+
 fs.mkdirSync(DIST, { recursive: true })
 
+// 上游 WIT（wit/，由 npm run wit 拉取）与本地最小 world（world/）不在同一目录，
+// 构建时合并到临时目录，避免 npm run wit 清空本地 world。
+const buildWit = fs.mkdtempSync(path.join(os.tmpdir(), 'bandbox-wit-'))
+for (const dir of [WIT_DIR, LOCAL_WIT_DIR]) {
+  for (const entry of fs.readdirSync(dir)) {
+    fs.cpSync(path.join(dir, entry), path.join(buildWit, entry), { recursive: true })
+  }
+}
+
 const outWasm = path.join(DIST, 'plugin.wasm')
-console.log('[build] CLI      :', cli)
-console.log('[build] WIT      :', WIT_DIR)
+console.log('[build] WIT      :', buildWit)
 console.log('[build] world   :', WORLD)
 console.log('[build] entry   :', SRC)
 
-const res = spawnSync(
-  cli,
-  ['--wit', WIT_DIR, '--js', SRC, '-n', WORLD, '-o', outWasm],
-  { stdio: 'inherit' }
-)
+let res
+try {
+  res = spawnSync(
+    cli,
+    ['--wit', buildWit, '--js', SRC, '-n', WORLD, '-o', outWasm],
+    { stdio: 'inherit' }
+  )
+} finally {
+  fs.rmSync(buildWit, { recursive: true, force: true })
+}
 
 if (res.status !== 0 || !fs.existsSync(outWasm)) {
   fail('componentize-qjs 构建失败（退出码 ' + res.status + '）')
@@ -120,7 +146,21 @@ if (process.argv.includes('--package')) {
     entries.push({ name: 'icon.png', data: fs.readFileSync(iconPath) })
   }
 
-  // 极简 zip 写入器（不依赖第三方库）
+  const abp = path.join(DIST, manifest.name + '.abp')
+  writeZip(entries, abp)
+  console.log('[build] 打包完成：', abp, '(' + (fs.statSync(abp).size / 1024 / 1024).toFixed(2), 'MB )')
+}
+
+/**
+ * 写入标准 zip（deflate）。
+ *
+ * 早期实现把 DOS 时间/日期写成了 0，`unzip -l` 会显示 1980-00-00；
+ * 虽然部分工具能容忍，但这不是合法 zip 时间。这里写入构建时的本地时间，
+ * 并设置 UTF-8 文件名标志与 Unix 文件权限，产物可直接被系统解压工具识别。
+ */
+function writeZip(entries, outPath) {
+  const { dosTime, dosDate } = toDosDateTime(new Date())
+  const FLAG_UTF8 = 0x0800
   const chunks = []
   const central = []
   let offset = 0
@@ -133,10 +173,10 @@ if (process.argv.includes('--package')) {
     const local = Buffer.alloc(30)
     local.writeUInt32LE(0x04034b50, 0)
     local.writeUInt16LE(20, 4) // version needed
-    local.writeUInt16LE(0, 6) // flags
+    local.writeUInt16LE(FLAG_UTF8, 6)
     local.writeUInt16LE(8, 8) // deflate
-    local.writeUInt16LE(0, 10) // time
-    local.writeUInt16LE(0, 12) // date
+    local.writeUInt16LE(dosTime, 10)
+    local.writeUInt16LE(dosDate, 12)
     local.writeUInt32LE(crc, 14)
     local.writeUInt32LE(compressed.length, 18)
     local.writeUInt32LE(entry.data.length, 22)
@@ -147,12 +187,12 @@ if (process.argv.includes('--package')) {
 
     const cd = Buffer.alloc(46)
     cd.writeUInt32LE(0x02014b50, 0)
-    cd.writeUInt16LE(20, 4)
-    cd.writeUInt16LE(20, 6)
-    cd.writeUInt16LE(0, 8)
+    cd.writeUInt16LE(0x031e, 4) // made by: Unix, zip 3.0
+    cd.writeUInt16LE(20, 6) // version needed
+    cd.writeUInt16LE(FLAG_UTF8, 8)
     cd.writeUInt16LE(8, 10)
-    cd.writeUInt16LE(0, 12)
-    cd.writeUInt16LE(0, 14)
+    cd.writeUInt16LE(dosTime, 12)
+    cd.writeUInt16LE(dosDate, 14)
     cd.writeUInt32LE(crc, 16)
     cd.writeUInt32LE(compressed.length, 20)
     cd.writeUInt32LE(entry.data.length, 24)
@@ -161,7 +201,7 @@ if (process.argv.includes('--package')) {
     cd.writeUInt16LE(0, 32)
     cd.writeUInt16LE(0, 34)
     cd.writeUInt16LE(0, 36)
-    cd.writeUInt32LE(0, 38)
+    cd.writeUInt32LE((0o100644 << 16) >>> 0, 38)
     cd.writeUInt32LE(offset, 42)
 
     central.push(cd, nameBuf)
@@ -179,9 +219,23 @@ if (process.argv.includes('--package')) {
   end.writeUInt32LE(offset, 16)
   end.writeUInt16LE(0, 20)
 
-  const abp = path.join(DIST, manifest.name + '.abp')
-  fs.writeFileSync(abp, Buffer.concat([...chunks, centralBuf, end]))
-  console.log('[build] 打包完成：', abp, '(' + (fs.statSync(abp).size / 1024 / 1024).toFixed(2), 'MB )')
+  fs.writeFileSync(outPath, Buffer.concat([...chunks, centralBuf, end]))
+}
+
+/**
+ * 转成 MS-DOS 日期/时间字段（zip 使用）。
+ */
+function toDosDateTime(date) {
+  const year = Math.min(2107, Math.max(1980, date.getFullYear()))
+  const dosTime =
+    (date.getHours() << 11) |
+    (date.getMinutes() << 5) |
+    Math.floor(date.getSeconds() / 2)
+  const dosDate =
+    ((year - 1980) << 9) |
+    ((date.getMonth() + 1) << 5) |
+    date.getDate()
+  return { dosTime, dosDate }
 }
 
 /**
