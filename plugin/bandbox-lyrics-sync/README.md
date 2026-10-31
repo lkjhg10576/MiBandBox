@@ -17,14 +17,16 @@ bandbox-lyrics-sync/
 ├── icon.png              216×216 图标
 ├── wit/                  AstroBox 插件 WIT（npm run wit 拉取）
 ├── src/
-│   ├── plugin.js         入口：导出 lifecycle / event
+│   ├── plugin.js         入口：导出 lifecycle / event 接口对象
 │   ├── lrc.js            LRC 解析（纯函数）
+│   ├── gbk-table.js      GBK 映射表（由 scripts/gen-gbk-table.mjs 生成）
 │   ├── protocol.js       消息构造与解析
 │   ├── device.js         设备选择
 │   └── ui.js             声明式 UI
 ├── scripts/
 │   ├── build.mjs         componentize → dist/plugin.wasm → dist/*.abp
 │   ├── fetch-wit.mjs     拉取 WIT
+│   ├── gen-gbk-table.mjs 生成 GBK 映射表
 │   └── gen-icon.py       生成图标
 └── test/                 node:test 单测
 ```
@@ -34,7 +36,8 @@ bandbox-lyrics-sync/
 ```bash
 npm install          # 装 componentize-qjs（预编译二进制，约 56 MB，无需 Rust）
 npm run wit          # 拉取 AstroBox 插件 WIT 到 wit/
-npm test             # 36 项单测
+npm run gbk          # 重新生成 src/gbk-table.js（仅修改生成逻辑时需要）
+npm test             # 39 项单测
 npm run package      # 产出 dist/plugin.wasm + dist/BandBox歌词同步.abp
 ```
 
@@ -61,12 +64,44 @@ v4 的宿主接口（`dialog.pick-file`、`interconnect.send-qaic-message` …�
 这里改用 `@di-framework/componentize-qjs`（wasmtime 48 分支）：预编译原生二进制、零 Rust，
 并且能正确 stub `async func` 导入。实测产物：
 
-- `plugin.wasm` 约 2.86 MB
+- `plugin.wasm` 约 2.99 MB
 - 导入只含 `astrobox:psys-host-v4/*` 与 WASI，**没有 `local:` 导入**，宿主可满足
 - 导出 `astrobox:psys-plugin-v4/lifecycle` 与 `astrobox:psys-plugin-v4/event`（外加一个无害的 `init`）
 
 > `componentize-qjs` 用 QuickJS 而非 SpiderMonkey，JS 运行时不同，但组件 ABI
 > （导入/导出签名）完全按 WIT 生成，宿主侧无感知。
+
+## 运行时限制（QuickJS）
+
+QuickJS **不是**浏览器/Node，下面这些 API 都不存在：
+
+| 缺失 | 替代方案 |
+|---|---|
+| `console` | 不要打日志；错误写进 UI 状态 |
+| `TextDecoder` | `src/lrc.js` 自带的 UTF-8 解码 + `src/gbk-table.js` |
+| `setTimeout` / `clearTimeout` | 宿主 `astrobox:psys-host-v4/timer` 的 `setTimeout` / `clearTimer`，到期从 `onEvent('timer', …)` 回来 |
+
+另外，API Level 4 的导出是 `async func`，**JS 侧必须导出接口对象，且方法必须是 `async`**：
+
+```js
+export const lifecycle = {
+  async onLoad() {}
+}
+
+export const event = {
+  async onEvent(eventType, eventPayload) { return '' },
+  async onUiEvent(elementId, event, payload) { return '' },
+  async onUiRender(elementId) {},
+  async onCardRender(cardId) {}
+}
+```
+
+顶层 `export function onLoad()`、或把方法写成同步函数，都会让宿主的 `on-load` 调用
+直接 wasm trap，表现为「插件安装失败」且日志里没有任何插件输出。
+
+还有一点：`onLoad` 在安装流程里同步执行，**不要调用需要权限的宿主接口**
+（例如 `device.get-connected-device-list`），否则安装阶段会弹权限框甚至卡住安装。
+本插件把设备列表放到 `onUiRender` 里取。
 
 ## 权限
 

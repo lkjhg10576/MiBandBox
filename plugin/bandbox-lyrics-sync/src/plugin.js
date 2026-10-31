@@ -10,6 +10,7 @@
 import { pickFile } from 'astrobox:psys-host-v4/dialog'
 import { sendQaicMessage } from 'astrobox:psys-host-v4/interconnect'
 import { registerInterconnectRecv } from 'astrobox:psys-host-v4/register'
+import { setTimeout as setHostTimeout, clearTimer } from 'astrobox:psys-host-v4/timer'
 
 import lrc from './lrc.js'
 import protocol from './protocol.js'
@@ -81,7 +82,7 @@ function repaint() {
   try {
     renderUI(state.elementId, viewState())
   } catch (e) {
-    console.log('[bandbox] repaint failed: ' + String(e))
+    // QuickJS 运行时没有 console，渲染失败时只能静默；错误会留在界面状态里
   }
 }
 
@@ -107,11 +108,51 @@ function refreshDevices() {
  * 注册接收手环消息。
  */
 function registerRecv() {
+  if (!state.deviceAddr) return false
   try {
     registerInterconnectRecv(state.deviceAddr, protocol.TARGET_PKG)
+    return true
   } catch (e) {
-    console.log('[bandbox] register-interconnect-recv failed: ' + String(e))
+    state.lastError =
+      '注册手环消息接收失败：' + String(e && e.message ? e.message : e)
+    return false
   }
+}
+
+/**
+ * 取消当前 ACK 超时定时器。
+ *
+ * QuickJS 运行时没有 setTimeout/clearTimeout，必须使用宿主 timer 接口。
+ */
+function stopTimer() {
+  if (state.timer === null || state.timer === undefined) return
+  try {
+    clearTimer(state.timer)
+  } catch (e) {
+    // 定时器可能已经触发，忽略
+  }
+  state.timer = null
+}
+
+/**
+ * 处理宿主 timer 事件。
+ *
+ * 宿主投递的 payload 是 JSON：{ timerId, kind, payload }。
+ */
+function handleTimer(raw) {
+  let info
+  try {
+    info = JSON.parse(raw)
+  } catch (e) {
+    return
+  }
+  if (!info || info.payload !== state.pendingId) return
+  state.timer = null
+  if (state.status !== 'sending') return
+  state.status = 'failed'
+  state.statusText = '手环未响应'
+  state.lastError = '手环未响应（可能未停留在「从手机传输」页面）'
+  repaint()
 }
 
 /**
@@ -121,11 +162,12 @@ function handleReply(raw) {
   const parsed = protocol.decode(raw)
   if (!parsed.ok) return
   const msg = parsed.msg
+  // 忽略上一次发送的迟到回执
+  if (msg.id && state.pendingId && msg.id !== state.pendingId) return
   const info = protocol.describeReply(msg)
 
   if (msg.type === 'ack') {
-    clearTimeout(state.timer)
-    state.timer = null
+    stopTimer()
     state.status = 'sent'
     state.statusText = info.text
     state.lastError = ''
@@ -134,8 +176,7 @@ function handleReply(raw) {
   }
 
   if (msg.type === 'err') {
-    clearTimeout(state.timer)
-    state.timer = null
+    stopTimer()
     state.status = 'failed'
     state.statusText = '发送失败'
     state.lastError = info.text
@@ -220,7 +261,7 @@ function doSend() {
     return
   }
 
-  refreshDevices()
+  if (!state.devices.length) refreshDevices()
   const picked = device.pick(state.devices, state.deviceAddr)
   if (!picked.ok) {
     if (picked.needChoice) {
@@ -240,7 +281,12 @@ function doSend() {
   state.deviceAddr = dev.addr
   state.deviceName = dev.name
   state.needsDeviceChoice = false
-  registerRecv()
+  if (!registerRecv()) {
+    state.status = 'failed'
+    state.statusText = '无法接收手环回执'
+    repaint()
+    return
+  }
 
   const plan = protocol.planSend(state.title, state.lines)
   state.pendingId = plan.id
@@ -277,16 +323,9 @@ function doSend() {
     }
   }
 
-  // 等 ACK：超时保护
-  if (state.timer) clearTimeout(state.timer)
-  state.timer = setTimeout(() => {
-    if (state.status === 'sending') {
-      state.status = 'failed'
-      state.statusText = '手环未响应'
-      state.lastError = '手环未响应（可能未停留在「从手机传输」页面）'
-      repaint()
-    }
-  }, ACK_TIMEOUT)
+  // 等 ACK：用宿主 timer（QuickJS 没有 setTimeout），到期通过 timer 事件回来
+  stopTimer()
+  state.timer = setHostTimeout(ACK_TIMEOUT, state.pendingId)
 }
 
 /**
@@ -302,7 +341,10 @@ function doPickDevice(addr) {
   }
   state.needsDeviceChoice = false
   state.statusText = '已选择 ' + state.deviceName
-  registerRecv()
+  if (!registerRecv()) {
+    state.status = 'failed'
+    state.statusText = '无法接收手环回执'
+  }
   repaint()
 }
 
@@ -310,49 +352,70 @@ function doPickDevice(addr) {
 // 导出给宿主的接口
 // ------------------------------------------------------------------
 
-export function onLoad() {
-  console.log('[bandbox] plugin loaded')
-  refreshDevices()
-  if (state.deviceAddr) registerRecv()
-  return undefined
+export const lifecycle = {
+  /**
+   * 插件加载完成后调用。
+   *
+   * 注意：安装流程会同步等待 onLoad 返回，这里不要调用任何需要权限的宿主接口，
+   * 否则会在安装阶段弹权限框甚至卡住安装。设备列表放到 onUiRender 里取。
+   */
+  async onLoad() {
+    // QuickJS 运行时没有 console，不要在这里打印日志
+  }
 }
 
-export function onUiRender(elementId) {
-  state.elementId = elementId
-  refreshDevices()
-  repaint()
-  return undefined
-}
-
-export function onUiEvent(elementId, uiEvent, eventPayload) {
-  state.elementId = elementId || state.elementId
-  let id = eventPayload
-  if (typeof id !== 'string') {
-    try {
-      id = JSON.parse(eventPayload).id
-    } catch (e) {
-      id = String(eventPayload)
+export const event = {
+  /**
+   * 手环回执（interconnect-message）与宿主定时器（timer）都从这里进来。
+   */
+  async onEvent(eventType, eventPayload) {
+    if (eventType === 'interconnect-message') {
+      handleReply(eventPayload)
+    } else if (eventType === 'timer') {
+      handleTimer(eventPayload)
     }
-  }
-  if (id === 'pick-file') {
-    doPickFile()
-  } else if (id === 'send') {
-    doSend()
-  } else if (typeof id === 'string' && id.indexOf('pick-device:') === 0) {
-    doPickDevice(id.slice('pick-device:'.length))
-  }
-  return undefined
-}
+    return ''
+  },
 
-export function onEvent(eventType, eventPayload) {
-  if (eventType === 'interconnect-message') {
-    handleReply(eventPayload)
-  }
-  return ''
-}
+  /**
+   * UI 事件：按钮点击等。
+   *
+   * WIT 声明返回 string，返回 undefined 会触发 wasm trap。
+   */
+  async onUiEvent(elementId, uiEvent, eventPayload) {
+    state.elementId = elementId || state.elementId
+    let id = eventPayload
+    if (typeof id !== 'string') {
+      try {
+        id = JSON.parse(eventPayload).id
+      } catch (e) {
+        id = String(eventPayload)
+      }
+    }
+    if (id === 'pick-file') {
+      doPickFile()
+    } else if (id === 'send') {
+      doSend()
+    } else if (typeof id === 'string' && id.indexOf('pick-device:') === 0) {
+      doPickDevice(id.slice('pick-device:'.length))
+    }
+    return ''
+  },
 
-export function onCardRender() {
-  return undefined
-}
+  /**
+   * 渲染插件页面。先画一帧，再请求设备列表（会弹一次设备权限）。
+   */
+  async onUiRender(elementId) {
+    state.elementId = elementId
+    repaint()
+    if (!state.devices.length) {
+      refreshDevices()
+      repaint()
+    }
+  },
 
-export default { onLoad, onUiRender, onUiEvent, onEvent, onCardRender }
+  /**
+   * 文本卡片渲染（本插件不使用）。
+   */
+  async onCardRender() {}
+}

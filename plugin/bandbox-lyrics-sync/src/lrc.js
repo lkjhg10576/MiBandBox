@@ -1,9 +1,11 @@
 /**
  * LRC 歌词解析：纯函数，无平台依赖，可在 Node 下直接单测。
  *
- * 目标：把带时间轴的 .lrc 还原成「逐行纯文本」，供手环歌词本使用。
- * 时间轴、元数据标签、逐字标签全部丢弃。
+ * 注意：AstroBox 的 JS 插件跑在 QuickJS 上，**没有 TextDecoder**，
+ * 所以这里用纯 JS 解码 UTF-8，并用生成的映射表兜底 GBK/GB18030。
  */
+
+import { GBK_TABLE } from './gbk-table.js'
 
 /** 元数据标签（整行形如 [ti:xxx]），解析后丢弃。 */
 const META_RE = /^\[(ti|ar|al|by|offset|length|re|ve|au|by|tool|encoding):(.*)\]$/i
@@ -13,6 +15,127 @@ const TIME_RE = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g
 
 /** 增强 LRC 的逐字标签 <mm:ss.xx> */
 const WORD_RE = /<\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?>/g
+
+/**
+ * 严格/非严格 UTF-8 解码。
+ *
+ * @param {Uint8Array} u8
+ * @param {boolean} fatal true 时遇到非法序列直接抛错
+ * @returns {string}
+ */
+function decodeUtf8(u8, fatal) {
+  let out = ''
+  let i = 0
+  while (i < u8.length) {
+    const b0 = u8[i]
+    if (b0 < 0x80) {
+      out += String.fromCharCode(b0)
+      i++
+      continue
+    }
+
+    let need
+    let cp
+    let min
+    if (b0 >= 0xc2 && b0 <= 0xdf) {
+      need = 1
+      cp = b0 & 0x1f
+      min = 0x80
+    } else if (b0 >= 0xe0 && b0 <= 0xef) {
+      need = 2
+      cp = b0 & 0x0f
+      min = 0x800
+    } else if (b0 >= 0xf0 && b0 <= 0xf4) {
+      need = 3
+      cp = b0 & 0x07
+      min = 0x10000
+    } else {
+      if (fatal) throw new Error('invalid utf-8 lead byte')
+      out += '\ufffd'
+      i++
+      continue
+    }
+
+    if (i + need >= u8.length) {
+      if (fatal) throw new Error('truncated utf-8 sequence')
+      out += '\ufffd'
+      i++
+      continue
+    }
+
+    let ok = true
+    for (let k = 1; k <= need; k++) {
+      const b = u8[i + k]
+      if ((b & 0xc0) !== 0x80) {
+        ok = false
+        break
+      }
+      cp = (cp << 6) | (b & 0x3f)
+    }
+
+    if (
+      !ok ||
+      cp < min ||
+      cp > 0x10ffff ||
+      (cp >= 0xd800 && cp <= 0xdfff)
+    ) {
+      if (fatal) throw new Error('invalid utf-8 sequence')
+      out += '\ufffd'
+      i++
+      continue
+    }
+
+    i += need + 1
+    if (cp > 0xffff) {
+      const v = cp - 0x10000
+      out += String.fromCharCode(0xd800 + (v >> 10), 0xdc00 + (v & 0x3ff))
+    } else {
+      out += String.fromCharCode(cp)
+    }
+  }
+  return out
+}
+
+/**
+ * GBK/GB18030 双字节解码。
+ *
+ * 表由 scripts/gen-gbk-table.mjs 生成：lead 0x81-0xFE，trail 0x40-0xFE（跳过 0x7F），
+ * 共 126 × 190 = 23940 项。遇到 4 字节 GB18030 或非法序列返回 null，
+ * 让调用方退回非严格 UTF-8。
+ *
+ * @param {Uint8Array} u8
+ * @returns {string|null}
+ */
+function decodeGbk(u8) {
+  let out = ''
+  let i = 0
+  while (i < u8.length) {
+    const lead = u8[i]
+    if (lead < 0x80) {
+      out += String.fromCharCode(lead)
+      i++
+      continue
+    }
+    // CP936 把单字节 0x80 映射为欧元符号
+    if (lead === 0x80) {
+      out += '\u20ac'
+      i++
+      continue
+    }
+    if (lead < 0x81 || lead > 0xfe || i + 1 >= u8.length) return null
+
+    const trail = u8[i + 1]
+    if (trail < 0x40 || trail > 0xfe || trail === 0x7f) return null
+
+    const index =
+      (lead - 0x81) * 190 + (trail < 0x7f ? trail - 0x40 : trail - 0x41)
+    const ch = GBK_TABLE.charCodeAt(index)
+    if (ch === 0xfffd) return null
+    out += GBK_TABLE.charAt(index)
+    i += 2
+  }
+  return out
+}
 
 /**
  * 解码字节为文本。
@@ -40,24 +163,18 @@ export function decodeText(bytes) {
     u8 = u8.subarray(2)
   }
 
-  // 严格 UTF-8 解码
+  // 严格 UTF-8
   try {
-    return new TextDecoder('utf-8', { fatal: true }).decode(u8)
+    return decodeUtf8(u8, true)
   } catch (e) {
     // 落到 GBK
   }
 
-  for (const enc of ['gb18030', 'gbk']) {
-    try {
-      return new TextDecoder(enc).decode(u8)
-    } catch (e) {}
-  }
+  const gbk = decodeGbk(u8)
+  if (gbk !== null) return gbk
+
   // 最后兜底：非严格 UTF-8
-  try {
-    return new TextDecoder('utf-8').decode(u8)
-  } catch (e) {
-    return ''
-  }
+  return decodeUtf8(u8, false)
 }
 
 /**
