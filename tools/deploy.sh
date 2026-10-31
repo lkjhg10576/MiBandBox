@@ -2,7 +2,7 @@
 # 构建并部署到已运行的 Vela 模拟器（adb 设备 emulator-5554）
 set -e
 cd "$(dirname "$0")/.."
-PKG=com.cleanroom.bandbox
+PKG=com.miband.box
 ADB=${ADB:-$HOME/.vela/sdk/tools/adb/linux/adb}
 RPK=$(ls -t dist/*.rpk | head -1)
 

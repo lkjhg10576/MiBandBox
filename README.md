@@ -2,7 +2,7 @@
 
 BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，净室实现，包含 26 个应用、48 个页面。
 
-- 包名：`com.cleanroom.bandbox`
+- 包名：`com.miband.box`
 - 版本：1.0.0
 - 技术栈：Vela JS 快应用（`.ux`）
 - 画布：212 × 520，纯黑背景
@@ -64,10 +64,10 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 ./tools/deploy.sh
 
 # 或手动
-adb push dist/*.rpk /data/app/com.cleanroom.bandbox.rpk
-adb shell mkdir /data/app/com.cleanroom.bandbox
-adb shell unzip -o /data/app/com.cleanroom.bandbox.rpk -d /data/app/com.cleanroom.bandbox
-adb shell am start com.cleanroom.bandbox
+adb push dist/*.rpk /data/app/com.miband.box.rpk
+adb shell mkdir /data/app/com.miband.box
+adb shell unzip -o /data/app/com.miband.box.rpk -d /data/app/com.miband.box
+adb shell am start com.miband.box
 ```
 
 截图 / 触摸 / 日志：
