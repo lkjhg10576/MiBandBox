@@ -10,11 +10,20 @@ import { GBK_TABLE } from './gbk-table.js'
 /** 元数据标签（整行形如 [ti:xxx]），解析后丢弃。 */
 const META_RE = /^\[(ti|ar|al|by|offset|length|re|ve|au|by|tool|encoding):(.*)\]$/i
 
-/** 时间标签 [mm:ss.xx] / [mm:ss.xxx] / [mm:ss] */
-const TIME_RE = /\[(\d{1,3}):(\d{1,2})(?:[.:](\d{1,3}))?\]/g
+/** 时间标签本体：[mm:ss.xx] / [mm:ss.xxx] / [mm:ss] */
+const TIME_TAG_SRC = '\\[\\d{1,3}:\\d{1,2}(?:[.:]\\d{1,3})?\\]'
+
+/** 行首连续的行时间标签（允许多个标签之间有空白） */
+const LEAD_TIME_RE = new RegExp('^(?:' + TIME_TAG_SRC + '[ \\t]*)+')
+
+/** 行内时间标签：常规逐字歌词的 [mm:ss.xx] */
+const INLINE_TIME_RE = new RegExp(TIME_TAG_SRC, 'g')
 
 /** 增强 LRC 的逐字标签 <mm:ss.xx> */
 const WORD_RE = /<\d{1,3}:\d{1,2}(?:[.:]\d{1,3})?>/g
+
+/** 歌词格式的判定优先级：增强逐字 > 逐字 > 逐行 > 纯文本。 */
+const FORMAT_RANK = { plain: 0, line: 1, word: 2, enhanced: 3 }
 
 /**
  * 严格/非严格 UTF-8 解码。
@@ -189,11 +198,70 @@ export function titleFromFileName(fileName) {
 }
 
 /**
+ * 解析一行歌词。
+ *
+ * 三种时间轴形态统一处理：
+ *   - 逐行：[00:01.00]歌词
+ *   - 逐字：[00:01.00]歌[00:01.20]词[00:02.00]
+ *   - 增强逐字：[00:01.00]<00:01.00>歌<00:01.20>词<00:02.00>
+ *
+ * 行首连续的 [time] 是行时间；其余 [time] / <time> 都是逐字时间，直接剥离。
+ *
+ * @param {string} rawLine
+ * @returns {{type:'empty'}|{type:'meta',key:string,value:string}|{type:'lyric',content:string,format:string,repeat:number,tagged:boolean}}
+ */
+function parseLyricLine(rawLine) {
+  const line = String(rawLine == null ? '' : rawLine).trim()
+  if (!line) return { type: 'empty' }
+
+  const meta = line.match(META_RE)
+  if (meta) {
+    return { type: 'meta', key: meta[1].toLowerCase(), value: meta[2].trim() }
+  }
+
+  let stamps = []
+  let rest = line
+  const lead = line.match(LEAD_TIME_RE)
+  if (lead) {
+    stamps = lead[0].match(INLINE_TIME_RE) || []
+    rest = line.slice(lead[0].length)
+  }
+
+  const inlineTimes = rest.match(INLINE_TIME_RE) || []
+  const inlineWords = rest.match(WORD_RE) || []
+  const content = rest.replace(INLINE_TIME_RE, '').replace(WORD_RE, '').trim()
+  if (!content) return { type: 'empty' }
+
+  let format = 'plain'
+  if (inlineWords.length > 0) format = 'enhanced'
+  else if (inlineTimes.length > 0) format = 'word'
+  else if (stamps.length > 0) format = 'line'
+
+  // 行首有多个标签、行内又有逐字标签时，后续标签更可能是首个词的起点，
+  // 不要把整行重复多次。
+  const repeat =
+    stamps.length > 1 && (inlineTimes.length > 0 || inlineWords.length > 0)
+      ? 1
+      : Math.max(1, stamps.length)
+
+  return {
+    type: 'lyric',
+    content,
+    format,
+    repeat,
+    tagged: stamps.length > 0 || inlineTimes.length > 0 || inlineWords.length > 0
+  }
+}
+
+/**
  * 解析 LRC 文本。
+ *
+ * 兼容逐行 LRC、常规逐字 LRC（行内 [time]）和增强逐字 LRC（ESLyric 的 <time>）。
+ * 所有时间轴都只用于定位文本，最终输出为逐行纯文本。
  *
  * @param {string} text
  * @param {string} [fileName] 用于在缺少 [ti:] 时推断标题
- * @returns {{ title: string, lines: string[], ok: boolean, reason?: string }}
+ * @returns {{ title: string, lines: string[], ok: boolean, hasTimestamp: boolean, format: string, reason?: string }}
  */
 export function parseLrc(text, fileName) {
   const src = String(text == null ? '' : text)
@@ -202,63 +270,33 @@ export function parseLrc(text, fileName) {
   const lines = []
   let title = ''
   let hasTimestamp = false
+  let format = 'plain'
 
   for (let i = 0; i < rawLines.length; i++) {
-    let line = rawLines[i]
-    if (!line) continue
+    const parsed = parseLyricLine(rawLines[i])
 
-    // 元数据标签
-    const meta = line.match(META_RE)
-    if (meta) {
-      const key = meta[1].toLowerCase()
-      const value = meta[2].trim()
-      if (key === 'ti' && value && !title) title = value
+    if (parsed.type === 'empty') continue
+
+    if (parsed.type === 'meta') {
+      if (parsed.key === 'ti' && parsed.value && !title) title = parsed.value
       continue
     }
 
-    // 提取时间标签
-    TIME_RE.lastIndex = 0
-    const stamps = []
-    let m
-    let lastIndex = 0
-    while ((m = TIME_RE.exec(line)) !== null) {
-      stamps.push(m[0])
-      lastIndex = m.index + m[0].length
-      if (TIME_RE.lastIndex === m.index) TIME_RE.lastIndex++
-    }
+    if (parsed.tagged) hasTimestamp = true
+    if (FORMAT_RANK[parsed.format] > FORMAT_RANK[format]) format = parsed.format
 
-    let content
-    if (stamps.length > 0) {
-      hasTimestamp = true
-      content = line.slice(lastIndex)
-    } else {
-      content = line
-    }
-
-    // 去掉增强 LRC 的逐字标签
-    WORD_RE.lastIndex = 0
-    content = content.replace(WORD_RE, '')
-
-    content = content.trim()
-    if (!content) continue
-
-    // 有多个时间标签时，同一文本展开为多行
-    if (stamps.length > 0) {
-      for (let s = 0; s < stamps.length; s++) {
-        lines.push(content)
-      }
-    } else {
-      lines.push(content)
+    for (let r = 0; r < parsed.repeat; r++) {
+      lines.push(parsed.content)
     }
   }
 
   if (!title) title = titleFromFileName(fileName)
 
   if (lines.length === 0) {
-    return { ok: false, reason: '该文件没有可用的歌词行', title, lines: [] }
+    return { ok: false, reason: '该文件没有可用的歌词行', title, lines: [], hasTimestamp, format }
   }
 
-  return { ok: true, title, lines, hasTimestamp }
+  return { ok: true, title, lines, hasTimestamp, format }
 }
 
 /**

@@ -1,7 +1,10 @@
 # BandBox歌词同步（AstroBox 插件）
 
-手机端 AstroBox 插件：选一个 `.lrc` 文件 → 剥掉时间轴与元数据标签、还原成**逐行纯文本**
-→ 通过 BLE `interconnect` 推送到手环上的 BandBox 歌词本。
+手机端 AstroBox 插件：选一个 `.lrc` 文件 → 自动识别并剥离时间轴与元数据标签、
+还原成**逐行纯文本** → 通过 BLE `interconnect` 推送到手环上的 BandBox 歌词本。
+
+支持三种常见歌词格式：逐行 LRC、常规逐字 LRC（行内 `[mm:ss.xx]`）、
+增强逐字 LRC（ESLyric 的 `<mm:ss.xx>` 标签）。
 
 - API Level：**4**（`wasi_version: 3`）
 - 目标快应用包名：`com.miband.box`（手环端 BandBox）
@@ -18,7 +21,7 @@ bandbox-lyrics-sync/
 ├── wit/                  AstroBox 插件 WIT（npm run wit 拉取）
 ├── src/
 │   ├── plugin.js         入口：导出 lifecycle / event 接口对象
-│   ├── lrc.js            LRC 解析（纯函数）
+│   ├── lrc.js            LRC 解析（逐行/逐字/增强逐字，纯函数）
 │   ├── gbk-table.js      GBK 映射表（由 scripts/gen-gbk-table.mjs 生成）
 │   ├── protocol.js       消息构造与解析
 │   ├── device.js         设备选择
@@ -37,7 +40,7 @@ bandbox-lyrics-sync/
 npm install          # 装 componentize-qjs（预编译二进制，约 56 MB，无需 Rust）
 npm run wit          # 拉取 AstroBox 插件 WIT 到 wit/
 npm run gbk          # 重新生成 src/gbk-table.js（仅修改生成逻辑时需要）
-npm test             # 39 项单测
+npm test             # 50 项单测
 npm run package      # 产出 dist/plugin.wasm + dist/BandBox歌词同步.abp
 ```
 
@@ -139,11 +142,17 @@ export const event = {
 1. 编码：先严格 UTF-8，失败再按 GBK/GB18030 解码（国内 LRC 常见 GBK）；去 BOM
 2. 元数据标签（`[ti:]`、`[ar:]`、`[al:]`、`[by:]`、`[length:]`、`[offset:]`）丢弃，
    `[ti:]` 作为标题候选，优先于文件名
-3. 时间轴 `[mm:ss.xx]` / `[mm:ss.xxx]` / `[mm:ss]` 丢弃；一行多个时间标签时展开为多行同文本
-4. 增强 LRC 的逐字标签 `<mm:ss.xx>` 去掉，各段文本直接拼接（不做逐字动画）
-5. 行文本去首尾空白、保留行内空格、丢弃空行
-6. 结果为 `{title, lines}`；`lines` 为空即解析失败
-7. 没有任何时间标签的纯文本 LRC，按行原样保留
+3. 只把**行首连续出现**的 `[mm:ss.xx]` / `[mm:ss.xxx]` / `[mm:ss]` 当作行时间标签；
+   一行有多个行首时间标签时，展开为多行同文本（保持常规 LRC 的重复行行为）
+4. 行首标签之后的所有时间标签都视为逐字时间并剥离，文本按原顺序拼接：
+   - 逐行 LRC：`[00:01.00]歌词`
+   - 常规逐字 LRC：`[00:01.00]歌[00:01.20]词[00:02.00]`
+   - 增强逐字 LRC（ESLyric）：`[00:01.00]<00:01.00>歌<00:01.20>词<00:02.00>`
+5. 逐字标签只用于定位文本，不保留时间轴或逐字动画；同一时间戳的多行参照歌词
+   （翻译/注释行）按文件顺序全部保留，不去重
+6. 行文本去首尾空白、保留行内空格、丢弃空行
+7. 结果为 `{title, lines, hasTimestamp, format}`；`lines` 为空即解析失败
+8. 没有任何时间标签的纯文本 LRC，按行原样保留
 
 ## 真机验收清单
 
@@ -151,6 +160,8 @@ export const event = {
 
 - [ ] 插件安装并加载成功，插件页 UI 正常显示（设备名、状态区、预览区）
 - [ ] 选一个真实 `.lrc` → 预览显示歌名 / 行数 / 前若干行，时间轴已剥离
+- [ ] 逐行 / 常规逐字 / 增强逐字（ESLyric）三种 LRC 各选一个 → 预览与手环正文都不含
+      `[mm:ss]` / `<mm:ss>` 时间标签，三种格式的正文一致
 - [ ] 手环停在「从手机传输」页 → 手机点「发送到手环」→ 手环 Toast「已接收：<歌名>」并落盘
 - [ ] 插件显示「已发送」，歌词本里出现该条目，标题与正文正确
 - [ ] 手环不在该页面时发送 → 插件 20 秒内提示「手环未响应」，手环侧不产生脏数据
