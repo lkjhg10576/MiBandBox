@@ -55,19 +55,32 @@
 
 <script>
 import kv from '../../utils/kv'
+import layoutApi from '../../utils/homeLayout'
 import router from '../../utils/router'
 import time from '../../utils/time'
 
 export default {
-  data: { clock: '--:--', current: 'grid', four: [1, 2, 3, 4], three: [1, 2, 3] },
+  data: { clock: '--:--', current: 'grid', picking: false, four: [1, 2, 3, 4], three: [1, 2, 3] },
   onShow() {
+    this.picking = false
     this.clock = time.formatClock(new Date())
+    const app = layoutApi.api(this)
+    if (app && app.getHomeLayout && app.isHomeLayoutReady && app.isHomeLayoutReady()) {
+      this.current = app.getHomeLayout()
+      return
+    }
     kv.init(() => {
       this.current = kv.get('home', 'grid') === 'list' ? 'list' : 'grid'
     })
   },
   pick(mode) {
+    if (this.picking) return
+    this.picking = true
     this.current = mode
+    const app = layoutApi.api(this)
+    if (app && app.setHomeLayout) {
+      app.setHomeLayout(mode)
+    }
     kv.init(() => {
       kv.set('home', mode)
       kv.flush()

@@ -11,7 +11,7 @@ BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地�
 
 ## 功能
 
-首页支持双栏网格 / 单栏列表切换（入口在应用列表最后），顶部显示最近的目标日：
+首页支持双栏网格 / 单栏列表切换（入口：应用列表最后的「设置」→「首页样式」），顶部显示最近的目标日：
 
 | 工具 | 说明 |
 |---|---|
@@ -89,7 +89,7 @@ src/
 │   ├── BackBtn.ux         统一返回按钮
 │   └── Ring.ux            弧形进度环（原生 progress arc）
 ├── data/                  自建数据集（apps/quotes/answers/food/history/waste/morse/colors/perf）
-├── utils/                 kv / fs / docs / time / haptic / router / calc / inputResult
+├── utils/                 kv / fs / docs / time / haptic / router / calc / inputResult / homeLayout
 └── pages/                 48 个页面（含 input 文本输入页）
 ```
 
@@ -101,7 +101,7 @@ src/
 
 在 212×520 Vela 模拟器（`xiaomi_band_10` skin）上实测：
 
-- 构建、安装、启动、返回、首页双列/单列切换
+- 构建、安装、启动、返回、设置页双列/单列切换即时生效
 - 笔记本：新建 → 标题/正文输入 → 保存 → 列表 → 阅读
 - 目标日：新建 → 保存 → 列表倒计时 → 首页最近事件
 - 存储空间环图、系统信息 12 项、水平仪传感器读数

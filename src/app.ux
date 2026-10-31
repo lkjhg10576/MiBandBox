@@ -10,12 +10,70 @@
 <script>
 import kv from './utils/kv'
 
+function normalizeLayout(mode) {
+  return mode === 'list' ? 'list' : 'grid'
+}
+
+/**
+ * 应用级布局状态：所有页面共享同一份内存值。
+ * 状态放在模块闭包里，不依赖 app.ux 方法被调用时的 this 指向。
+ *
+ * 注意：app.ux 只读 kv，不写 kv，也不在 onDestroy 里 flush。
+ * 页面写入已经会及时落盘；app 侧的空/过期快照会覆盖用户偏好。
+ */
+const layoutState = {
+  mode: 'grid',
+  ready: false,
+  watchers: []
+}
+
+function notifyLayout() {
+  const mode = normalizeLayout(layoutState.mode)
+  layoutState.watchers.slice().forEach((fn) => {
+    try {
+      fn(mode)
+    } catch (e) {}
+  })
+}
+
 export default {
   onCreate() {
-    kv.init()
+    layoutState.mode = 'grid'
+    layoutState.ready = false
+    layoutState.watchers = []
+    kv.init(() => {
+      if (!layoutState.ready) {
+        layoutState.mode = normalizeLayout(kv.get('home', 'grid'))
+      }
+      layoutState.ready = true
+      notifyLayout()
+    })
   },
-  onDestroy() {
-    kv.flush()
+  getHomeLayout() {
+    return normalizeLayout(layoutState.mode)
+  },
+  isHomeLayoutReady() {
+    return layoutState.ready === true
+  },
+  watchHomeLayout(cb) {
+    if (typeof cb !== 'function') return
+    if (layoutState.watchers.indexOf(cb) < 0) {
+      layoutState.watchers.push(cb)
+    }
+    if (layoutState.ready) {
+      try {
+        cb(normalizeLayout(layoutState.mode))
+      } catch (e) {}
+    }
+  },
+  unwatchHomeLayout(cb) {
+    const i = layoutState.watchers.indexOf(cb)
+    if (i >= 0) layoutState.watchers.splice(i, 1)
+  },
+  setHomeLayout(mode) {
+    layoutState.mode = normalizeLayout(mode)
+    layoutState.ready = true
+    notifyLayout()
   }
 }
 </script>

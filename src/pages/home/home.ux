@@ -3,7 +3,6 @@
 <template>
   <div class="page">
     <pagehead title="BandBox" clock="{{ clock }}"></pagehead>
-    <text class="f setBtn" @click="openSet">设置</text>
 
     <div class="today" @click="openDays">
       <div class="todayTop">
@@ -14,17 +13,25 @@
       <text class="f delta" style="color: {{ eventColor }};">{{ eventDelta }}</text>
     </div>
 
-    <scroll class="apps" if="{{ layoutReady }}" scroll-y="true" bounces="true">
+    <scroll class="apps" show="{{ layoutReady && layout === 'grid' }}" scroll-y="true" bounces="true">
       <div class="grid" style="height: {{ gridHeight }}px;">
-        <div class="f cell {{ layout === 'list' ? 'rowCell' : '' }}" for="{{ cells }}" @click="open($item)">
-          <img class="icon {{ layout === 'list' ? 'rowIcon' : '' }}" src="{{ $item.icon }}" />
-          <div class="meta {{ layout === 'list' ? 'rowMeta' : '' }}">
-            <text class="f name {{ layout === 'list' ? 'rowName' : '' }}">{{ $item.name }}</text>
-            <text class="f desc {{ layout === 'list' ? 'rowDesc' : '' }}" if="{{ layout === 'list' }}">{{ $item.desc }}</text>
-          </div>
+        <div class="f cell" for="{{ cells }}" @click="open($item)">
+          <img class="icon" src="{{ $item.icon }}" />
+          <text class="f name">{{ $item.name }}</text>
         </div>
       </div>
     </scroll>
+
+    <list class="apps listApps" if="{{ layoutReady && layout === 'list' }}" bounces="true">
+      <list-item type="app" class="rowCell" for="{{ cells }}" @click="open($item)">
+        <img class="rowIcon" src="{{ $item.icon }}" />
+        <div class="rowMeta">
+          <text class="f rowName">{{ $item.name }}</text>
+          <text class="f rowDesc">{{ $item.desc }}</text>
+        </div>
+      </list-item>
+      <list-item type="pad" class="listPad"></list-item>
+    </list>
 
   </div>
 </template>
@@ -33,20 +40,6 @@
 @import '../../common/styles/theme.css';
 
 .page { width: 212px; height: 520px; background-color: #000000; }
-.setBtn {
-  position: absolute;
-  left: 144px;
-  top: 42px;
-  width: 34px;
-  height: 28px;
-  line-height: 28px;
-  text-align: center;
-  font-size: 14px;
-  color: rgba(255,255,255,0.75);
-  background-color: rgba(255,255,255,0.1);
-  border-radius: 14px;
-  z-index: 99;
-}
 .today {
   position: absolute;
   left: 3px;
@@ -98,6 +91,9 @@
   width: 212px;
   height: 258px;
 }
+.listApps {
+  background-color: #000000;
+}
 .grid {
   width: 212px;
   padding: 0px 3px 20px 3px;
@@ -129,19 +125,12 @@
   text-overflow: ellipsis;
   lines: 1;
 }
-.desc {
-  width: 93px;
-  height: 18px;
-  line-height: 18px;
-  text-align: center;
-  font-size: 14px;
-  color: rgba(255,255,255,0.4);
-  text-overflow: ellipsis;
-  lines: 1;
-}
 .rowCell {
   width: 200px;
   height: 72px;
+  margin: 3px 6px 8px 6px;
+  border-radius: 26px;
+  background-color: #1A1A1A;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
@@ -165,6 +154,9 @@
   line-height: 26px;
   text-align: left;
   font-size: 17px;
+  color: #FFFFFF;
+  text-overflow: ellipsis;
+  lines: 1;
 }
 .rowDesc {
   width: 128px;
@@ -172,34 +164,41 @@
   line-height: 20px;
   text-align: left;
   font-size: 14px;
+  color: rgba(255,255,255,0.4);
+  text-overflow: ellipsis;
+  lines: 1;
+}
+.listPad {
+  width: 212px;
+  height: 20px;
 }
 </style>
 
 <script>
 import apps from '../../data/apps'
 import kv from '../../utils/kv'
+import layoutApi from '../../utils/homeLayout'
 import router from '../../utils/router'
 import time from '../../utils/time'
 import fs from '../../utils/fs'
-import haptic from '../../utils/haptic'
 
 const EVENTS_PATH = 'internal://files/bandbox/events.json'
 
-function buildCells(mode) {
-  const toggle = {
-    id: '__layout__',
-    name: mode === 'list' ? '双栏' : '单栏',
-    desc: '切换首页布局',
-    route: '',
-    icon: mode === 'list' ? '/common/switch_on.png' : '/common/switch_off.png'
-  }
-  return apps.concat([toggle])
+const SETTINGS_TILE = {
+  id: '__settings__',
+  name: '设置',
+  desc: '首页样式 · 关于',
+  route: '/pages/set',
+  icon: '/common/icons/settings.png'
 }
 
-function gridHeight(mode, count) {
-  if (mode === 'list') return count * 78 + 20
+const CELLS = apps.concat([SETTINGS_TILE])
+
+function gridHeight(count) {
   return Math.ceil(count / 2) * 86 + 20
 }
+
+let layoutWatcher = null
 
 export default {
   data: {
@@ -210,11 +209,13 @@ export default {
     eventColor: 'rgba(255,255,255,0.4)',
     layout: 'grid',
     layoutReady: false,
-    cells: buildCells('grid'),
-    gridHeight: gridHeight('grid', apps.length + 1),
+    cells: CELLS,
+    gridHeight: gridHeight(CELLS.length),
     timer: null
   },
   onShow() {
+    this.watchLayout()
+    this.syncLayout()
     this.refresh()
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => this.refreshClock(), 20000)
@@ -224,18 +225,50 @@ export default {
     this.timer = null
   },
   onDestroy() {
+    this.unwatchLayout()
     if (this.timer) clearInterval(this.timer)
     this.timer = null
+  },
+  watchLayout() {
+    if (layoutWatcher) return
+    const app = layoutApi.api(this)
+    if (!app || !app.watchHomeLayout) return
+    const page = this
+    layoutWatcher = function (mode) {
+      if (!page.$valid) return
+      page.applyLayout(mode)
+    }
+    app.watchHomeLayout(layoutWatcher)
+  },
+  unwatchLayout() {
+    if (!layoutWatcher) return
+    const app = layoutApi.api(this)
+    if (app && app.unwatchHomeLayout) app.unwatchHomeLayout(layoutWatcher)
+    layoutWatcher = null
+  },
+  syncLayout() {
+    const app = layoutApi.api(this)
+    if (app && app.getHomeLayout && app.isHomeLayoutReady && app.isHomeLayoutReady()) {
+      this.applyLayout(app.getHomeLayout())
+      return
+    }
+    if (app && app.watchHomeLayout) {
+      // watchLayout 已注册，应用级数据就绪时会回调
+      return
+    }
+    kv.init(() => {
+      this.applyLayout(kv.get('home', 'grid'))
+    })
+  },
+  applyLayout(mode) {
+    const next = mode === 'list' ? 'list' : 'grid'
+    if (this.layout !== next) this.layout = next
+    if (!this.layoutReady) this.layoutReady = true
   },
   refresh() {
     this.refreshClock()
     const now = new Date()
     this.dateText = now.getMonth() + 1 + '月' + now.getDate() + '日 ' + time.weekdayName(now)
-    kv.init(() => {
-      const mode = kv.get('home', 'grid') === 'list' ? 'list' : 'grid'
-      this.applyLayout(mode)
-      this.layoutReady = true
-    })
     fs.readText(EVENTS_PATH, (text) => {
       if (!text) return
       let list = []
@@ -264,30 +297,11 @@ export default {
       }
     })
   },
-  applyLayout(mode) {
-    this.layout = mode
-    this.cells = buildCells(mode)
-    this.gridHeight = gridHeight(mode, this.cells.length)
-  },
-  toggleLayout() {
-    haptic.short()
-    const next = this.layout === 'list' ? 'grid' : 'list'
-    this.applyLayout(next)
-    kv.set('home', next)
-    kv.flush()
-  },
   refreshClock() {
     this.clock = time.formatClock(new Date())
   },
   open(item) {
-    if (item.id === '__layout__') {
-      this.toggleLayout()
-      return
-    }
     router.push(item.route)
-  },
-  openSet() {
-    router.push('/pages/set')
   },
   openDays() {
     router.push('/pages/daysmatter/list')

@@ -310,6 +310,19 @@ def icon_level():
     save(im, os.path.join(ICONS, "level.png"))
 
 
+def icon_settings():
+    im = canvas(); d = ImageDraw.Draw(im)
+    circle(d, 22, 22, 10)
+    circle(d, 22, 22, 3, width=4)
+    for i in range(8):
+        a = math.radians(i * 45)
+        line(d, [
+            (22 + math.cos(a) * 10, 22 + math.sin(a) * 10),
+            (22 + math.cos(a) * 15, 22 + math.sin(a) * 15),
+        ])
+    save(im, os.path.join(ICONS, "settings.png"))
+
+
 def common_shadow():
     w, h = 212, 84
     im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -409,7 +422,7 @@ def main():
         icon_storage, icon_fish, icon_display, icon_flashlight, icon_cps,
         icon_diet, icon_random, icon_system, icon_performance, icon_history,
         icon_scoreboard, icon_morse, icon_waste, icon_qrcode, icon_marquee,
-        icon_lylist, icon_level,
+        icon_lylist, icon_level, icon_settings,
     ):
         fn()
     common_shadow()

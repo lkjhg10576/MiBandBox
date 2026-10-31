@@ -54,6 +54,7 @@
 
 <script>
 import kv from '../../utils/kv'
+import layoutApi from '../../utils/homeLayout'
 import router from '../../utils/router'
 import time from '../../utils/time'
 import prompt from '@system.prompt'
@@ -62,9 +63,14 @@ export default {
   data: { clock: '--:--', layoutText: '双栏网格', resetHint: '连按两次清空偏好设置', resetStep: 0, timer: null },
   onShow() {
     this.clock = time.formatClock(new Date())
-    kv.init(() => {
-      this.layoutText = kv.get('home', 'grid') === 'list' ? '单栏列表' : '双栏网格'
-    })
+    const app = layoutApi.api(this)
+    if (app && app.getHomeLayout && app.isHomeLayoutReady && app.isHomeLayoutReady()) {
+      this.layoutText = app.getHomeLayout() === 'list' ? '单栏列表' : '双栏网格'
+    } else {
+      kv.init(() => {
+        this.layoutText = kv.get('home', 'grid') === 'list' ? '单栏列表' : '双栏网格'
+      })
+    }
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => {
       this.clock = time.formatClock(new Date())
@@ -95,6 +101,10 @@ export default {
     }
     kv.reset()
     kv.flush()
+    const app = layoutApi.api(this)
+    if (app && app.setHomeLayout) {
+      app.setHomeLayout('grid')
+    }
     this.resetStep = 0
     this.resetHint = '连按两次清空偏好设置'
     this.layoutText = '双栏网格'
