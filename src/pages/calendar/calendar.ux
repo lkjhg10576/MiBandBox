@@ -1,0 +1,126 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="日历" clock="{{ clock }}"></pagehead>
+
+    <text class="f month">{{ monthText }}</text>
+    <div class="weekRow">
+      <text class="f wd" for="{{ weekNames }}">{{ $item }}</text>
+    </div>
+    <div class="line"></div>
+
+    <div class="days">
+      <text class="f dnum {{ $item.cls }}" for="{{ cells }}" @click="pick($item)">{{ $item.d || '' }}</text>
+    </div>
+
+    <div class="navRow">
+      <div class="navBtn" @click="shift(-1)">
+        <div class="navInner"><text class="f chev">‹</text></div>
+      </div>
+      <div class="navBtn" @click="shift(1)">
+        <div class="navInner"><text class="f chev">›</text></div>
+      </div>
+    </div>
+
+    <div class="line2"></div>
+    <text class="f detailDate">{{ dateText }}</text>
+    <text class="f detailLunar">{{ lunarText }}</text>
+    <text class="f detailWeek">{{ weekText }}</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+.page { width: 212px; height: 520px; background-color: #000000; }
+.month { position: absolute; left: 0px; top: 74px; width: 212px; height: 26px; line-height: 26px; text-align: center; font-size: 18px; color: #FFFFFF; }
+.weekRow { position: absolute; left: 1px; top: 102px; width: 210px; height: 18px; flex-direction: row; }
+.wd { width: 30px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.45); }
+.line { position: absolute; left: 10px; top: 122px; width: 192px; height: 1px; background-color: rgba(255,255,255,0.12); }
+.days { position: absolute; left: 1px; top: 124px; width: 210px; height: 192px; flex-direction: row; flex-wrap: wrap; }
+.dnum { width: 26px; height: 26px; line-height: 26px; margin: 3px 2px; border-radius: 13px; text-align: center; font-size: 16px; color: #FFFFFF; }
+.sel { background-color: #0D6EFF; color: #FFFFFF; }
+.today { background-color: rgba(13,110,255,0.18); color: #9FC4FF; }
+.navRow { position: absolute; left: 30px; top: 322px; width: 152px; height: 40px; flex-direction: row; justify-content: space-between; }
+.navBtn { width: 72px; height: 40px; border-radius: 14px; background-color: #0D6EFF; padding: 2px; align-items: center; justify-content: center; }
+.navInner { width: 68px; height: 36px; border-radius: 12px; background-color: #050505; align-items: center; justify-content: center; }
+.chev { width: 68px; height: 36px; line-height: 36px; text-align: center; font-size: 26px; color: #4E87FF; }
+.line2 { position: absolute; left: 44px; top: 370px; width: 124px; height: 1px; background-color: rgba(255,255,255,0.12); }
+.detailDate { position: absolute; left: 0px; top: 378px; width: 212px; height: 28px; line-height: 28px; text-align: center; font-size: 19px; color: #FFFFFF; }
+.detailLunar { position: absolute; left: 0px; top: 412px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 15px; color: #9FC4FF; }
+.detailWeek { position: absolute; left: 0px; top: 442px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
+</style>
+
+<script>
+import lunarUtil from '../../utils/lunar'
+import calendar from '../../utils/calendar'
+import haptic from '../../utils/haptic'
+import time from '../../utils/time'
+
+const WEEK_NAMES = ['日', '一', '二', '三', '四', '五', '六']
+
+export default {
+  data: {
+    clock: '--:--',
+    year: 2026,
+    month: 10,
+    day: 1,
+    monthText: '',
+    dateText: '',
+    lunarText: '',
+    weekText: '',
+    weekNames: WEEK_NAMES,
+    cells: [],
+    timer: null
+  },
+  onShow() {
+    const now = new Date()
+    this.year = now.getFullYear()
+    this.month = now.getMonth()
+    this.day = now.getDate()
+    this.clock = time.formatClock(now)
+    this.update()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  update() {
+    const d = new Date(this.year, this.month, this.day)
+    const lunar = lunarUtil.solarToLunar(this.year, this.month + 1, this.day)
+    this.monthText = this.year + '年' + (this.month + 1) + '月'
+    this.dateText = this.year + '年' + (this.month + 1) + '月' + this.day + '日'
+    this.lunarText = lunar ? lunar.text : '农历不可用'
+    this.weekText = time.weekdayName(d) + '  第' + calendar.isoWeek(d) + '周'
+    this.cells = calendar.buildMonthCells(this.year, this.month, this.day, new Date())
+  },
+  shift(delta) {
+    const next = calendar.shiftMonth(this.year, this.month, delta)
+    if (next.year < 1901 || next.year > 2099) return
+    const max = new Date(next.year, next.month + 1, 0).getDate()
+    this.year = next.year
+    this.month = next.month
+    if (this.day > max) this.day = max
+    this.update()
+    haptic.short()
+  },
+  pick(item) {
+    if (!item || !item.d) return
+    this.day = item.d
+    this.update()
+    haptic.short()
+  }
+}
+</script>

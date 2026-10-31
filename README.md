@@ -1,12 +1,12 @@
 # BandBox
 
-BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 26 个应用、49 个页面。
+BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 27 个应用、50 个页面。
 
 - 包名：`com.miband.box`
-- 版本：1.0.0
+- 版本：1.1.0
 - 技术栈：Vela JS 快应用（`.ux`）
-- 画布：212 × 520，纯黑背景
-- 体积：约 790 KB（含中文字体子集）
+- 屏幕：212 × 520 跑道屏；模拟器应用区 212 × 466，真机可绘制到约 500（底部为药丸收窄区）
+- 体积：约 810 KB（含中文字体子集）
 - 无联网必需、无收费、无授权、无第三方 App 依赖
 - 手机端可选装 AstroBox 插件「BandBox歌词同步」，把手上的 LRC 歌词推到手表歌词本
 
@@ -20,6 +20,7 @@ BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地�
 | 笔记本 | 新建 / 编辑 / 重命名 / 二维码分享 / 删除 |
 | 荧光棒 | 彩色条纹循环，可暂停 |
 | 目标日 | 倒数 / 纪念日，日期选择器，本地保存 |
+| 日历 | 月视图，点选日期查看农历、周几与 ISO 周数，左右切月 |
 | 每日一言 | 100 条自撰短句，可收藏 |
 | 密码生成 | 长度 8–32，字符集可勾选，收藏夹 |
 | 答案之书 | 随机答案，淡入展示 |
@@ -101,7 +102,7 @@ adb shell am start com.miband.box
 
 ```
 src/
-├── manifest.json          49 条路由、权限、features
+├── manifest.json          50 条路由、权限、features
 ├── app.ux                 全局字体与 KV 初始化
 ├── common/                自绘图标、公共图、字体子集
 ├── components/
@@ -110,13 +111,14 @@ src/
 ├── data/                  自建数据集（apps/quotes/answers/food/history/waste/morse/colors/perf）
 ├── utils/                 kv / fs / docs / time / haptic / router / calc / inputResult / homeLayout
 │                          interconnect（手机互传通道）/ lyricsTransfer（歌词传输协议）
-└── pages/                 49 个页面（含 input 文本输入页、lyrics/transfer 接收页）
+└── pages/                 50 个页面（含 input 文本输入页、lyrics/transfer 接收页）
 
 plugin/
 └── bandbox-lyrics-sync/   AstroBox 插件（API Level 4）：手机端选 LRC 并推送
 
 tools/
 ├── test-protocol.mjs       手环端协议单测（node tools/test-protocol.mjs）
+├── test-calendar.mjs       农历 / 日历纯逻辑单测（node tools/test-calendar.mjs）
 └── gen-assets/font.py      中文字体子集生成
 ```
 
@@ -131,6 +133,7 @@ tools/
 - 「从手机传输」需要手机端安装 AstroBox 插件「BandBox歌词同步」，且手环需停留在接收页；
   没装插件时手环页会显示「对端未安装」。
 - 性能分为相对参考值，受温度、后台任务和模拟器影响。
+- 模拟器里的快应用绘制区域为 212×466（底部 54px 为系统手势栏）；真机照片显示可继续绘制到约 500，但底部是药丸屏收窄区，仅适合居中窄内容。
 - 模拟器冷启动约 10 秒，是 Vela 运行时调试器发现超时导致；真机通常更快。
 - 模拟器的鼠标/触摸坐标与画面存在约 40 px 偏移，自动化截图时需自行校准；真机触摸正常。
 - Vela 模拟器镜像的文本渲染不稳：重装应用后偶发整页中文变豆腐块或错位，

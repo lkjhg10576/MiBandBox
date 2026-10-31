@@ -8,8 +8,8 @@
       <div class="inner" style="height: 640px;">
       <img class="logo" src="/common/icon.png" />
       <text class="f name">BandBox</text>
-      <text class="f ver">v1.0.0</text>
-      <text class="f desc">为小米手环窄长屏设计的小工具箱，包含 26 个本地小工具：计算、记录、查询与趣味功能。</text>
+      <text class="f ver">v1.1.0</text>
+      <text class="f desc">为小米手环窄长屏设计的小工具箱，包含 27 个本地小工具：计算、记录、查询与趣味功能。</text>
       <div class="card">
         <text class="f cTitle">设计原则</text>
         <text class="f cBody">不联网、不收费、不引流；数据全部保存在本机，删除应用即删除数据。</text>
@@ -33,7 +33,7 @@
 <style>
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 384px; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 418px; }
 .inner { width: 212px; flex-direction: column; }
 .logo { width: 56px; height: 56px; margin-top: 4px; margin-left: 78px; border-radius: 15px; }
 .name { width: 212px; height: 32px; line-height: 32px; text-align: center; font-size: 17px; color: #FFFFFF; }

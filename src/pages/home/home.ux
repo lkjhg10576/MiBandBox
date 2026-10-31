@@ -45,10 +45,10 @@
   left: 3px;
   top: 92px;
   width: 206px;
-  height: 100px;
+  height: 88px;
   border-radius: 26px;
   background-color: #262626;
-  padding: 11px 16px;
+  padding: 8px 16px;
   flex-direction: column;
 }
 .todayTop {
@@ -87,38 +87,38 @@
 .apps {
   position: absolute;
   left: 0px;
-  top: 200px;
+  top: 182px;
   width: 212px;
-  height: 258px;
+  height: 304px;
 }
 .listApps {
   background-color: #000000;
 }
 .grid {
   width: 212px;
-  padding: 0px 3px 20px 3px;
+  padding: 0px 3px 40px 3px;
   flex-direction: row;
   flex-wrap: wrap;
 }
 .cell {
   width: 97px;
-  height: 80px;
+  height: 70px;
   margin: 3px;
   border-radius: 26px;
   background-color: #1A1A1A;
   align-items: center;
   justify-content: flex-start;
   flex-direction: column;
-  padding-top: 8px;
+  padding-top: 4px;
 }
 .icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
 }
 .name {
   width: 93px;
-  height: 22px;
-  line-height: 22px;
+  height: 20px;
+  line-height: 20px;
   text-align: center;
   font-size: 16px;
   color: #FFFFFF;
@@ -127,7 +127,7 @@
 }
 .rowCell {
   width: 200px;
-  height: 72px;
+  height: 68px;
   margin: 3px 6px 8px 6px;
   border-radius: 26px;
   background-color: #1A1A1A;
@@ -137,8 +137,8 @@
   padding: 0px 12px;
 }
 .rowIcon {
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   margin-right: 10px;
 }
 .rowMeta {
@@ -170,7 +170,7 @@
 }
 .listPad {
   width: 212px;
-  height: 20px;
+  height: 40px;
 }
 </style>
 
@@ -195,7 +195,7 @@ const SETTINGS_TILE = {
 const CELLS = apps.concat([SETTINGS_TILE])
 
 function gridHeight(count) {
-  return Math.ceil(count / 2) * 86 + 20
+  return Math.ceil(count / 2) * 76 + 60
 }
 
 let layoutWatcher = null

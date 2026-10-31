@@ -1,8 +1,8 @@
 {
   "package": "com.miband.box",
   "name": "BandBox",
-  "versionName": "1.0.0",
-  "versionCode": 10000,
+  "versionName": "1.1.0",
+  "versionCode": 10100,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -101,6 +101,9 @@
       },
       "pages/daysmatter/inputdate": {
         "component": "inputdate"
+      },
+      "pages/calendar": {
+        "component": "calendar"
       },
       "pages/sentence": {
         "component": "sentence"

@@ -48,7 +48,7 @@
 .plusT { font-size: 24px; color: #FFFFFF; }
 .minus { width: 66px; height: 36px; border-radius: 18px; background-color: rgba(255,255,255,0.06); align-items: center; justify-content: center; margin-top: 8px; }
 .minusT { font-size: 20px; color: rgba(255,255,255,0.6); }
-.hint { position: absolute; left: 16px; top: 442px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.5); }
+.hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.5); }
 </style>
 
 <script>

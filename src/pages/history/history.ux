@@ -40,7 +40,7 @@
 .eventScroll { width: 170px; height: 214px; }
 .eventText { width: 170px; font-size: 18px; line-height: 27px; color: #FFFFFF; }
 .tipLabel { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.35); }
-.foot { position: absolute; left: 16px; top: 438px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
 </style>
 
 <script>

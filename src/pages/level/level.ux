@@ -26,7 +26,7 @@
 .tip { position: absolute; left: 16px; top: 296px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.4); }
 .btn { position: absolute; left: 48px; top: 360px; width: 116px; height: 42px; border-radius: 21px; background-color: #262626; align-items: center; justify-content: center; }
 .btnT { font-size: 14px; color: #FFFFFF; }
-.foot { position: absolute; left: 16px; top: 438px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
 </style>
 
 <script>

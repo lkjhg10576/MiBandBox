@@ -6,6 +6,7 @@ const apps = [
   { id: 'notebook', name: '笔记本', route: '/pages/notebook/list', icon: '/common/icons/notebook.png', desc: '随手记 · 本地保存' },
   { id: 'fluorescence', name: '荧光棒', route: '/pages/fluorescence', icon: '/common/icons/fluorescence.png', desc: '彩色循环 · 氛围' },
   { id: 'daysmatter', name: '目标日', route: '/pages/daysmatter/list', icon: '/common/icons/daysmatter.png', desc: '倒数 · 纪念日' },
+  { id: 'calendar', name: '日历', route: '/pages/calendar', icon: '/common/icons/calendar.png', desc: '农历 · 周数' },
   { id: 'sentence', name: '每日一言', route: '/pages/sentence', icon: '/common/icons/sentence.png', desc: '一句话 · 换一条' },
   { id: 'password', name: '密码生成', route: '/pages/password', icon: '/common/icons/password.png', desc: '随机 · 收藏' },
   { id: 'answer', name: '答案之书', route: '/pages/answer', icon: '/common/icons/answer.png', desc: '摇一摇 · 看答案' },

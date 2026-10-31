@@ -17,7 +17,7 @@
           <text class="f cTitle">关于 BandBox</text>
           <text class="f arrow">></text>
         </div>
-        <text class="f cSub">版本 1.0.0</text>
+        <text class="f cSub">版本 1.1.0</text>
       </div>
       <div class="card" @click="showPrivacy">
         <div class="cardTop">
@@ -43,7 +43,7 @@
 @import '../../common/styles/theme.css';
 
 .page { width: 212px; height: 520px; background-color: #000000; }
-.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 384px; flex-direction: column; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 418px; flex-direction: column; }
 .card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; }
 .cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
 .cTitle { font-size: 17px; color: #FFFFFF; }

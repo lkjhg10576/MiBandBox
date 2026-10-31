@@ -22,7 +22,7 @@
 <style>
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 384px; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 418px; }
 .listInner { width: 212px; flex-direction: column; }
 .card { width: 206px; height: 72px; margin: 0px 3px 7px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 16px; }
 .card.cur { background-color: rgba(13,110,255,0.24); }

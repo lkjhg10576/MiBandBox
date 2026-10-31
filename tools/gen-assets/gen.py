@@ -92,6 +92,21 @@ def icon_daysmatter():
     save(im, os.path.join(ICONS, "daysmatter.png"))
 
 
+def icon_calendar():
+    im = canvas(); d = ImageDraw.Draw(im)
+    rr(d, (6, 9, 38, 39), 5)
+    line(d, [(6, 17), (38, 17)])
+    line(d, [(14, 5), (14, 12)])
+    line(d, [(30, 5), (30, 12)])
+    dot(d, 13, 24, 1.6)
+    dot(d, 22, 24, 1.6)
+    dot(d, 31, 24, 1.6)
+    dot(d, 13, 32, 1.6)
+    circle(d, 22, 32, 4)
+    dot(d, 30, 32, 1.6)
+    save(im, os.path.join(ICONS, "calendar.png"))
+
+
 def icon_sentence():
     im = canvas(); d = ImageDraw.Draw(im)
     for x in (9, 25):
@@ -418,7 +433,7 @@ def main():
     os.makedirs(ICONS, exist_ok=True)
     for fn in (
         icon_calculator, icon_notebook, icon_fluorescence, icon_daysmatter,
-        icon_sentence, icon_password, icon_answer, icon_vibrate, icon_time,
+        icon_calendar, icon_sentence, icon_password, icon_answer, icon_vibrate, icon_time,
         icon_storage, icon_fish, icon_display, icon_flashlight, icon_cps,
         icon_diet, icon_random, icon_system, icon_performance, icon_history,
         icon_scoreboard, icon_morse, icon_waste, icon_qrcode, icon_marquee,

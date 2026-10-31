@@ -32,7 +32,7 @@
 .cHint { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.3); }
 .go { position: absolute; left: 26px; top: 392px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goT { font-size: 14px; color: #FFFFFF; }
-.hint { position: absolute; left: 16px; top: 440px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
 </style>
 
 <script>
