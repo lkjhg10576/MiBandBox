@@ -44,6 +44,9 @@
     },
     {
       "name": "system.crypto"
+    },
+    {
+      "name": "system.interconnect"
     }
   ],
   "config": {
@@ -194,6 +197,9 @@
       },
       "pages/lyrics/showmode": {
         "component": "showmode"
+      },
+      "pages/lyrics/transfer": {
+        "component": "transfer"
       },
       "pages/input": {
         "component": "input"

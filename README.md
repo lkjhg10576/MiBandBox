@@ -1,13 +1,14 @@
 # BandBox
 
-BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 26 个应用、48 个页面。
+BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 26 个应用、49 个页面。
 
 - 包名：`com.miband.box`
 - 版本：1.0.0
 - 技术栈：Vela JS 快应用（`.ux`）
 - 画布：212 × 520，纯黑背景
-- 体积：约 778 KB（含中文字体子集）
+- 体积：约 790 KB（含中文字体子集）
 - 无联网必需、无收费、无授权、无第三方 App 依赖
+- 手机端可选装 AstroBox 插件「BandBox歌词同步」，把手上的 LRC 歌词推到手表歌词本（见下文）
 
 ## 功能
 
@@ -40,8 +41,26 @@ BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地�
 | 垃圾分类 | 200+ 物品词表，五分类 |
 | 快捷生码 | 文本 / 网址 / WiFi 二维码 |
 | 跑马灯 | 文字、字号、速度、颜色，全屏滚动 |
-| 歌词本 | 本地歌词、自动滚动、横竖屏 |
+| 歌词本 | 本地歌词、自动滚动、横竖屏，支持「从手机传输」接收手机推送的歌词 |
 | 水平仪 | 加速度计倾角 + 分段圆环 |
+
+## 从手机传输歌词
+
+歌词本首页顶部有一张「从手机传输」卡片，点进去进入接收页：
+
+1. 手机装 AstroBox 插件 **BandBox歌词同步**（源码在 `plugin/bandbox-lyrics-sync/`）
+2. 手环停在「从手机传输」页面（页面会置常亮、每 20 秒刷新一次连接状态）
+3. 手机插件里点「选择 LRC 文件」→ 选一个 `.lrc`
+4. 插件剥掉时间轴与元数据标签、还原成逐行纯文本，点「发送到手环」
+5. 手环弹出「已接收：<歌名>」，歌词本里随即出现该条目
+
+协议是本仓库自定义的 `bandbox-lyrics`（JSON 字符串，`app`/`v`/`type` 三个公共字段），
+手环端实现见 `src/utils/lyricsTransfer.js`，插件端实现见 `plugin/bandbox-lyrics-sync/src/protocol.js`，
+两端各有一套单测。传输通道只有 BLE `interconnect` 一条（`system.interconnect`），
+没有局域网 HTTP 兜底。
+
+> 模拟器没有 BLE、也装不了 AstroBox，所以这条链路只能真机跑，
+> 验收清单见 `plugin/bandbox-lyrics-sync/README.md`。
 
 ## 构建
 
@@ -63,12 +82,14 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 # 自动构建 + 安装 + 启动
 ./tools/deploy.sh
 
-# 或手动
+# 或手动（必须用 pm install）
 adb push dist/*.rpk /data/app/com.miband.box.rpk
-adb shell mkdir /data/app/com.miband.box
-adb shell unzip -o /data/app/com.miband.box.rpk -d /data/app/com.miband.box
+adb shell pm install /data/app/com.miband.box.rpk
 adb shell am start com.miband.box
 ```
+
+> 不要用 `rm -rf /data/app/<pkg>` + `unzip` 的方式安装：那样 AMS 里会残留
+> 「文件已删、状态还在」的坏应用，之后 `am start` 只出黑屏。用 `pm install` 覆盖即可。
 
 截图 / 触摸 / 日志：
 
@@ -82,7 +103,7 @@ adb shell am start com.miband.box
 
 ```
 src/
-├── manifest.json          48 条路由、权限、features
+├── manifest.json          49 条路由、权限、features
 ├── app.ux                 全局字体与 KV 初始化
 ├── common/                自绘图标、公共图、字体子集
 ├── components/
@@ -90,7 +111,15 @@ src/
 │   └── Ring.ux            弧形进度环（原生 progress arc）
 ├── data/                  自建数据集（apps/quotes/answers/food/history/waste/morse/colors/perf）
 ├── utils/                 kv / fs / docs / time / haptic / router / calc / inputResult / homeLayout
-└── pages/                 48 个页面（含 input 文本输入页）
+│                          interconnect（手机互传通道）/ lyricsTransfer（歌词传输协议）
+└── pages/                 49 个页面（含 input 文本输入页、lyrics/transfer 接收页）
+
+plugin/
+└── bandbox-lyrics-sync/   AstroBox 插件（API Level 4）：手机端选 LRC 并推送
+
+tools/
+├── test-protocol.mjs       手环端协议单测（node tools/test-protocol.mjs）
+└── gen-assets/font.py      中文字体子集生成
 ```
 
 ## 许可
@@ -108,8 +137,9 @@ src/
 - 记分牌计时器与红蓝计分、手速测试倒计时与 CPS
 - 显示测试色卡、红光手电亮度切换、木鱼计数
 - 跑马灯设置与全屏滚动、歌词本空态、答案之书、每日一言
+- 歌词本「从手机传输」入口卡片与接收页（连接状态、重新检测、返回歌词本）
 - 数字滚动（从随机数页进入）、计算器/密码/摩斯/垃圾分类/二维码页面与入口
-- 最终 rpk：约 778 KB，48 条路由，无构建警告
+- 最终 rpk：约 790 KB，49 条路由，无构建警告
 
 内容管理中的重命名、收藏夹、歌词保存等子流程已做代码审查与编译验证，建议在真机上再逐项点测。
 
@@ -117,9 +147,13 @@ src/
 
 - 自带输入页支持英文、数字与符号；中文内容通过内置数据集呈现，不提供拼音输入。
 - 歌词本完全离线，不提供在线搜索（避免第三方接口依赖）。
+- 「从手机传输」需要手机端安装 AstroBox 插件「BandBox歌词同步」，且手环需停留在接收页；
+  没装插件时手环页会显示「对端未安装」。
 - 性能分为相对参考值，受温度、后台任务和模拟器影响。
 - 模拟器冷启动约 10 秒，是 Vela 运行时调试器发现超时导致；真机通常更快。
 - 模拟器的鼠标/触摸坐标与画面存在约 40 px 偏移，自动化截图时需自行校准；真机触摸正常。
+- Vela 模拟器镜像的文本渲染不稳：重装应用后偶发整页中文变豆腐块或错位，
+  重启模拟器（清字体缓存）后恢复。这是模拟器侧的问题，手表真机不受影响。
 
 ## 致谢
 

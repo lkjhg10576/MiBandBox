@@ -9,6 +9,7 @@
 </style>
 <script>
 import kv from './utils/kv'
+import interconnectUtil from './utils/interconnect'
 
 function normalizeLayout(mode) {
   return mode === 'list' ? 'list' : 'grid'
@@ -41,6 +42,10 @@ export default {
     layoutState.mode = 'grid'
     layoutState.ready = false
     layoutState.watchers = []
+    // 初始化手机互传通道（全局一次），供「从手机传输」页面订阅消息
+    try {
+      interconnectUtil.init()
+    } catch (e) {}
     kv.init(() => {
       if (!layoutState.ready) {
         layoutState.mode = normalizeLayout(kv.get('home', 'grid'))

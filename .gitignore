@@ -8,3 +8,8 @@ _re/
 __pycache__/
 *.rpk
 docs/
+
+# AstroBox 插件：AstroBox-Plugin-WIT 由 `npm run wit` 拉取，不入库
+plugin/*/wit/
+plugin/*/node_modules/
+plugin/*/dist/

@@ -1,0 +1,288 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="从手机传输" clock="{{ clock }}"></pagehead>
+
+    <list class="list" bounces="true">
+      <list-item type="row" class="card" for="{{ rows }}" @click="onRow($item)">
+        <div class="cMain">
+          <text class="f cTitle">{{ $item.title }}</text>
+          <text class="f cSub">{{ $item.sub }}</text>
+        </div>
+        <text class="f arrow" if="{{ $item.arrow }}">{{ $item.arrow }}</text>
+      </list-item>
+      <list-item type="pad" class="pad"></list-item>
+    </list>
+
+    <text class="f tip">保持本页打开，然后在手机 AstroBox 插件中选择 LRC 文件</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.list { position: absolute; left: 0px; top: 82px; width: 212px; height: 384px; }
+.card { width: 206px; height: 72px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px 0px 16px; }
+.cMain { width: 140px; height: 54px; flex-direction: column; justify-content: center; }
+.cTitle { width: 140px; height: 28px; line-height: 28px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.cSub { width: 140px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); }
+.arrow { width: 26px; height: 24px; line-height: 24px; text-align: right; font-size: 20px; color: rgba(255,255,255,0.4); }
+.pad { width: 212px; height: 40px; }
+.tip { position: absolute; left: 10px; top: 478px; width: 192px; height: 30px; line-height: 15px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import docs from '../../../utils/docs'
+import haptic from '../../../utils/haptic'
+import interconnectUtil from '../../../utils/interconnect'
+import transfer from '../../../utils/lyricsTransfer'
+import prompt from '@system.prompt'
+import brightness from '@system.brightness'
+
+/**
+ * 页面内部状态：定时器、订阅句柄、分片会话。
+ * 这些值不是可序列化的界面数据，放在模块闭包里，
+ * 不进入 data 的响应式代理（与 app.ux 的 layoutState 同一思路）。
+ */
+const state = {
+  timer: null,
+  subscriber: null,
+  session: null
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    rows: [],
+    connText: '检测中',
+    stateText: '等待手机发送',
+    receivedName: '',
+    receivedLines: 0
+  },
+
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    state.session = transfer.createSession()
+    this.refreshRows()
+
+    this.arm()
+    this.checkConnection()
+    this.notifyReady()
+
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+
+    if (state.timer) clearInterval(state.timer)
+    state.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+      this.checkConnection()
+    }, 20000)
+  },
+
+  onHide() {
+    this.disarm()
+    state.timer && clearInterval(state.timer)
+    state.timer = null
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+  },
+
+  onDestroy() {
+    this.disarm()
+    state.timer && clearInterval(state.timer)
+    state.timer = null
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+  },
+
+  /**
+   * 重建列表内容。
+   */
+  refreshRows() {
+    const rows = []
+    rows.push({
+      title: this.connText,
+      sub: this.stateText,
+      act: ''
+    })
+    if (this.receivedName) {
+      rows.push({
+        title: '已接收：' + this.receivedName,
+        sub: '共 ' + this.receivedLines + ' 行，已保存到歌词本',
+        act: ''
+      })
+    }
+    rows.push({
+      title: '重新检测连接',
+      sub: '重新检测与手机的连接状态',
+      act: 'recheck',
+      arrow: '>'
+    })
+    rows.push({
+      title: '返回歌词本',
+      sub: '回到歌词列表',
+      act: 'back',
+      arrow: '>'
+    })
+    this.rows = rows
+  },
+
+  /**
+   * 订阅手机消息。进入页面时 arm，离开时 disarm（同一时刻只允许一个页面接收）。
+   */
+  arm() {
+    if (state.subscriber) return
+    state.subscriber = interconnectUtil.onMessage((text) => {
+      this.handle(text)
+    })
+    // 兼容「刚进页面就收到消息」：立刻消费缓存
+    const cached = interconnectUtil.getLastMessage()
+    if (cached) this.handle(cached)
+  },
+
+  disarm() {
+    if (state.subscriber) {
+      try {
+        state.subscriber()
+      } catch (e) {}
+    }
+    state.subscriber = null
+  },
+
+  /**
+   * 告知手机端手环已就绪。
+   */
+  notifyReady() {
+    interconnectUtil.send(transfer.ready(), () => {}, () => {})
+  },
+
+  /**
+   * 检测手机端连接状态。
+   */
+  checkConnection() {
+    interconnectUtil.readyState((status) => {
+      if (status === 1) {
+        this.connText = '已连接手机'
+      } else if (status === 2) {
+        this.connText = '未连接手机'
+      } else {
+        // 状态未知时用 diagnosis 进一步确认对端是否安装
+        interconnectUtil.diagnosis(3000, (code) => {
+          if (code === 0) {
+            this.connText = '已连接手机'
+          } else if (code === 1001) {
+            this.connText = '对端未安装'
+          } else if (code === 204) {
+            this.connText = '连接超时'
+          } else {
+            this.connText = '未连接手机'
+          }
+          this.refreshRows()
+        })
+        this.refreshRows()
+        return
+      }
+      this.refreshRows()
+    })
+  },
+
+  /**
+   * 处理一条来自手机的原始消息。
+   */
+  handle(raw) {
+    const parsed = transfer.parse(raw)
+    if (!parsed.ok) {
+      // 非本协议的消息静默忽略；坏 JSON / 版本不符才回 err
+      if (parsed.reason === transfer.ERRORS.BAD_JSON || parsed.reason === transfer.ERRORS.VERSION) {
+        this.reply(transfer.err('', parsed.reason))
+      }
+      return
+    }
+
+    const msg = parsed.msg
+    const type = msg.type
+
+    if (type === 'hello') {
+      this.reply(transfer.pong(msg.id))
+      return
+    }
+
+    if (type === 'lyrics') {
+      const payload = transfer.toLyricsPayload(msg)
+      if (!payload.ok) {
+        this.reply(transfer.err(msg.id, payload.reason))
+        return
+      }
+      this.save(msg.id, payload.title, payload.text, payload.lines.length)
+      return
+    }
+
+    if (type === 'chunk') {
+      const res = transfer.acceptChunk(state.session, msg)
+      if (!res.ok) {
+        this.reply(transfer.err(msg.id, res.reason))
+        state.session = transfer.createSession()
+        return
+      }
+      if (!res.done) {
+        this.reply(transfer.progress(msg.id, res.received, res.total))
+        return
+      }
+      const lines = res.text === '' ? [] : res.text.split('\n')
+      this.save(msg.id, res.title || '未命名', res.text, lines.length)
+      return
+    }
+  },
+
+  /**
+   * 落盘并回执。
+   */
+  save(id, title, text, count) {
+    docs.save('lyrics', title, text, (ok, code, name) => {
+      if (!ok) {
+        this.connText = '保存失败'
+        this.stateText = '错误码 ' + code
+        this.refreshRows()
+        this.reply(transfer.err(id, transfer.ERRORS.WRITE_FAILED))
+        prompt.showToast({ message: '歌词保存失败' })
+        haptic.short()
+        return
+      }
+      this.receivedName = name
+      this.receivedLines = count
+      this.connText = '已接收'
+      this.stateText = '共 ' + count + ' 行，已保存到歌词本'
+      this.refreshRows()
+      this.reply(transfer.ack(id, name))
+      prompt.showToast({ message: '已接收：' + name })
+      haptic.short()
+      state.session = transfer.createSession()
+    })
+  },
+
+  /**
+   * 回一条消息给手机。
+   */
+  reply(msg) {
+    interconnectUtil.send(msg, () => {}, () => {})
+  },
+
+  onRow(item) {
+    if (item.act === 'recheck') {
+      haptic.short()
+      this.connText = '检测中'
+      this.stateText = '等待手机发送'
+      this.refreshRows()
+      this.checkConnection()
+      this.notifyReady()
+      return
+    }
+    if (item.act === 'back') {
+      haptic.short()
+      router.back()
+    }
+  }
+}
+</script>
