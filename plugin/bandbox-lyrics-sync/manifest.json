@@ -1,0 +1,13 @@
+{
+  "name": "BandBox歌词同步",
+  "icon": "icon.png",
+  "version": "1.0.0",
+  "description": "在手机端选择 LRC 歌词，解析为逐行文本并推送到手环 BandBox 的歌词本",
+  "author": "BandBox",
+  "website": "https://github.com/gcw_MchqrexB/MiBandBox",
+  "entry": "plugin.wasm",
+  "wasi_version": 3,
+  "api_level": 4,
+  "permissions": ["device", "interconnect", "register_interconnect_recv"],
+  "additional_files": []
+}

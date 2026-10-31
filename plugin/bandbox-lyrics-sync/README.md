@@ -1,0 +1,135 @@
+# BandBox歌词同步（AstroBox 插件）
+
+手机端 AstroBox 插件：选一个 `.lrc` 文件 → 剥掉时间轴与元数据标签、还原成**逐行纯文本**
+→ 通过 BLE `interconnect` 推送到手环上的 BandBox 歌词本。
+
+- API Level：**4**（`wasi_version: 3`）
+- 目标快应用包名：`com.miband.box`（手环端 BandBox）
+- 协议：本仓库自定义的 `bandbox-lyrics`，与手环端 `src/utils/lyricsTransfer.js` 一一对应
+- 语言：JavaScript（不需要 Rust 工具链）
+
+## 目录
+
+```
+bandbox-lyrics-sync/
+├── package.json          依赖 componentize-qjs（预编译原生二进制）
+├── manifest.json         AstroBox 插件清单
+├── icon.png              216×216 图标
+├── wit/                  AstroBox 插件 WIT（npm run wit 拉取）
+├── src/
+│   ├── plugin.js         入口：导出 lifecycle / event
+│   ├── lrc.js            LRC 解析（纯函数）
+│   ├── protocol.js       消息构造与解析
+│   ├── device.js         设备选择
+│   └── ui.js             声明式 UI
+├── scripts/
+│   ├── build.mjs         componentize → dist/plugin.wasm → dist/*.abp
+│   ├── fetch-wit.mjs     拉取 WIT
+│   └── gen-icon.py       生成图标
+└── test/                 node:test 单测
+```
+
+## 构建
+
+```bash
+npm install          # 装 componentize-qjs（预编译二进制，约 56 MB，无需 Rust）
+npm run wit          # 拉取 AstroBox 插件 WIT 到 wit/
+npm test             # 36 项单测
+npm run package      # 产出 dist/plugin.wasm + dist/BandBox歌词同步.abp
+```
+
+`npm install` 会按当前平台自动装对应的原生包
+（Linux x64/arm64、macOS x64/arm64、Windows x64），无需手工挑版本。
+
+把 `dist/BandBox歌词同步.abp` 装到手机上的 AstroBox 里即可。
+
+### 为什么用 componentize-qjs 而不是官方的 componentize-js
+
+官方 `@bytecodealliance/componentize-js@0.23.0` **构建不了 API Level 4**：
+它的 splicer 对 `async func` 导入还没实现，构建 `psys-world-v4` 时直接 panic：
+
+```
+thread '<unnamed>' (1) panicked at crates/spidermonkey-embedding-splicer/src/bindgen.rs:721:48:
+not yet implemented
+```
+
+v4 的宿主接口（`dialog.pick-file`、`interconnect.send-qaic-message` …）全是 `async func`，
+所以这条路径走不通。AstroBox 官方给的解法是打补丁的 ComponentizeJS 分支
+（`AstralSightStudios/ComponentizeJS@astrobox/async-func-support`），但那需要本机装 Rust
+现场编译 splicer，与「不装 Rust」的要求冲突。
+
+这里改用 `@di-framework/componentize-qjs`（wasmtime 48 分支）：预编译原生二进制、零 Rust，
+并且能正确 stub `async func` 导入。实测产物：
+
+- `plugin.wasm` 约 2.86 MB
+- 导入只含 `astrobox:psys-host-v4/*` 与 WASI，**没有 `local:` 导入**，宿主可满足
+- 导出 `astrobox:psys-plugin-v4/lifecycle` 与 `astrobox:psys-plugin-v4/event`（外加一个无害的 `init`）
+
+> `componentize-qjs` 用 QuickJS 而非 SpiderMonkey，JS 运行时不同，但组件 ABI
+> （导入/导出签名）完全按 WIT 生成，宿主侧无感知。
+
+## 权限
+
+| 权限 | 用途 |
+|---|---|
+| `device` | `device.get-connected-device-list` 找已连接的手环 |
+| `interconnect` | `interconnect.send-qaic-message` 发消息 |
+| `register_interconnect_recv` | `register.register-interconnect-recv` 接收手环回执 |
+
+`dialog.pick-file`（选文件）在 v4 文档里没有单独的权限名，先不声明；
+若宿主报权限不足，按宿主提示补，不要臆造。
+
+## 协议
+
+所有消息都是 UTF-8 JSON 字符串，公共字段 `app = "bandbox-lyrics"`、`v = 1`、`type`。
+
+| 方向 | type | 载荷 |
+|---|---|---|
+| 手机→手环 | `hello` | `{id}` 探活 |
+| 手机→手环 | `lyrics` | `{id, title, lines[], count, ts}` 单包直发 |
+| 手机→手环 | `chunk` | `{id, seq, total, title, data}` 分片 |
+| 手环→手机 | `pong` | `{id}` |
+| 手环→手机 | `ack` | `{id, ok:true, name}` 落盘成功（`name` = 实际文件名） |
+| 手环→手机 | `err` | `{id, reason}` 失败原因 |
+| 手环→手机 | `ready` | 手环进入接收页时主动上报 |
+| 手环→手机 | `progress` | `{id, received, total}` 分片进度 |
+
+单条 JSON 超过 **12 KB** 就按行切块（不切断一行），逐片顺序发送；
+手环端全部收齐后一次性落盘为「首行标题 + 其余正文」。
+
+错误原因：`bad-json` / `not-armed` / `write-failed` / `bad-seq` / `version` / `bad-app` / `bad-type` / `empty`。
+
+## LRC 解析规则
+
+1. 编码：先严格 UTF-8，失败再按 GBK/GB18030 解码（国内 LRC 常见 GBK）；去 BOM
+2. 元数据标签（`[ti:]`、`[ar:]`、`[al:]`、`[by:]`、`[length:]`、`[offset:]`）丢弃，
+   `[ti:]` 作为标题候选，优先于文件名
+3. 时间轴 `[mm:ss.xx]` / `[mm:ss.xxx]` / `[mm:ss]` 丢弃；一行多个时间标签时展开为多行同文本
+4. 增强 LRC 的逐字标签 `<mm:ss.xx>` 去掉，各段文本直接拼接（不做逐字动画）
+5. 行文本去首尾空白、保留行内空格、丢弃空行
+6. 结果为 `{title, lines}`；`lines` 为空即解析失败
+7. 没有任何时间标签的纯文本 LRC，按行原样保留
+
+## 真机验收清单
+
+模拟器没有 BLE、也装不了 AstroBox，这条链路只能真机跑。逐项确认：
+
+- [ ] 插件安装并加载成功，插件页 UI 正常显示（设备名、状态区、预览区）
+- [ ] 选一个真实 `.lrc` → 预览显示歌名 / 行数 / 前若干行，时间轴已剥离
+- [ ] 手环停在「从手机传输」页 → 手机点「发送到手环」→ 手环 Toast「已接收：<歌名>」并落盘
+- [ ] 插件显示「已发送」，歌词本里出现该条目，标题与正文正确
+- [ ] 手环不在该页面时发送 → 插件 20 秒内提示「手环未响应」，手环侧不产生脏数据
+- [ ] 断连蓝牙 → 插件给出明确错误；重连后重发成功
+- [ ] 中文 GBK 编码的 LRC 正常显示
+- [ ] > 12 KB 的长歌词走分片，最终完整落盘
+- [ ] 多设备同时连接时，插件能选择目标手环
+
+## 排障
+
+| 现象 | 排查 |
+|---|---|
+| 插件加载失败 | 宿主 AstroBox 版本要支持 API Level 4 |
+| 收不到手环回执 | 手环是否停在「从手机传输」页；蓝牙是否连着 |
+| 提示「对端未安装」 | 手环端 BandBox 未安装或版本过旧 |
+| 中文乱码 | 宿主 TextDecoder 是否带 GBK；否则把 LRC 另存为 UTF-8 |
+| 构建报 `not yet implemented` | 用了官方 componentize-js，见上文「为什么用 componentize-qjs」 |
