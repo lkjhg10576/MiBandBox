@@ -8,7 +8,7 @@
       <div class="inner" style="height: 640px;">
       <img class="logo" src="/common/icon.png" />
       <text class="f name">BandBox</text>
-      <text class="f ver">v1.0.0 · 净室实现</text>
+      <text class="f ver">v1.0.0</text>
       <text class="f desc">为小米手环窄长屏设计的小工具箱，包含 26 个本地小工具：计算、记录、查询与趣味功能。</text>
       <div class="card">
         <text class="f cTitle">设计原则</text>
@@ -22,7 +22,7 @@
         <text class="f cTitle">致谢</text>
         <text class="f cBody">感谢小米 Vela 平台与开源社区提供的开发文档与示例。</text>
       </div>
-      <text class="f fine">独立实现，与第三方无关</text>
+      <text class="f fine">本地运行，数据自持</text>
       <div class="pad"></div>
       </div>
     </scroll>
