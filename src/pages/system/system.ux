@@ -1,0 +1,126 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="系统信息" clock="{{ clock }}"></pagehead>
+    <div class="card">
+      <text class="f cardTitle">本机信息</text>
+      <div class="row" for="{{ rows }}">
+        <text class="f k">{{ $item.k }}</text>
+        <text class="f v">{{ $item.v }}</text>
+      </div>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.card { position: absolute; left: 3px; top: 84px; width: 206px; height: 354px; border-radius: 26px; background-color: #262626; padding: 10px 16px 6px 16px; flex-direction: column; }
+.cardTitle { width: 174px; height: 26px; line-height: 26px; font-size: 16px; color: #0D6EFF; }
+.row { width: 174px; height: 26px; flex-direction: row; align-items: center; justify-content: space-between; }
+.k { width: 74px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.v { width: 100px; text-align: right; font-size: 14px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+</style>
+
+<script>
+import time from '../../utils/time'
+import device from '@system.device'
+
+function gb(n) {
+  if (!n && n !== 0) return '—'
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let v = n
+  let i = 0
+  while (v >= 1024 && i < units.length - 1) {
+    v /= 1024
+    i++
+  }
+  return (Math.round(v * 10) / 10) + ' ' + units[i]
+}
+
+function mask(s) {
+  const str = String(s || '')
+  if (str.length <= 8) return str || '—'
+  return str.slice(0, 4) + '••' + str.slice(-4)
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    rows: [
+      { k: '设备类型', v: '读取中' },
+      { k: '品牌', v: '—' },
+      { k: '型号', v: '—' },
+      { k: '系统', v: '—' },
+      { k: '平台版本', v: '—' },
+      { k: '地区', v: '—' },
+      { k: '屏幕宽度', v: '—' },
+      { k: '屏幕高度', v: '—' },
+      { k: '屏幕密度', v: '—' },
+      { k: '屏幕形状', v: '—' },
+      { k: '设备标识', v: '—' },
+      { k: '总存储', v: '—' }
+    ],
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.load()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  load() {
+    const rows = this.rows.slice()
+    device.getInfo({
+      success: (d) => {
+        rows[0] = { k: '设备类型', v: d.deviceType || 'watch' }
+        rows[1] = { k: '品牌', v: d.brand || '—' }
+        rows[2] = { k: '型号', v: d.model || '—' }
+        rows[3] = { k: '系统', v: (d.osType || '—') + ' ' + (d.osVersionName || '') }
+        rows[4] = { k: '平台版本', v: (d.platformVersionName || '—') + ' / ' + (d.platformVersionCode || '—') }
+        rows[5] = { k: '地区', v: (d.language || '—') + ' · ' + (d.region || '—') }
+        rows[6] = { k: '屏幕宽度', v: (d.screenWidth || '—') + ' px' }
+        rows[7] = { k: '屏幕高度', v: (d.screenHeight || '—') + ' px' }
+        rows[8] = { k: '屏幕密度', v: String(d.screenDensity || '—') }
+        rows[9] = { k: '屏幕形状', v: d.screenShape || '—' }
+        this.rows = rows.slice()
+      },
+      fail: () => {}
+    })
+    device.getDeviceId({
+      success: (d) => {
+        rows[10] = { k: '设备标识', v: mask(d.deviceId) }
+        this.rows = rows.slice()
+      },
+      fail: () => {
+        rows[10] = { k: '设备标识', v: '不可用' }
+        this.rows = rows.slice()
+      }
+    })
+    device.getTotalStorage({
+      success: (d) => {
+        rows[11] = { k: '总存储', v: gb(d.totalStorage) }
+        this.rows = rows.slice()
+      },
+      fail: () => {
+        rows[11] = { k: '总存储', v: '不可用' }
+        this.rows = rows.slice()
+      }
+    })
+  }
+}
+</script>

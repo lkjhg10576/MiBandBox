@@ -1,0 +1,125 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<import name="ring" src="../../components/Ring.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="水平仪" clock="{{ clock }}"></pagehead>
+    <div class="ringWrap">
+      <ring percent="{{ percent }}" color="{{ color }}" size="{{ 170 }}" label="{{ angleText }}"></ring>
+    </div>
+    <text class="f state" style="color: {{ color }};">{{ state }}</text>
+    <text class="f tip">{{ tip }}</text>
+
+    <div class="btn" @click="calibrate"><text class="f btnT">校准为零</text></div>
+    <text class="f foot">放平设备，读数接近 0°</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.ringWrap { position: absolute; left: 21px; top: 84px; width: 170px; height: 170px; }
+.state { position: absolute; left: 0px; top: 264px; width: 212px; height: 30px; line-height: 30px; text-align: center; font-size: 17px; }
+.tip { position: absolute; left: 16px; top: 296px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.4); }
+.btn { position: absolute; left: 48px; top: 360px; width: 116px; height: 42px; border-radius: 21px; background-color: #262626; align-items: center; justify-content: center; }
+.btnT { font-size: 14px; color: #FFFFFF; }
+.foot { position: absolute; left: 16px; top: 438px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import sensor from '@system.sensor'
+import haptic from '../../utils/haptic'
+
+export default {
+  data: {
+    clock: '--:--',
+    angle: 0,
+    offset: 0,
+    percent: 0,
+    color: '#0D6EFF',
+    angleText: '0°',
+    state: '等待传感器',
+    tip: '把设备放平，读数接近 0°',
+    timer: null,
+    smoothed: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    this.subscribe()
+  },
+  onHide() {
+    this.unsubscribe()
+  },
+  onDestroy() {
+    this.unsubscribe()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  subscribe() {
+    try {
+      sensor.subscribeAccelerometer({
+        interval: 200,
+        callback: (ret) => {
+          const x = ret.x || 0
+          const y = ret.y || 0
+          const z = ret.z || 0
+          let deg = (Math.atan2(x, Math.sqrt(y * y + z * z)) * 180) / Math.PI
+          deg = deg - this.offset
+          if (this.smoothed === null) this.smoothed = deg
+          else this.smoothed = this.smoothed * 0.8 + deg * 0.2
+          this.apply(this.smoothed)
+        },
+        fail: () => {
+          this.state = '传感器不可用'
+          this.tip = '当前设备或模拟器未提供加速度计'
+          this.color = '#FF9500'
+        }
+      })
+    } catch (e) {
+      this.state = '传感器不可用'
+      this.color = '#FF9500'
+    }
+  },
+  unsubscribe() {
+    try {
+      sensor.unsubscribeAccelerometer()
+    } catch (e) {}
+  },
+  apply(deg) {
+    const abs = Math.abs(deg)
+    const angle = Math.round(deg * 10) / 10
+    const percent = Math.min(100, Math.round((abs / 45) * 100))
+    if (angle === this.angle && percent === this.percent) return
+    this.angle = angle
+    this.percent = percent
+    this.angleText = (deg > 0 ? '+' : '') + this.angle.toFixed(1) + '°'
+    if (abs < 1.5) {
+      this.color = '#00C853'
+      this.state = '已水平'
+      this.tip = '保持在 0° 附近即可'
+    } else if (abs < 8) {
+      this.color = '#0D6EFF'
+      this.state = deg > 0 ? '向右微倾' : '向左微倾'
+      this.tip = '再调整一点就水平了'
+    } else {
+      this.color = abs > 30 ? '#FF3B30' : '#FF9500'
+      this.state = deg > 0 ? '向右倾斜' : '向左倾斜'
+      this.tip = '缓慢调整设备角度'
+    }
+  },
+  calibrate() {
+    haptic.short()
+    this.offset = (this.angle || 0) + this.offset
+    this.smoothed = 0
+    this.apply(0)
+  }
+}
+</script>

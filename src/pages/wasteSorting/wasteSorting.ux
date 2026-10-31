@@ -1,0 +1,130 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="垃圾分类" clock="{{ clock }}"></pagehead>
+    <div class="inputCard" @click="openInput">
+      <text class="f iLabel">物品名称</text>
+      <text class="f iText" if="{{ query }}">{{ query }}</text>
+      <text class="f iPlace" if="{{ !query }}">点击输入，例如：塑料瓶</text>
+    </div>
+
+    <div class="chips">
+      <div class="chip" for="{{ quick }}" @click="pick($item)"><text class="f chipT">{{ $item }}</text></div>
+    </div>
+
+    <div class="result" style="background-color: {{ bg }};">
+      <text class="f rCat" style="color: {{ color }};">{{ cat }}</text>
+      <text class="f rItem">{{ query || '等待查询' }}</text>
+      <text class="f rTip">{{ tip }}</text>
+    </div>
+
+    <div class="go" @click="doQuery"><text class="f goT">查一查</text></div>
+    <text class="f foot">分类口径以所在地规定为准</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.inputCard { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iText { width: 174px; height: 36px; line-height: 36px; font-size: 20px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.iPlace { width: 174px; height: 36px; line-height: 36px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.chips { position: absolute; left: 6px; top: 170px; width: 200px; height: 32px; flex-direction: row; justify-content: space-between; }
+.chip { width: 62px; height: 30px; border-radius: 15px; background-color: #1E1E1E; align-items: center; justify-content: center; }
+.chipT { font-size: 14px; color: rgba(255,255,255,0.7); }
+.result { position: absolute; left: 3px; top: 214px; width: 206px; height: 180px; border-radius: 26px; padding: 14px 18px; flex-direction: column; }
+.rCat { width: 170px; height: 40px; line-height: 40px; font-size: 17px; }
+.rItem { width: 170px; height: 28px; line-height: 28px; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.rTip { width: 170px; height: 72px; font-size: 14px; line-height: 19px; color: rgba(255,255,255,0.6); }
+.go { position: absolute; left: 66px; top: 400px; width: 80px; height: 38px; border-radius: 19px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.foot { position: absolute; left: 16px; top: 442px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import waste from '../../data/waste'
+import haptic from '../../utils/haptic'
+import router from '../../utils/router'
+import inputResult from '../../utils/inputResult'
+
+export default {
+  data: {
+    clock: '--:--',
+    query: '',
+    cat: '等待查询',
+    color: '#FFFFFF',
+    bg: '#1A1A1A',
+    tip: '输入物品名称，或点上面的快捷词。',
+    quick: ['塑料瓶', '电池', '果皮', '纸巾'],
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    inputResult.take((r) => {
+      if (r && r.field === 'wasteQuery') { this.query = r.value; this.live() }
+    })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  openInput() {
+    router.push('/pages/input', {
+      field: 'wasteQuery',
+      inputTitle: '垃圾分类',
+      text: this.query,
+      max: 16,
+      multiline: 0,
+      hint: '输入物品名称'
+    })
+  },
+  pick(word) {
+    this.query = word
+    this.live()
+    haptic.short()
+  },
+  live() {
+    const r = waste.classify(this.query)
+    if (r) this.show(r)
+    else if (!this.query) {
+      this.cat = '等待查询'
+      this.color = '#FFFFFF'
+      this.bg = '#1A1A1A'
+      this.tip = '输入物品名称，或点上面的快捷词。'
+    }
+  },
+  doQuery() {
+    if (!this.query) return
+    const r = waste.classify(this.query)
+    if (r) this.show(r)
+    else {
+      this.cat = '未收录'
+      this.color = '#FF9500'
+      this.bg = 'rgba(255,149,0,0.12)'
+      this.tip = '词表里暂时没有这个物品。建议查看当地分类指南，或换一个更通用的名称。'
+      haptic.short()
+    }
+  },
+  show(r) {
+    this.cat = r.name
+    this.color = r.color
+    this.bg = 'rgba(255,255,255,0.04)'
+    this.tip = r.tip
+    haptic.short()
+  }
+}
+</script>

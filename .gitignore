@@ -1,0 +1,9 @@
+node_modules/
+build/
+dist/
+.temp_*/
+*.log
+.venv-emu/
+_re/
+__pycache__/
+*.rpk

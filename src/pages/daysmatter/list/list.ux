@@ -1,0 +1,105 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="目标日" clock="{{ clock }}"></pagehead>
+    <list class="list" bounces="true">
+      <list-item type="event" class="card" for="{{ items }}" @click="open($item)">
+        <div class="cMain">
+          <text class="f cTitle">{{ $item.title }}</text>
+          <text class="f cSub">{{ $item.date }}</text>
+        </div>
+        <text class="f delta" style="color: {{ $item.color }};">{{ $item.delta }}</text>
+      </list-item>
+      <list-item type="empty" class="empty" if="{{ items.length === 0 }}">
+        <img class="emptyImg" src="/common/empty.png" />
+        <text class="f emptyT">还没有目标日</text>
+        <text class="f emptyS">记下考试、纪念日或旅行</text>
+      </list-item>
+      <list-item type="pad" class="pad"></list-item>
+    </list>
+
+    <img class="plus" src="/common/plus.png" @click="create" />
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.list { position: absolute; left: 0px; top: 82px; width: 212px; height: 384px; }
+.card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 16px; }
+.cMain { width: 110px; height: 52px; flex-direction: column; justify-content: center; }
+.cTitle { width: 110px; height: 26px; line-height: 26px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.cSub { width: 110px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.4); }
+.delta { width: 64px; text-align: right; font-size: 14px; }
+.empty { width: 212px; height: 320px; align-items: center; justify-content: center; flex-direction: column; }
+.emptyImg { width: 80px; height: 80px; margin-bottom: 12px; }
+.emptyT { font-size: 17px; color: #FFFFFF; }
+.emptyS { font-size: 14px; color: rgba(255,255,255,0.4); }
+.pad { width: 212px; height: 90px; }
+.plus { position: absolute; left: 132px; top: 396px; width: 64px; height: 64px; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import fs from '../../../utils/fs'
+import haptic from '../../../utils/haptic'
+
+const PATH = 'internal://files/bandbox/events.json'
+
+export default {
+  data: { clock: '--:--', items: [], timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.load()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  load() {
+    fs.readText(PATH, (text) => {
+      let list = []
+      try {
+        list = text ? JSON.parse(text) : []
+      } catch (e) {
+        list = []
+      }
+      if (!Array.isArray(list)) list = []
+      const mapped = list
+        .filter((it) => it && it.date && it.title)
+        .map((it) => {
+          const d = time.humanDelta(it.date)
+          return {
+            id: it.id || it.date + it.title,
+            title: it.title,
+            date: it.date,
+            delta: d.text,
+            abs: Math.abs(d.days),
+            color: d.status === 'today' ? '#00C853' : d.status === 'future' ? '#0D6EFF' : 'rgba(255,255,255,0.45)'
+          }
+        })
+        .sort((a, b) => a.abs - b.abs)
+      this.items = mapped
+    })
+  },
+  open(item) {
+    router.push('/pages/daysmatter/edit', { id: item.id })
+  },
+  create() {
+    haptic.short()
+    router.push('/pages/daysmatter/edit', { id: '' })
+  }
+}
+</script>

@@ -1,0 +1,101 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="重命名" clock="{{ clock }}"></pagehead>
+    <div class="card" @click="openInput">
+      <text class="f label">新名称</text>
+      <text class="f value" if="{{ value }}">{{ value }}</text>
+      <text class="f place" if="{{ !value }}">点击输入</text>
+    </div>
+
+    <div class="check" @click="save"><img class="checkImg" src="/common/check.png" /></div>
+    <text class="f tip">名称最多 20 个字</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.card { position: absolute; left: 3px; top: 86px; width: 206px; height: 84px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
+.label { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.value { width: 174px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.place { width: 174px; height: 40px; line-height: 40px; font-size: 16px; color: rgba(255,255,255,0.3); }
+.check { position: absolute; left: 74px; top: 210px; width: 64px; height: 64px; align-items: center; justify-content: center; }
+.checkImg { width: 64px; height: 64px; }
+.tip { position: absolute; left: 0px; top: 292px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import docs from '../../../utils/docs'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+import inputResult from '../../../utils/inputResult'
+
+export default {
+  protected: { docName: '' },
+  private: { clock: '--:--', value: '', oldName: '', timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.oldName = this.docName
+    this.value = this.docName
+    inputResult.take((r) => {
+      if (r && r.field === 'nbRename') this.value = r.value
+    })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  openInput() {
+    router.push('/pages/input', {
+      field: 'nbRename',
+      inputTitle: '重命名',
+      text: this.value,
+      max: 20,
+      multiline: 0,
+      hint: '输入新的笔记名称'
+    })
+  },
+  save() {
+    const clean = docs.safeName(this.value)
+    if (!clean) {
+      prompt.showToast({ message: '名称不能为空', duration: 1400 })
+      return
+    }
+    if (clean === this.oldName) {
+      router.back()
+      return
+    }
+    docs.exists('notes', clean, (exists) => {
+      if (exists) {
+        prompt.showToast({ message: '已有同名笔记', duration: 1500 })
+        return
+      }
+      docs.rename('notes', this.oldName, clean, (ok) => {
+        if (!ok) {
+          prompt.showToast({ message: '重命名失败', duration: 1500 })
+          return
+        }
+        haptic.short()
+        prompt.showToast({ message: '保存成功', duration: 1200 })
+        this.oldName = clean
+        setTimeout(() => router.replace('/pages/notebook/list'), 320)
+      })
+    })
+  }
+}
+</script>

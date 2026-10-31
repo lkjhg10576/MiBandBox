@@ -1,0 +1,99 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="笔记本" clock="{{ clock }}"></pagehead>
+    <list class="list" bounces="true">
+      <list-item type="note" class="card" for="{{ items }}" @click="open($item)">
+        <div class="cMain">
+          <text class="f cTitle">{{ $item.title }}</text>
+          <text class="f cSub">{{ $item.dateText }} · {{ $item.sizeText }}</text>
+        </div>
+        <img class="enter" src="/common/enter.png" />
+      </list-item>
+      <list-item type="empty" class="empty" if="{{ items.length === 0 }}">
+        <img class="emptyImg" src="/common/empty.png" />
+        <text class="f emptyT">还没有笔记</text>
+        <text class="f emptyS">点右下角新建一条</text>
+      </list-item>
+      <list-item type="pad" class="pad"></list-item>
+    </list>
+
+    <img class="plus" src="/common/plus.png" @click="create" />
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.list { position: absolute; left: 0px; top: 82px; width: 212px; height: 384px; }
+.card { width: 206px; height: 72px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px 0px 16px; }
+.cMain { width: 140px; height: 54px; flex-direction: column; justify-content: center; }
+.cTitle { width: 140px; height: 28px; line-height: 28px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.cSub { width: 140px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.enter { width: 26px; height: 26px; }
+.empty { width: 212px; height: 320px; align-items: center; justify-content: center; flex-direction: column; }
+.emptyImg { width: 80px; height: 80px; margin-bottom: 12px; }
+.emptyT { font-size: 17px; color: #FFFFFF; }
+.emptyS { font-size: 14px; color: rgba(255,255,255,0.4); }
+.pad { width: 212px; height: 90px; }
+.plus { position: absolute; left: 132px; top: 396px; width: 64px; height: 64px; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import docs from '../../../utils/docs'
+import haptic from '../../../utils/haptic'
+
+function sizeText(n) {
+  if (!n && n !== 0) return '0 B'
+  if (n < 1024) return n + ' B'
+  return (Math.round((n / 1024) * 10) / 10) + ' KB'
+}
+
+function dateText(ms) {
+  if (!ms) return '—'
+  const d = new Date(ms)
+  return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + time.formatClock(d)
+}
+
+export default {
+  data: { clock: '--:--', items: [], timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.load()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  load() {
+    docs.list('notes', (list) => {
+      this.items = list.map((it) => ({
+        name: it.name,
+        title: it.title,
+        sizeText: sizeText(it.size),
+        dateText: dateText(it.mtime)
+      }))
+    })
+  },
+  open(item) {
+    router.push('/pages/notebook/show', { name: item.name })
+  },
+  create() {
+    haptic.short()
+    router.push('/pages/notebook/edit', { name: '' })
+  }
+}
+</script>

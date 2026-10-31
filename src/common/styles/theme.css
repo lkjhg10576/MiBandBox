@@ -1,0 +1,25 @@
+/*
+ * BandBox 设计令牌（212×520 跑道屏）。
+ * Vela CSS 不支持 var()，因此这里用约定式单类名提供基线；
+ * 页面私有样式可以覆盖同名属性（后加载的同优先级声明生效）。
+ *
+ * 安全区：
+ *   y 0..40    顶部死区：只放居中单行文字
+ *   y 40..480  安全工作区：所有可点控件
+ *   y 480..520 底部收窄区：只放居中、窄元素
+ */
+.page { width: 212px; height: 520px; background-color: #000000; }
+
+/* 页面头部：时钟 15px / 标题 17px，整体位于 y=22..72 */
+.header { position: absolute; left: 0px; top: 0px; width: 212px; height: 84px; }
+.clock { position: absolute; left: 0px; top: 22px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.6); }
+.title { position: absolute; left: 0px; top: 42px; width: 212px; height: 30px; line-height: 30px; text-align: center; font-size: 17px; color: #FFFFFF; }
+
+/* 卡片基线 */
+.card { width: 206px; border-radius: 26px; background-color: #262626; }
+.cardTitle { font-size: 17px; color: #FFFFFF; }
+.cardSub { font-size: 14px; color: rgba(255,255,255,0.6); }
+
+/* 按钮与提示 */
+.btnText { font-size: 14px; color: #FFFFFF; }
+.hint { font-size: 14px; color: rgba(255,255,255,0.4); text-align: center; }

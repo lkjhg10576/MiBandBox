@@ -1,0 +1,191 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="目标日" clock="{{ clock }}"></pagehead>
+    <div class="save" @click="save"><text class="f saveT">保存</text></div>
+
+    <div class="card" @click="openInput">
+      <text class="f label">事件名称</text>
+      <text class="f value" if="{{ title }}">{{ title }}</text>
+      <text class="f place" if="{{ !title }}">例如：考试、生日、旅行</text>
+    </div>
+
+    <div class="card card2" @click="pickDate">
+      <text class="f label">日期</text>
+      <text class="f value" style="color: #0D6EFF;">{{ date }}</text>
+    </div>
+
+    <text class="f delta">{{ deltaText }}</text>
+
+    <div class="del" @click="del"><text class="f delT">{{ delStep === 0 ? '删除这个目标日' : '再次点击确认删除' }}</text></div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
+.saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
+.card { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.card2 { top: 168px; }
+.label { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.value { width: 174px; height: 38px; line-height: 38px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.place { width: 174px; height: 38px; line-height: 38px; font-size: 14px; color: rgba(255,255,255,0.3); }
+.delta { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.55); }
+.del { position: absolute; left: 48px; top: 330px; width: 116px; height: 34px; border-radius: 17px; background-color: rgba(255,59,48,0.14); align-items: center; justify-content: center; }
+.delT { font-size: 14px; color: #FF6B6B; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import fs from '../../../utils/fs'
+import kv from '../../../utils/kv'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+import inputResult from '../../../utils/inputResult'
+
+const PATH = 'internal://files/bandbox/events.json'
+const DIR = 'internal://files/bandbox/'
+
+export default {
+  protected: { id: '' },
+  private: {
+    clock: '--:--',
+    title: '',
+    date: '',
+    deltaText: '保存后会显示倒计时',
+    delStep: 0,
+    list: [],
+    loaded: false,
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.date = time.todayKey()
+    this.delStep = 0
+    this.load()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  load() {
+    fs.readText(PATH, (text) => {
+      let list = []
+      try {
+        list = text ? JSON.parse(text) : []
+      } catch (e) {
+        list = []
+      }
+      if (!Array.isArray(list)) list = []
+      this.list = list
+      this.loaded = true
+      if (this.id) {
+        const found = list.filter((it) => String(it.id) === String(this.id))[0]
+        if (found) {
+          this.title = found.title
+          this.date = found.date
+          this.refreshDelta()
+        }
+      }
+      inputResult.take((r) => {
+        if (r && r.field === 'dmTitle') this.title = r.value
+      })
+      kv.init(() => {
+        const picked = kv.get('pickDate', '')
+        if (picked) {
+          this.date = picked
+          kv.set('pickDate', '')
+          this.refreshDelta()
+        }
+      })
+    })
+  },
+  refreshDelta() {
+    if (!this.date) return
+    const d = time.parseDate(this.date)
+    if (!d) return
+    const h = time.humanDelta(this.date)
+    this.deltaText = this.date + ' · ' + time.weekdayName(d) + ' · ' + h.text
+  },
+  openInput() {
+    router.push('/pages/input', {
+      field: 'dmTitle',
+      inputTitle: '事件名称',
+      text: this.title,
+      max: 20,
+      multiline: 0,
+      hint: '例如：考试、生日、旅行'
+    })
+  },
+  pickDate() {
+    router.push('/pages/daysmatter/inputdate', { date: this.date })
+  },
+  save() {
+    const title = this.title.trim()
+    if (!title) {
+      prompt.showToast({ message: '请填写事件名称', duration: 1400 })
+      return
+    }
+    if (!time.parseDate(this.date)) {
+      prompt.showToast({ message: '日期无效', duration: 1400 })
+      return
+    }
+    const list = this.list.slice()
+    const id = this.id || String(Date.now())
+    let found = false
+    const next = list.map((it) => {
+      if (String(it.id) === String(id)) {
+        found = true
+        return { id, title, date: this.date, createdAt: it.createdAt || Date.now() }
+      }
+      return it
+    })
+    if (!found) next.push({ id, title, date: this.date, createdAt: Date.now() })
+    fs.ensureDir(DIR, () => {
+      fs.writeText(PATH, JSON.stringify(next), (ok) => {
+        if (!ok) {
+          prompt.showToast({ message: '保存失败，请重试', duration: 1500 })
+          return
+        }
+        haptic.short()
+        prompt.showToast({ message: '事件保存成功！', duration: 1300 })
+        setTimeout(() => router.back(), 300)
+      })
+    })
+  },
+  del() {
+    if (!this.id) {
+      router.back()
+      return
+    }
+    if (this.delStep === 0) {
+      this.delStep = 1
+      return
+    }
+    const next = this.list.filter((it) => String(it.id) !== String(this.id))
+    fs.writeText(PATH, JSON.stringify(next), (ok) => {
+      haptic.long()
+      if (!ok) {
+        prompt.showToast({ message: '删除失败', duration: 1400 })
+        return
+      }
+      prompt.showToast({ message: '已删除', duration: 1200 })
+      setTimeout(() => router.replace('/pages/daysmatter/list'), 300)
+    })
+  }
+}
+</script>

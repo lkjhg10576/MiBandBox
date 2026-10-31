@@ -1,0 +1,75 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="歌词操作" clock="{{ clock }}"></pagehead>
+    <div class="card" @click="edit"><text class="f cT">编辑歌词</text><text class="f arrow">></text></div>
+    <div class="card card2" @click="showmode"><text class="f cT">显示方式</text><text class="f arrow">></text></div>
+    <div class="card card3" @click="del"><text class="f cT" style="color: #FF6B6B;">{{ delStep === 0 ? '删除歌词' : '再次点击确认删除' }}</text><text class="f arrow" style="color: #FF6B6B;">></text></div>
+
+    <text class="f tip">歌词全部保存在本机</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.card { position: absolute; left: 3px; top: 84px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 18px; }
+.card2 { top: 164px; }
+.card3 { top: 244px; }
+.cT { font-size: 17px; color: #FFFFFF; }
+.arrow { font-size: 20px; color: rgba(255,255,255,0.4); }
+.tip { position: absolute; left: 0px; top: 340px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import docs from '../../../utils/docs'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+
+export default {
+  protected: { name: '' },
+  private: { clock: '--:--', delStep: 0, timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.delStep = 0
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  edit() {
+    router.push('/pages/lyrics/edit', { name: this.name })
+  },
+  showmode() {
+    router.push('/pages/lyrics/showmode')
+  },
+  del() {
+    if (this.delStep === 0) {
+      this.delStep = 1
+      return
+    }
+    docs.remove('lyrics', this.name, (ok) => {
+      haptic.long()
+      if (ok) {
+        prompt.showToast({ message: '删除成功', duration: 1200 })
+        setTimeout(() => router.replace('/pages/lylist'), 300)
+      } else {
+        prompt.showToast({ message: '删除失败', duration: 1400 })
+      }
+    })
+  }
+}
+</script>

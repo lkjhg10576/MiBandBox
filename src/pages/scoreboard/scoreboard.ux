@@ -1,0 +1,129 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="记分牌" clock="{{ clock }}"></pagehead>
+    <div class="timer">
+      <text class="f tVal">{{ timerText }}</text>
+      <div class="tBtns">
+        <div class="tBtn" @click="toggleTimer"><text class="f tBtnT">{{ running ? '暂停' : '开始' }}</text></div>
+        <div class="tBtn" @click="resetTimer"><text class="f tBtnT">归零</text></div>
+      </div>
+    </div>
+
+    <div class="team red">
+      <text class="f teamName" style="color: #FF6B6B;">红队</text>
+      <text class="f score" style="color: #FF6B6B;">{{ red }}</text>
+      <div class="plus" @click="add('red')"><text class="f plusT">+</text></div>
+      <div class="minus" @click="sub('red')"><text class="f minusT">-</text></div>
+    </div>
+
+    <div class="team blue">
+      <text class="f teamName" style="color: #5B9DFF;">蓝队</text>
+      <text class="f score" style="color: #5B9DFF;">{{ blue }}</text>
+      <div class="plus" @click="add('blue')"><text class="f plusT">+</text></div>
+      <div class="minus" @click="sub('blue')"><text class="f minusT">-</text></div>
+    </div>
+
+    <text class="f hint">点击 + / - 记分</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.timer { position: absolute; left: 3px; top: 82px; width: 206px; height: 82px; border-radius: 26px; background-color: #262626; flex-direction: column; align-items: center; justify-content: center; }
+.tVal { position: absolute; left: 0px; top: 10px; width: 206px; height: 30px; line-height: 30px; text-align: center; font-size: 24px; color: #FFFFFF; }
+.tBtns { position: absolute; left: 41px; top: 44px; width: 124px; height: 28px; flex-direction: row; justify-content: space-between; }
+.tBtn { width: 56px; height: 28px; border-radius: 14px; background-color: #333333; align-items: center; justify-content: center; }
+.tBtnT { font-size: 14px; color: #FFFFFF; }
+.team { position: absolute; top: 174px; width: 92px; height: 264px; border-radius: 26px; align-items: center; padding-top: 12px; flex-direction: column; }
+.red { left: 8px; background-color: rgba(255,59,48,0.14); }
+.blue { left: 112px; background-color: rgba(13,110,255,0.14); }
+.teamName { font-size: 17px; }
+.score { width: 92px; height: 86px; line-height: 86px; text-align: center; font-size: 58px; }
+.plus { width: 66px; height: 42px; border-radius: 21px; background-color: rgba(255,255,255,0.12); align-items: center; justify-content: center; margin-top: 6px; }
+.plusT { font-size: 24px; color: #FFFFFF; }
+.minus { width: 66px; height: 36px; border-radius: 18px; background-color: rgba(255,255,255,0.06); align-items: center; justify-content: center; margin-top: 8px; }
+.minusT { font-size: 20px; color: rgba(255,255,255,0.6); }
+.hint { position: absolute; left: 16px; top: 442px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.5); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import haptic from '../../utils/haptic'
+
+function hms(sec) {
+  const h = Math.floor(sec / 3600)
+  const m = Math.floor((sec % 3600) / 60)
+  const s = sec % 60
+  const p = (n) => (n < 10 ? '0' + n : '' + n)
+  return p(h) + ':' + p(m) + ':' + p(s)
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    red: 0,
+    blue: 0,
+    seconds: 0,
+    running: false,
+    timerText: '00:00:00',
+    timer: null,
+    clockTimer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.clockTimer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    this.clear()
+  },
+  onDestroy() {
+    this.clear()
+  },
+  clear() {
+    if (this.timer) clearInterval(this.timer)
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.timer = null
+    this.clockTimer = null
+  },
+  add(team) {
+    haptic.short()
+    if (team === 'red') this.red++
+    else this.blue++
+  },
+  sub(team) {
+    haptic.short()
+    if (team === 'red') this.red = Math.max(0, this.red - 1)
+    else this.blue = Math.max(0, this.blue - 1)
+  },
+  toggleTimer() {
+    haptic.short()
+    if (this.running) {
+      this.running = false
+      clearInterval(this.timer)
+      this.timer = null
+      return
+    }
+    this.running = true
+    this.timer = setInterval(() => {
+      this.seconds++
+      this.timerText = hms(this.seconds)
+    }, 1000)
+  },
+  resetTimer() {
+    haptic.long()
+    this.running = false
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+    this.seconds = 0
+    this.timerText = '00:00:00'
+  }
+}
+</script>

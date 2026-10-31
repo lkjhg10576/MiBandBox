@@ -1,0 +1,90 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="木鱼" clock="{{ clock }}"></pagehead>
+    <div class="fishWrap" @click="knock">
+      <div class="fish {{ hit ? 'hit' : '' }}">
+        <div class="slit"></div>
+        <div class="tail"></div>
+      </div>
+      <text class="f plusOne" if="{{ hit }}">功德 +1</text>
+    </div>
+
+    <text class="f meritLabel">功德</text>
+    <text class="f merit">{{ merit }}</text>
+    <text class="f hint">轻触木鱼，静心一下</text>
+
+    <div class="reset" @click="reset"><text class="f resetT">{{ delStep === 0 ? '功德归零' : '再次点击确认' }}</text></div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.fishWrap { position: absolute; left: 0px; top: 82px; width: 212px; height: 180px; align-items: center; justify-content: center; }
+.fish { width: 156px; height: 112px; border-radius: 78px 78px 56px 56px; background-color: #8A5A2B; transform: scale(1); }
+.fish.hit { transform: scale(0.93); }
+.slit { position: absolute; left: 46px; top: 34px; width: 64px; height: 9px; border-radius: 5px; background-color: #3A2410; }
+.tail { position: absolute; left: 144px; top: 48px; width: 26px; height: 26px; border-radius: 4px; background-color: #6E4520; transform: rotate(45deg); }
+.plusOne { position: absolute; left: 0px; top: 24px; width: 212px; text-align: center; font-size: 18px; color: #FFD166; opacity: 0; }
+.plusOne.show { opacity: 1; }
+.meritLabel { position: absolute; left: 0px; top: 286px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+.merit { position: absolute; left: 0px; top: 306px; width: 212px; height: 64px; line-height: 64px; text-align: center; font-size: 48px; color: #FFFFFF; }
+.hint { position: absolute; left: 0px; top: 390px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+.reset { position: absolute; left: 62px; top: 424px; width: 88px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
+.resetT { font-size: 14px; color: rgba(255,255,255,0.55); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import kv from '../../utils/kv'
+import haptic from '../../utils/haptic'
+
+export default {
+  data: { clock: '--:--', merit: 0, hit: false, delStep: 0, timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.delStep = 0
+    kv.init(() => {
+      this.merit = kv.get('fishMerit', 0) || 0
+    })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  knock() {
+    this.merit++
+    kv.set('fishMerit', this.merit)
+    haptic.short()
+    this.hit = false
+    setTimeout(() => {
+      this.hit = true
+    }, 10)
+    setTimeout(() => {
+      this.hit = false
+    }, 140)
+  },
+  reset() {
+    if (this.delStep === 0) {
+      this.delStep = 1
+      return
+    }
+    this.merit = 0
+    kv.set('fishMerit', 0)
+    this.delStep = 0
+    haptic.long()
+  }
+}
+</script>

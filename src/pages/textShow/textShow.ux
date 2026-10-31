@@ -1,0 +1,55 @@
+<template>
+  <div class="page" style="background-color: {{ bg }};" @click="back">
+    <marquee class="f mq" scrollamount="{{ speed }}" text-offset="60" loop="-1" style="color: {{ color }}; font-size: {{ size }}px;">{{ text }}</marquee>
+    <text class="f hint" style="color: {{ color }};">轻触屏幕退出</text>
+  </div>
+</template>
+
+<style>
+.page { width: 212px; height: 520px; align-items: center; justify-content: center; }
+.mq { width: 212px; height: 120px; line-height: 120px; }
+.hint { position: absolute; left: 16px; top: 438px; width: 180px; text-align: center; font-size: 14px; opacity: 0.4; }
+</style>
+
+<script>
+import kv from '../../utils/kv'
+import router from '../../utils/router'
+import brightness from '@system.brightness'
+
+export default {
+  protected: {
+    text: '',
+    size: '30',
+    speed: '6',
+    color: '#FFFFFF',
+    bg: '#0D6EFF'
+  },
+  private: {},
+  onShow() {
+    if (!this.text) {
+      kv.init(() => {
+        const m = kv.get('marquee', null)
+        if (m) {
+          this.text = m.text || 'BandBox'
+          this.size = m.size || 30
+          this.speed = m.speed || 6
+          this.color = m.color || '#FFFFFF'
+          this.bg = m.bg || '#0D6EFF'
+        } else {
+          this.text = 'BandBox'
+        }
+      })
+    }
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+  },
+  onHide() {
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+  },
+  onDestroy() {
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+  },
+  back() {
+    router.back()
+  }
+}
+</script>

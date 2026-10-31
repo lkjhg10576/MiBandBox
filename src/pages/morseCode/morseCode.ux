@@ -1,0 +1,210 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="摩斯密码" clock="{{ clock }}"></pagehead>
+    <div class="inputCard" @click="openInput">
+      <text class="f iLabel">文本</text>
+      <text class="f iText" if="{{ text }}">{{ text }}</text>
+      <text class="f iPlace" if="{{ !text }}">点击输入字母或数字</text>
+    </div>
+
+    <div class="morseCard">
+      <text class="f mLabel">电码</text>
+      <scroll class="morseScroll" scroll-y="true">
+        <text class="f morse">{{ code || '·- 等待输入' }}</text>
+      </scroll>
+    </div>
+
+    <div class="playRow">
+      <div class="pBtn" @click="play"><text class="f pBtnT">{{ playing ? '播放中' : '播放' }}</text></div>
+      <div class="pBtn stop" @click="stop"><text class="f pBtnT">停止</text></div>
+      <div class="pBtn dark" @click="clearManual"><text class="f pBtnT">清空</text></div>
+    </div>
+
+    <div class="tapArea" @touchstart="touchStart" @touchend="touchEnd">
+      <text class="f tapSym">{{ flash || '·' }}</text>
+      <text class="f tapHint">{{ playing ? status : '按住为划，轻点为点' }}</text>
+    </div>
+
+    <div class="manualRow">
+      <div class="mBtn" @click="addDot"><text class="f mBtnT">点 ·</text></div>
+      <div class="mBtn" @click="addDash"><text class="f mBtnT">划 -</text></div>
+      <text class="f manual">{{ manual || '—' }}</text>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
+.iLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iText { width: 174px; height: 32px; line-height: 32px; font-size: 18px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.iPlace { width: 174px; height: 32px; line-height: 32px; font-size: 14px; color: rgba(255,255,255,0.3); }
+.morseCard { position: absolute; left: 3px; top: 152px; width: 206px; height: 116px; border-radius: 26px; background-color: #1A1A1A; padding: 8px 16px; flex-direction: column; }
+.mLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: #4E87FF; }
+.morseScroll { width: 174px; height: 78px; }
+.morse { width: 174px; font-size: 18px; line-height: 26px; color: #FFFFFF; letter-spacing: 1px; }
+.playRow { position: absolute; left: 3px; top: 276px; width: 206px; height: 40px; flex-direction: row; justify-content: space-between; }
+.pBtn { width: 64px; height: 38px; border-radius: 19px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.pBtn.stop { background-color: #3A2020; }
+.pBtn.dark { background-color: #262626; }
+.pBtnT { font-size: 14px; color: #FFFFFF; }
+.tapArea { position: absolute; left: 26px; top: 322px; width: 160px; height: 90px; border-radius: 45px; background-color: #1C1C1C; align-items: center; justify-content: center; flex-direction: column; }
+.tapSym { width: 160px; height: 44px; line-height: 44px; text-align: center; font-size: 36px; color: #0D6EFF; }
+.tapHint { width: 160px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+.manualRow { position: absolute; left: 12px; top: 420px; width: 188px; height: 32px; flex-direction: row; align-items: center; justify-content: space-between; }
+.mBtn { width: 44px; height: 28px; border-radius: 14px; background-color: #262626; align-items: center; justify-content: center; }
+.mBtnT { font-size: 14px; color: #FFFFFF; }
+.manual { width: 100px; text-align: right; font-size: 14px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; }
+</style>
+
+<script>
+import time from '../../utils/time'
+import morse from '../../data/morse'
+import haptic from '../../utils/haptic'
+import inputResult from '../../utils/inputResult'
+import router from '../../utils/router'
+
+const DOT = 180
+const DASH = 540
+const GAP = 180
+const CHAR_GAP = 540
+const WORD_GAP = 1260
+
+export default {
+  data: {
+    clock: '--:--',
+    text: '',
+    code: '',
+    manual: '',
+    flash: '',
+    status: '',
+    playing: false,
+    timers: [],
+    startAt: 0,
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    inputResult.take((r) => {
+      if (r && r.field === 'morseText') this.text = r.value; this.code = morse.encode(this.text)
+    })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    this.stop()
+  },
+  onDestroy() {
+    this.stop()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  openInput() {
+    router.push('/pages/input', {
+      field: 'morseText',
+      inputTitle: '摩斯密码',
+      text: this.text,
+      max: 30,
+      multiline: 0,
+      hint: '输入字母或数字，自动转换'
+    })
+  },
+  play() {
+    if (!this.text) {
+      this.openInput()
+      return
+    }
+    this.stop()
+    this.code = morse.encode(this.text)
+    const seq = []
+    const words = this.text.toUpperCase().split(' ')
+    words.forEach((word, wi) => {
+      for (let i = 0; i < word.length; i++) {
+        const code = morse.table[word[i]]
+        if (!code) continue
+        for (let j = 0; j < code.length; j++) {
+          seq.push(code[j] === '.' ? 'dot' : 'dash')
+          if (j < code.length - 1) seq.push('gap')
+        }
+        if (i < word.length - 1) seq.push('char')
+      }
+      if (wi < words.length - 1) seq.push('word')
+    })
+    this.playing = true
+    this.status = '准备播放'
+    this.runSeq(seq, 0)
+  },
+  runSeq(seq, i) {
+    if (!this.playing) return
+    if (i >= seq.length) {
+      this.playing = false
+      this.status = '播放完成'
+      this.flash = ''
+      return
+    }
+    const token = seq[i]
+    let delay = GAP
+    if (token === 'dot') {
+      delay = DOT
+      this.flash = '·'
+      this.status = '播放中 ' + (i + 1) + '/' + seq.length
+      haptic.short()
+    } else if (token === 'dash') {
+      delay = DASH
+      this.flash = '-'
+      this.status = '播放中 ' + (i + 1) + '/' + seq.length
+      haptic.long()
+    } else if (token === 'char') {
+      delay = CHAR_GAP
+      this.flash = ''
+    } else if (token === 'word') {
+      delay = WORD_GAP
+      this.flash = ''
+    } else {
+      delay = GAP
+      this.flash = ''
+    }
+    const t = setTimeout(() => this.runSeq(seq, i + 1), delay)
+    this.timers.push(t)
+  },
+  stop() {
+    this.playing = false
+    this.flash = ''
+    this.status = ''
+    this.timers.forEach((t) => clearTimeout(t))
+    this.timers = []
+    haptic.stop()
+  },
+  touchStart() {
+    this.startAt = Date.now()
+  },
+  touchEnd() {
+    const ms = Date.now() - this.startAt
+    if (ms >= 250) this.addDash()
+    else this.addDot()
+  },
+  addDot() {
+    this.manual = (this.manual + '·').slice(-18)
+    this.flash = '·'
+    haptic.short()
+  },
+  addDash() {
+    this.manual = (this.manual + '-').slice(-18)
+    this.flash = '-'
+    haptic.long()
+  },
+  clearManual() {
+    this.manual = ''
+    this.flash = ''
+    haptic.short()
+  }
+}
+</script>

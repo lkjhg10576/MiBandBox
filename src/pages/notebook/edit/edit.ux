@@ -1,0 +1,145 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="编辑笔记" clock="{{ clock }}"></pagehead>
+    <div class="save" @click="save"><text class="f saveT">保存</text></div>
+
+    <div class="field {{ active === 'title' ? 'on' : '' }}" @click="openTitle">
+      <text class="f fLabel">标题</text>
+      <text class="f fTitle" if="{{ title }}">{{ title }}</text>
+      <text class="f fPlace" if="{{ !title }}">给笔记起个名字</text>
+    </div>
+
+    <div class="bodyCard {{ active === 'body' ? 'on' : '' }}" @click="openBody">
+      <text class="f fLabel">正文 · 点击输入</text>
+      <scroll class="bodyScroll" scroll-y="true">
+        <text class="f fBody" if="{{ body }}">{{ body }}</text>
+        <text class="f fPlace" if="{{ !body }}">写点什么…</text>
+      </scroll>
+    </div>
+
+    <text class="f tip">{{ active === 'title' ? '正在输入标题' : '正在输入正文' }} · 支持换行</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
+.saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
+.field { position: absolute; left: 3px; top: 80px; width: 206px; height: 62px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
+.field.on { border-color: #0D6EFF; }
+.bodyCard { position: absolute; left: 3px; top: 150px; width: 206px; height: 96px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
+.bodyCard.on { border-color: #0D6EFF; }
+.fLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.fTitle { width: 174px; height: 32px; line-height: 32px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.fPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.bodyScroll { width: 174px; height: 64px; }
+.fBody { width: 174px; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.85); }
+.tip { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import docs from '../../../utils/docs'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+import inputResult from '../../../utils/inputResult'
+
+export default {
+  protected: { name: '' },
+  private: {
+    clock: '--:--',
+    title: '',
+    body: '',
+    active: 'title',
+    oldName: '',
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.oldName = this.name || ''
+    inputResult.take((r) => {
+      if (r && r.field === 'nbTitle') this.title = r.value
+      else if (r && r.field === 'nbBody') this.body = r.value
+    })
+    if (this.name) {
+      docs.read('notes', this.name, (text) => {
+        const raw = text || ''
+        const pos = raw.indexOf('\n')
+        if (pos >= 0) {
+          this.title = raw.slice(0, pos)
+          this.body = raw.slice(pos + 1)
+        } else {
+          this.title = raw
+          this.body = ''
+        }
+      })
+    }
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  openTitle() {
+    this.active = 'title'
+    router.push('/pages/input', {
+      field: 'nbTitle',
+      inputTitle: '笔记标题',
+      text: this.title,
+      max: 20,
+      multiline: 0,
+      hint: '给笔记起个名字'
+    })
+  },
+  openBody() {
+    this.active = 'body'
+    router.push('/pages/input', {
+      field: 'nbBody',
+      inputTitle: '笔记正文',
+      text: this.body,
+      max: 1000,
+      multiline: 1,
+      hint: '支持换行，最多 1000 字'
+    })
+  },
+  save() {
+    let name = docs.safeName(this.title)
+    if (!name) {
+      const firstLine = (this.body || '').split('\n')[0]
+      name = docs.safeName(firstLine || '未命名笔记')
+    }
+    if (!name) name = '未命名笔记'
+    const text = name + '\n' + this.body
+    docs.save('notes', name, text, (ok) => {
+      if (!ok) {
+        prompt.showToast({ message: '保存失败，请重试', duration: 1500 })
+        return
+      }
+      const renamed = this.oldName && this.oldName !== name
+      if (renamed) {
+        docs.remove('notes', this.oldName, () => {})
+      }
+      haptic.short()
+      prompt.showToast({ message: '保存成功', duration: 1200 })
+      setTimeout(() => {
+        if (renamed) router.replace('/pages/notebook/list')
+        else router.back()
+      }, 300)
+    })
+  }
+}
+</script>

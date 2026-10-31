@@ -1,0 +1,296 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="BandBox" clock="{{ clock }}"></pagehead>
+    <text class="f setBtn" @click="openSet">设置</text>
+
+    <div class="today" @click="openDays">
+      <div class="todayTop">
+        <text class="f date">{{ dateText }}</text>
+        <text class="f go">目标日 ></text>
+      </div>
+      <text class="f event">{{ eventTitle }}</text>
+      <text class="f delta" style="color: {{ eventColor }};">{{ eventDelta }}</text>
+    </div>
+
+    <scroll class="apps" if="{{ layoutReady }}" scroll-y="true" bounces="true">
+      <div class="grid" style="height: {{ gridHeight }}px;">
+        <div class="f cell {{ layout === 'list' ? 'rowCell' : '' }}" for="{{ cells }}" @click="open($item)">
+          <img class="icon {{ layout === 'list' ? 'rowIcon' : '' }}" src="{{ $item.icon }}" />
+          <div class="meta {{ layout === 'list' ? 'rowMeta' : '' }}">
+            <text class="f name {{ layout === 'list' ? 'rowName' : '' }}">{{ $item.name }}</text>
+            <text class="f desc {{ layout === 'list' ? 'rowDesc' : '' }}" if="{{ layout === 'list' }}">{{ $item.desc }}</text>
+          </div>
+        </div>
+      </div>
+    </scroll>
+
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+.page { width: 212px; height: 520px; background-color: #000000; }
+.setBtn {
+  position: absolute;
+  left: 144px;
+  top: 42px;
+  width: 34px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  background-color: rgba(255,255,255,0.1);
+  border-radius: 14px;
+  z-index: 99;
+}
+.today {
+  position: absolute;
+  left: 3px;
+  top: 92px;
+  width: 206px;
+  height: 100px;
+  border-radius: 26px;
+  background-color: #262626;
+  padding: 11px 16px;
+  flex-direction: column;
+}
+.todayTop {
+  width: 174px;
+  height: 24px;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+.date {
+  width: 118px;
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+}
+.go {
+  width: 54px;
+  text-align: right;
+  font-size: 14px;
+  color: rgba(255,255,255,0.4);
+}
+.event {
+  width: 174px;
+  height: 26px;
+  line-height: 26px;
+  font-size: 17px;
+  color: #FFFFFF;
+  text-overflow: ellipsis;
+  lines: 1;
+}
+.delta {
+  width: 174px;
+  height: 22px;
+  line-height: 22px;
+  font-size: 15px;
+}
+.apps {
+  position: absolute;
+  left: 0px;
+  top: 200px;
+  width: 212px;
+  height: 258px;
+}
+.grid {
+  width: 212px;
+  padding: 0px 3px 20px 3px;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.cell {
+  width: 97px;
+  height: 80px;
+  margin: 3px;
+  border-radius: 26px;
+  background-color: #1A1A1A;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: column;
+  padding-top: 8px;
+}
+.icon {
+  width: 32px;
+  height: 32px;
+}
+.name {
+  width: 93px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  font-size: 16px;
+  color: #FFFFFF;
+  text-overflow: ellipsis;
+  lines: 1;
+}
+.desc {
+  width: 93px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255,255,255,0.4);
+  text-overflow: ellipsis;
+  lines: 1;
+}
+.rowCell {
+  width: 200px;
+  height: 72px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0px 12px;
+}
+.rowIcon {
+  width: 36px;
+  height: 36px;
+  margin-right: 10px;
+}
+.rowMeta {
+  width: 128px;
+  height: 52px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+.rowName {
+  width: 128px;
+  height: 26px;
+  line-height: 26px;
+  text-align: left;
+  font-size: 17px;
+}
+.rowDesc {
+  width: 128px;
+  height: 20px;
+  line-height: 20px;
+  text-align: left;
+  font-size: 14px;
+}
+</style>
+
+<script>
+import apps from '../../data/apps'
+import kv from '../../utils/kv'
+import router from '../../utils/router'
+import time from '../../utils/time'
+import fs from '../../utils/fs'
+import haptic from '../../utils/haptic'
+
+const EVENTS_PATH = 'internal://files/bandbox/events.json'
+
+function buildCells(mode) {
+  const toggle = {
+    id: '__layout__',
+    name: mode === 'list' ? '双栏' : '单栏',
+    desc: '切换首页布局',
+    route: '',
+    icon: mode === 'list' ? '/common/switch_on.png' : '/common/switch_off.png'
+  }
+  return apps.concat([toggle])
+}
+
+function gridHeight(mode, count) {
+  if (mode === 'list') return count * 78 + 20
+  return Math.ceil(count / 2) * 86 + 20
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    dateText: '',
+    eventTitle: '记录一个目标日',
+    eventDelta: '把重要的日子放在心上',
+    eventColor: 'rgba(255,255,255,0.4)',
+    layout: 'grid',
+    layoutReady: false,
+    cells: buildCells('grid'),
+    gridHeight: gridHeight('grid', apps.length + 1),
+    timer: null
+  },
+  onShow() {
+    this.refresh()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => this.refreshClock(), 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  refresh() {
+    this.refreshClock()
+    const now = new Date()
+    this.dateText = now.getMonth() + 1 + '月' + now.getDate() + '日 ' + time.weekdayName(now)
+    kv.init(() => {
+      const mode = kv.get('home', 'grid') === 'list' ? 'list' : 'grid'
+      this.applyLayout(mode)
+      this.layoutReady = true
+    })
+    fs.readText(EVENTS_PATH, (text) => {
+      if (!text) return
+      let list = []
+      try {
+        list = JSON.parse(text)
+      } catch (e) {
+        list = []
+      }
+      if (!Array.isArray(list) || !list.length) return
+      let best = null
+      let bestAbs = 1e9
+      list.forEach((item) => {
+        if (!item || !item.date) return
+        const d = time.humanDelta(item.date)
+        if (d.status === 'invalid') return
+        const abs = Math.abs(d.days)
+        if (abs < bestAbs) {
+          bestAbs = abs
+          best = { item, d }
+        }
+      })
+      if (best) {
+        this.eventTitle = best.item.title || best.item.display_name || '目标日'
+        this.eventDelta = best.d.text
+        this.eventColor = best.d.status === 'today' ? '#00C853' : '#0D6EFF'
+      }
+    })
+  },
+  applyLayout(mode) {
+    this.layout = mode
+    this.cells = buildCells(mode)
+    this.gridHeight = gridHeight(mode, this.cells.length)
+  },
+  toggleLayout() {
+    haptic.short()
+    const next = this.layout === 'list' ? 'grid' : 'list'
+    this.applyLayout(next)
+    kv.set('home', next)
+    kv.flush()
+  },
+  refreshClock() {
+    this.clock = time.formatClock(new Date())
+  },
+  open(item) {
+    if (item.id === '__layout__') {
+      this.toggleLayout()
+      return
+    }
+    router.push(item.route)
+  },
+  openSet() {
+    router.push('/pages/set')
+  },
+  openDays() {
+    router.push('/pages/daysmatter/list')
+  }
+}
+</script>

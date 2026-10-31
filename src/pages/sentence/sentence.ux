@@ -1,0 +1,104 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="每日一言" clock="{{ clock }}"></pagehead>
+    <div class="card">
+      <text class="f quoteMark">“</text>
+      <text class="f quote">{{ quote }}</text>
+      <text class="f idx">第 {{ index + 1 }} / {{ total }} 条</text>
+    </div>
+
+    <div class="actions">
+      <div class="btn" @click="next"><text class="f btnT">换一条</text></div>
+      <div class="btn fav" @click="favorite"><text class="f btnT">{{ faved ? '已收藏' : '收藏' }}</text></div>
+    </div>
+    <text class="f favCount">已收藏 {{ favCount }} 条 · 保存在本机</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.card { position: absolute; left: 3px; top: 82px; width: 206px; height: 250px; border-radius: 26px; background-color: #262626; padding: 14px 18px; flex-direction: column; }
+.quoteMark { width: 170px; height: 36px; line-height: 36px; font-size: 44px; color: #4E87FF; }
+.quote { width: 170px; height: 150px; font-size: 23px; line-height: 34px; color: #FFFFFF; }
+.idx { width: 170px; height: 20px; line-height: 20px; text-align: right; font-size: 14px; color: rgba(255,255,255,0.3); }
+.actions { position: absolute; left: 18px; top: 358px; width: 176px; height: 46px; flex-direction: row; justify-content: space-between; }
+.btn { width: 84px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.fav { background-color: #262626; }
+.btnT { font-size: 14px; color: #FFFFFF; }
+.favCount { position: absolute; left: 0px; top: 424px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import quotes from '../../data/quotes'
+import kv from '../../utils/kv'
+import haptic from '../../utils/haptic'
+import prompt from '@system.prompt'
+
+export default {
+  data: {
+    clock: '--:--',
+    quote: quotes[0],
+    index: 0,
+    total: quotes.length,
+    faved: false,
+    favCount: 0,
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    kv.init(() => {
+      const now = new Date()
+      const day = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000)
+      this.index = day % quotes.length
+      this.quote = quotes[this.index]
+      this.refreshFav()
+    })
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  refreshFav() {
+    const list = kv.get('quoteFavs', [])
+    this.favCount = Array.isArray(list) ? list.length : 0
+    this.faved = Array.isArray(list) && list.indexOf(this.quote) >= 0
+  },
+  next() {
+    haptic.short()
+    this.index = (this.index + 1) % quotes.length
+    this.quote = quotes[this.index]
+    this.refreshFav()
+  },
+  favorite() {
+    haptic.short()
+    const list = kv.get('quoteFavs', [])
+    const arr = Array.isArray(list) ? list.slice() : []
+    const pos = arr.indexOf(this.quote)
+    if (pos >= 0) {
+      arr.splice(pos, 1)
+      prompt.showToast({ message: '已取消收藏', duration: 1200 })
+    } else {
+      arr.unshift(this.quote)
+      prompt.showToast({ message: '已收藏', duration: 1200 })
+    }
+    if (arr.length > 50) arr.length = 50
+    kv.set('quoteFavs', arr)
+    this.favCount = arr.length
+    this.faved = arr.indexOf(this.quote) >= 0
+  }
+}
+</script>

@@ -1,0 +1,135 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="计算器" clock="{{ clock }}"></pagehead>
+    <scroll class="exprBox" scroll-x="true" bounces="false">
+      <text class="f expr">{{ expr || '0' }}</text>
+    </scroll>
+    <text class="f preview">{{ preview }}</text>
+
+    <div class="pad">
+      <text class="f key {{ $item.cls }}" for="{{ keys }}" @click="onKey($item)">{{ $item.t }}</text>
+    </div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.exprBox { position: absolute; left: 12px; top: 80px; width: 188px; height: 42px; }
+.expr { height: 42px; line-height: 42px; font-size: 24px; color: #FFFFFF; }
+.preview { position: absolute; left: 12px; top: 124px; width: 188px; height: 46px; line-height: 46px; text-align: right; font-size: 34px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; }
+.pad { position: absolute; left: 10px; top: 172px; width: 192px; height: 284px; flex-direction: row; flex-wrap: wrap; }
+.key { width: 44px; height: 42px; line-height: 42px; margin: 2px; text-align: center; border-radius: 14px; font-size: 22px; color: #FFFFFF; background-color: #262626; }
+.num { background-color: #1E1E1E; }
+.fn { background-color: #333333; color: #9FC4FF; }
+.op { background-color: #0D6EFF; }
+.eq { background-color: #0D6EFF; }
+.clear { background-color: #3A2020; color: #FF8A80; }
+</style>
+
+<script>
+import time from '../../utils/time'
+import calc from '../../utils/calc'
+import haptic from '../../utils/haptic'
+import prompt from '@system.prompt'
+
+const LAYOUT = [
+  { t: 'C', v: 'C', cls: 'clear' }, { t: '←', v: 'DEL', cls: 'fn' },
+  { t: '%', v: '%', cls: 'fn' }, { t: '÷', v: '/', cls: 'op' },
+  { t: '7', v: '7', cls: 'num' }, { t: '8', v: '8', cls: 'num' },
+  { t: '9', v: '9', cls: 'num' }, { t: '×', v: '*', cls: 'op' },
+  { t: '4', v: '4', cls: 'num' }, { t: '5', v: '5', cls: 'num' },
+  { t: '6', v: '6', cls: 'num' }, { t: '-', v: '-', cls: 'op' },
+  { t: '1', v: '1', cls: 'num' }, { t: '2', v: '2', cls: 'num' },
+  { t: '3', v: '3', cls: 'num' }, { t: '+', v: '+', cls: 'op' },
+  { t: '±', v: 'SIGN', cls: 'fn' }, { t: '0', v: '0', cls: 'num' },
+  { t: '.', v: '.', cls: 'num' }, { t: '=', v: 'EQ', cls: 'eq' },
+  { t: '(', v: '(', cls: 'fn' }, { t: ')', v: ')', cls: 'fn' },
+  { t: '开方', v: '√', cls: 'fn' }, { t: '^', v: '^', cls: 'fn' }
+]
+
+export default {
+  data: {
+    clock: '--:--',
+    expr: '',
+    preview: '',
+    keys: LAYOUT,
+    evaluated: false,
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onKey(key) {
+    haptic.short()
+    const v = key.v
+    if (v === 'C') {
+      this.expr = ''
+      this.preview = ''
+      this.evaluated = false
+      return
+    }
+    if (v === 'DEL') {
+      this.expr = this.expr.slice(0, -1)
+      this.evaluated = false
+      this.refresh()
+      return
+    }
+    if (v === 'EQ') {
+      this.doEqual()
+      return
+    }
+    if (v === 'SIGN') {
+      if (!this.expr) this.expr = '-'
+      else if (this.expr[0] === '-') this.expr = this.expr.slice(1)
+      else this.expr = '-' + this.expr
+      this.evaluated = false
+      this.refresh()
+      return
+    }
+    if (this.evaluated) {
+      const isOp = ['+', '-', '*', '/', '^', '%'].indexOf(v) >= 0
+      if (!isOp) this.expr = ''
+      this.evaluated = false
+    }
+    this.expr += v
+    this.refresh()
+  },
+  refresh() {
+    if (!this.expr) {
+      this.preview = ''
+      return
+    }
+    try {
+      this.preview = calc.format(calc.evaluate(this.expr))
+    } catch (e) {
+      this.preview = ''
+    }
+  },
+  doEqual() {
+    if (!this.expr) return
+    try {
+      const result = calc.evaluate(this.expr)
+      this.preview = calc.format(result)
+      this.expr = calc.format(result)
+      this.evaluated = true
+      haptic.long()
+    } catch (e) {
+      prompt.showToast({ message: '输入无效', duration: 1400 })
+      haptic.short()
+    }
+  }
+}
+</script>

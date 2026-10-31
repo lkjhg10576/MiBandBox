@@ -1,0 +1,141 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <div class="tapZone" @click="onTap">
+    <pagehead title="手速测试" clock="{{ clock }}"></pagehead>
+    <text class="f big" style="color: {{ bigColor }};">{{ big }}</text>
+    <text class="f status">{{ status }}</text>
+
+    <div class="bar">
+      <div class="fill" style="width: {{ progress }}%;"></div>
+    </div>
+
+    <text class="f result" if="{{ state === 'done' }}">{{ cps }} 次/秒</text>
+    <text class="f hint">{{ hint }}</text>
+    </div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.tapZone { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
+.big { position: absolute; left: 0px; top: 120px; width: 212px; height: 96px; line-height: 96px; text-align: center; font-size: 76px; }
+.status { position: absolute; left: 20px; top: 226px; width: 172px; height: 28px; line-height: 28px; text-align: center; font-size: 16px; color: rgba(255,255,255,0.7); }
+.bar { position: absolute; left: 26px; top: 272px; width: 160px; height: 8px; border-radius: 4px; background-color: #262626; }
+.fill { height: 8px; border-radius: 4px; background-color: #0D6EFF; }
+.result { position: absolute; left: 0px; top: 300px; width: 212px; text-align: center; font-size: 26px; color: #00C853; }
+.hint { position: absolute; left: 16px; top: 438px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import haptic from '../../utils/haptic'
+
+const DURATION = 3000
+
+export default {
+  data: {
+    clock: '--:--',
+    state: 'idle',
+    big: '3.0',
+    bigColor: '#FFFFFF',
+    status: '点击屏幕开始',
+    progress: 0,
+    cps: '0.00',
+    hint: '3 秒内尽可能多地点击',
+    count: 0,
+    timer: null,
+    clockTimer: null,
+    startAt: 0
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.clockTimer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    this.clearTimers()
+  },
+  onDestroy() {
+    this.clearTimers()
+  },
+  clearTimers() {
+    if (this.timer) clearInterval(this.timer)
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.timer = null
+    this.clockTimer = null
+  },
+  onTap() {
+    if (this.state === 'running') {
+      this.count++
+      this.big = String(this.count)
+      this.status = '正在计数'
+      haptic.short()
+      return
+    }
+    if (this.state === 'idle' || this.state === 'done') {
+      this.start()
+    }
+  },
+  start() {
+    this.state = 'countdown'
+    this.count = 0
+    this.big = '3'
+    this.bigColor = '#FF9500'
+    this.status = '准备'
+    this.progress = 0
+    this.cps = '0.00'
+    this.hint = '倒计时结束后开始点击'
+    let n = 3
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      n--
+      if (n > 0) {
+        this.big = String(n)
+        this.status = '准备'
+      } else if (n === 0) {
+        this.big = '开始'
+        this.status = '快速点击！'
+        this.bigColor = '#00C853'
+        this.beginRun()
+      }
+    }, 800)
+  },
+  beginRun() {
+    this.state = 'running'
+    this.count = 0
+    this.startAt = Date.now()
+    this.big = '0'
+    this.status = '快速点击！'
+    this.hint = '别停，继续点'
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      const elapsed = Date.now() - this.startAt
+      const left = Math.max(0, DURATION - elapsed)
+      this.progress = Math.round((left / DURATION) * 100)
+      if (left <= 0) {
+        this.finish()
+      }
+    }, 80)
+  },
+  finish() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+    this.state = 'done'
+    this.progress = 0
+    const seconds = DURATION / 1000
+    this.cps = (this.count / seconds).toFixed(2)
+    this.big = String(this.count)
+    this.bigColor = '#0D6EFF'
+    this.status = '点击次数'
+    this.hint = '点击任意位置再试一次'
+    haptic.pattern(2, 160)
+  }
+}
+</script>

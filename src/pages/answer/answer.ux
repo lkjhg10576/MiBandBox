@@ -1,0 +1,65 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="答案之书" clock="{{ clock }}"></pagehead>
+    <div class="stack" @click="open">
+      <div class="sheet s1"></div>
+      <div class="sheet s2"></div>
+      <div class="sheet s3"></div>
+      <div class="cover">
+        <img class="book" src="/common/icons/answer.png" />
+        <text class="f coverT">答案之书</text>
+        <text class="f coverS">想一个问题</text>
+      </div>
+    </div>
+
+    <text class="f hint">轻触翻开 · 答案仅供参考</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.stack { position: absolute; left: 0px; top: 96px; width: 212px; height: 300px; align-items: center; justify-content: center; }
+.sheet { position: absolute; width: 130px; height: 180px; border-radius: 16px; background-color: #1C2B4A; }
+.s1 { left: 28px; top: 58px; transform: rotate(-14deg); background-color: #15233C; }
+.s2 { left: 54px; top: 50px; transform: rotate(9deg); background-color: #1A2E52; }
+.s3 { left: 40px; top: 54px; transform: rotate(-3deg); background-color: #20365E; }
+.cover { position: absolute; left: 32px; top: 42px; width: 148px; height: 204px; border-radius: 18px; background-color: #0D6EFF; align-items: center; justify-content: center; flex-direction: column; }
+.book { width: 66px; height: 66px; margin-bottom: 14px; }
+.coverT { font-size: 17px; color: #FFFFFF; }
+.coverS { font-size: 14px; color: rgba(255,255,255,0.7); }
+.hint { position: absolute; left: 16px; top: 438px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import router from '../../utils/router'
+import haptic from '../../utils/haptic'
+
+export default {
+  data: { clock: '--:--', timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  open() {
+    haptic.short()
+    router.push('/pages/answer/a1')
+  }
+}
+</script>

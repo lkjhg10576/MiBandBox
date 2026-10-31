@@ -1,0 +1,156 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="跑马灯设置" clock="{{ clock }}"></pagehead>
+    <div class="inputCard" @click="openInput">
+      <text class="f iLabel">滚动文字</text>
+      <text class="f iText" if="{{ text }}">{{ text }}</text>
+      <text class="f iPlace" if="{{ !text }}">点击输入文字</text>
+      <text class="f counter">{{ text.length }}/40</text>
+    </div>
+
+    <text class="f label" style="top: 164px;">字号</text>
+    <div class="chips" style="top: 184px;">
+      <div class="chip {{ size === 24 ? 'on' : '' }}" @click="setSize(24)"><text class="f chipT">小</text></div>
+      <div class="chip {{ size === 30 ? 'on' : '' }}" @click="setSize(30)"><text class="f chipT">中</text></div>
+      <div class="chip {{ size === 38 ? 'on' : '' }}" @click="setSize(38)"><text class="f chipT">大</text></div>
+    </div>
+
+    <text class="f label" style="top: 218px;">速度</text>
+    <div class="chips" style="top: 238px;">
+      <div class="chip {{ speed === 3 ? 'on' : '' }}" @click="setSpeed(3)"><text class="f chipT">慢</text></div>
+      <div class="chip {{ speed === 6 ? 'on' : '' }}" @click="setSpeed(6)"><text class="f chipT">中</text></div>
+      <div class="chip {{ speed === 12 ? 'on' : '' }}" @click="setSpeed(12)"><text class="f chipT">快</text></div>
+    </div>
+
+    <text class="f label" style="top: 272px;">文字颜色</text>
+    <div class="dots" style="top: 292px;">
+      <div class="dot {{ color === $item ? 'sel' : '' }}" for="{{ textColors }}" style="background-color: {{ $item }};" @click="setColor($item)"></div>
+    </div>
+
+    <text class="f label" style="top: 318px;">背景颜色</text>
+    <div class="dots" style="top: 338px;">
+      <div class="dot {{ bg === $item ? 'sel' : '' }}" for="{{ bgColors }}" style="background-color: {{ $item }};" @click="setBg($item)"></div>
+    </div>
+
+    <div class="preview" style="background-color: {{ bg }};">
+      <text class="f pv" style="color: {{ color }}; font-size: {{ size }}px;">{{ text || '预览' }}</text>
+    </div>
+
+    <div class="go" @click="save"><text class="f goT">保存并播放</text></div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 78px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iText { width: 158px; height: 40px; font-size: 17px; line-height: 20px; color: #FFFFFF; }
+.iPlace { width: 158px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.counter { position: absolute; right: 14px; top: 8px; font-size: 14px; color: rgba(255,255,255,0.3); }
+.label { position: absolute; left: 12px; width: 80px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.chips { position: absolute; left: 6px; width: 200px; height: 32px; flex-direction: row; justify-content: space-between; }
+.chip { width: 62px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
+.chip.on { background-color: rgba(13,110,255,0.35); }
+.chipT { font-size: 14px; color: #FFFFFF; }
+.dots { position: absolute; left: 12px; width: 188px; height: 28px; flex-direction: row; }
+.dot { width: 24px; height: 24px; border-radius: 12px; margin-right: 8px; border-width: 2px; border-style: solid; border-color: transparent; }
+.dot.sel { border-color: #FFFFFF; }
+.preview { position: absolute; left: 3px; top: 366px; width: 206px; height: 42px; border-radius: 21px; align-items: center; justify-content: center; }
+.pv { width: 190px; text-align: center; text-overflow: ellipsis; lines: 1; }
+.go { position: absolute; left: 26px; top: 414px; width: 160px; height: 36px; border-radius: 18px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goT { font-size: 14px; color: #FFFFFF; }
+</style>
+
+<script>
+import time from '../../utils/time'
+import kv from '../../utils/kv'
+import router from '../../utils/router'
+import haptic from '../../utils/haptic'
+import inputResult from '../../utils/inputResult'
+
+export default {
+  data: {
+    clock: '--:--',
+    text: 'BandBox · 手腕上的百宝箱',
+    size: 30,
+    speed: 6,
+    color: '#FFFFFF',
+    bg: '#0D6EFF',
+    textColors: ['#FFFFFF', '#FFD166', '#00E5FF', '#00C853', '#FF6B6B'],
+    bgColors: ['#000000', '#0D6EFF', '#5B1A1A', '#1A3A20', '#FFFFFF'],
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    inputResult.take((r) => {
+      if (r && r.field === 'marqueeText') { this.text = r.value }
+    })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    kv.init(() => {
+      const m = kv.get('marquee', null)
+      if (m) {
+        this.text = m.text || this.text
+        this.size = m.size || this.size
+        this.speed = m.speed || this.speed
+        this.color = m.color || this.color
+        this.bg = m.bg || this.bg
+      }
+    })
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  openInput() {
+    router.push('/pages/input', {
+      field: 'marqueeText',
+      inputTitle: '跑马灯',
+      text: this.text,
+      max: 40,
+      multiline: 0,
+      hint: '输入要滚动的文字'
+    })
+  },
+  setSize(v) {
+    this.size = v
+    haptic.short()
+  },
+  setSpeed(v) {
+    this.speed = v
+    haptic.short()
+  },
+  setColor(v) {
+    this.color = v
+    haptic.short()
+  },
+  setBg(v) {
+    this.bg = v
+    if (v === '#FFFFFF') this.color = '#111111'
+    haptic.short()
+  },
+  save() {
+    if (!this.text) {
+        return
+    }
+    const m = { text: this.text, size: this.size, speed: this.speed, color: this.color, bg: this.bg }
+    kv.init(() => {
+      kv.set('marquee', m)
+      kv.flush()
+      router.push('/pages/textShow', m)
+    })
+  }
+}
+</script>

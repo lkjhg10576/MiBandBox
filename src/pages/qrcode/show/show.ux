@@ -1,0 +1,52 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+
+<template>
+  <div class="page" @click="back">
+    <pagehead title="扫码查看" clock="{{ clock }}"></pagehead>
+    <div class="qrCard">
+      <qrcode class="qr" value="{{ qr }}"></qrcode>
+    </div>
+    <text class="f text">{{ qr }}</text>
+    <text class="f hint">轻触屏幕返回</text>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.qrCard { position: absolute; left: 26px; top: 90px; width: 160px; height: 160px; border-radius: 26px; background-color: #FFFFFF; padding: 12px; align-items: center; justify-content: center; }
+.qr { width: 136px; height: 136px; background-color: #FFFFFF; }
+.text { position: absolute; left: 20px; top: 258px; width: 172px; font-size: 15px; line-height: 21px; color: rgba(255,255,255,0.75); text-align: center; }
+.hint { position: absolute; left: 16px; top: 438px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import brightness from '@system.brightness'
+
+export default {
+  protected: { qr: '' },
+  private: { clock: '--:--', timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  back() {
+    router.back()
+  }
+}
+</script>

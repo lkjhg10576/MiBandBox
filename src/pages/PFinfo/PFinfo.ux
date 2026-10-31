@@ -1,0 +1,74 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="参考分数" clock="{{ clock }}"></pagehead>
+    <scroll class="body" scroll-y="true">
+      <div class="listInner" style="height: 940px;">
+      <div class="card {{ $item.current ? 'cur' : '' }}" for="{{ devices }}">
+        <text class="f dName">{{ $item.name }}</text>
+        <text class="f dScore">{{ $item.score }}</text>
+        <text class="f badge" if="{{ $item.current }}">当前</text>
+      </div>
+      <text class="f note">参考分仅作横向比较</text>
+      <div class="pad"></div>
+      </div>
+    </scroll>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 384px; }
+.listInner { width: 212px; flex-direction: column; }
+.card { width: 206px; height: 72px; margin: 0px 3px 7px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 16px; }
+.card.cur { background-color: rgba(13,110,255,0.24); }
+.dName { width: 132px; font-size: 16px; color: #FFFFFF; }
+.dScore { width: 42px; text-align: right; font-size: 20px; color: #0D6EFF; }
+.badge { width: 36px; height: 20px; line-height: 20px; margin-left: 6px; border-radius: 10px; background-color: #0D6EFF; text-align: center; font-size: 14px; color: #FFFFFF; }
+.note { width: 190px; margin: 4px 11px 0px 11px; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.3); text-align: center; }
+.pad { width: 212px; height: 20px; }
+</style>
+
+<script>
+import time from '../../utils/time'
+import perf from '../../data/perf'
+import device from '@system.device'
+
+export default {
+  data: {
+    clock: '--:--',
+    devices: perf.devices.map((d) => ({ name: d.name, score: d.score, current: false })),
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    device.getInfo({
+      success: (d) => {
+        const model = String(d.model || '')
+        this.devices = perf.devices.map((x) => ({
+          name: x.name,
+          score: x.score,
+          current: model && model.indexOf(x.name.replace('小米手环 ', '小米手环')) >= 0
+        }))
+      },
+      fail: () => {}
+    })
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  }
+}
+</script>

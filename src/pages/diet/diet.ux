@@ -1,0 +1,112 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="今日饮食" clock="{{ clock }}"></pagehead>
+    <div class="card" @click="rollEat">
+      <text class="f cLabel">吃什么</text>
+      <text class="f cVal">{{ eatText }}</text>
+      <text class="f cHint">轻触换一个</text>
+    </div>
+
+    <div class="card card2" @click="rollDrink">
+      <text class="f cLabel">喝什么</text>
+      <text class="f cVal" style="color: #5B9DFF;">{{ drinkText }}</text>
+      <text class="f cHint">轻触换一个</text>
+    </div>
+
+    <div class="go" @click="rollBoth"><text class="f goT">都换一换</text></div>
+    <text class="f hint">选择困难时，交给随机</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.card { position: absolute; left: 3px; top: 80px; width: 206px; height: 140px; border-radius: 26px; background-color: #262626; padding: 12px 18px; flex-direction: column; }
+.card2 { top: 232px; }
+.cLabel { width: 170px; height: 24px; line-height: 24px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.cVal { width: 170px; height: 58px; line-height: 58px; font-size: 28px; color: #FFB74D; text-overflow: ellipsis; lines: 1; }
+.cHint { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.3); }
+.go { position: absolute; left: 26px; top: 392px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.hint { position: absolute; left: 16px; top: 440px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import food from '../../data/food'
+import haptic from '../../utils/haptic'
+
+export default {
+  data: {
+    clock: '--:--',
+    eatText: '—',
+    drinkText: '—',
+    eating: false,
+    drinking: false,
+    timer: null,
+    clockTimer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.clockTimer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    if (this.eatText === '—') this.rollBoth()
+  },
+  onHide() {
+    this.clear()
+  },
+  onDestroy() {
+    this.clear()
+  },
+  clear() {
+    if (this.timer) clearInterval(this.timer)
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.timer = null
+    this.clockTimer = null
+  },
+  pick(list) {
+    return list[Math.floor(Math.random() * list.length)]
+  },
+  rollEat() {
+    if (this.eating) return
+    this.eating = true
+    let n = 0
+    const timer = setInterval(() => {
+      n++
+      this.eatText = this.pick(food.eat)
+      if (n > 7) {
+        clearInterval(timer)
+        this.eating = false
+        this.eatText = this.pick(food.eat)
+        haptic.short()
+      }
+    }, 55)
+  },
+  rollDrink() {
+    if (this.drinking) return
+    this.drinking = true
+    let n = 0
+    const timer = setInterval(() => {
+      n++
+      this.drinkText = this.pick(food.drink)
+      if (n > 7) {
+        clearInterval(timer)
+        this.drinking = false
+        this.drinkText = this.pick(food.drink)
+        haptic.short()
+      }
+    }, 55)
+  },
+  rollBoth() {
+    haptic.short()
+    this.rollEat()
+    this.rollDrink()
+  }
+}
+</script>

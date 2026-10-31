@@ -1,0 +1,70 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="关于" clock="{{ clock }}"></pagehead>
+    <scroll class="body" scroll-y="true">
+      <div class="inner" style="height: 640px;">
+      <img class="logo" src="/common/icon.png" />
+      <text class="f name">BandBox</text>
+      <text class="f ver">v1.0.0 · 净室实现</text>
+      <text class="f desc">为小米手环窄长屏设计的小工具箱，包含 26 个本地小工具：计算、记录、查询与趣味功能。</text>
+      <div class="card">
+        <text class="f cTitle">设计原则</text>
+        <text class="f cBody">不联网、不收费、不引流；数据全部保存在本机，删除应用即删除数据。</text>
+      </div>
+      <div class="card">
+        <text class="f cTitle">字体</text>
+        <text class="f cBody">界面使用思源黑体 / Noto Sans CJK 子集（SIL Open Font License 1.1）。</text>
+      </div>
+      <div class="card">
+        <text class="f cTitle">致谢</text>
+        <text class="f cBody">感谢小米 Vela 平台与开源社区提供的开发文档与示例。</text>
+      </div>
+      <text class="f fine">独立实现，与第三方无关</text>
+      <div class="pad"></div>
+      </div>
+    </scroll>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 384px; }
+.inner { width: 212px; flex-direction: column; }
+.logo { width: 56px; height: 56px; margin-top: 4px; margin-left: 78px; border-radius: 15px; }
+.name { width: 212px; height: 32px; line-height: 32px; text-align: center; font-size: 17px; color: #FFFFFF; }
+.ver { width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.5); }
+.desc { width: 180px; margin: 10px 16px 14px 16px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.7); }
+.card { width: 206px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 12px 16px; flex-direction: column; }
+.cTitle { width: 174px; height: 24px; line-height: 24px; font-size: 17px; color: #FFFFFF; }
+.cBody { width: 174px; font-size: 14px; line-height: 19px; color: rgba(255,255,255,0.6); }
+.fine { width: 180px; margin: 6px 16px 0px 16px; font-size: 14px; line-height: 19px; color: rgba(255,255,255,0.35); text-align: center; }
+.pad { width: 212px; height: 24px; }
+</style>
+
+<script>
+import time from '../../utils/time'
+
+export default {
+  data: { clock: '--:--', timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  }
+}
+</script>

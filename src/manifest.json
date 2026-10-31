@@ -1,0 +1,206 @@
+{
+  "package": "com.cleanroom.bandbox",
+  "name": "BandBox",
+  "versionName": "1.0.0",
+  "versionCode": 10000,
+  "minPlatformVersion": 1100,
+  "simulationVersion": "default",
+  "deviceTypeList": [
+    "watch"
+  ],
+  "icon": "/common/icon.png",
+  "permissions": [
+    {
+      "name": "hapjs.permission.DEVICE_INFO"
+    }
+  ],
+  "features": [
+    {
+      "name": "system.router"
+    },
+    {
+      "name": "system.prompt"
+    },
+    {
+      "name": "system.vibrator"
+    },
+    {
+      "name": "system.device"
+    },
+    {
+      "name": "system.app"
+    },
+    {
+      "name": "system.storage"
+    },
+    {
+      "name": "system.brightness"
+    },
+    {
+      "name": "system.sensor"
+    },
+    {
+      "name": "system.file"
+    },
+    {
+      "name": "system.crypto"
+    }
+  ],
+  "config": {
+    "designWidth": "device-width",
+    "debug": false,
+    "logLevel": "log"
+  },
+  "display": {
+    "backgroundColor": "#000000"
+  },
+  "router": {
+    "entry": "pages/home",
+    "pages": {
+      "pages/home": {
+        "component": "home"
+      },
+      "pages/set": {
+        "component": "set"
+      },
+      "pages/hset": {
+        "component": "hset"
+      },
+      "pages/about": {
+        "component": "about"
+      },
+      "pages/calculator": {
+        "component": "calculator"
+      },
+      "pages/notebook/list": {
+        "component": "list"
+      },
+      "pages/notebook/show": {
+        "component": "show"
+      },
+      "pages/notebook/edit": {
+        "component": "edit"
+      },
+      "pages/notebook/rename": {
+        "component": "rename"
+      },
+      "pages/notebook/more": {
+        "component": "more"
+      },
+      "pages/fluorescence": {
+        "component": "fluorescence"
+      },
+      "pages/daysmatter/list": {
+        "component": "list"
+      },
+      "pages/daysmatter/edit": {
+        "component": "edit"
+      },
+      "pages/daysmatter/inputdate": {
+        "component": "inputdate"
+      },
+      "pages/sentence": {
+        "component": "sentence"
+      },
+      "pages/password": {
+        "component": "password"
+      },
+      "pages/passwordDetail": {
+        "component": "passwordDetail"
+      },
+      "pages/answer": {
+        "component": "answer"
+      },
+      "pages/answer/a1": {
+        "component": "a1"
+      },
+      "pages/vibrate": {
+        "component": "vibrate"
+      },
+      "pages/time": {
+        "component": "time"
+      },
+      "pages/storage": {
+        "component": "storage"
+      },
+      "pages/fish": {
+        "component": "fish"
+      },
+      "pages/display": {
+        "component": "display"
+      },
+      "pages/flashlight": {
+        "component": "flashlight"
+      },
+      "pages/cpsTest": {
+        "component": "cpsTest"
+      },
+      "pages/diet": {
+        "component": "diet"
+      },
+      "pages/random": {
+        "component": "random"
+      },
+      "pages/system": {
+        "component": "system"
+      },
+      "pages/performance": {
+        "component": "performance"
+      },
+      "pages/PFinfo": {
+        "component": "PFinfo"
+      },
+      "pages/history": {
+        "component": "history"
+      },
+      "pages/scoreboard": {
+        "component": "scoreboard"
+      },
+      "pages/morseCode": {
+        "component": "morseCode"
+      },
+      "pages/wasteSorting": {
+        "component": "wasteSorting"
+      },
+      "pages/qrcode": {
+        "component": "qrcode"
+      },
+      "pages/qrcode/show": {
+        "component": "show"
+      },
+      "pages/marquee": {
+        "component": "marquee"
+      },
+      "pages/marqueeSet": {
+        "component": "marqueeSet"
+      },
+      "pages/textShow": {
+        "component": "textShow"
+      },
+      "pages/num": {
+        "component": "num"
+      },
+      "pages/lylist": {
+        "component": "lylist"
+      },
+      "pages/lyrics/edit": {
+        "component": "edit"
+      },
+      "pages/lyrics/show": {
+        "component": "show"
+      },
+      "pages/lyrics/more": {
+        "component": "more"
+      },
+      "pages/lyrics/showmode": {
+        "component": "showmode"
+      },
+      "pages/input": {
+        "component": "input"
+      },
+      "pages/level": {
+        "component": "level"
+      }
+    }
+  }
+}

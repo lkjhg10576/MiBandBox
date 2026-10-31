@@ -1,0 +1,104 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="设置" clock="{{ clock }}"></pagehead>
+    <div class="body">
+      <div class="card" @click="goStyle">
+        <div class="cardTop">
+          <text class="f cTitle">首页样式</text>
+          <text class="f arrow">></text>
+        </div>
+        <text class="f cSub">{{ layoutText }}</text>
+      </div>
+      <div class="card" @click="goAbout">
+        <div class="cardTop">
+          <text class="f cTitle">关于 BandBox</text>
+          <text class="f arrow">></text>
+        </div>
+        <text class="f cSub">版本 1.0.0 · 净室实现</text>
+      </div>
+      <div class="card" @click="showPrivacy">
+        <div class="cardTop">
+          <text class="f cTitle">数据与隐私</text>
+          <text class="f arrow">></text>
+        </div>
+        <text class="f cSub">仅保存在本机，不联网</text>
+      </div>
+      <div class="card" @click="reset">
+        <div class="cardTop">
+          <text class="f cTitle" style="color: #FF3B30;">恢复默认设置</text>
+          <text class="f arrow">></text>
+        </div>
+        <text class="f cSub">{{ resetHint }}</text>
+      </div>
+      <div class="pad"></div>
+    </div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+.page { width: 212px; height: 520px; background-color: #000000; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 384px; flex-direction: column; }
+.card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; }
+.cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
+.cTitle { font-size: 17px; color: #FFFFFF; }
+.arrow { font-size: 20px; color: rgba(255,255,255,0.4); }
+.cSub { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.pad { width: 212px; height: 24px; }
+</style>
+
+<script>
+import kv from '../../utils/kv'
+import router from '../../utils/router'
+import time from '../../utils/time'
+import prompt from '@system.prompt'
+
+export default {
+  data: { clock: '--:--', layoutText: '双栏网格', resetHint: '连按两次清空偏好设置', resetStep: 0, timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    kv.init(() => {
+      this.layoutText = kv.get('home', 'grid') === 'list' ? '单栏列表' : '双栏网格'
+    })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  goStyle() {
+    router.push('/pages/hset')
+  },
+  goAbout() {
+    router.push('/pages/about')
+  },
+  showPrivacy() {
+    prompt.showToast({ message: '笔记、目标日、歌词与设置都只保存在本机', duration: 2200 })
+  },
+  reset() {
+    if (this.resetStep === 0) {
+      this.resetStep = 1
+      this.resetHint = '再次点击确认恢复'
+      return
+    }
+    kv.reset()
+    kv.flush()
+    this.resetStep = 0
+    this.resetHint = '连按两次清空偏好设置'
+    this.layoutText = '双栏网格'
+    prompt.showToast({ message: '已恢复默认设置', duration: 1600 })
+  }
+}
+</script>

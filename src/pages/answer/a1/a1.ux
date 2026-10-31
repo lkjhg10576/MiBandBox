@@ -1,0 +1,69 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="答案" clock="{{ clock }}"></pagehead>
+    <div class="card {{ shown ? 'show' : '' }}">
+      <text class="f mark">“</text>
+      <text class="f answer">{{ answer }}</text>
+      <text class="f mark2">”</text>
+    </div>
+
+    <div class="again" @click="again"><text class="f againT">再问一次</text></div>
+    <text class="f close" @click="close">合上书</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.card { position: absolute; left: 3px; top: 86px; width: 206px; height: 240px; border-radius: 26px; background-color: #16213A; padding: 20px 18px; flex-direction: column; opacity: 0; }
+.card.show { opacity: 1; }
+.mark { width: 170px; height: 34px; line-height: 34px; font-size: 42px; color: #4E87FF; }
+.answer { width: 170px; height: 130px; font-size: 24px; line-height: 34px; color: #FFFFFF; }
+.mark2 { width: 170px; height: 28px; line-height: 28px; text-align: right; font-size: 42px; color: #4E87FF; }
+.again { position: absolute; left: 26px; top: 356px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.againT { font-size: 14px; color: #FFFFFF; }
+.close { position: absolute; left: 0px; top: 420px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.45); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import haptic from '../../../utils/haptic'
+import answers from '../../../data/answers'
+
+export default {
+  data: { clock: '--:--', answer: '…', shown: false, timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    this.again()
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  again() {
+    this.shown = false
+    this.answer = answers[Math.floor(Math.random() * answers.length)]
+    setTimeout(() => {
+      this.shown = true
+    }, 40)
+    haptic.short()
+  },
+  close() {
+    haptic.short()
+    router.back()
+  }
+}
+</script>

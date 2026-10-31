@@ -1,0 +1,21 @@
+<style>
+@font-face {
+  font-family: 'BandBoxSans';
+  src: url('/common/fonts/BandBoxSans.ttf');
+}
+.f {
+  font-family: 'BandBoxSans';
+}
+</style>
+<script>
+import kv from './utils/kv'
+
+export default {
+  onCreate() {
+    kv.init()
+  },
+  onDestroy() {
+    kv.flush()
+  }
+}
+</script>

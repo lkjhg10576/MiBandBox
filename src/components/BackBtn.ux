@@ -1,0 +1,30 @@
+<template>
+  <div class="bbBack" @click="go"><img class="bbBackIcon" src="/common/back.png" /></div>
+</template>
+
+<style>
+/* Safe area: y=42, x=32..60. */
+.bbBack {
+  position: absolute;
+  left: 32px;
+  top: 42px;
+  width: 28px;
+  height: 28px;
+  border-radius: 14px;
+  z-index: 99;
+  background-color: rgba(255,255,255,0.08);
+  align-items: center;
+  justify-content: center;
+}
+.bbBackIcon { width: 18px; height: 18px; }
+</style>
+
+<script>
+import router from '../utils/router'
+
+export default {
+  go() {
+    router.back()
+  }
+}
+</script>

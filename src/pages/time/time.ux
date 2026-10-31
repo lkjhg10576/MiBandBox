@@ -1,0 +1,92 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="剩余时间" clock="{{ clock }}"></pagehead>
+    <div class="card">
+      <text class="f cLabel">今日还剩</text>
+      <text class="f big">{{ todayText }}</text>
+      <div class="bar"><div class="fill" style="width: {{ dayPercent }}%;"></div></div>
+      <text class="f sub">今天已过去 {{ dayPercent }}%</text>
+    </div>
+
+    <div class="card2">
+      <text class="f cLabel">今年还剩</text>
+      <text class="f big2">{{ yearDays }} <text class="f unit">天</text></text>
+      <text class="f sub2">{{ yearTime }}</text>
+      <div class="bar"><div class="fill green" style="width: {{ yearPercent }}%;"></div></div>
+      <text class="f sub">今年已过去 {{ yearPercent }}%</text>
+    </div>
+
+    <text class="f foot">{{ dateText }}</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.card { position: absolute; left: 3px; top: 82px; width: 206px; height: 160px; border-radius: 26px; background-color: #262626; padding: 12px 18px; flex-direction: column; }
+.card2 { position: absolute; left: 3px; top: 254px; width: 206px; height: 178px; border-radius: 26px; background-color: #262626; padding: 12px 18px; flex-direction: column; }
+.cLabel { width: 170px; height: 24px; line-height: 24px; font-size: 15px; color: rgba(255,255,255,0.55); }
+.big { width: 170px; height: 62px; line-height: 62px; font-size: 42px; color: #FFFFFF; }
+.big2 { width: 170px; height: 62px; line-height: 62px; font-size: 42px; color: #FFFFFF; }
+.unit { font-size: 18px; color: rgba(255,255,255,0.6); }
+.sub2 { width: 170px; height: 24px; line-height: 24px; font-size: 17px; color: #0D6EFF; }
+.bar { width: 170px; height: 6px; border-radius: 3px; background-color: #3A3A3A; margin-top: 6px; margin-bottom: 6px; }
+.fill { height: 6px; border-radius: 3px; background-color: #0D6EFF; }
+.green { background-color: #00C853; }
+.sub { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.4); }
+.foot { position: absolute; left: 16px; top: 438px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+</style>
+
+<script>
+import time from '../../utils/time'
+
+function hms(sec) {
+  const d = time.splitDuration(sec)
+  return time.pad2(d.hours) + ':' + time.pad2(d.minutes) + ':' + time.pad2(d.seconds)
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    todayText: '--:--:--',
+    yearDays: 0,
+    yearTime: '--:--:--',
+    dayPercent: 0,
+    yearPercent: 0,
+    dateText: '',
+    timer: null
+  },
+  onShow() {
+    this.refresh()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => this.refresh(), 1000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  refresh() {
+    const now = new Date()
+    this.clock = time.formatClock(now)
+    const remainDay = time.countdownToEndOfDay(now)
+    this.todayText = hms(remainDay)
+    this.dayPercent = Math.min(100, Math.round(((86400 - remainDay) / 86400) * 100))
+    const remainYear = time.countdownToEndOfYear(now)
+    const yd = time.splitDuration(remainYear)
+    this.yearDays = yd.days
+    this.yearTime = time.pad2(yd.hours) + ':' + time.pad2(yd.minutes) + ':' + time.pad2(yd.seconds)
+    const total = time.isLeap(now.getFullYear()) ? 366 : 365
+    const passed = total * 86400 - remainYear
+    this.yearPercent = Math.min(100, Math.round((passed / (total * 86400)) * 100))
+    this.dateText = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日'
+  }
+}
+</script>

@@ -1,0 +1,149 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ title || '输入' }}" clock="{{ clock }}"></pagehead>
+    <div class="done" @click="done"><text class="f doneT">完成</text></div>
+
+    <div class="preview">
+      <text class="f pLabel">{{ hintText }}</text>
+      <scroll class="pScroll" scroll-y="true">
+        <text class="f pText" if="{{ value }}">{{ value }}</text>
+        <text class="f pPlace" if="{{ !value }}">点击下方键盘输入</text>
+      </scroll>
+      <text class="f pCount">{{ value.length }}/{{ limit }}</text>
+    </div>
+
+    <div class="tools">
+      <text class="f tool" @click="toggleCase">{{ upper ? 'ABC' : 'abc' }}</text>
+      <text class="f tool" @click="cycleLayer">{{ layerLabel }}</text>
+      <text class="f tool wide" @click="space">空格</text>
+      <text class="f tool delTool" @click="del">←</text>
+    </div>
+
+    <div class="grid">
+      <div class="key" for="{{ keys }}" @click="onKey($item)"><text class="f keyT">{{ $item }}</text></div>
+    </div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+.page { width: 212px; height: 520px; background-color: #000000; }
+.done { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
+.doneT { font-size: 14px; color: #FFFFFF; }
+.preview { position: absolute; left: 3px; top: 80px; width: 206px; height: 104px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.pLabel { width: 140px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.pScroll { width: 174px; height: 60px; }
+.pText { width: 174px; font-size: 18px; line-height: 24px; color: #FFFFFF; }
+.pPlace { width: 174px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.pCount { position: absolute; right: 14px; top: 8px; font-size: 14px; color: rgba(255,255,255,0.3); }
+.tools { position: absolute; left: 6px; top: 192px; width: 200px; height: 28px; flex-direction: row; justify-content: space-between; align-items: center; }
+.tool { width: 48px; height: 26px; line-height: 26px; border-radius: 8px; background-color: #333333; color: rgba(255,255,255,0.85); font-size: 14px; text-align: center; }
+.wide { width: 64px; }
+.delTool { width: 32px; }
+.grid { position: absolute; left: 6px; top: 226px; width: 200px; height: 240px; flex-direction: row; flex-wrap: wrap; }
+.key { width: 48px; height: 30px; margin-right: 2px; margin-bottom: 2px; border-radius: 8px; background-color: #333333; align-items: center; justify-content: center; }
+.keyT { font-size: 18px; color: #FFFFFF; }
+</style>
+
+<script>
+import time from '../../utils/time'
+import inputResult from '../../utils/inputResult'
+import router from '../../utils/router'
+import haptic from '../../utils/haptic'
+
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
+const NUMBERS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', ',', '-', '_', ':', '/', '@', '#', '+', '*', '(', ')', '=', '%', '!', '?', ' ', '换行']
+const SYMBOLS = ['.', ',', '?', '!', "'", '"', ':', ';', '/', '@', '#', '$', '%', '&', '*', '+', '-', '=', '(', ')', '[', ']', '{', '}', '<', '>', ' ', '换行']
+
+export default {
+  protected: { field: '', inputTitle: '', text: '', max: '80', multiline: '0', hint: '' },
+  private: {
+    clock: '--:--',
+    title: '输入',
+    value: '',
+    hintText: '输入内容',
+    limit: 80,
+    multi: false,
+    layer: 0,
+    upper: true,
+    layerLabel: 'ABC',
+    keys: LETTERS.slice(0, 26).concat([' ', '换行']),
+    timer: null
+  },
+  onInit() {
+    this.title = this.inputTitle || '输入'
+    this.value = this.text || ''
+    this.limit = parseInt(this.max, 10) || 80
+    this.multi = String(this.multiline) === '1'
+    this.hintText = this.hint || (this.multi ? '支持换行，最多 ' + this.limit + ' 字' : '最多 ' + this.limit + ' 字')
+    this.refresh()
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  refresh() {
+    if (this.layer === 0) {
+      const letters = this.upper ? LETTERS : LETTERS.map((c) => c.toLowerCase())
+      this.keys = letters.concat([' ', '换行'])
+      this.layerLabel = this.upper ? 'ABC' : 'abc'
+    } else if (this.layer === 1) {
+      this.keys = NUMBERS
+      this.layerLabel = '123'
+    } else {
+      this.keys = SYMBOLS
+      this.layerLabel = '#+='
+    }
+  },
+  toggleCase() {
+    this.upper = !this.upper
+    this.refresh()
+    haptic.short()
+  },
+  cycleLayer() {
+    this.layer = (this.layer + 1) % 3
+    this.refresh()
+    haptic.short()
+  },
+  onKey(ch) {
+    haptic.short()
+    if (ch === ' ') this.space()
+    else if (ch === '换行') this.append('\n')
+    else this.append(ch)
+  },
+  append(ch) {
+    if (this.value.length >= this.limit) return
+    if (!this.multi && ch === '\n') ch = ' '
+    this.value = this.value + ch
+  },
+  space() {
+    this.append(' ')
+  },
+  del() {
+    haptic.short()
+    this.value = this.value.slice(0, -1)
+  },
+  done() {
+    inputResult.save(this.field, this.value, () => {
+      haptic.short()
+      router.back()
+    })
+  }
+}
+</script>

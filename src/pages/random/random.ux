@@ -1,0 +1,123 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="随机数" clock="{{ clock }}"></pagehead>
+    <text class="f numBtn" @click="openNum">滚动</text>
+
+    <div class="row">
+      <text class="f label">最小值</text>
+      <div class="step" @click="dec('min')"><text class="f stepT">-</text></div>
+      <text class="f val">{{ min }}</text>
+      <div class="step" @click="inc('min')"><text class="f stepT">+</text></div>
+    </div>
+    <div class="row" style="top: 160px;">
+      <text class="f label">最大值</text>
+      <div class="step" @click="dec('max')"><text class="f stepT">-</text></div>
+      <text class="f val">{{ max }}</text>
+      <div class="step" @click="inc('max')"><text class="f stepT">+</text></div>
+    </div>
+
+    <div class="result">
+      <text class="f rLabel">结果</text>
+      <text class="f rVal">{{ display }}</text>
+    </div>
+
+    <div class="go" @click="roll"><text class="f goT">抽一个</text></div>
+    <text class="f hint">包含最小值和最大值</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.numBtn { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; line-height: 28px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.7); background-color: rgba(255,255,255,0.08); border-radius: 14px; z-index: 99; }
+.row { position: absolute; left: 3px; top: 84px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px; }
+.label { width: 64px; font-size: 17px; color: rgba(255,255,255,0.65); }
+.step { width: 40px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; }
+.stepT { font-size: 22px; color: #FFFFFF; }
+.val { width: 60px; text-align: center; font-size: 24px; color: #FFFFFF; }
+.result { position: absolute; left: 3px; top: 246px; width: 206px; height: 116px; border-radius: 26px; background-color: #151515; align-items: center; justify-content: center; flex-direction: column; }
+.rLabel { font-size: 14px; color: rgba(255,255,255,0.4); }
+.rVal { font-size: 52px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+.go { position: absolute; left: 26px; top: 390px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.hint { position: absolute; left: 16px; top: 442px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import haptic from '../../utils/haptic'
+import prompt from '@system.prompt'
+import router from '../../utils/router'
+
+export default {
+  data: {
+    clock: '--:--',
+    min: 1,
+    max: 100,
+    result: 42,
+    display: '—',
+    rolling: false,
+    timer: null,
+    clockTimer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.clockTimer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    this.clear()
+  },
+  onDestroy() {
+    this.clear()
+  },
+  clear() {
+    if (this.timer) clearInterval(this.timer)
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.timer = null
+    this.clockTimer = null
+  },
+  openNum() {
+    router.push('/pages/num')
+  },
+  inc(which) {
+    if (which === 'min') this.min = this.min + 1
+    else this.max = this.max + 1
+    haptic.short()
+  },
+  dec(which) {
+    if (which === 'min') this.min = this.min - 1
+    else this.max = this.max - 1
+    haptic.short()
+  },
+  roll() {
+    if (this.rolling) return
+    if (this.min > this.max) {
+      prompt.showToast({ message: '最小值不能大于最大值', duration: 1600 })
+      haptic.long()
+      return
+    }
+    this.rolling = true
+    let n = 0
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      n++
+      this.display = String(this.min + Math.floor(Math.random() * (this.max - this.min + 1)))
+      if (n > 10) {
+        clearInterval(this.timer)
+        this.timer = null
+        this.result = this.min + Math.floor(Math.random() * (this.max - this.min + 1))
+        this.display = String(this.result)
+        this.rolling = false
+        haptic.pattern(2, 120)
+      }
+    }, 60)
+  }
+}
+</script>

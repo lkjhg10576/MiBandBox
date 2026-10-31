@@ -1,0 +1,174 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="性能测试" clock="{{ clock }}"></pagehead>
+    <text class="f ref" @click="pfinfo">参考</text>
+
+    <div class="scoreCard">
+      <text class="f sLabel">综合参考分</text>
+      <text class="f sVal">{{ score }}</text>
+      <text class="f sSub">{{ compare }}</text>
+    </div>
+
+    <div class="tests">
+      <div class="test" for="{{ rows }}">
+        <div class="tTop">
+          <text class="f tName">{{ $item.name }}</text>
+          <text class="f tMs">{{ $item.ms }} ms</text>
+        </div>
+        <div class="bar"><div class="fill" style="width: {{ $item.percent }}%;"></div></div>
+      </div>
+    </div>
+
+    <div class="go" @click="run"><text class="f goT">{{ running ? '测试中...' : '开始测试' }}</text></div>
+    <text class="f hint">分数受温度与后台影响</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.ref { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; line-height: 28px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.7); background-color: rgba(255,255,255,0.08); border-radius: 14px; z-index: 99; }
+.scoreCard { position: absolute; left: 3px; top: 78px; width: 206px; height: 112px; border-radius: 26px; background-color: #262626; align-items: center; justify-content: center; flex-direction: column; }
+.sLabel { font-size: 14px; color: rgba(255,255,255,0.45); }
+.sVal { width: 206px; height: 56px; line-height: 56px; text-align: center; font-size: 38px; color: #0D6EFF; }
+.sSub { width: 190px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+.tests { position: absolute; left: 3px; top: 198px; width: 206px; height: 200px; flex-direction: column; }
+.test { width: 206px; height: 44px; margin-bottom: 4px; border-radius: 16px; background-color: #1C1C1C; padding: 3px 12px; flex-direction: column; }
+.tTop { width: 182px; height: 20px; flex-direction: row; align-items: center; justify-content: space-between; }
+.tName { font-size: 14px; color: rgba(255,255,255,0.75); }
+.tMs { font-size: 14px; color: rgba(255,255,255,0.45); }
+.bar { width: 182px; height: 4px; border-radius: 2px; background-color: #333333; }
+.fill { height: 4px; border-radius: 2px; background-color: #00C853; }
+.go { position: absolute; left: 26px; top: 400px; width: 160px; height: 44px; border-radius: 22px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.hint { position: absolute; left: 16px; top: 444px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import device from '@system.device'
+import perf from '../../data/perf'
+import haptic from '../../utils/haptic'
+import router from '../../utils/router'
+
+export default {
+  data: {
+    clock: '--:--',
+    score: '待测',
+    compare: '点击开始，约需 1 秒',
+    running: false,
+    rows: perf.tests.map((t) => ({ name: t.name, ms: '—', percent: 0 })),
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    this.model = ''
+    device.getInfo({
+      success: (d) => {
+        this.model = d.model || ''
+      },
+      fail: () => {}
+    })
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  pfinfo() {
+    router.push('/pages/PFinfo')
+  },
+  run() {
+    if (this.running) return
+    this.running = true
+    haptic.short()
+    this.rows = perf.tests.map((t) => ({ name: t.name, ms: '—', percent: 0 }))
+    this.score = '—'
+    this.compare = '正在测试...'
+    this.results = []
+    this.next(0)
+  },
+  next(index) {
+    if (index >= perf.tests.length) {
+      this.finish()
+      return
+    }
+    setTimeout(() => {
+      const t = perf.tests[index]
+      const ms = this.measure(t.key)
+      const rows = this.rows.slice()
+      rows[index] = {
+        name: t.name,
+        ms,
+        percent: Math.max(6, Math.min(100, Math.round((1 - Math.min(1, ms / 260)) * 100)))
+      }
+      this.rows = rows
+      this.results.push({ key: t.key, ms, weight: t.weight })
+      this.next(index + 1)
+    }, 60)
+  },
+  measure(key) {
+    const t0 = Date.now()
+    let acc = 0
+    if (key === 'object') {
+      const o = { a: 0, b: 0, c: 0 }
+      for (let i = 0; i < 120000; i++) {
+        o.a = i
+        o.b = o.a + 1
+        o.c = o.b * 2
+        acc += o.c
+      }
+    } else if (key === 'array') {
+      const arr = []
+      for (let i = 0; i < 15000; i++) arr.push(i)
+      for (let i = 0; i < arr.length; i++) acc += arr[i]
+      for (let i = 0; i < 4000; i++) arr.pop()
+    } else if (key === 'math') {
+      for (let i = 0; i < 50000; i++) {
+        acc += Math.sin(i * 0.001) + Math.cos(i * 0.002) + Math.sqrt(i % 97)
+      }
+    } else {
+      for (let round = 0; round < 2; round++) {
+        const arr = []
+        for (let i = 0; i < 2000; i++) arr.push((i * 9301 + 49297) % 233280)
+        arr.sort((a, b) => a - b)
+        acc += arr[0]
+      }
+    }
+    const ms = Math.max(1, Date.now() - t0)
+    this.sink = acc
+    return ms
+  },
+  finish() {
+    let raw = 0
+    this.results.forEach((r) => {
+      raw += r.weight * (60 / (r.ms + 2))
+    })
+    const score = Math.max(1, Math.round(raw * 22))
+    this.score = String(score)
+    let best = null
+    let bestDiff = 1e9
+    perf.devices.forEach((d) => {
+      const diff = Math.abs(d.score - score)
+      if (diff < bestDiff) {
+        bestDiff = diff
+        best = d
+      }
+    })
+    if (best) this.compare = '接近 ' + best.name + '（参考 ' + best.score + '）'
+    this.running = false
+    haptic.pattern(3, 140)
+  }
+}
+</script>

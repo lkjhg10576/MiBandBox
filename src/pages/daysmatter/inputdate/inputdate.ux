@@ -1,0 +1,139 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="选择日期" clock="{{ clock }}"></pagehead>
+    <div class="row">
+      <text class="f label">年</text>
+      <picker class="pk" type="text" range="{{ years }}" selected="{{ yi }}" onchange="onYear"></picker>
+    </div>
+    <div class="row row2">
+      <text class="f label">月</text>
+      <picker class="pk" type="text" range="{{ months }}" selected="{{ mi }}" onchange="onMonth"></picker>
+    </div>
+    <div class="row row3">
+      <text class="f label">日</text>
+      <picker class="pk" type="text" range="{{ days }}" selected="{{ di }}" onchange="onDay"></picker>
+    </div>
+
+    <text class="f preview">{{ dateText }}</text>
+
+    <div class="go" @click="confirm"><text class="f goT">确定</text></div>
+    <text class="f tip">上下滚动选择，点确定返回</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.row { position: absolute; left: 3px; top: 82px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 12px; }
+.row2 { top: 154px; }
+.row3 { top: 226px; }
+.label { width: 34px; font-size: 15px; color: rgba(255,255,255,0.55); }
+.pk { width: 148px; height: 56px; color: #FFFFFF; font-size: 20px; selected-color: #0D6EFF; }
+.preview { position: absolute; left: 0px; top: 312px; width: 212px; text-align: center; font-size: 15px; color: #FFFFFF; }
+.go { position: absolute; left: 26px; top: 370px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.tip { position: absolute; left: 0px; top: 430px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import kv from '../../../utils/kv'
+import haptic from '../../../utils/haptic'
+
+export default {
+  protected: { date: '' },
+  private: {
+    clock: '--:--',
+    years: [],
+    months: [],
+    days: [],
+    yi: 0,
+    mi: 0,
+    di: 0,
+    y: 2026,
+    m: 1,
+    d: 1,
+    dateText: '',
+    timer: null
+  },
+  onInit() {
+    this.clock = time.formatClock(new Date())
+    const years = []
+    for (let y = 1970; y <= 2100; y++) years.push(String(y))
+    const months = []
+    for (let m = 1; m <= 12; m++) months.push(m + ' 月')
+    this.years = years
+    this.months = months
+    const base = time.parseDate(this.date) || new Date()
+    this.y = base.getFullYear()
+    this.m = base.getMonth() + 1
+    this.d = base.getDate()
+    this.yi = this.y - 1970
+    this.mi = this.m - 1
+    this.buildDays()
+    this.refreshText()
+  },
+  onShow() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  buildDays() {
+    const max = time.daysInMonth(this.y, this.m)
+    const days = []
+    for (let i = 1; i <= max; i++) days.push(i + ' 日')
+    this.days = days
+    if (this.d > max) this.d = max
+    this.di = this.d - 1
+  },
+  refreshText() {
+    const dt = new Date(this.y, this.m - 1, this.d)
+    this.dateText = this.y + ' 年 ' + this.m + ' 月 ' + this.d + ' 日 · ' + time.weekdayName(dt)
+  },
+  onYear(e) {
+    const idx = e.detail ? e.detail.newSelected : e.newSelected
+    this.yi = idx
+    this.y = 1970 + idx
+    this.buildDays()
+    this.refreshText()
+    haptic.short()
+  },
+  onMonth(e) {
+    const idx = e.detail ? e.detail.newSelected : e.newSelected
+    this.mi = idx
+    this.m = idx + 1
+    this.buildDays()
+    this.refreshText()
+    haptic.short()
+  },
+  onDay(e) {
+    const idx = e.detail ? e.detail.newSelected : e.newSelected
+    this.di = idx
+    this.d = idx + 1
+    this.refreshText()
+    haptic.short()
+  },
+  confirm() {
+    const str = this.y + '-' + time.pad2(this.m) + '-' + time.pad2(this.d)
+    kv.init(() => {
+      kv.set('pickDate', str)
+      haptic.short()
+      router.back()
+    })
+  }
+}
+</script>

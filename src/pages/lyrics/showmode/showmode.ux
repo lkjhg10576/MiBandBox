@@ -1,0 +1,72 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="显示方式" clock="{{ clock }}"></pagehead>
+    <div class="opt optA {{ mode === 'v' ? 'on' : '' }}" @click="pick('v')">
+      <text class="f oT">竖屏</text>
+      <text class="f oS">沿手环长边阅读</text>
+      <text class="f chk" if="{{ mode === 'v' }}">✓</text>
+    </div>
+    <div class="opt optB {{ mode === 'h' ? 'on' : '' }}" @click="pick('h')">
+      <text class="f oT">横屏</text>
+      <text class="f oS">旋转 90°，字更大</text>
+      <text class="f chk" if="{{ mode === 'h' }}">✓</text>
+    </div>
+
+    <text class="f tip">返回播放页后生效</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.opt { position: absolute; left: 3px; width: 206px; height: 92px; border-radius: 26px; background-color: #262626; padding: 12px 18px; flex-direction: column; }
+.optA { top: 92px; }
+.optB { top: 200px; }
+.opt.on { background-color: rgba(13,110,255,0.24); }
+.oT { width: 140px; height: 30px; line-height: 30px; font-size: 17px; color: #FFFFFF; }
+.oS { width: 140px; height: 24px; line-height: 24px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.chk { position: absolute; right: 16px; top: 18px; font-size: 22px; color: #0D6EFF; }
+.tip { position: absolute; left: 0px; top: 320px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import kv from '../../../utils/kv'
+import router from '../../../utils/router'
+import haptic from '../../../utils/haptic'
+
+export default {
+  data: { clock: '--:--', mode: 'v', timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    kv.init(() => {
+      this.mode = kv.get('lyricsm', 'v') === 'h' ? 'h' : 'v'
+    })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  pick(m) {
+    this.mode = m
+    kv.init(() => {
+      kv.set('lyricsm', m)
+      kv.flush()
+    })
+    haptic.short()
+    setTimeout(() => router.back(), 120)
+  }
+}
+</script>

@@ -1,0 +1,55 @@
+<template>
+  <div class="ph">
+    <img class="phMask" src="/common/shadow.png" />
+    <text class="f phClock">{{ clock }}</text>
+    <text class="f phTitle">{{ title }}</text>
+  </div>
+</template>
+
+<style>
+.ph {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 212px;
+  height: 84px;
+  z-index: 1;
+}
+.phMask {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 212px;
+  height: 84px;
+}
+.phClock {
+  position: absolute;
+  left: 0px;
+  top: 22px;
+  width: 212px;
+  height: 20px;
+  line-height: 20px;
+  text-align: center;
+  font-size: 15px;
+  color: rgba(255,255,255,0.6);
+}
+.phTitle {
+  position: absolute;
+  left: 0px;
+  top: 42px;
+  width: 212px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  font-size: 17px;
+  color: #FFFFFF;
+  lines: 1;
+}
+</style>
+
+<script>
+export default {
+  props: ['clock', 'title'],
+  data: {}
+}
+</script>

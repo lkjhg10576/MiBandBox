@@ -1,0 +1,92 @@
+<template>
+  <div class="page" style="background-color: {{ color }};">
+    <div class="top">
+      <div class="exit" @click="exit"><text class="f exitT">退出</text></div>
+      <text class="f name" style="color: {{ fg }};">{{ name }}</text>
+      <text class="f hint" style="color: {{ fg }};">{{ hint }}</text>
+    </div>
+    <div class="zone" @click="next">
+      <text class="f arrow" style="color: {{ fg }};">轻触切换</text>
+    </div>
+  </div>
+</template>
+
+<style>
+.page { width: 212px; height: 520px; }
+.top { position: absolute; left: 0px; top: 42px; width: 212px; height: 78px; flex-direction: column; align-items: center; }
+.exit { width: 52px; height: 28px; border-radius: 14px; background-color: rgba(0,0,0,0.35); align-items: center; justify-content: center; }
+.exitT { font-size: 14px; color: #FFFFFF; }
+.name { width: 212px; height: 28px; line-height: 28px; text-align: center; font-size: 17px; }
+.hint { width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; opacity: 0.7; }
+.zone { position: absolute; left: 0px; top: 128px; width: 212px; height: 348px; align-items: center; justify-content: center; }
+.arrow { font-size: 15px; opacity: 0.35; }
+</style>
+
+<script>
+import brightness from '@system.brightness'
+import haptic from '../../utils/haptic'
+import router from '../../utils/router'
+
+const MODES = [
+  { name: '红光', color: '#FF0000', fg: '#FFFFFF', hint: '高亮红光，适合夜间' },
+  { name: '暖橙', color: '#FF6A00', fg: '#FFFFFF', hint: '柔和暖光' },
+  { name: '白光', color: '#FFFFFF', fg: '#111111', hint: '最亮白光' },
+  { name: '冷光', color: '#00E5FF', fg: '#111111', hint: '冷色补光' },
+  { name: '关闭', color: '#000000', fg: '#FFFFFF', hint: '轻触重新点亮' }
+]
+
+export default {
+  data: {
+    index: 0,
+    color: MODES[0].color,
+    name: MODES[0].name,
+    fg: MODES[0].fg,
+    hint: MODES[0].hint,
+    saved: -1
+  },
+  onShow() {
+    this.apply(0)
+    brightness.getValue({
+      success: (res) => {
+        this.saved = res.value
+      },
+      fail: () => {}
+    })
+    brightness.setValue({ value: 255, success: () => {}, fail: () => {} })
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+  },
+  onHide() {
+    this.restore()
+  },
+  onDestroy() {
+    this.restore()
+  },
+  restore() {
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+    if (this.saved >= 0) {
+      brightness.setValue({ value: this.saved, success: () => {}, fail: () => {} })
+    }
+  },
+  apply(i) {
+    this.index = i % MODES.length
+    const m = MODES[this.index]
+    this.color = m.color
+    this.name = m.name
+    this.fg = m.fg
+    this.hint = m.hint
+    if (m.color === '#000000') {
+      this.restore()
+    } else {
+      brightness.setValue({ value: 255, success: () => {}, fail: () => {} })
+    }
+    haptic.short()
+  },
+  next() {
+    this.apply(this.index + 1)
+  },
+  exit() {
+    haptic.short()
+    router.back()
+  }
+}
+</script>

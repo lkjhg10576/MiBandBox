@@ -1,0 +1,136 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="编辑歌词" clock="{{ clock }}"></pagehead>
+    <div class="save" @click="save"><text class="f saveT">保存</text></div>
+
+    <div class="field {{ active === 'title' ? 'on' : '' }}" @click="openTitle">
+      <text class="f fLabel">标题</text>
+      <text class="f fTitle" if="{{ title }}">{{ title }}</text>
+      <text class="f fPlace" if="{{ !title }}">歌曲名称</text>
+    </div>
+
+    <div class="bodyCard {{ active === 'body' ? 'on' : '' }}" @click="openBody">
+      <text class="f fLabel">歌词正文 · 支持换行</text>
+      <scroll class="bodyScroll" scroll-y="true">
+        <text class="f fBody" if="{{ body }}">{{ body }}</text>
+        <text class="f fPlace" if="{{ !body }}">逐行输入歌词…</text>
+      </scroll>
+    </div>
+
+    <text class="f tip">{{ active === 'title' ? '正在输入标题' : '正在输入歌词' }}</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
+.saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
+.field { position: absolute; left: 3px; top: 80px; width: 206px; height: 62px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
+.field.on { border-color: #0D6EFF; }
+.bodyCard { position: absolute; left: 3px; top: 150px; width: 206px; height: 100px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
+.bodyCard.on { border-color: #0D6EFF; }
+.fLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.fTitle { width: 174px; height: 32px; line-height: 32px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.fPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.bodyScroll { width: 174px; height: 68px; }
+.fBody { width: 174px; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.85); }
+.tip { position: absolute; left: 0px; top: 262px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import docs from '../../../utils/docs'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+import inputResult from '../../../utils/inputResult'
+
+export default {
+  protected: { name: '' },
+  private: {
+    clock: '--:--',
+    title: '',
+    body: '',
+    active: 'title',
+    oldName: '',
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.oldName = this.name || ''
+    inputResult.take((r) => {
+      if (r && r.field === 'lyTitle') this.title = r.value
+      else if (r && r.field === 'lyBody') this.body = r.value
+    })
+    if (this.name) {
+      docs.read('lyrics', this.name, (text) => {
+        const raw = text || ''
+        const pos = raw.indexOf('\n')
+        if (pos >= 0) {
+          this.title = raw.slice(0, pos)
+          this.body = raw.slice(pos + 1)
+        } else {
+          this.title = raw
+          this.body = ''
+        }
+      })
+    }
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  openTitle() {
+    this.active = 'title'
+    router.push('/pages/input', {
+      field: 'lyTitle',
+      inputTitle: '歌词标题',
+      text: this.title,
+      max: 20,
+      multiline: 0,
+      hint: '歌曲名称'
+    })
+  },
+  openBody() {
+    this.active = 'body'
+    router.push('/pages/input', {
+      field: 'lyBody',
+      inputTitle: '歌词正文',
+      text: this.body,
+      max: 5000,
+      multiline: 1,
+      hint: '逐行输入歌词，支持换行'
+    })
+  },
+  save() {
+    let name = docs.safeName(this.title)
+    if (!name) name = docs.safeName((this.body || '').split('\n')[0] || '未命名歌词')
+    if (!name) name = '未命名歌词'
+    const text = name + '\n' + this.body
+    docs.save('lyrics', name, text, (ok) => {
+      if (!ok) {
+        prompt.showToast({ message: '保存失败，请重试', duration: 1500 })
+        return
+      }
+      if (this.oldName && this.oldName !== name) docs.remove('lyrics', this.oldName, () => {})
+      haptic.short()
+      prompt.showToast({ message: '保存成功', duration: 1200 })
+      setTimeout(() => router.replace('/pages/lylist'), 300)
+    })
+  }
+}
+</script>

@@ -1,0 +1,78 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="首页样式" clock="{{ clock }}"></pagehead>
+    <div class="opt optA" style="background-color: {{ current === 'grid' ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="pick('grid')">
+      <div class="optIcon">
+        <div class="miniGrid">
+          <div class="miniCell" for="{{ four }}"></div>
+        </div>
+      </div>
+      <div class="optText">
+        <text class="f oTitle">双栏网格</text>
+        <text class="f oSub">一屏看到更多</text>
+      </div>
+      <text class="f check" if="{{ current === 'grid' }}">✓</text>
+    </div>
+    <div class="opt optB" style="background-color: {{ current === 'list' ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="pick('list')">
+      <div class="optIcon">
+        <div class="miniList">
+          <div class="miniRow" for="{{ three }}"></div>
+        </div>
+      </div>
+      <div class="optText">
+        <text class="f oTitle">单栏列表</text>
+        <text class="f oSub">图标大，带说明</text>
+      </div>
+      <text class="f check" if="{{ current === 'list' }}">✓</text>
+    </div>
+    <text class="f hint">选择后立即生效</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+.page { width: 212px; height: 520px; background-color: #000000; }
+.opt { position: absolute; left: 3px; width: 206px; height: 116px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 12px 16px; }
+.optA { top: 92px; }
+.optB { top: 216px; }
+.opt.on { background-color: rgba(13,110,255,0.22); }
+.optIcon { width: 44px; height: 44px; border-radius: 14px; background-color: #111111; margin-right: 8px; align-items: center; justify-content: center; }
+.miniGrid { width: 38px; height: 38px; flex-direction: row; flex-wrap: wrap; }
+.miniCell { width: 16px; height: 16px; margin: 1px; border-radius: 4px; background-color: #0D6EFF; }
+.miniList { width: 38px; height: 38px; flex-direction: column; justify-content: space-between; }
+.miniRow { width: 38px; height: 9px; border-radius: 4px; background-color: #0D6EFF; }
+.optText { width: 100px; flex-direction: column; }
+.oTitle { width: 100px; height: 26px; line-height: 26px; font-size: 17px; color: #FFFFFF; }
+.oSub { width: 100px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); }
+.check { width: 20px; font-size: 20px; color: #0D6EFF; text-align: center; }
+.hint { position: absolute; left: 0px; top: 420px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+</style>
+
+<script>
+import kv from '../../utils/kv'
+import router from '../../utils/router'
+import time from '../../utils/time'
+
+export default {
+  data: { clock: '--:--', current: 'grid', four: [1, 2, 3, 4], three: [1, 2, 3] },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    kv.init(() => {
+      this.current = kv.get('home', 'grid') === 'list' ? 'list' : 'grid'
+    })
+  },
+  pick(mode) {
+    this.current = mode
+    kv.init(() => {
+      kv.set('home', mode)
+      kv.flush()
+      setTimeout(() => router.back(), 120)
+    })
+  }
+}
+</script>

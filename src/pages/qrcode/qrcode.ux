@@ -1,0 +1,99 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="快捷生码" clock="{{ clock }}"></pagehead>
+    <div class="inputCard" @click="openInput">
+      <text class="f iLabel">文本内容</text>
+      <text class="f iText" if="{{ text }}">{{ text }}</text>
+      <text class="f iPlace" if="{{ !text }}">点击输入文字或网址</text>
+      <text class="f counter">{{ text.length }}/80</text>
+    </div>
+
+    <div class="quick">
+      <div class="chip" for="{{ presets }}" @click="usePreset($item)"><text class="f chipT">{{ $item }}</text></div>
+    </div>
+
+    <div class="go {{ text ? '' : 'off' }}" @click="generate"><text class="f goT">生成二维码</text></div>
+    <text class="f hint">二维码仅在本机生成</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.inputCard { position: absolute; left: 3px; top: 78px; width: 206px; height: 108px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
+.iLabel { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iText { width: 150px; height: 52px; font-size: 17px; line-height: 22px; color: #FFFFFF; }
+.iPlace { width: 150px; height: 52px; line-height: 52px; font-size: 16px; color: rgba(255,255,255,0.35); }
+.counter { position: absolute; right: 14px; top: 84px; font-size: 14px; color: rgba(255,255,255,0.3); }
+.quick { position: absolute; left: 6px; top: 200px; width: 200px; height: 36px; flex-direction: row; justify-content: space-between; }
+.chip { width: 62px; height: 32px; border-radius: 16px; background-color: #1E1E1E; align-items: center; justify-content: center; }
+.chipT { font-size: 14px; color: rgba(255,255,255,0.7); }
+.go { position: absolute; left: 26px; top: 264px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.go.off { background-color: #2A2A2A; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.hint { position: absolute; left: 16px; top: 330px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import router from '../../utils/router'
+import haptic from '../../utils/haptic'
+import prompt from '@system.prompt'
+import inputResult from '../../utils/inputResult'
+
+export default {
+  data: {
+    clock: '--:--',
+    text: '',
+    presets: ['网址', 'WiFi', '名片'],
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    inputResult.take((r) => {
+      if (r && r.field === 'qrText') { this.text = r.value }
+    })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  openInput() {
+    router.push('/pages/input', {
+      field: 'qrText',
+      inputTitle: '二维码',
+      text: this.text,
+      max: 80,
+      multiline: 0,
+      hint: '输入文字、网址或 WiFi 信息'
+    })
+  },
+  usePreset(name) {
+    haptic.short()
+    if (name === '网址') this.text = 'https://iot.mi.com/vela'
+    else if (name === 'WiFi') this.text = 'WIFI:T:WPA;S:BandBox;P:12345678;;'
+    else this.text = 'BandBox · 手腕上的百宝箱'
+  },
+  generate() {
+    if (!this.text) {
+      prompt.showToast({ message: '请先输入内容', duration: 1500 })
+      return
+    }
+    haptic.short()
+    router.push('/pages/qrcode/show', { qr: this.text })
+  }
+}
+</script>

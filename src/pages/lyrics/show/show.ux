@@ -1,0 +1,110 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
+    <div class="contentWrap {{ mode === 'h' ? 'land' : '' }}">
+      <scroll id="lyScroll" class="lyScroll" scroll-y="true">
+        <text class="f lyric {{ mode === 'h' ? 'lyricLand' : '' }}">{{ body || '（空歌词）' }}</text>
+        <div class="pad"></div>
+      </scroll>
+    </div>
+
+    <div class="bar">
+      <div class="btn {{ auto ? 'on' : '' }}" @click="toggleAuto"><text class="f btnT">{{ auto ? '自动滚动中' : '自动滚动' }}</text></div>
+      <div class="btn dark" @click="more"><text class="f btnT">更多</text></div>
+    </div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.contentWrap { position: absolute; left: 0px; top: 80px; width: 212px; height: 336px; }
+.contentWrap.land { left: -154px; top: 154px; width: 520px; height: 212px; transform: rotate(90deg); }
+.lyScroll { width: 100%; height: 100%; padding: 0px 12px; }
+.lyric { width: 188px; font-size: 18px; line-height: 28px; color: rgba(255,255,255,0.9); }
+.lyricLand { width: 492px; font-size: 20px; line-height: 30px; }
+.pad { width: 100%; height: 40px; }
+.bar { position: absolute; left: 18px; top: 420px; width: 176px; height: 44px; flex-direction: row; justify-content: space-between; }
+.btn { width: 84px; height: 44px; border-radius: 22px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.btn.on { background-color: #00A846; }
+.btn.dark { background-color: #262626; }
+.btnT { font-size: 14px; color: #FFFFFF; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import docs from '../../../utils/docs'
+import kv from '../../../utils/kv'
+import haptic from '../../../utils/haptic'
+import brightness from '@system.brightness'
+
+export default {
+  protected: { name: '' },
+  private: { clock: '--:--', title: '歌词', body: '', mode: 'v', auto: false, timer: null, scrollTimer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.title = this.name || '歌词'
+    this.load()
+    kv.init(() => {
+      this.mode = kv.get('lyricsm', 'v') === 'h' ? 'h' : 'v'
+    })
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    this.stopAuto()
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    this.stopAuto()
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  load() {
+    if (!this.name) return
+    docs.read('lyrics', this.name, (text) => {
+      const raw = text || ''
+      const pos = raw.indexOf('\n')
+      if (pos >= 0) {
+        this.title = raw.slice(0, pos) || this.name
+        this.body = raw.slice(pos + 1)
+      } else {
+        this.body = raw
+      }
+    })
+  },
+  toggleAuto() {
+    haptic.short()
+    if (this.auto) {
+      this.stopAuto()
+      return
+    }
+    this.auto = true
+    this.scrollTimer = setInterval(() => {
+      try {
+        this.$element('lyScroll').scrollBy({ top: 3, behavior: 'instant' })
+      } catch (e) {}
+    }, 260)
+  },
+  stopAuto() {
+    this.auto = false
+    if (this.scrollTimer) clearInterval(this.scrollTimer)
+    this.scrollTimer = null
+  },
+  more() {
+    this.stopAuto()
+    router.push('/pages/lyrics/more', { name: this.name })
+  }
+}
+</script>

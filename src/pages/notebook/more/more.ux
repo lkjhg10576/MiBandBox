@@ -1,0 +1,106 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="笔记操作" clock="{{ clock }}"></pagehead>
+    <div class="card" @click="edit"><text class="f cT">继续编辑</text><text class="f arrow">></text></div>
+    <div class="card card2" @click="rename"><text class="f cT">重新命名</text><text class="f arrow">></text></div>
+    <div class="card card3" @click="qr"><text class="f cT">以二维码分享</text><text class="f arrow">></text></div>
+    <div class="card card4" @click="toMarquee"><text class="f cT">推送至跑马灯</text><text class="f arrow">></text></div>
+    <div class="card card5" @click="del"><text class="f cT" style="color: #FF6B6B;">{{ delStep === 0 ? '删除笔记' : '再次点击确认删除' }}</text><text class="f arrow" style="color: #FF6B6B;">></text></div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.card { position: absolute; left: 3px; top: 80px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 18px; }
+.card2 { top: 156px; }
+.card3 { top: 232px; }
+.card4 { top: 308px; }
+.card5 { top: 384px; }
+.cT { font-size: 17px; color: #FFFFFF; }
+.arrow { font-size: 20px; color: rgba(255,255,255,0.4); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import docs from '../../../utils/docs'
+import kv from '../../../utils/kv'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+
+export default {
+  protected: { name: '' },
+  private: { clock: '--:--', delStep: 0, timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.delStep = 0
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  edit() {
+    router.push('/pages/notebook/edit', { name: this.name })
+  },
+  rename() {
+    router.push('/pages/notebook/rename', { docName: this.name })
+  },
+  qr() {
+    docs.read('notes', this.name, (text) => {
+      const body = String(text || '').slice(0, 400)
+      if (!body) {
+        prompt.showToast({ message: '笔记内容为空', duration: 1400 })
+        return
+      }
+      router.push('/pages/qrcode/show', { qr: body })
+    })
+  },
+  toMarquee() {
+    docs.read('notes', this.name, (text) => {
+      const body = String(text || '').replace(/\n/g, ' ').slice(0, 40)
+      if (!body) {
+        prompt.showToast({ message: '笔记内容为空', duration: 1400 })
+        return
+      }
+      kv.init(() => {
+        kv.set('marquee', {
+          text: body,
+          size: 28,
+          speed: 6,
+          color: '#FFFFFF',
+          bg: '#0D6EFF'
+        })
+        router.push('/pages/marqueeSet')
+      })
+    })
+  },
+  del() {
+    if (this.delStep === 0) {
+      this.delStep = 1
+      return
+    }
+    docs.remove('notes', this.name, (ok) => {
+      haptic.long()
+      if (ok) {
+        prompt.showToast({ message: '删除成功', duration: 1200 })
+        setTimeout(() => router.replace('/pages/notebook/list'), 300)
+      } else {
+        prompt.showToast({ message: '删除失败', duration: 1400 })
+      }
+    })
+  }
+}
+</script>

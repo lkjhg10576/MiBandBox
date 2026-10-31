@@ -1,0 +1,116 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="数字滚动" clock="{{ clock }}"></pagehead>
+    <div class="display" @click="toggle">
+      <text class="f num">{{ display }}</text>
+      <text class="f dLabel">轻触{{ running ? '暂停' : '开始' }}</text>
+    </div>
+
+    <text class="f label">滚动间隔</text>
+    <div class="chips">
+      <div class="chip {{ interval === 100 ? 'on' : '' }}" @click="setInterval(100)"><text class="f chipT">100ms</text></div>
+      <div class="chip {{ interval === 250 ? 'on' : '' }}" @click="setInterval(250)"><text class="f chipT">250ms</text></div>
+      <div class="chip {{ interval === 500 ? 'on' : '' }}" @click="setInterval(500)"><text class="f chipT">500ms</text></div>
+      <div class="chip {{ interval === 1000 ? 'on' : '' }}" @click="setInterval(1000)"><text class="f chipT">1s</text></div>
+    </div>
+
+    <div class="go" @click="toggle"><text class="f goT">{{ running ? '暂停' : '开始滚动' }}</text></div>
+    <div class="reset" @click="reset"><text class="f resetT">归零</text></div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.display { position: absolute; left: 3px; top: 80px; width: 206px; height: 150px; border-radius: 26px; background-color: #262626; align-items: center; justify-content: center; flex-direction: column; }
+.num { width: 206px; height: 86px; line-height: 86px; text-align: center; font-size: 62px; color: #0D6EFF; letter-spacing: 2px; }
+.dLabel { font-size: 14px; color: rgba(255,255,255,0.35); }
+.label { position: absolute; left: 12px; top: 250px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.chips { position: absolute; left: 6px; top: 276px; width: 200px; height: 64px; flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
+.chip { width: 96px; height: 28px; margin-bottom: 6px; border-radius: 14px; background-color: #262626; align-items: center; justify-content: center; }
+.chip.on { background-color: rgba(13,110,255,0.35); }
+.chipT { font-size: 14px; color: #FFFFFF; }
+.go { position: absolute; left: 26px; top: 370px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.reset { position: absolute; left: 71px; top: 430px; width: 70px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
+.resetT { font-size: 14px; color: rgba(255,255,255,0.65); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import kv from '../../utils/kv'
+import haptic from '../../utils/haptic'
+
+function pad(n) {
+  let s = String(n)
+  while (s.length < 5) s = '0' + s
+  return s
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    value: 0,
+    display: '00000',
+    interval: 250,
+    running: false,
+    timer: null,
+    clockTimer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.clockTimer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    kv.init(() => {
+      this.interval = kv.get('numInterval', 250)
+    })
+  },
+  onHide() {
+    this.stop()
+  },
+  onDestroy() {
+    this.stop()
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.clockTimer = null
+  },
+  setInterval(v) {
+    this.interval = v
+    kv.set('numInterval', v)
+    if (this.running) {
+      this.stop()
+      this.start()
+    }
+    haptic.short()
+  },
+  toggle() {
+    if (this.running) this.stop()
+    else this.start()
+  },
+  start() {
+    this.running = true
+    haptic.short()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.value = this.value + 1
+      this.display = pad(this.value)
+    }, this.interval)
+  },
+  stop() {
+    this.running = false
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  reset() {
+    haptic.long()
+    this.stop()
+    this.value = 0
+    this.display = '00000'
+  }
+}
+</script>

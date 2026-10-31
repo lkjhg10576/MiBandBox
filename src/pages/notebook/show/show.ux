@@ -1,0 +1,74 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
+    <scroll class="body" scroll-y="true">
+      <text class="f content">{{ content || '（空笔记）' }}</text>
+      <div class="pad"></div>
+    </scroll>
+
+    <div class="bar">
+      <div class="btn" @click="edit"><text class="f btnT">编辑</text></div>
+      <div class="btn dark" @click="more"><text class="f btnT">更多</text></div>
+    </div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 334px; padding: 0px 12px; align-items: flex-start; }
+.content { width: 188px; font-size: 16px; line-height: 25px; color: rgba(255,255,255,0.88); }
+.pad { width: 188px; height: 20px; }
+.bar { position: absolute; left: 18px; top: 420px; width: 176px; height: 44px; flex-direction: row; justify-content: space-between; }
+.btn { width: 84px; height: 44px; border-radius: 22px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.btn.dark { background-color: #262626; }
+.btnT { font-size: 14px; color: #FFFFFF; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import docs from '../../../utils/docs'
+
+export default {
+  protected: { name: '' },
+  private: { clock: '--:--', title: '笔记', content: '', loaded: false, timer: null },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.title = this.name || '笔记'
+    this.load()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  load() {
+    if (!this.name) return
+    docs.read('notes', this.name, (text) => {
+      const raw = text || ''
+      const pos = raw.indexOf('\n')
+      if (pos >= 0 && raw.slice(0, pos) === this.name) this.content = raw.slice(pos + 1)
+      else this.content = raw
+      this.loaded = true
+    })
+  },
+  edit() {
+    router.push('/pages/notebook/edit', { name: this.name })
+  },
+  more() {
+    router.push('/pages/notebook/more', { name: this.name })
+  }
+}
+</script>
