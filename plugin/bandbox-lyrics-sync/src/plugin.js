@@ -243,6 +243,26 @@ function doPickFile() {
 
   state.fileName = picked.name || ''
   state.title = parsed.title || lrc.titleFromFileName(picked.name) || '未命名'
+
+  // 单行超预算的文件手环端切不开（会破坏「不切断一行」约定），解析期直接拒绝
+  const check = protocol.checkTransferable(state.title, parsed.lines)
+  if (!check.ok) {
+    state.status = 'failed'
+    state.statusText = '歌词文件异常，未导入'
+    state.lastError =
+      check.reason === 'title-too-long'
+        ? '歌词文件存在异常（标题过长），手环端无法切分，导入失败' +
+          '（' + check.bytes + ' 字节，上限 ' + check.limit + '）'
+        : '歌词文件存在异常（单行过长），手环端无法切分，导入失败' +
+          '（第 ' + (check.lineIndex + 1) + ' 行，' + check.bytes + ' 字节，上限 ' + check.limit + '）'
+    state.lines = []
+    state.title = ''
+    state.previewLines = []
+    // fileName 保留，方便用户知道是哪个文件出的问题
+    repaint()
+    return
+  }
+
   state.lines = parsed.lines
   state.previewLines = parsed.lines.slice(0, 20)
   state.status = 'ready'

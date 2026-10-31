@@ -111,8 +111,25 @@ test('splitChunks() 长文本按行切分且不丢行', () => {
   const text = lines.join('\n')
   const { chunks, total } = T.splitChunks(text, 1024)
   assert.ok(total > 1, '应该被切成多片')
-  for (const c of chunks) assert.ok(c.length <= 1024, '单片不应超过限制: ' + c.length)
+  for (const c of chunks) assert.ok(T.jsonTextCost(c) <= 1024, '单片 JSON 字节成本不应超过限制: ' + T.jsonTextCost(c))
   assert.equal(chunks.join('\n'), text, '重组后应与原文一致')
+})
+
+test('splitChunks() 中文按字节切分（字符数不超限但字节数超限）', () => {
+  const lines = []
+  for (let i = 0; i < 60; i++) lines.push('好'.repeat(10))
+  const text = lines.join('\n')
+  assert.ok(T.byteLength(text) > 1024, '中文 UTF-8 字节数应超过限制')
+  assert.ok(text.length < 1024, '字符数低于限制（旧按字符实现会漏切）')
+  const { chunks, total } = T.splitChunks(text, 1024)
+  assert.ok(total >= 2, '中文应按字节切成多片，实际 ' + total + ' 片')
+  for (const c of chunks) assert.ok(T.jsonTextCost(c) <= 1024, '单片 JSON 字节成本不应超过限制')
+  assert.equal(chunks.join('\n'), text, '重组后应与原文一致')
+})
+
+test('splitChunks() 保留前导空行', () => {
+  const { chunks } = T.splitChunks('\nabc\ndef')
+  assert.equal(chunks.join('\n'), '\nabc\ndef')
 })
 
 test('splitChunks() 单行超长时该行独占一片', () => {

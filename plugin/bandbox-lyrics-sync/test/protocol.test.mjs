@@ -1,7 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  APP_ID, VERSION, ERRORS, encode, decode, splitChunks, needsChunk,
+  APP_ID, VERSION, CHUNK_LIMIT, ENVELOPE_RESERVE, ERRORS, encode, decode,
+  jsonTextCost, chunkBudget, splitChunks, checkTransferable, needsChunk,
   byteLength, makeId, planSend, chunkMessage, hello, describeReply, message
 } from '../src/protocol.js'
 
@@ -45,7 +46,56 @@ test('splitChunks 按行切分且可无损重组', () => {
   const body = lines.join('\n')
   const { chunks, total } = splitChunks(body, 256)
   assert.ok(total > 1)
+  for (const c of chunks) {
+    assert.ok(jsonTextCost(c) <= 256, '单片 JSON 字节成本不应超过限制: ' + jsonTextCost(c))
+  }
   assert.equal(chunks.join('\n'), body)
+})
+
+test('splitChunks 按 UTF-8 字节切分（中文）', () => {
+  const lines = []
+  for (let i = 0; i < 400; i++) {
+    lines.push('第' + i + '行：明月几时有，把酒问青天，不知天上宫阙。')
+  }
+  const body = lines.join('\n')
+  assert.ok(byteLength(body) > CHUNK_LIMIT, '中文正文 UTF-8 字节应超过 12 KB 才会触发分片')
+  const { chunks, total } = splitChunks(body)
+  assert.ok(total >= 2, '中文长歌词应被切成多片，实际 ' + total + ' 片')
+  for (const c of chunks) {
+    assert.ok(jsonTextCost(c) <= CHUNK_LIMIT, '单片 JSON 字节成本不应超过 12 KB: ' + jsonTextCost(c))
+  }
+  assert.equal(chunks.join('\n'), body)
+})
+
+test('splitChunks 保留前导空行', () => {
+  const { chunks } = splitChunks('\nabc\ndef')
+  assert.equal(chunks.join('\n'), '\nabc\ndef')
+})
+
+test('splitChunks 空文本仍产生一片', () => {
+  const { chunks, total } = splitChunks('')
+  assert.equal(total, 1)
+  assert.equal(chunks[0], '')
+})
+
+test('splitChunks 单行超长时该行独占一片（插件端由 checkTransferable 先行拒绝）', () => {
+  const long = '长'.repeat(30000)
+  const { chunks, total } = splitChunks(long, 1024)
+  assert.equal(total, 1)
+  assert.equal(chunks[0], long)
+})
+
+test('chunkBudget 与 jsonTextCost 口径一致', () => {
+  assert.equal(chunkBudget(''), CHUNK_LIMIT - ENVELOPE_RESERVE)
+  assert.equal(chunkBudget('abc'), CHUNK_LIMIT - ENVELOPE_RESERVE - 3)
+  assert.equal(chunkBudget('标题'), CHUNK_LIMIT - ENVELOPE_RESERVE - 6)
+  assert.equal(jsonTextCost(''), 0)
+  assert.equal(jsonTextCost('abc'), 3)
+  assert.equal(jsonTextCost('中'), 3)
+  assert.equal(jsonTextCost('😀'), 4)
+  assert.equal(jsonTextCost('"'), 2) // 转义成 \" 占 2 字节
+  assert.equal(jsonTextCost('\n'), 2) // 转义成 \n 占 2 字节
+  assert.equal(jsonTextCost('\\'), 2)
 })
 
 test('splitChunks 短文本单片', () => {
@@ -86,6 +136,45 @@ test('planSend 长歌词走分片', () => {
   assert.ok(p.total > 1)
   const rejoined = p.chunks.join('\n')
   assert.equal(rejoined, lines.join('\n'))
+})
+
+test('planSend 每片上线消息不超 CHUNK_LIMIT（核心断言）', () => {
+  const lines = []
+  for (let i = 0; i < 2000; i++) lines.push('第' + i + '行歌词内容，验证按字节切分。')
+  const title = '长歌'
+  const p = planSend(title, lines, 'id-byte')
+  assert.equal(p.mode, 'chunk')
+  for (let i = 0; i < p.chunks.length; i++) {
+    const json = chunkMessage(p.id, i, p.total, title, p.chunks[i])
+    assert.ok(
+      byteLength(json) <= CHUNK_LIMIT,
+      '上线消息应 ≤ ' + CHUNK_LIMIT + ' 字节，实际 ' + byteLength(json)
+    )
+  }
+  assert.equal(p.chunks.join('\n'), lines.join('\n'))
+})
+
+test('checkTransferable 拒绝超长单行', () => {
+  const lines = ['第一行', '长'.repeat(30000), '第三行']
+  const r = checkTransferable('歌', lines)
+  assert.equal(r.ok, false)
+  assert.equal(r.reason, 'line-too-long')
+  assert.equal(r.lineIndex, 1)
+  assert.ok(r.bytes > r.limit)
+})
+
+test('checkTransferable 拒绝超长标题', () => {
+  const r = checkTransferable('标'.repeat(6000), ['a'])
+  assert.equal(r.ok, false)
+  assert.equal(r.reason, 'title-too-long')
+  assert.ok(r.bytes > r.limit)
+})
+
+test('checkTransferable 接受普通中文长歌词', () => {
+  const lines = []
+  for (let i = 0; i < 400; i++) lines.push('第' + i + '行：明月几时有，把酒问青天。')
+  const r = checkTransferable('水调歌头', lines)
+  assert.deepEqual(r, { ok: true })
 })
 
 test('chunkMessage 字段正确', () => {

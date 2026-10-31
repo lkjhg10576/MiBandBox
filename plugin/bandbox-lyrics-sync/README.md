@@ -40,7 +40,7 @@ bandbox-lyrics-sync/
 npm install          # 装 componentize-qjs（预编译二进制，约 56 MB，无需 Rust）
 npm run wit          # 拉取 AstroBox 插件 WIT 到 wit/
 npm run gbk          # 重新生成 src/gbk-table.js（仅修改生成逻辑时需要）
-npm test             # 50 项单测
+npm test             # 59 项单测
 npm run package      # 产出 dist/plugin.wasm + dist/BandBox歌词同步.abp
 ```
 
@@ -132,8 +132,12 @@ export const event = {
 | 手环→手机 | `ready` | 手环进入接收页时主动上报 |
 | 手环→手机 | `progress` | `{id, received, total}` 分片进度 |
 
-单条 JSON 超过 **12 KB** 就按行切块（不切断一行），逐片顺序发送；
+单条 JSON 超过 **12 KB**（按 UTF-8 字节计）就按行切块（不切断一行），逐片顺序发送；
 手环端全部收齐后一次性落盘为「首行标题 + 其余正文」。
+
+分片按 **UTF-8 字节**计量（中文 3 字节/字，并计入 JSON 转义开销），单片正文预算 =
+12 KB − 外层消息预留 256 B − 标题字节；单行正文超预算的文件（手环端切不开、
+会破坏「不切断一行」约定）会在插件解析阶段被直接拒绝导入。
 
 错误原因：`bad-json` / `not-armed` / `write-failed` / `bad-seq` / `version` / `bad-app` / `bad-type` / `empty`。
 
@@ -168,6 +172,8 @@ export const event = {
 - [ ] 断连蓝牙 → 插件给出明确错误；重连后重发成功
 - [ ] 中文 GBK 编码的 LRC 正常显示
 - [ ] > 12 KB 的长歌词走分片，最终完整落盘
+- [ ] 含超长单行的 LRC 被拒绝导入，提示「歌词文件存在异常（单行过长）…导入失败」，
+      且不出现「发送到手环」按钮
 - [ ] 多设备同时连接时，插件能选择目标手环
 
 ## 排障

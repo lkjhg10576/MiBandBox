@@ -8,7 +8,7 @@
       <div class="inner" style="height: 640px;">
       <img class="logo" src="/common/icon.png" />
       <text class="f name">BandBox</text>
-      <text class="f ver">v1.1.0</text>
+      <text class="f ver">v0.2.0</text>
       <text class="f desc">为小米手环窄长屏设计的小工具箱，包含 27 个本地小工具：计算、记录、查询与趣味功能。</text>
       <div class="card">
         <text class="f cTitle">设计原则</text>

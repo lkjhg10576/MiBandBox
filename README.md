@@ -3,7 +3,7 @@
 BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 27 个应用、50 个页面。
 
 - 包名：`com.miband.box`
-- 版本：1.1.0
+- 版本：0.2.0
 - 技术栈：Vela JS 快应用（`.ux`）
 - 屏幕：212 × 520 跑道屏；模拟器应用区 212 × 466，真机可绘制到约 500（底部为药丸收窄区）
 - 体积：约 810 KB（含中文字体子集）
@@ -59,7 +59,8 @@ BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地�
 协议是本仓库自定义的 `bandbox-lyrics`（JSON 字符串，`app`/`v`/`type` 三个公共字段），
 手环端实现见 `src/utils/lyricsTransfer.js`，插件端实现见 `plugin/bandbox-lyrics-sync/src/protocol.js`，
 两端各有一套单测。传输通道只有 BLE `interconnect` 一条（`system.interconnect`），
-没有局域网 HTTP 兜底。
+没有局域网 HTTP 兜底。长歌词分片按 UTF-8 字节计量（中文 3 字节/字），
+单片正文预算 = 12 KB − 256 B 外层预留 − 标题字节；含超长单行的文件会在插件端被拒绝导入。
 
 ## 构建
 

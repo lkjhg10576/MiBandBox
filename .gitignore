@@ -13,3 +13,8 @@ docs/
 plugin/*/wit/
 plugin/*/node_modules/
 plugin/*/dist/
+
+# 本地工具 / Agent 运行状态，不入库
+.mimosa/
+.v2c/
+plugin/*/.mimosa/

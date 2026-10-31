@@ -13,8 +13,11 @@
 const APP_ID = 'bandbox-lyrics'
 const VERSION = 1
 
-/** 单条 JSON 消息的分片阈值（字节）。超过则按行切块。 */
+/** 单条 JSON 消息的分片阈值（字节，按上线消息的 UTF-8 字节数计）。超过则按行切块。 */
 const CHUNK_LIMIT = 12 * 1024
+
+/** 分片消息外层（app/v/type/id/seq/total/title）的字节预留（与插件端一致）。 */
+const ENVELOPE_RESERVE = 256
 
 const ERRORS = {
   BAD_JSON: 'bad-json',
@@ -76,28 +79,58 @@ function parse(raw) {
 }
 
 /**
- * 把歌词文本切成若干片，保证不切断一行。
+ * UTF-8 字节长度（与插件端 protocol.js 同款实现）。
+ */
+function byteLength(str) {
+  if (typeof TextEncoder !== 'undefined') {
+    return new TextEncoder().encode(str).length
+  }
+  // 兜底：手动按 UTF-8 计算
+  let len = 0
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i)
+    if (c < 0x80) len += 1
+    else if (c < 0x800) len += 2
+    else if (c >= 0xd800 && c <= 0xdbff) {
+      len += 4
+      i++
+    } else len += 3
+  }
+  return len
+}
+
+/**
+ * 一段文本放进 JSON 字符串后所占的字节数（不含两端引号）。
+ * 用 JSON.stringify 量，转义开销（\" \\ \n \r 等）自动计入。
+ */
+function jsonTextCost(text) {
+  return byteLength(JSON.stringify(String(text == null ? '' : text))) - 2
+}
+
+/**
+ * 把歌词文本切成若干片，按 **JSON 字节**计量（UTF-8 + 转义开销），保证不切断一行。
+ * 与插件端 protocol.js 的 splitChunks 逐字一致（协议规格副本，手环端运行时不发送）。
  * 返回 { chunks: string[], total: number }，chunks 是每片的文本片段。
  */
 function splitChunks(text, limit) {
   const max = limit > 0 ? limit : CHUNK_LIMIT
   const lines = String(text == null ? '' : text).split('\n')
   const chunks = []
-  let cur = ''
+  let buf = [] // 当前片的行数组（不用空串当哨兵，避免前导空行被吞）
+  let cost = 0 // 当前片累计 JSON 字节
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    // 加上换行符后的长度
-    const add = cur === '' ? line.length : line.length + 1
-    if (cur !== '' && cur.length + add > max) {
-      chunks.push(cur)
-      cur = line
-    } else {
-      cur = cur === '' ? line : cur + '\n' + line
+    const lc = jsonTextCost(lines[i])
+    // 行间换行在 JSON 里转义成 \n，占 2 字节
+    if (buf.length && cost + 2 + lc > max) {
+      chunks.push(buf.join('\n'))
+      buf = []
+      cost = 0
     }
+    if (buf.length) cost += 2
+    cost += lc
+    buf.push(lines[i])
   }
-  if (cur !== '' || chunks.length === 0) {
-    chunks.push(cur)
-  }
+  chunks.push(buf.join('\n'))
   return { chunks, total: chunks.length }
 }
 
@@ -221,9 +254,12 @@ export default {
   APP_ID,
   VERSION,
   CHUNK_LIMIT,
+  ENVELOPE_RESERVE,
   ERRORS,
   message,
   parse,
+  byteLength,
+  jsonTextCost,
   splitChunks,
   buildText,
   toLyricsPayload,

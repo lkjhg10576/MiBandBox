@@ -11,8 +11,11 @@ export const VERSION = 1
 /** 目标快应用包名（手环端 BandBox）。 */
 export const TARGET_PKG = 'com.miband.box'
 
-/** 单条 JSON 超过该字节数就分片。 */
+/** 单条 JSON 超过该字节数就分片（按上线消息的 UTF-8 字节数计）。 */
 export const CHUNK_LIMIT = 12 * 1024
+
+/** 分片消息外层（app/v/type/id/seq/total/title）的字节预留。 */
+export const ENVELOPE_RESERVE = 256
 
 export const ERRORS = {
   BAD_JSON: 'bad-json',
@@ -87,28 +90,69 @@ export function decode(raw) {
 }
 
 /**
- * 把歌词行切成若干片，不切断一行。
+ * 一段文本放进 JSON 字符串后所占的字节数（不含两端引号）。
+ * 用 JSON.stringify 量，转义开销（\" \\ \n \r 等）自动计入。
+ */
+export function jsonTextCost(text) {
+  return byteLength(JSON.stringify(String(text == null ? '' : text))) - 2
+}
+
+/**
+ * 单片正文可用的字节预算 = 12 KB - 外层预留 - 标题字节。
+ * 解析期校验与发送期切分必须用同一个函数，保证「校验通过 = 一定切得开」。
+ */
+export function chunkBudget(title) {
+  return CHUNK_LIMIT - ENVELOPE_RESERVE - byteLength(String(title == null ? '' : title))
+}
+
+/**
+ * 把歌词行切成若干片，按 **JSON 字节**计量（UTF-8 + 转义开销），不切断一行。
  * 返回 { chunks: string[], total: number }。
  */
 export function splitChunks(text, limit) {
   const max = limit > 0 ? limit : CHUNK_LIMIT
   const lines = String(text == null ? '' : text).split('\n')
   const chunks = []
-  let cur = ''
+  let buf = [] // 当前片的行数组（不用空串当哨兵，避免前导空行被吞）
+  let cost = 0 // 当前片累计 JSON 字节
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-    const add = cur === '' ? line.length : line.length + 1
-    if (cur !== '' && cur.length + add > max) {
-      chunks.push(cur)
-      cur = line
-    } else {
-      cur = cur === '' ? line : cur + '\n' + line
+    const lc = jsonTextCost(lines[i])
+    // 行间换行在 JSON 里转义成 \n，占 2 字节
+    if (buf.length && cost + 2 + lc > max) {
+      chunks.push(buf.join('\n'))
+      buf = []
+      cost = 0
+    }
+    if (buf.length) cost += 2
+    cost += lc
+    buf.push(lines[i])
+  }
+  chunks.push(buf.join('\n'))
+  return { chunks, total: chunks.length }
+}
+
+/**
+ * 校验一份歌词是否可以整份传输。
+ * 单行正文超预算（切不开、会破坏「不切断一行」约定）或标题超长时返回失败，
+ * 插件端据此在解析期拒绝导入。
+ * 返回 { ok: true } 或 { ok: false, reason, lineIndex?, bytes?, limit? }。
+ */
+export function checkTransferable(title, lines) {
+  const t = String(title == null ? '' : title)
+  const titleLimit = CHUNK_LIMIT - ENVELOPE_RESERVE
+  const tBytes = byteLength(t)
+  if (tBytes > titleLimit) {
+    return { ok: false, reason: 'title-too-long', bytes: tBytes, limit: titleLimit }
+  }
+  const budget = chunkBudget(t)
+  const arr = Array.isArray(lines) ? lines : []
+  for (let i = 0; i < arr.length; i++) {
+    const cost = jsonTextCost(arr[i])
+    if (cost > budget) {
+      return { ok: false, reason: 'line-too-long', lineIndex: i, bytes: cost, limit: budget }
     }
   }
-  if (cur !== '' || chunks.length === 0) {
-    chunks.push(cur)
-  }
-  return { chunks, total: chunks.length }
+  return { ok: true }
 }
 
 /**
@@ -170,7 +214,7 @@ export function planSend(title, lines, id) {
   if (!needsChunk(single)) {
     return { mode: 'single', id: msgId, json: single }
   }
-  const { chunks, total } = splitChunks(body)
+  const { chunks, total } = splitChunks(body, chunkBudget(title))
   return { mode: 'chunk', id: msgId, title, chunks, total }
 }
 
@@ -220,12 +264,16 @@ export default {
   VERSION,
   TARGET_PKG,
   CHUNK_LIMIT,
+  ENVELOPE_RESERVE,
   ERRORS,
   ERROR_TEXT,
   message,
   encode,
   decode,
+  jsonTextCost,
+  chunkBudget,
   splitChunks,
+  checkTransferable,
   needsChunk,
   byteLength,
   makeId,
