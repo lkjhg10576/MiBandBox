@@ -1,0 +1,2 @@
+e3f1480c1e301adc6c4c77295da26d6ba0cca1304fe15a6476b911fe6c5ff6b7  com.miband.box.debug.0.2.1.rpk
+c491ee31ca3488a4843cd10536b6ba2252562873fb48cc6ef97edc65da70c371  BandBox歌词同步.abp

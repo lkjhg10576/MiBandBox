@@ -1,6 +1,6 @@
 {
   "name": "bandbox-lyrics-sync",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": true,
   "type": "module",
   "description": "AstroBox 插件：把手机上的 LRC 歌词推送到手环 BandBox 的歌词本",

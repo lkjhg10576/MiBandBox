@@ -18,3 +18,4 @@ plugin/*/dist/
 .mimosa/
 .v2c/
 plugin/*/.mimosa/
+.zcode/
