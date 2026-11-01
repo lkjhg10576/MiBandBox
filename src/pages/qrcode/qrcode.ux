@@ -4,10 +4,9 @@
 <template>
   <div class="page">
     <pagehead title="快捷生码" clock="{{ clock }}"></pagehead>
-    <div class="inputCard" @click="openInput">
+    <div class="inputCard" @click="focusText">
       <text class="f iLabel">文本内容</text>
-      <text class="f iText" if="{{ text }}">{{ text }}</text>
-      <text class="f iPlace" if="{{ !text }}">点击输入文字或网址</text>
+      <input id="qrInput" class="f iText" type="text" value="{{ text }}" maxlength="80" placeholder="点击输入文字或网址" enterkeytype="done" @change="onTextChange" @click="focusText" />
       <text class="f counter">{{ text.length }}/80</text>
     </div>
 
@@ -27,8 +26,7 @@
 .page { width: 212px; height: 520px; background-color: #000000; }
 .inputCard { position: absolute; left: 3px; top: 78px; width: 206px; height: 108px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
 .iLabel { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.iText { width: 150px; height: 52px; font-size: 17px; line-height: 22px; color: #FFFFFF; }
-.iPlace { width: 150px; height: 52px; line-height: 52px; font-size: 16px; color: rgba(255,255,255,0.35); }
+.iText { width: 150px; height: 52px; font-size: 17px; line-height: 22px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.35); }
 .counter { position: absolute; right: 14px; top: 84px; font-size: 14px; color: rgba(255,255,255,0.3); }
 .quick { position: absolute; left: 6px; top: 200px; width: 200px; height: 36px; flex-direction: row; justify-content: space-between; }
 .chip { width: 62px; height: 32px; border-radius: 16px; background-color: #1E1E1E; align-items: center; justify-content: center; }
@@ -44,7 +42,7 @@ import time from '../../utils/time'
 import router from '../../utils/router'
 import haptic from '../../utils/haptic'
 import prompt from '@system.prompt'
-import inputResult from '../../utils/inputResult'
+import textInput from '../../utils/textInput'
 
 export default {
   data: {
@@ -55,9 +53,6 @@ export default {
   },
   onShow() {
     this.clock = time.formatClock(new Date())
-    inputResult.take((r) => {
-      if (r && r.field === 'qrText') { this.text = r.value }
-    })
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => {
       this.clock = time.formatClock(new Date())
@@ -71,15 +66,11 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
-  openInput() {
-    router.push('/pages/input', {
-      field: 'qrText',
-      inputTitle: '二维码',
-      text: this.text,
-      max: 80,
-      multiline: 0,
-      hint: '输入文字、网址或 WiFi 信息'
-    })
+  onTextChange(e) {
+    this.text = textInput.clamp(textInput.eventValue(e), 80, false)
+  },
+  focusText() {
+    textInput.focus(this, 'qrInput')
   },
   usePreset(name) {
     haptic.short()
@@ -92,6 +83,7 @@ export default {
       prompt.showToast({ message: '请先输入内容', duration: 1500 })
       return
     }
+    textInput.blur(this, 'qrInput')
     haptic.short()
     router.push('/pages/qrcode/show', { qr: this.text })
   }

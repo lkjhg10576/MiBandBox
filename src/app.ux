@@ -1,10 +1,7 @@
 <style>
-@font-face {
-  font-family: 'BandBoxSans';
-  src: url('/common/fonts/BandBoxSans.ttf');
-}
+/* 使用系统字体：Band 10/11 的系统字体覆盖完整中文，避免用户输入出现豆腐块。 */
 .f {
-  font-family: 'BandBoxSans';
+  font-family: sans-serif;
 }
 </style>
 <script>

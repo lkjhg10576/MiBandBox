@@ -6,25 +6,36 @@
     <pagehead title="{{ title || '输入' }}" clock="{{ clock }}"></pagehead>
     <div class="done" @click="done"><text class="f doneT">完成</text></div>
 
-    <div class="preview">
-      <text class="f pLabel">{{ hintText }}</text>
-      <scroll class="pScroll" scroll-y="true">
-        <text class="f pText" if="{{ value }}">{{ value }}</text>
-        <text class="f pPlace" if="{{ !value }}">点击下方键盘输入</text>
-      </scroll>
+    <div class="editorCard {{ multi ? 'multiCard' : '' }}">
+      <text class="f eLabel">{{ hintText }}</text>
+      <input
+        if="{{ !multi }}"
+        id="editorInput"
+        class="f editor"
+        type="text"
+        value="{{ value }}"
+        maxlength="{{ limit }}"
+        placeholder="点击输入"
+        enterkeytype="done"
+        @change="onChange"
+        @enterkeyclick="onEnter"
+        @click="focusEditor"
+      />
+      <!-- Vela 运行时 WidgetTextarea 支持 value；编译器 schema 尚未收录，构建时会有一条 warning。 -->
+      <textarea
+        if="{{ multi }}"
+        id="editorArea"
+        class="f editor area"
+        maxlength="{{ limit }}"
+        placeholder="点击输入"
+        value="{{ value }}"
+        @change="onChange"
+        @click="focusEditor"
+      ></textarea>
       <text class="f pCount">{{ value.length }}/{{ limit }}</text>
     </div>
 
-    <div class="tools">
-      <text class="f tool" @click="toggleCase">{{ upper ? 'ABC' : 'abc' }}</text>
-      <text class="f tool" @click="cycleLayer">{{ layerLabel }}</text>
-      <text class="f tool wide" @click="space">空格</text>
-      <text class="f tool delTool" @click="del">←</text>
-    </div>
-
-    <div class="grid">
-      <div class="key" for="{{ keys }}" @click="onKey($item)"><text class="f keyT">{{ $item }}</text></div>
-    </div>
+    <text class="f tip" style="top: {{ multi ? 380 : 210 }}px;">系统输入法 · 支持中英文</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -35,30 +46,22 @@
 .page { width: 212px; height: 520px; background-color: #000000; }
 .done { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
 .doneT { font-size: 14px; color: #FFFFFF; }
-.preview { position: absolute; left: 3px; top: 80px; width: 206px; height: 104px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
-.pLabel { width: 140px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
-.pScroll { width: 174px; height: 60px; }
-.pText { width: 174px; font-size: 18px; line-height: 24px; color: #FFFFFF; }
-.pPlace { width: 174px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.editorCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 112px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.multiCard { height: 286px; }
+.eLabel { width: 140px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.editor { width: 174px; height: 44px; font-size: 18px; line-height: 26px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
+.area { height: 214px; font-size: 16px; line-height: 24px; }
 .pCount { position: absolute; right: 14px; top: 8px; font-size: 14px; color: rgba(255,255,255,0.3); }
-.tools { position: absolute; left: 6px; top: 192px; width: 200px; height: 28px; flex-direction: row; justify-content: space-between; align-items: center; }
-.tool { width: 48px; height: 26px; line-height: 26px; border-radius: 8px; background-color: #333333; color: rgba(255,255,255,0.85); font-size: 14px; text-align: center; }
-.wide { width: 64px; }
-.delTool { width: 32px; }
-.grid { position: absolute; left: 6px; top: 226px; width: 200px; height: 240px; flex-direction: row; flex-wrap: wrap; }
-.key { width: 48px; height: 30px; margin-right: 2px; margin-bottom: 2px; border-radius: 8px; background-color: #333333; align-items: center; justify-content: center; }
-.keyT { font-size: 18px; color: #FFFFFF; }
+.tip { position: absolute; left: 0px; top: 210px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
 </style>
 
 <script>
 import time from '../../utils/time'
 import inputResult from '../../utils/inputResult'
+import textInput from '../../utils/textInput'
 import router from '../../utils/router'
 import haptic from '../../utils/haptic'
-
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')
-const NUMBERS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', ',', '-', '_', ':', '/', '@', '#', '+', '*', '(', ')', '=', '%', '!', '?', ' ', '换行']
-const SYMBOLS = ['.', ',', '?', '!', "'", '"', ':', ';', '/', '@', '#', '$', '%', '&', '*', '+', '-', '=', '(', ')', '[', ']', '{', '}', '<', '>', ' ', '换行']
+import prompt from '@system.prompt'
 
 export default {
   protected: { field: '', inputTitle: '', text: '', max: '80', multiline: '0', hint: '' },
@@ -69,19 +72,20 @@ export default {
     hintText: '输入内容',
     limit: 80,
     multi: false,
-    layer: 0,
-    upper: true,
-    layerLabel: 'ABC',
-    keys: LETTERS.slice(0, 26).concat([' ', '换行']),
-    timer: null
+    saving: false,
+    focusedOnce: false,
+    synced: false,
+    timer: null,
+    focusTimer: null
   },
   onInit() {
     this.title = this.inputTitle || '输入'
-    this.value = this.text || ''
     this.limit = parseInt(this.max, 10) || 80
     this.multi = String(this.multiline) === '1'
+    this.value = textInput.clamp(this.text || '', this.limit, this.multi)
     this.hintText = this.hint || (this.multi ? '支持换行，最多 ' + this.limit + ' 字' : '最多 ' + this.limit + ' 字')
-    this.refresh()
+    // 清掉上一次可能残留的结果，取消输入时调用方不会读到旧值。
+    inputResult.clear()
   },
   onShow() {
     this.clock = time.formatClock(new Date())
@@ -89,58 +93,65 @@ export default {
     this.timer = setInterval(() => {
       this.clock = time.formatClock(new Date())
     }, 20000)
+    if (!this.focusedOnce) {
+      this.focusedOnce = true
+      this.focusTimer = setTimeout(() => {
+        this.syncEditor()
+        this.focusEditor()
+      }, 250)
+    }
   },
   onHide() {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
+    if (this.focusTimer) clearTimeout(this.focusTimer)
+    this.focusTimer = null
   },
   onDestroy() {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
+    if (this.focusTimer) clearTimeout(this.focusTimer)
+    this.focusTimer = null
   },
-  refresh() {
-    if (this.layer === 0) {
-      const letters = this.upper ? LETTERS : LETTERS.map((c) => c.toLowerCase())
-      this.keys = letters.concat([' ', '换行'])
-      this.layerLabel = this.upper ? 'ABC' : 'abc'
-    } else if (this.layer === 1) {
-      this.keys = NUMBERS
-      this.layerLabel = '123'
-    } else {
-      this.keys = SYMBOLS
-      this.layerLabel = '#+='
-    }
+  editorId() {
+    return this.multi ? 'editorArea' : 'editorInput'
   },
-  toggleCase() {
-    this.upper = !this.upper
-    this.refresh()
-    haptic.short()
+  syncEditor() {
+    if (!this.multi || this.synced) return
+    try {
+      const el = this.$element('editorArea')
+      if (!el) return
+      this.synced = true
+      if (el.value !== undefined && el.value !== this.value) el.value = this.value
+    } catch (e) {}
   },
-  cycleLayer() {
-    this.layer = (this.layer + 1) % 3
-    this.refresh()
-    haptic.short()
+  focusEditor() {
+    this.syncEditor()
+    textInput.focus(this, this.editorId())
   },
-  onKey(ch) {
-    haptic.short()
-    if (ch === ' ') this.space()
-    else if (ch === '换行') this.append('\n')
-    else this.append(ch)
+  blurEditor() {
+    textInput.blur(this, this.editorId())
   },
-  append(ch) {
-    if (this.value.length >= this.limit) return
-    if (!this.multi && ch === '\n') ch = ' '
-    this.value = this.value + ch
+  onChange(e) {
+    this.value = textInput.clamp(textInput.eventValue(e), this.limit, this.multi)
   },
-  space() {
-    this.append(' ')
-  },
-  del() {
-    haptic.short()
-    this.value = this.value.slice(0, -1)
+  onEnter(e) {
+    if (this.multi) return
+    const value = textInput.eventValue(e)
+    if (value) this.value = textInput.clamp(value, this.limit, false)
+    this.done()
   },
   done() {
-    inputResult.save(this.field, this.value, () => {
+    if (this.saving) return
+    this.saving = true
+    const value = textInput.clamp(this.value, this.limit, this.multi)
+    this.blurEditor()
+    inputResult.save(this.field, value, (ok) => {
+      if (!ok) {
+        this.saving = false
+        prompt.showToast({ message: '保存失败，请重试', duration: 1500 })
+        return
+      }
       haptic.short()
       router.back()
     })

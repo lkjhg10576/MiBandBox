@@ -6,10 +6,9 @@
     <pagehead title="编辑笔记" clock="{{ clock }}"></pagehead>
     <div class="save" @click="save"><text class="f saveT">保存</text></div>
 
-    <div class="field {{ active === 'title' ? 'on' : '' }}" @click="openTitle">
+    <div class="field {{ active === 'title' ? 'on' : '' }}" @click="focusTitle">
       <text class="f fLabel">标题</text>
-      <text class="f fTitle" if="{{ title }}">{{ title }}</text>
-      <text class="f fPlace" if="{{ !title }}">给笔记起个名字</text>
+      <input id="nbTitleInput" class="f fTitle" type="text" value="{{ title }}" maxlength="20" placeholder="给笔记起个名字" enterkeytype="done" @change="onTitleChange" @click="focusTitle" />
     </div>
 
     <div class="bodyCard {{ active === 'body' ? 'on' : '' }}" @click="openBody">
@@ -20,7 +19,7 @@
       </scroll>
     </div>
 
-    <text class="f tip">{{ active === 'title' ? '正在输入标题' : '正在输入正文' }} · 支持换行</text>
+    <text class="f tip">系统输入法 · 支持中英文</text>
 
     <backbtn></backbtn>
   </div>
@@ -36,7 +35,7 @@
 .bodyCard { position: absolute; left: 3px; top: 150px; width: 206px; height: 96px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
 .bodyCard.on { border-color: #0D6EFF; }
 .fLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.45); }
-.fTitle { width: 174px; height: 32px; line-height: 32px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.fTitle { width: 174px; height: 32px; font-size: 17px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
 .fPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); }
 .bodyScroll { width: 174px; height: 64px; }
 .fBody { width: 174px; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.85); }
@@ -50,6 +49,7 @@ import docs from '../../../utils/docs'
 import haptic from '../../../utils/haptic'
 import prompt from '@system.prompt'
 import inputResult from '../../../utils/inputResult'
+import textInput from '../../../utils/textInput'
 
 export default {
   protected: { name: '' },
@@ -59,16 +59,17 @@ export default {
     body: '',
     active: 'title',
     oldName: '',
+    loaded: false,
     timer: null
   },
   onShow() {
     this.clock = time.formatClock(new Date())
     this.oldName = this.name || ''
     inputResult.take((r) => {
-      if (r && r.field === 'nbTitle') this.title = r.value
-      else if (r && r.field === 'nbBody') this.body = r.value
+      if (r && r.field === 'nbBody') this.body = r.value
     })
-    if (this.name) {
+    if (this.name && !this.loaded) {
+      this.loaded = true
       docs.read('notes', this.name, (text) => {
         const raw = text || ''
         const pos = raw.indexOf('\n')
@@ -94,19 +95,16 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
-  openTitle() {
+  onTitleChange(e) {
+    this.title = textInput.clamp(textInput.eventValue(e), 20, false)
+  },
+  focusTitle() {
     this.active = 'title'
-    router.push('/pages/input', {
-      field: 'nbTitle',
-      inputTitle: '笔记标题',
-      text: this.title,
-      max: 20,
-      multiline: 0,
-      hint: '给笔记起个名字'
-    })
+    textInput.focus(this, 'nbTitleInput')
   },
   openBody() {
     this.active = 'body'
+    textInput.blur(this, 'nbTitleInput')
     router.push('/pages/input', {
       field: 'nbBody',
       inputTitle: '笔记正文',
@@ -117,6 +115,7 @@ export default {
     })
   },
   save() {
+    textInput.blur(this, 'nbTitleInput')
     let name = docs.safeName(this.title)
     if (!name) {
       const firstLine = (this.body || '').split('\n')[0]

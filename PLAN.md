@@ -18,7 +18,7 @@
 - **JS 快应用**（与原件一致，生态/API 最匹配）
 - `deviceTypeList: ["watch"]`，`config.designWidth: 212`，`display.backgroundColor: "#000000"`
 - 纯 JS，无构建依赖；数据本地化，**零联网必需**（联网功能作为可选）
-- 目标机型：小米手环 8 Pro / 9 / 9 Pro / 10 Pro、Redmi Watch 4~8、Xiaomi Watch S 系列（466 圆屏与小方屏都要能跑）
+- 目标机型：当前以小米手环 10 / 11（212×520 跑道屏）为准；系统输入法依赖真机固件，其他机型需单独验证
 
 ---
 
@@ -32,17 +32,15 @@ src/
 │   ├── icon.png               # 应用图标（自绘）
 │   └── images/                # 自绘资源（shadow/more/enter/plus/check/... + icons/）
 ├── components/
-│   ├── PageShell.ux           # 页面骨架：时间 + 标题 + 顶部遮罩 + 底部圆钮
-│   ├── ListRow.ux             # 卡片行（主/副文本 + 右箭头/开关/数值）
-│   ├── CardStack.ux           # 4 张扇形旋转卡片装饰
-│   ├── Keyboard.ux            # 自研输入法（英文 + 数字 + 符号，可选拼音）
-│   ├── Toast.ux               # 轻提示
-│   └── Ring.ux                # 圆环进度（存储/水平仪/性能共用）
+│   ├── BackBtn.ux             # 统一返回按钮
+│   ├── Ring.ux                # 圆环进度（存储/水平仪/性能共用）
+│   └── PageHead.ux            # 时间 + 标题 + 顶部遮罩
 ├── utils/
 │   ├── kv.js                  # KV 存储（savedFile JSON 读写，防抖落盘）
 │   ├── fs.js                  # 文件读写/列目录/删除封装
 │   ├── time.js                # 时钟源、格式化、天数差、闰年
 │   ├── haptic.js              # 振动封装（短/长/节奏）
+│   ├── textInput.js           # 原生 input/textarea 取值、换行、长度规则
 │   └── router.js              # 路由封装（push/back/param 传递）
 ├── data/                      # 全部自建数据集
 │   ├── quotes.js  food.js  history.js  waste.js  answers.js
@@ -69,7 +67,7 @@ src/
 
 ### M2 输入类（5 页，2 天）
 `marquee` → `marqueeSet` → `textShow`；`num`；`qrcode` → `show`；`morseCode`；`diet`；`answer` → `a1`；`sentence`；`history`；`wasteSorting`
-（依赖 `Keyboard.ux` 与数据表；`qrcode` 依赖自研二维码编码器）
+（依赖系统输入法与原生 `input`/`textarea`；`qrcode` 依赖自研二维码编码器）
 
 ### M3 内容管理（4 组页面，3 天）
 - 笔记本：`notebook/{list,show,edit,rename,more}`
@@ -103,11 +101,11 @@ src/
 `PageShell` 统一时间刷新（`setInterval` 每 10s 对齐分钟）+ 顶部 `shadow.png` 遮罩 + 标题。
 卡片统一 `206×≥72 / radius 27 / #262626 / padding 12.5px 16.5px / margin-bottom 8px`。
 
-### 5.2 输入法（自研 `Keyboard.ux`）
-- v1：3 层（字母 / 数字 / 符号）+ 退格 + 确认，8×3 或 3×4 网格，按键 34×34，圆屏按弧形收边
-- 事件：`complete(char)` / `delete` / `change`（层切换）/ `visibilityChange`
-- 长文本页（笔记/歌词）用「输入条 + 键盘」组合，遮住下半屏
-- v2（可选）：拼音首字母候选（自建 500 高频字表），不做完整词库（体积/内存考虑）
+### 5.2 输入法（系统输入法）
+- 使用 Vela 原生 `<input type="text">` / `<textarea>`，获得焦点时由系统输入法接管，支持中英文
+- 短字段（标题、名称、跑马灯、二维码、摩斯、垃圾分类）在页面内直接输入；长文本（笔记/歌词正文）走 `pages/input` 原生 textarea
+- `utils/textInput.js` 统一取值（`value`/`text`）、换行归一、长度裁剪、摩斯字符过滤
+- 不再内置英文键盘和字体子集；字体使用系统字体，避免用户输入出现豆腐块
 
 ### 5.3 二维码（纯 JS，自研）
 `utils/qr.js`：字节模式、版本 1~10 自动选择、纠错等级 M、掩码择优（8 种惩罚评分）。
@@ -161,11 +159,12 @@ src/
 ## 6. 验收清单
 
 **功能**：26 个应用全部可进入、可返回、可持久化；无死路页面；无激活/付费入口。
+**手势**：页面无横向溢出（`.page` 全局 `overflow: hidden` 兜底 + 逐页消除超宽行），右滑返回不被横向拖动抢占；计算器表达式框、跑马灯、密码滑块、歌词横屏等「设计内横向滚动」除外。
 **视觉**：212×520 基准下与设计规范一致；圆屏（466）四角不裁切关键内容；
 标题/时间/遮罩位置统一；卡片 27px 圆角。
 **稳定性**：页面销毁清定时器与订阅（`onDestroy`）；连续切换 30 次无泄漏；
 文件读写失败有 Toast + 默认值降级。
-**体积**：rpk < 1.5 MB（不含大字典）；冷启动 < 800ms。
+**体积**：rpk < 1.5 MB（系统字体，无内置字库）；冷启动 < 800ms。
 **合规**：无联网必需、无第三方 App 依赖、无原始素材、无原商标。
 
 ---

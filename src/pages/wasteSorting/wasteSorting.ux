@@ -4,10 +4,9 @@
 <template>
   <div class="page">
     <pagehead title="垃圾分类" clock="{{ clock }}"></pagehead>
-    <div class="inputCard" @click="openInput">
+    <div class="inputCard" @click="focusQuery">
       <text class="f iLabel">物品名称</text>
-      <text class="f iText" if="{{ query }}">{{ query }}</text>
-      <text class="f iPlace" if="{{ !query }}">点击输入，例如：塑料瓶</text>
+      <input id="wasteInput" class="f iText" type="text" value="{{ query }}" maxlength="16" placeholder="点击输入，例如：塑料瓶" enterkeytype="search" @change="onQueryChange" @click="focusQuery" />
     </div>
 
     <div class="chips">
@@ -32,11 +31,10 @@
 .page { width: 212px; height: 520px; background-color: #000000; }
 .inputCard { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
 .iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.iText { width: 174px; height: 36px; line-height: 36px; font-size: 20px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.iPlace { width: 174px; height: 36px; line-height: 36px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.iText { width: 174px; height: 36px; font-size: 20px; line-height: 36px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
 .chips { position: absolute; left: 6px; top: 170px; width: 200px; height: 32px; flex-direction: row; justify-content: space-between; }
-.chip { width: 62px; height: 30px; border-radius: 15px; background-color: #1E1E1E; align-items: center; justify-content: center; }
-.chipT { font-size: 14px; color: rgba(255,255,255,0.7); }
+.chip { width: 46px; height: 30px; border-radius: 15px; background-color: #1E1E1E; align-items: center; justify-content: center; }
+.chipT { font-size: 13px; color: rgba(255,255,255,0.7); }
 .result { position: absolute; left: 3px; top: 214px; width: 206px; height: 180px; border-radius: 26px; padding: 14px 18px; flex-direction: column; }
 .rCat { width: 170px; height: 40px; line-height: 40px; font-size: 17px; }
 .rItem { width: 170px; height: 28px; line-height: 28px; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
@@ -50,8 +48,7 @@
 import time from '../../utils/time'
 import waste from '../../data/waste'
 import haptic from '../../utils/haptic'
-import router from '../../utils/router'
-import inputResult from '../../utils/inputResult'
+import textInput from '../../utils/textInput'
 
 export default {
   data: {
@@ -66,9 +63,6 @@ export default {
   },
   onShow() {
     this.clock = time.formatClock(new Date())
-    inputResult.take((r) => {
-      if (r && r.field === 'wasteQuery') { this.query = r.value; this.live() }
-    })
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => {
       this.clock = time.formatClock(new Date())
@@ -82,15 +76,12 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
-  openInput() {
-    router.push('/pages/input', {
-      field: 'wasteQuery',
-      inputTitle: '垃圾分类',
-      text: this.query,
-      max: 16,
-      multiline: 0,
-      hint: '输入物品名称'
-    })
+  onQueryChange(e) {
+    this.query = textInput.clamp(textInput.eventValue(e), 16, false)
+    this.live()
+  },
+  focusQuery() {
+    textInput.focus(this, 'wasteInput')
   },
   pick(word) {
     this.query = word
@@ -109,6 +100,7 @@ export default {
   },
   doQuery() {
     if (!this.query) return
+    textInput.blur(this, 'wasteInput')
     const r = waste.classify(this.query)
     if (r) this.show(r)
     else {

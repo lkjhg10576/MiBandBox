@@ -19,6 +19,7 @@ import os
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "emugrpc"))
 
@@ -50,13 +51,22 @@ def stub(port=None):
     return p, ch, pbg.EmulatorControllerStub(ch)
 
 
+def _safe_out(out):
+    """把输出路径限制在当前工作目录内，避免绝对路径或 .. 逃逸。"""
+    base = os.path.realpath(os.getcwd())
+    target = os.path.realpath(os.path.join(base, out))
+    if os.path.commonpath([base, target]) != base:
+        sys.exit(f"输出路径必须在当前工作目录内：{out}")
+    return target
+
+
 def do_shot(stub_, out, scale=0):
+    out = _safe_out(out)
     fmt = pb.ImageFormat(format=pb.ImageFormat.PNG)
     if scale:
         fmt.width = scale
     img = stub_.getScreenshot(fmt, timeout=10)
-    with open(out, "wb") as f:
-        f.write(img.image)
+    Path(out).write_bytes(img.image)
     w = img.format.width or "?"
     h = img.format.height or "?"
     print(f"{out}  {len(img.image)} bytes  {w}x{h}")
@@ -98,6 +108,7 @@ def do_logcat(stub_, n):
 
 def shot_window(out):
     """兜底：X11 抓模拟器窗口。需要 DISPLAY 与 xdotool。"""
+    out = _safe_out(out)
     ids = subprocess.run(
         ["xdotool", "search", "--name", "Vela|AIoT|Emulator|模拟器"],
         capture_output=True,
@@ -117,6 +128,7 @@ def shot_window(out):
 
 
 def do_watch(stub_, outdir, interval):
+    outdir = _safe_out(outdir)
     os.makedirs(outdir, exist_ok=True)
     i = 0
     print(f"录像中 → {outdir}/（Ctrl-C 停止）")

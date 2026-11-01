@@ -15,6 +15,12 @@ function save(field, value, cb) {
   })
 }
 
+function clear(cb) {
+  fs.remove(PATH, () => {
+    if (cb) cb()
+  })
+}
+
 function take(cb) {
   fs.readText(PATH, (text) => {
     if (!text) {
@@ -32,4 +38,4 @@ function take(cb) {
   })
 }
 
-export default { save, take, PATH }
+export default { save, take, clear, PATH }

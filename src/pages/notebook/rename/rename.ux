@@ -4,10 +4,9 @@
 <template>
   <div class="page">
     <pagehead title="重命名" clock="{{ clock }}"></pagehead>
-    <div class="card" @click="openInput">
+    <div class="card" @click="focusValue">
       <text class="f label">新名称</text>
-      <text class="f value" if="{{ value }}">{{ value }}</text>
-      <text class="f place" if="{{ !value }}">点击输入</text>
+      <input id="renameInput" class="f value" type="text" value="{{ value }}" maxlength="20" placeholder="点击输入" enterkeytype="done" @change="onValueChange" @click="focusValue" />
     </div>
 
     <div class="check" @click="save"><img class="checkImg" src="/common/check.png" /></div>
@@ -22,8 +21,7 @@
 .page { width: 212px; height: 520px; background-color: #000000; }
 .card { position: absolute; left: 3px; top: 86px; width: 206px; height: 84px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
 .label { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.45); }
-.value { width: 174px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.place { width: 174px; height: 40px; line-height: 40px; font-size: 16px; color: rgba(255,255,255,0.3); }
+.value { width: 174px; height: 40px; font-size: 17px; line-height: 40px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
 .check { position: absolute; left: 74px; top: 210px; width: 64px; height: 64px; align-items: center; justify-content: center; }
 .checkImg { width: 64px; height: 64px; }
 .tip { position: absolute; left: 0px; top: 292px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
@@ -35,7 +33,7 @@ import router from '../../../utils/router'
 import docs from '../../../utils/docs'
 import haptic from '../../../utils/haptic'
 import prompt from '@system.prompt'
-import inputResult from '../../../utils/inputResult'
+import textInput from '../../../utils/textInput'
 
 export default {
   protected: { docName: '' },
@@ -44,9 +42,6 @@ export default {
     this.clock = time.formatClock(new Date())
     this.oldName = this.docName
     this.value = this.docName
-    inputResult.take((r) => {
-      if (r && r.field === 'nbRename') this.value = r.value
-    })
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => {
       this.clock = time.formatClock(new Date())
@@ -60,17 +55,14 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
-  openInput() {
-    router.push('/pages/input', {
-      field: 'nbRename',
-      inputTitle: '重命名',
-      text: this.value,
-      max: 20,
-      multiline: 0,
-      hint: '输入新的笔记名称'
-    })
+  onValueChange(e) {
+    this.value = textInput.clamp(textInput.eventValue(e), 20, false)
+  },
+  focusValue() {
+    textInput.focus(this, 'renameInput')
   },
   save() {
+    textInput.blur(this, 'renameInput')
     const clean = docs.safeName(this.value)
     if (!clean) {
       prompt.showToast({ message: '名称不能为空', duration: 1400 })

@@ -3,10 +3,10 @@
 BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 27 个应用、50 个页面。
 
 - 包名：`com.miband.box`
-- 版本：0.2.0
+- 版本：0.2.1
 - 技术栈：Vela JS 快应用（`.ux`）
 - 屏幕：212 × 520 跑道屏；模拟器应用区 212 × 466，真机可绘制到约 500（底部为药丸收窄区）
-- 体积：约 810 KB（含中文字体子集）
+- 体积：约 380 KB（使用系统字体，无内置字体子集）
 - 无联网必需、无收费、无授权、无第三方 App 依赖
 - 手机端可选装 AstroBox 插件「BandBox歌词同步」，把手上的 LRC 歌词推到手表歌词本
 
@@ -104,13 +104,13 @@ adb shell am start com.miband.box
 ```
 src/
 ├── manifest.json          50 条路由、权限、features
-├── app.ux                 全局字体与 KV 初始化
-├── common/                自绘图标、公共图、字体子集
+├── app.ux                 全局 KV / 互联初始化
+├── common/                自绘图标、公共图
 ├── components/
 │   ├── BackBtn.ux         统一返回按钮
 │   └── Ring.ux            弧形进度环（原生 progress arc）
 ├── data/                  自建数据集（apps/quotes/answers/food/history/waste/morse/colors/perf）
-├── utils/                 kv / fs / docs / time / haptic / router / calc / inputResult / homeLayout
+├── utils/                 kv / fs / docs / time / haptic / router / calc / inputResult / textInput / homeLayout
 │                          interconnect（手机互传通道）/ lyricsTransfer（歌词传输协议）
 └── pages/                 50 个页面（含 input 文本输入页、lyrics/transfer 接收页）
 
@@ -120,16 +120,18 @@ plugin/
 tools/
 ├── test-protocol.mjs       手环端协议单测（node tools/test-protocol.mjs）
 ├── test-calendar.mjs       农历 / 日历纯逻辑单测（node tools/test-calendar.mjs）
-└── gen-assets/font.py      中文字体子集生成
+├── test-input.mjs          原生输入工具单测（node tools/test-input.mjs）
+└── gen-assets/gen.py       图标与公共图生成
 ```
 
 ## 许可
 
-- 中文字体为 Noto Sans CJK / 思源黑体的 **OFL 1.1** 子集，仅包含源码实际用到的字。
+- 字体使用设备系统字体（Band 10/11 的 MiSans / MiLan Pro），不再内置字体子集。
 
 ## 已知限制
 
-- 自带输入页支持英文、数字与符号；中文内容通过内置数据集呈现，暂不提供拼音输入，后续会支持系统拼音输入能力。
+- 文本输入使用系统输入法（Band 10/11），支持中英文；短字段在页面内直接输入，长文本（笔记正文、歌词正文）在独立编辑页输入。
+- 系统输入法由手环固件提供；模拟器镜像不一定带中文 IME，输入行为需在 Band 10/11 真机上验证。
 - 歌词本完全离线，不提供在线搜索（避免第三方接口依赖）。
 - 「从手机传输」需要手机端安装 AstroBox 插件「BandBox歌词同步」，且手环需停留在接收页；
   没装插件时手环页会显示「对端未安装」。
@@ -142,7 +144,7 @@ tools/
 
 ## 致谢
 
-感谢小米 Vela 平台、AIoT-IDE 、AstroBox平台、米坛社区，以及各开源社区提供的文档与示例。字体来自 Noto Sans CJK（SIL Open Font License 1.1）。
+感谢小米 Vela 平台、AIoT-IDE 、AstroBox平台、米坛社区，以及各开源社区提供的文档与示例。
 
 ## 赞助
 本项目开源免费，若你愿意小小的赞助作者一杯咖啡，那就更好了，感激不尽！

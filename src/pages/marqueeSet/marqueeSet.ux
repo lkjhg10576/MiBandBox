@@ -4,10 +4,9 @@
 <template>
   <div class="page">
     <pagehead title="跑马灯设置" clock="{{ clock }}"></pagehead>
-    <div class="inputCard" @click="openInput">
+    <div class="inputCard" @click="focusText">
       <text class="f iLabel">滚动文字</text>
-      <text class="f iText" if="{{ text }}">{{ text }}</text>
-      <text class="f iPlace" if="{{ !text }}">点击输入文字</text>
+      <input id="marqueeInput" class="f iText" type="text" value="{{ text }}" maxlength="40" placeholder="点击输入文字" enterkeytype="done" @change="onTextChange" @click="focusText" />
       <text class="f counter">{{ text.length }}/40</text>
     </div>
 
@@ -50,8 +49,7 @@
 .page { width: 212px; height: 520px; background-color: #000000; }
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 78px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
 .iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.iText { width: 158px; height: 40px; font-size: 17px; line-height: 20px; color: #FFFFFF; }
-.iPlace { width: 158px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.iText { width: 158px; height: 40px; font-size: 17px; line-height: 20px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
 .counter { position: absolute; right: 14px; top: 8px; font-size: 14px; color: rgba(255,255,255,0.3); }
 .label { position: absolute; left: 12px; width: 80px; font-size: 14px; color: rgba(255,255,255,0.45); }
 .chips { position: absolute; left: 6px; width: 200px; height: 32px; flex-direction: row; justify-content: space-between; }
@@ -72,7 +70,8 @@ import time from '../../utils/time'
 import kv from '../../utils/kv'
 import router from '../../utils/router'
 import haptic from '../../utils/haptic'
-import inputResult from '../../utils/inputResult'
+import textInput from '../../utils/textInput'
+import prompt from '@system.prompt'
 
 export default {
   data: {
@@ -88,9 +87,6 @@ export default {
   },
   onShow() {
     this.clock = time.formatClock(new Date())
-    inputResult.take((r) => {
-      if (r && r.field === 'marqueeText') { this.text = r.value }
-    })
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => {
       this.clock = time.formatClock(new Date())
@@ -114,15 +110,11 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
-  openInput() {
-    router.push('/pages/input', {
-      field: 'marqueeText',
-      inputTitle: '跑马灯',
-      text: this.text,
-      max: 40,
-      multiline: 0,
-      hint: '输入要滚动的文字'
-    })
+  onTextChange(e) {
+    this.text = textInput.clamp(textInput.eventValue(e), 40, false)
+  },
+  focusText() {
+    textInput.focus(this, 'marqueeInput')
   },
   setSize(v) {
     this.size = v
@@ -143,8 +135,10 @@ export default {
   },
   save() {
     if (!this.text) {
-        return
+      prompt.showToast({ message: '请先输入文字', duration: 1400 })
+      return
     }
+    textInput.blur(this, 'marqueeInput')
     const m = { text: this.text, size: this.size, speed: this.speed, color: this.color, bg: this.bg }
     kv.init(() => {
       kv.set('marquee', m)
