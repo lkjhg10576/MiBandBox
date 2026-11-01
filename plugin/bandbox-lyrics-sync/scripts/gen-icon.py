@@ -10,6 +10,7 @@
 import os
 import struct
 import zlib
+from pathlib import Path
 
 S = 216  # 画布尺寸（与手环端图标一致）
 
@@ -81,14 +82,15 @@ def encode_png(path):
     png += chunk(b'IDAT', zlib.compress(bytes(raw), 9))
     png += chunk(b'IEND', b'')
 
-    with open(path, 'wb') as f:
-        f.write(png)
+    Path(path).write_bytes(png)
     return len(png)
 
 
 def main():
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'icon.png')
-    out = os.path.normpath(out)
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    out = os.path.realpath(os.path.join(root, 'icon.png'))
+    if os.path.commonpath([out, root]) != root:
+        raise SystemExit('输出路径越出插件根目录：%s' % out)
     size = encode_png(out)
     print('icon.png written:', out, '(%d bytes, %dx%d RGBA)' % (size, S, S))
 

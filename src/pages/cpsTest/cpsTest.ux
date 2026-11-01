@@ -23,7 +23,7 @@
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
 .tapZone { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
-.big { position: absolute; left: 0px; top: 120px; width: 212px; height: 96px; line-height: 96px; text-align: center; font-size: 76px; }
+.big { position: absolute; left: 0px; top: 120px; width: 212px; height: 96px; line-height: 96px; text-align: center; font-size: 76px; text-overflow: ellipsis; lines: 1; }
 .status { position: absolute; left: 20px; top: 226px; width: 172px; height: 28px; line-height: 28px; text-align: center; font-size: 16px; color: rgba(255,255,255,0.7); }
 .bar { position: absolute; left: 26px; top: 272px; width: 160px; height: 8px; border-radius: 4px; background-color: #262626; }
 .fill { height: 8px; border-radius: 4px; background-color: #0D6EFF; }

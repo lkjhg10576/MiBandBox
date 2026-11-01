@@ -6,7 +6,7 @@
 </template>
 
 <style>
-.page { width: 212px; height: 520px; align-items: center; justify-content: center; }
+.page { width: 212px; height: 520px; align-items: center; justify-content: center; overflow: hidden; }
 .mq { width: 212px; height: 120px; line-height: 120px; }
 .hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; opacity: 0.4; }
 </style>

@@ -14,7 +14,7 @@
 </template>
 
 <style>
-.page { width: 212px; height: 520px; background-color: #000000; }
+.page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
 .stripes { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; flex-direction: row; }
 .stripe { flex: 1; height: 520px; }
 .top { position: absolute; left: 32px; top: 44px; width: 148px; height: 28px; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px; }

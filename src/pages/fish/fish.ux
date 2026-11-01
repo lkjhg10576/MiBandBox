@@ -32,7 +32,7 @@
 .plusOne { position: absolute; left: 0px; top: 24px; width: 212px; text-align: center; font-size: 18px; color: #FFD166; opacity: 0; }
 .plusOne.show { opacity: 1; }
 .meritLabel { position: absolute; left: 0px; top: 286px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
-.merit { position: absolute; left: 0px; top: 306px; width: 212px; height: 64px; line-height: 64px; text-align: center; font-size: 48px; color: #FFFFFF; }
+.merit { position: absolute; left: 0px; top: 306px; width: 212px; height: 64px; line-height: 64px; text-align: center; font-size: 48px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .hint { position: absolute; left: 0px; top: 390px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
 .reset { position: absolute; left: 62px; top: 424px; width: 88px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
 .resetT { font-size: 14px; color: rgba(255,255,255,0.55); }

@@ -12,7 +12,7 @@
 </template>
 
 <style>
-.page { width: 212px; height: 520px; }
+.page { width: 212px; height: 520px; overflow: hidden; }
 .top { position: absolute; left: 0px; top: 42px; width: 212px; height: 78px; flex-direction: column; align-items: center; }
 .exit { width: 52px; height: 28px; border-radius: 14px; background-color: rgba(0,0,0,0.35); align-items: center; justify-content: center; }
 .exitT { font-size: 14px; color: #FFFFFF; }

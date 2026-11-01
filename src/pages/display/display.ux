@@ -16,7 +16,7 @@
 </template>
 
 <style>
-.page { width: 212px; height: 520px; }
+.page { width: 212px; height: 520px; overflow: hidden; }
 .top { position: absolute; left: 30px; top: 42px; width: 152px; height: 28px; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px; }
 .exit { width: 40px; height: 28px; line-height: 28px; text-align: center; font-size: 14px; color: #FFFFFF; background-color: rgba(0,0,0,0.35); border-radius: 14px; }
 .name { width: 68px; text-align: center; font-size: 15px; }

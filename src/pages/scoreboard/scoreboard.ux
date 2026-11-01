@@ -14,14 +14,14 @@
 
     <div class="team red">
       <text class="f teamName" style="color: #FF6B6B;">红队</text>
-      <text class="f score" style="color: #FF6B6B;">{{ red }}</text>
+      <text class="f score {{ red >= 1000 ? 'small' : '' }}" style="color: #FF6B6B;">{{ red }}</text>
       <div class="plus" @click="add('red')"><text class="f plusT">+</text></div>
       <div class="minus" @click="sub('red')"><text class="f minusT">-</text></div>
     </div>
 
     <div class="team blue">
       <text class="f teamName" style="color: #5B9DFF;">蓝队</text>
-      <text class="f score" style="color: #5B9DFF;">{{ blue }}</text>
+      <text class="f score {{ blue >= 1000 ? 'small' : '' }}" style="color: #5B9DFF;">{{ blue }}</text>
       <div class="plus" @click="add('blue')"><text class="f plusT">+</text></div>
       <div class="minus" @click="sub('blue')"><text class="f minusT">-</text></div>
     </div>
@@ -44,6 +44,7 @@
 .blue { left: 112px; background-color: rgba(13,110,255,0.14); }
 .teamName { font-size: 17px; }
 .score { width: 92px; height: 86px; line-height: 86px; text-align: center; font-size: 58px; }
+.score.small { font-size: 34px; }
 .plus { width: 66px; height: 42px; border-radius: 21px; background-color: rgba(255,255,255,0.12); align-items: center; justify-content: center; margin-top: 6px; }
 .plusT { font-size: 24px; color: #FFFFFF; }
 .minus { width: 66px; height: 36px; border-radius: 18px; background-color: rgba(255,255,255,0.06); align-items: center; justify-content: center; margin-top: 8px; }

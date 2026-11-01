@@ -26,9 +26,9 @@
 .listInner { width: 212px; flex-direction: column; }
 .card { width: 206px; height: 72px; margin: 0px 3px 7px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 16px; }
 .card.cur { background-color: rgba(13,110,255,0.24); }
-.dName { width: 132px; font-size: 16px; color: #FFFFFF; }
-.dScore { width: 42px; text-align: right; font-size: 20px; color: #0D6EFF; }
-.badge { width: 36px; height: 20px; line-height: 20px; margin-left: 6px; border-radius: 10px; background-color: #0D6EFF; text-align: center; font-size: 14px; color: #FFFFFF; }
+.dName { flex: 1; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.dScore { width: 36px; text-align: right; font-size: 20px; color: #0D6EFF; }
+.badge { width: 36px; height: 20px; line-height: 20px; margin-left: 4px; border-radius: 10px; background-color: #0D6EFF; text-align: center; font-size: 14px; color: #FFFFFF; }
 .note { width: 190px; margin: 4px 11px 0px 11px; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.3); text-align: center; }
 .pad { width: 212px; height: 20px; }
 </style>

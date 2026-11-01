@@ -9,7 +9,8 @@
  *   y 466..500 真机可绘制的药丸收窄区：仅居中/窄内容，模拟器会被系统栏裁切
  *   y 500..520 屏幕圆角尖端：不放内容
  */
-.page { width: 212px; height: 520px; background-color: #000000; }
+/* overflow:hidden 兜底裁剪：任何子元素超宽都不再撑出横向可拖动区域（抢占右滑返回） */
+.page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
 
 /* 页面头部：时钟 15px / 标题 17px，整体位于 y=22..72 */
 .header { position: absolute; left: 0px; top: 0px; width: 212px; height: 84px; }
