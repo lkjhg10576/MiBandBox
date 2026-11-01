@@ -76,7 +76,8 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 
 ## 安装到模拟器
 
-模拟器需先启动（AIoT-IDE 的 Vela 模拟器，212×520，skin `xiaomi_band_10`）。
+模拟器需先启动（AIoT-IDE 的 Vela 模拟器，212×520，skin `xiaomi_band_10`）；
+也可以脱离 IDE 从命令行启动（必须带 `-vela` 旗标），见 `docs/emulator-fix.md`。
 
 ```bash
 # 自动构建 + 安装 + 启动
