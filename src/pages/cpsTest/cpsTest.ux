@@ -35,18 +35,18 @@
 import time from '../../utils/time'
 import haptic from '../../utils/haptic'
 
-const DURATION = 3000
+const DURATION = 5000
 
 export default {
   data: {
     clock: '--:--',
     state: 'idle',
-    big: '3.0',
+    big: '5.0',
     bigColor: '#FFFFFF',
     status: '点击屏幕开始',
     progress: 0,
     cps: '0.00',
-    hint: '3 秒内尽可能多地点击',
+    hint: '5 秒内尽可能多地点击',
     count: 0,
     timer: null,
     clockTimer: null,

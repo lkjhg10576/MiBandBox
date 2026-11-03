@@ -2,8 +2,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   APP_ID, VERSION, CHUNK_LIMIT, ENVELOPE_RESERVE, ERRORS, encode, decode,
-  jsonTextCost, chunkBudget, splitChunks, checkTransferable, needsChunk,
-  byteLength, makeId, planSend, chunkMessage, hello, describeReply, message
+  unwrapInterconnectPayload, jsonTextCost, chunkBudget, splitChunks, checkTransferable, needsChunk,
+  byteLength, makeId, planSend, chunkMessage, hello, pong, describeReply, message
 } from '../src/protocol.js'
 
 test('message() 带上公共字段', () => {
@@ -213,4 +213,56 @@ test('describeReply 解释各类回执', () => {
 test('describeReply 对未知回执安全', () => {
   assert.equal(describeReply(null).state, 'unknown')
   assert.equal(describeReply({ type: 'zzz' }).state, 'unknown')
+})
+
+test('pong 可构造并解码', () => {
+  const raw = pong('p-1')
+  const r = decode(raw)
+  assert.equal(r.ok, true)
+  assert.equal(r.msg.type, 'pong')
+  assert.equal(r.msg.id, 'p-1')
+})
+
+test('unwrapInterconnectPayload 保留裸协议消息', () => {
+  const raw = encode('ack', { id: 'x', ok: true, name: '歌' })
+  const env = unwrapInterconnectPayload(raw)
+  assert.equal(env.data, raw)
+  assert.equal(env.addr, '')
+  assert.equal(env.pkgName, '')
+})
+
+test('unwrapInterconnectPayload 解析 payloadText 信封', () => {
+  const raw = encode('ready', { id: 'r-1' })
+  const env = unwrapInterconnectPayload(JSON.stringify({
+    addr: 'AA:BB:CC',
+    pkgName: 'com.miband.box',
+    payloadText: raw,
+    payloadHex: '00ff'
+  }))
+  assert.equal(env.addr, 'AA:BB:CC')
+  assert.equal(env.pkgName, 'com.miband.box')
+  assert.equal(env.data, raw)
+})
+
+test('unwrapInterconnectPayload 解析 payload 对象', () => {
+  const inner = { app: APP_ID, v: VERSION, type: 'ping', id: 'p-1' }
+  const env = unwrapInterconnectPayload(JSON.stringify({
+    addr: 'AA:BB:CC',
+    payload: inner
+  }))
+  assert.equal(env.addr, 'AA:BB:CC')
+  assert.deepEqual(JSON.parse(env.data), inner)
+})
+
+test('unwrapInterconnectPayload 解析 payloadHex', () => {
+  const raw = encode('pong', { id: 'p-1' })
+  const hex = Buffer.from(raw, 'utf8').toString('hex')
+  const env = unwrapInterconnectPayload(JSON.stringify({ addr: 'AA', payloadHex: hex }))
+  assert.equal(env.addr, 'AA')
+  assert.equal(env.data, raw)
+})
+
+test('unwrapInterconnectPayload 对坏 JSON 回退原文', () => {
+  const env = unwrapInterconnectPayload('{oops')
+  assert.equal(env.data, '{oops')
 })

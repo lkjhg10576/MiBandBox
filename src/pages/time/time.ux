@@ -4,22 +4,38 @@
 <template>
   <div class="page">
     <pagehead title="剩余时间" clock="{{ clock }}"></pagehead>
-    <div class="card">
-      <text class="f cLabel">今日还剩</text>
-      <text class="f big">{{ todayText }}</text>
-      <div class="bar"><div class="fill" style="width: {{ dayPercent }}%;"></div></div>
-      <text class="f sub">今天已过去 {{ dayPercent }}%</text>
-    </div>
-
-    <div class="card2">
-      <text class="f cLabel">今年还剩</text>
-      <text class="f big2">{{ yearDays }} <text class="f unit">天</text></text>
-      <text class="f sub2">{{ yearTime }}</text>
-      <div class="bar"><div class="fill green" style="width: {{ yearPercent }}%;"></div></div>
-      <text class="f sub">今年已过去 {{ yearPercent }}%</text>
-    </div>
-
-    <text class="f foot">{{ dateText }}</text>
+    <scroll class="body" scroll-y="true" bounces="true">
+      <div class="inner">
+        <div class="card c1">
+          <text class="f cLabel">本分钟还剩</text>
+          <text class="f mid">{{ minuteSec }} <text class="f unit">秒</text></text>
+        </div>
+        <div class="card c2">
+          <text class="f cLabel">本小时还剩</text>
+          <text class="f mid">{{ hourText }}</text>
+        </div>
+        <div class="card c3">
+          <text class="f cLabel">今天还剩</text>
+          <text class="f big">{{ todayText }}</text>
+          <div class="bar"><div class="fill" style="width: {{ dayPercent }}%;"></div></div>
+          <text class="f sub">今天已过去 {{ dayPercent }}%</text>
+        </div>
+        <div class="card c4">
+          <text class="f cLabel">本周还剩</text>
+          <text class="f mid">{{ weekText }}</text>
+          <text class="f sub">本周已过去 {{ weekPercent }}%</text>
+        </div>
+        <div class="card c5">
+          <text class="f cLabel">今年还剩</text>
+          <text class="f big">{{ yearDays }} <text class="f unit">天</text></text>
+          <text class="f blue">{{ yearTime }}</text>
+          <div class="bar"><div class="fill green" style="width: {{ yearPercent }}%;"></div></div>
+          <text class="f sub">今年已过去 {{ yearPercent }}%</text>
+        </div>
+        <text class="f foot">{{ dateText }}</text>
+        <div class="pad"></div>
+      </div>
+    </scroll>
     <backbtn></backbtn>
   </div>
 </template>
@@ -27,18 +43,25 @@
 <style>
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.card { position: absolute; left: 3px; top: 82px; width: 206px; height: 160px; border-radius: 26px; background-color: #262626; padding: 12px 18px; flex-direction: column; }
-.card2 { position: absolute; left: 3px; top: 254px; width: 206px; height: 178px; border-radius: 26px; background-color: #262626; padding: 12px 18px; flex-direction: column; }
-.cLabel { width: 170px; height: 24px; line-height: 24px; font-size: 15px; color: rgba(255,255,255,0.55); }
-.big { width: 170px; height: 62px; line-height: 62px; font-size: 42px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.big2 { width: 170px; height: 62px; line-height: 62px; font-size: 42px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.unit { font-size: 18px; color: rgba(255,255,255,0.6); }
-.sub2 { width: 170px; height: 24px; line-height: 24px; font-size: 17px; color: #0D6EFF; }
-.bar { width: 170px; height: 6px; border-radius: 3px; background-color: #3A3A3A; margin-top: 6px; margin-bottom: 6px; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
+.inner { width: 212px; height: 596px; flex-direction: column; }
+.card { width: 206px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
+.c1 { height: 84px; }
+.c2 { height: 84px; }
+.c3 { height: 116px; }
+.c4 { height: 100px; }
+.c5 { height: 132px; }
+.cLabel { width: 174px; height: 22px; line-height: 22px; font-size: 15px; color: rgba(255,255,255,0.55); }
+.mid { width: 174px; height: 40px; line-height: 40px; font-size: 32px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.big { width: 174px; height: 48px; line-height: 48px; font-size: 38px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.unit { font-size: 16px; color: rgba(255,255,255,0.6); }
+.blue { width: 174px; height: 22px; line-height: 22px; font-size: 16px; color: #0D6EFF; }
+.bar { width: 174px; height: 6px; border-radius: 3px; background-color: #3A3A3A; margin-top: 4px; margin-bottom: 4px; }
 .fill { height: 6px; border-radius: 3px; background-color: #0D6EFF; }
 .green { background-color: #00C853; }
-.sub { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.4); }
-.foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+.sub { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.4); }
+.foot { width: 212px; height: 24px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+.pad { width: 212px; height: 16px; }
 </style>
 
 <script>
@@ -49,13 +72,23 @@ function hms(sec) {
   return time.pad2(d.hours) + ':' + time.pad2(d.minutes) + ':' + time.pad2(d.seconds)
 }
 
+function dhms(sec) {
+  const d = time.splitDuration(sec)
+  if (d.days <= 0) return hms(sec)
+  return d.days + ' 天 ' + time.pad2(d.hours) + ':' + time.pad2(d.minutes) + ':' + time.pad2(d.seconds)
+}
+
 export default {
   data: {
     clock: '--:--',
+    minuteSec: 0,
+    hourText: '--:--',
     todayText: '--:--:--',
+    dayPercent: 0,
+    weekText: '--',
+    weekPercent: 0,
     yearDays: 0,
     yearTime: '--:--:--',
-    dayPercent: 0,
     yearPercent: 0,
     dateText: '',
     timer: null
@@ -76,9 +109,14 @@ export default {
   refresh() {
     const now = new Date()
     this.clock = time.formatClock(now)
+    this.minuteSec = time.countdownEndOfMinute(now)
+    this.hourText = hms(time.countdownEndOfHour(now)).slice(3)
     const remainDay = time.countdownToEndOfDay(now)
     this.todayText = hms(remainDay)
     this.dayPercent = Math.min(100, Math.round(((86400 - remainDay) / 86400) * 100))
+    const remainWeek = time.countdownEndOfWeek(now)
+    this.weekText = dhms(remainWeek)
+    this.weekPercent = Math.min(100, Math.round(((7 * 86400 - remainWeek) / (7 * 86400)) * 100))
     const remainYear = time.countdownToEndOfYear(now)
     const yd = time.splitDuration(remainYear)
     this.yearDays = yd.days

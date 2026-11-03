@@ -4,7 +4,6 @@
 <template>
   <div class="page">
     <pagehead title="随机数" clock="{{ clock }}"></pagehead>
-    <text class="f numBtn" @click="openNum">滚动</text>
 
     <div class="row">
       <text class="f label">最小值</text>
@@ -33,7 +32,6 @@
 <style>
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.numBtn { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; line-height: 28px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.7); background-color: rgba(255,255,255,0.08); border-radius: 14px; z-index: 99; }
 .row { position: absolute; left: 3px; top: 84px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px; }
 .label { width: 52px; font-size: 17px; color: rgba(255,255,255,0.65); }
 .step { width: 37px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; }
@@ -51,7 +49,6 @@
 import time from '../../utils/time'
 import haptic from '../../utils/haptic'
 import prompt from '@system.prompt'
-import router from '../../utils/router'
 
 export default {
   data: {
@@ -82,9 +79,6 @@ export default {
     if (this.clockTimer) clearInterval(this.clockTimer)
     this.timer = null
     this.clockTimer = null
-  },
-  openNum() {
-    router.push('/pages/num')
   },
   inc(which) {
     if (which === 'min') this.min = this.min + 1

@@ -6,6 +6,7 @@
 支持三种常见歌词格式：逐行 LRC、常规逐字 LRC（行内 `[mm:ss.xx]`）、
 增强逐字 LRC（ESLyric 的 `<mm:ss.xx>` 标签）。
 
+- 版本：`0.2.5`
 - API Level：**4**（`wasi_version: 3`）
 - 目标快应用包名：`com.miband.box`（手环端 BandBox）
 - 协议：本仓库自定义的 `bandbox-lyrics`，与手环端 `src/utils/lyricsTransfer.js` 一一对应
@@ -23,6 +24,7 @@ bandbox-lyrics-sync/
 │   └── bandbox.wit       本地最小 world（只导入实际用到的宿主接口）
 ├── src/
 │   ├── plugin.js         入口：导出 lifecycle / event 接口对象
+│   ├── actions.js        UI 动作解析（兼容 eventId / eventPayload 两种宿主形态）
 │   ├── lrc.js            LRC 解析（逐行/逐字/增强逐字，纯函数）
 │   ├── gbk-table.js      GBK 映射表（由 scripts/gen-gbk-table.mjs 生成）
 │   ├── protocol.js       消息构造与解析
@@ -42,7 +44,7 @@ bandbox-lyrics-sync/
 npm install          # 装 componentize-qjs（预编译二进制，约 56 MB，无需 Rust）
 npm run wit          # 拉取 AstroBox 插件 WIT 到 wit/
 npm run gbk          # 重新生成 src/gbk-table.js（仅修改生成逻辑时需要）
-npm test             # 61 项单测
+npm test             # 74 项单测
 npm run package      # 产出 dist/plugin.wasm + dist/BandBox歌词同步.abp
 ```
 
@@ -71,7 +73,7 @@ v4 的宿主接口（`dialog.pick-file`、`interconnect.send-qaic-message` …�
 并且能正确 stub `async func` 导入。实测产物：
 
 - `plugin.wasm` 约 2.99 MB
-- 只导入实际使用的 6 个 `astrobox:psys-host-v4/*` 接口与 WASI，**没有 `local:` 导入**，宿主可满足
+- 只导入实际使用的 7 个 `astrobox:psys-host-v4/*` 接口与 WASI，**没有 `local:` 导入**，宿主可满足
 - 导出 `astrobox:psys-plugin-v4/lifecycle` 与 `astrobox:psys-plugin-v4/event`（外加一个无害的 `init`）
 
 > `componentize-qjs` 用 QuickJS 而非 SpiderMonkey，JS 运行时不同，但组件 ABI
@@ -90,7 +92,7 @@ component imports instance `astrobox:psys-host-v4/canopusconnect`,
 but a matching implementation was not found in the linker
 ```
 
-因此 `world/bandbox.wit` 定义了只包含实际用到的 6 个接口的 `bandbox-world-v4`。
+因此 `world/bandbox.wit` 定义了只包含实际用到的 7 个接口的 `bandbox-world-v4`。
 `scripts/build.mjs` 构建时把 `wit/`（上游，`npm run wit` 会重新拉取）与 `world/`
 （本地，入库）合并到临时目录再交给 `componentize-qjs`。
 `test/world.test.mjs` 会检查 world 的 import 与 `src/` 里的宿主 import 是否一致。
@@ -127,6 +129,46 @@ export const event = {
 （例如 `device.get-connected-device-list`），否则安装阶段会弹权限框甚至卡住安装。
 本插件把设备列表放到 `onUiRender` 里取。
 
+## ⚠️ 宿主接口必须 await（0.2.5 修掉的根因）
+
+Level 4 的宿主接口几乎全是 `async func`。按 `componentize-qjs` 的类型映射：
+
+| WIT 类型 | JS 侧表现 |
+|---|---|
+| `async func` | 返回 **Promise**，必须 `await` 才有值 |
+| 顶层 `result<T, E>` | 成功返回 `T`，失败**抛错**（reject） |
+| `option<T>` | `T \| null`，`null` 表示 none |
+| `list<T>` / `record` | `Array` / camelCase 对象 |
+
+漏掉 `await` 不会报错，只会静默拿到 Promise 对象：
+
+```js
+const connected = getConnectedDeviceList() || []   // ❌ connected 是 Promise
+                                                  //    connected.length === undefined
+                                                  //    → 设备列表恒为空 → 心跳发不出去
+                                                  //    → 手环永远「未连接手机」
+
+const picked = pickFile(cfg, filter)               // ❌ Promise 没人 await
+                                                  //    → 宿主的取文件任务被取消
+                                                  //    → 点「选择 LRC 文件」不弹选择器
+```
+
+**正确写法**：所有宿主调用统一走 `hostCall()`，它负责 await 并把「失败抛错」
+转成 `{ ok: false, error }`：
+
+```js
+const res = await hostCall('pickFile', () =>
+  pickFile(
+    { read: true, copyTo: null },          // option<string> 用 null 表示 none
+    { multiple: false, extensions: ['lrc'], defaultDirectory: '', defaultFileName: '' }
+  )
+)
+if (!res.ok) { /* res.error 是宿主给的失败原因 */ }
+```
+
+`test/host-async.test.mjs` 会静态扫描 `src/*.js`，确保每个 `async` 宿主接口调用
+都被 `await` 或包在 `hostCall()` 里，防止再写回同步调用。
+
 ## 权限
 
 | 权限 | 用途 |
@@ -147,11 +189,27 @@ export const event = {
 | 手机→手环 | `hello` | `{id}` 探活 |
 | 手机→手环 | `lyrics` | `{id, title, lines[], count, ts}` 单包直发 |
 | 手机→手环 | `chunk` | `{id, seq, total, title, data}` 分片 |
-| 手环→手机 | `pong` | `{id}` |
+| 手环→手机 | `ping` | `{id}` 手环主动探活手机插件 |
+| 手机→手环 | `pong` | `{id}` 回复手环 `ping` / `ready` |
+| 手环→手机 | `pong` | `{id}` 回复手机 `hello` / `ping` |
 | 手环→手机 | `ack` | `{id, ok:true, name}` 落盘成功（`name` = 实际文件名） |
 | 手环→手机 | `err` | `{id, reason}` 失败原因 |
-| 手环→手机 | `ready` | 手环进入接收页时主动上报 |
+| 手环→手机 | `ready` | `{id?}` 手环进入接收页时主动上报 |
 | 手环→手机 | `progress` | `{id, received, total}` 分片进度 |
+
+### 连接状态与宿主信封
+
+- 手环进入「从手机传输」页后发 `ready` + `ping`；插件收到后回 `pong`。
+- 同时插件每 5 秒主动向已连接手环发一次 `hello` 心跳。手环收到 `hello` / `pong` 或任何合法
+  协议消息即显示「已连接手机」。部分固件/签名组合下手环→手机方向会直接失败，
+  因此连接状态以**手机→手环心跳**为准，手环的 `ping` 只做兼容与补充。
+- 手环不再依赖 Vela 的 `getReadyState`（AstroBox 不是官方配套 App，该状态在 AstroBox 场景下不可靠）。
+- 插件在 `onUiRender` 和 `device-action` 时会刷新设备并注册
+  `registerInterconnectRecv(addr, "com.miband.box")`，因此即使还没有点过发送，也能收到手环的
+  `ready` / `ping`。
+- 宿主会把 `interconnect-message` 包装成
+  `{ "addr": "...", "pkgName": "...", "payloadText": "...", "payloadHex": "..." }`；
+  `protocol.unwrapInterconnectPayload()` 会先解包，再交给 `decode()`。旧宿主直接传裸协议 JSON 时也能工作。
 
 单条 JSON 超过 **12 KB**（按 UTF-8 字节计）就按行切块（不切断一行），逐片顺序发送；
 手环端全部收齐后一次性落盘为「首行标题 + 其余正文」。
@@ -178,12 +236,17 @@ export const event = {
 6. 行文本去首尾空白、保留行内空格、丢弃空行
 7. 结果为 `{title, lines, hasTimestamp, format}`；`lines` 为空即解析失败
 8. 没有任何时间标签的纯文本 LRC，按行原样保留
+9. 安卓文件选择器可能只返回 content URI 片段（没有真实文件名）：歌名优先用 `[ti:]`，
+   没有 `[ti:]` 时回退到首行歌词，避免把 `audio%3A...` 当成歌名
 
 ## 真机验收清单
 
 模拟器没有 BLE、也装不了 AstroBox，这条链路只能真机跑。逐项确认：
 
 - [ ] 插件安装并加载成功，插件页 UI 正常显示（设备名、状态区、预览区）
+- [ ] 手机点「选择 LRC 文件」→ 系统文件选择器正常弹出（手机端事件 id 兼容）
+- [ ] 手环连上 AstroBox 后打开「从手机传输」→ 10 秒内从「检测中」变「已连接手机」
+- [ ] 关闭插件 / 断开手环 → 25 秒内变「未连接手机」并显示具体提示
 - [ ] 选一个真实 `.lrc` → 预览显示歌名 / 行数 / 前若干行，时间轴已剥离
 - [ ] 逐行 / 常规逐字 / 增强逐字（ESLyric）三种 LRC 各选一个 → 预览与手环正文都不含
       `[mm:ss]` / `<mm:ss>` 时间标签，三种格式的正文一致
@@ -203,7 +266,12 @@ export const event = {
 |---|---|
 | 插件加载失败 | 宿主 AstroBox 版本要支持 API Level 4 |
 | 安装失败，日志含 `canopusconnect` | 用了上游完整 world，改用 `world/bandbox.wit` 构建 |
+| 手机点「选择 LRC 文件」没反应 | 0.2.5 起所有宿主调用都 `await` 了；若仍不弹，点插件页「诊断」，把 `宿主：` / `选择：` 两行发来（`宿主：pickFile → …` 能直接区分是宿主没返回还是插件没接住） |
+| 诊断卡显示「平台：[object Promise]」 | 0.2.4 的症状：宿主调用没 `await`。装 0.2.5 即可 |
+| 手环提示「互传通道未就绪」 | 0.2.4 起不再直接判死：插件每 5 秒发 `hello` 心跳，手环收到即显示已连接；若仍失败，检查插件是否已加载、`interconnect` 权限是否已授予 |
+| 手机插件不显示「在线」 | 看诊断卡 `手环：` 行；确认设备列表非空、`interconnect` 权限已授予、手环端 BandBox 已安装 |
+| 手环一直显示「未连接手机」 | 手环是否停在「从手机传输」页；AstroBox 是否已连接手环；插件是否已加载；「诊断码」可用于区分蓝牙/插件问题。0.2.4 及更早版本因设备列表恒为空而永远发不出心跳，须升级到 0.2.5 |
+| 插件一直显示「手环未响应」 | 确认手环停在接收页；插件已解宿主信封并处理 ack，若仍超时请看诊断卡的 `手环：` 行 |
 | 收不到手环回执 | 手环是否停在「从手机传输」页；蓝牙是否连着 |
-| 提示「对端未安装」 | 手环端 BandBox 未安装或版本过旧 |
 | 中文乱码 | 宿主 TextDecoder 是否带 GBK；否则把 LRC 另存为 UTF-8 |
 | 构建报 `not yet implemented` | 用了官方 componentize-js，见上文「为什么用 componentize-qjs」 |

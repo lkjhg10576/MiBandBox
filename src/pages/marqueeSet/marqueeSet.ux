@@ -1,12 +1,14 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
+<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="跑马灯设置" clock="{{ clock }}"></pagehead>
-    <div class="inputCard" @click="focusText">
+    <div class="inputCard" @click="openKb">
       <text class="f iLabel">滚动文字</text>
-      <input id="marqueeInput" class="f iText" type="text" value="{{ text }}" maxlength="40" placeholder="点击输入文字" enterkeytype="done" @change="onTextChange" @click="focusText" />
+      <text class="f iText" if="{{ text }}">{{ text }}</text>
+      <text class="f iPlace" if="{{ !text }}">点击输入文字</text>
       <text class="f counter">{{ text.length }}/40</text>
     </div>
 
@@ -41,6 +43,8 @@
     <div class="go" @click="save"><text class="f goT">保存并播放</text></div>
 
     <backbtn></backbtn>
+    <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
+    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
   </div>
 </template>
 
@@ -49,7 +53,8 @@
 .page { width: 212px; height: 520px; background-color: #000000; }
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 78px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
 .iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.iText { width: 158px; height: 40px; font-size: 17px; line-height: 20px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
+.iText { width: 158px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.iPlace { width: 158px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .counter { position: absolute; right: 14px; top: 8px; font-size: 14px; color: rgba(255,255,255,0.3); }
 .label { position: absolute; left: 12px; width: 80px; font-size: 14px; color: rgba(255,255,255,0.45); }
 .chips { position: absolute; left: 6px; width: 200px; height: 32px; flex-direction: row; justify-content: space-between; }
@@ -83,6 +88,7 @@ export default {
     bg: '#0D6EFF',
     textColors: ['#FFFFFF', '#FFD166', '#00E5FF', '#00C853', '#FF6B6B'],
     bgColors: ['#000000', '#0D6EFF', '#5B1A1A', '#1A3A20', '#FFFFFF'],
+    kbShow: false,
     timer: null
   },
   onShow() {
@@ -110,11 +116,18 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
-  onTextChange(e) {
-    this.text = textInput.clamp(textInput.eventValue(e), 40, false)
+  openKb() {
+    this.kbShow = true
   },
-  focusText() {
-    textInput.focus(this, 'marqueeInput')
+  closeKb() {
+    this.kbShow = false
+  },
+  onKey(e) {
+    const content = e && e.detail && e.detail.content ? e.detail.content : ''
+    this.text = textInput.clamp(this.text + content, 40, false)
+  },
+  onDel() {
+    this.text = this.text.slice(0, -1)
   },
   setSize(v) {
     this.size = v
@@ -138,8 +151,8 @@ export default {
       prompt.showToast({ message: '请先输入文字', duration: 1400 })
       return
     }
-    textInput.blur(this, 'marqueeInput')
-    const m = { text: this.text, size: this.size, speed: this.speed, color: this.color, bg: this.bg }
+    this.kbShow = false
+    const m = { text: this.text, size: this.size, speed: this.speed, color: this.color, bg: this.bg, mode: 'v' }
     kv.init(() => {
       kv.set('marquee', m)
       kv.flush()

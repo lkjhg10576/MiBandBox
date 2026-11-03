@@ -1,0 +1,185 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="输入法诊断" clock="{{ clock }}"></pagehead>
+
+    <div class="card">
+      <scroll class="sc" scroll-y="true">
+        <div class="lines" style="height: 240px;">
+          <text class="f line" for="{{ reportLines }}">{{ $item }}</text>
+        </div>
+      </scroll>
+    </div>
+
+    <div class="btn {{ busy ? 'off' : '' }}" @click="run">
+      <text class="f btnT">{{ busy ? '诊断中…' : '开始诊断' }}</text>
+    </div>
+    <div class="btn qrBtn {{ qr ? '' : 'off' }}" @click="showQr">
+      <text class="f btnT">二维码</text>
+    </div>
+    <text class="f hint">把屏幕内容或二维码发给开发者</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+.page { width: 212px; height: 520px; background-color: #000000; }
+.card { position: absolute; left: 3px; top: 82px; width: 206px; height: 268px; border-radius: 26px; background-color: #262626; padding: 12px 16px; }
+.sc { width: 174px; height: 244px; }
+.lines { width: 174px; flex-direction: column; }
+.line { width: 174px; height: 20px; font-size: 14px; line-height: 20px; color: #FFFFFF; }
+.btn { position: absolute; left: 26px; top: 370px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.btn.off { background-color: #2A2A2A; }
+.qrBtn { top: 428px; }
+.btnT { font-size: 15px; color: #FFFFFF; }
+.hint { position: absolute; left: 0px; top: 484px; width: 212px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
+</style>
+
+<script>
+import time from '../../utils/time'
+import router from '../../utils/router'
+
+function typeOf(v) {
+  if (v === undefined) return 'undefined'
+  if (v === null) return 'null'
+  return typeof v
+}
+
+function keysOf(v) {
+  try {
+    const keys = Object.keys(v || {})
+    return keys.length ? keys.slice(0, 8).join(',') : '-'
+  } catch (e) {
+    return 'err'
+  }
+}
+
+function globalObject() {
+  try {
+    if (typeof globalThis !== 'undefined' && globalThis) return globalThis
+  } catch (e) {}
+  try {
+    if (typeof global !== 'undefined' && global) return global
+  } catch (e) {}
+  return null
+}
+
+function globalHints() {
+  try {
+    const g = globalObject()
+    if (!g) return 'no-global'
+    const names = Object.keys(g).filter((n) => /input|ime|method|keyboard/i.test(n))
+    return names.length ? names.slice(0, 8).join(',') : '-'
+  } catch (e) {
+    return 'err'
+  }
+}
+
+function compactValue(v) {
+  if (v === null) return 'null'
+  if (v === undefined) return 'undefined'
+  if (typeof v === 'string') return v
+  try {
+    const s = JSON.stringify(v)
+    return s.length > 220 ? s.slice(0, 220) + '…' : s
+  } catch (e) {
+    return String(v)
+  }
+}
+
+export default {
+  private: {
+    clock: '--:--',
+    busy: false,
+    reportLines: [
+      '点击“开始诊断”',
+      '结果会显示在这里',
+      '可生成二维码带走'
+    ],
+    report: '',
+    qr: '',
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  run() {
+    if (this.busy) return
+    this.busy = true
+    this.qr = ''
+
+    const lines = []
+    const hasInput = typeof input !== 'undefined' && input
+    lines.push('input: ' + (hasInput ? typeOf(input) : 'undefined'))
+    lines.push('keys: ' + (hasInput ? keysOf(input) : '-'))
+    lines.push('open: ' + (hasInput && typeof input.openInputMethod === 'function' ? 'function' : 'NO'))
+    lines.push('global: ' + (globalObject() ? 'yes' : 'no'))
+    lines.push('hints: ' + globalHints())
+    this.setLines(lines)
+
+    if (!hasInput || typeof input.openInputMethod !== 'function') {
+      lines.push('call: no-api')
+      this.setLines(lines)
+      this.busy = false
+      return
+    }
+
+    lines.push('call: waiting')
+    this.setLines(lines)
+
+    try {
+      input.openInputMethod({
+        inputText: '诊断ABC123',
+        success: (res) => {
+          const out = res && res.outputText != null ? res.outputText : (res && res.text != null ? res.text : res)
+          this.finish('success', out)
+        },
+        fail: (err, code) => {
+          this.finish('fail', 'code=' + code + ' ' + compactValue(err))
+        }
+      })
+    } catch (e) {
+      this.finish('throw', e && e.message ? e.message : String(e))
+    }
+  },
+  setLines(lines) {
+    this.reportLines = lines.slice()
+    this.report = lines.join('; ')
+    try {
+      console.log('[imeTest] ' + this.report)
+    } catch (e) {}
+  },
+  finish(kind, detail) {
+    const lines = this.reportLines.slice()
+    if (lines.length && lines[lines.length - 1] === 'call: waiting') lines.pop()
+    lines.push('call: ' + kind)
+    lines.push('out: ' + compactValue(detail))
+    this.setLines(lines)
+    this.busy = false
+
+    const short = lines.filter((l) => /^(input|open|call|out):/.test(l)).join(';')
+    this.qr = short.slice(0, 180)
+  },
+  showQr() {
+    if (!this.qr) return
+    router.push('/pages/qrcode/show', { qr: this.qr })
+  }
+}
+</script>

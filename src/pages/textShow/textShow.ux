@@ -1,14 +1,21 @@
 <template>
   <div class="page" style="background-color: {{ bg }};" @click="back">
-    <marquee class="f mq" scrollamount="{{ speed }}" text-offset="60" loop="-1" style="color: {{ color }}; font-size: {{ size }}px;">{{ text }}</marquee>
+    <div class="band" show="{{ !hBig }}">
+      <marquee class="f mqV" scrollamount="{{ speed }}" text-offset="40" loop="-1" style="color: {{ color }};">{{ text }}</marquee>
+    </div>
+    <div class="band" show="{{ hBig }}">
+      <text class="f mqH" style="color: {{ color }};">{{ stepText }}</text>
+    </div>
     <text class="f hint" style="color: {{ color }};">轻触屏幕退出</text>
   </div>
 </template>
 
 <style>
-.page { width: 212px; height: 520px; align-items: center; justify-content: center; overflow: hidden; }
-.mq { width: 212px; height: 120px; line-height: 120px; }
-.hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; opacity: 0.4; }
+.page { width: 212px; height: 520px; overflow: hidden; }
+.band { position: absolute; left: 0px; top: 160px; width: 212px; height: 200px; align-items: center; }
+.mqV { width: 212px; height: 200px; line-height: 200px; font-weight: bold; }
+.mqH { width: 212px; height: 200px; line-height: 200px; text-align: center; font-size: 56px; font-weight: bold; text-overflow: ellipsis; lines: 1; }
+.hint { position: absolute; left: 21px; top: 462px; width: 170px; text-align: center; font-size: 14px; opacity: 0.4; }
 </style>
 
 <script>
@@ -22,31 +29,55 @@ export default {
     size: '30',
     speed: '6',
     color: '#FFFFFF',
-    bg: '#0D6EFF'
+    bg: '#0D6EFF',
+    mode: 'v'
   },
-  private: {},
+  private: {
+    hBig: false,
+    stepText: ''
+  },
   onShow() {
-    if (!this.text) {
-      kv.init(() => {
-        const m = kv.get('marquee', null)
-        if (m) {
-          this.text = m.text || 'BandBox'
-          this.size = m.size || 30
-          this.speed = m.speed || 6
-          this.color = m.color || '#FFFFFF'
-          this.bg = m.bg || '#0D6EFF'
-        } else {
-          this.text = 'BandBox'
-        }
-      })
-    }
+    // 跑马灯配置与播放模式都走 KV（路由参数在当前 Vela 上绑定不稳定）。
+    // marquee 页 push 前已 kv.set + kv.flush，这里能读到最新值。
+    // 竖屏 = marquee 组件平滑滚动（组件字号在本渲染器上不可调）。
+    // 横屏 = 纯 text 元素 56px 特大字号 + 定时器逐字步进滚动
+    //（marquee 字号锁死、transform rotate 容器不渲染、canvas 缺失，均为本渲染器实测）。
+    kv.init(() => {
+      const m = kv.get('marquee', null)
+      this.text = (m && m.text) || 'BandBox'
+      this.size = (m && m.size) || 30
+      this.speed = (m && m.speed) || 6
+      this.color = (m && m.color) || '#FFFFFF'
+      this.bg = (m && m.bg) || '#0D6EFF'
+      const mode = kv.get('marqueeMode', this.mode) || this.mode
+      this.hBig = mode === 'h'
+      if (this.hBig) this.startStep()
+    })
     brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
   },
   onHide() {
+    this.stopStep()
     brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
   },
   onDestroy() {
+    this.stopStep()
     brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+  },
+  startStep() {
+    this.stopStep()
+    const cycle = String(this.text || 'BandBox') + '　　'
+    let i = 0
+    this.stepText = cycle
+    const step = () => {
+      i = (i + 1) % cycle.length
+      this.stepText = cycle.slice(i) + cycle.slice(0, i)
+    }
+    const gap = this.speed >= 12 ? 220 : this.speed >= 6 ? 360 : 560
+    this.stepTimer = setInterval(step, gap)
+  },
+  stopStep() {
+    if (this.stepTimer) clearInterval(this.stepTimer)
+    this.stepTimer = null
   },
   back() {
     router.back()

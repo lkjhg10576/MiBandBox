@@ -23,7 +23,7 @@
 </style>
 
 <script>
-import brightness from '@system.brightness'
+import screen from '../../utils/screen'
 import haptic from '../../utils/haptic'
 import router from '../../utils/router'
 
@@ -41,31 +41,17 @@ export default {
     color: MODES[0].color,
     name: MODES[0].name,
     fg: MODES[0].fg,
-    hint: MODES[0].hint,
-    saved: -1
+    hint: MODES[0].hint
   },
   onShow() {
+    screen.enter()
     this.apply(0)
-    brightness.getValue({
-      success: (res) => {
-        this.saved = res.value
-      },
-      fail: () => {}
-    })
-    brightness.setValue({ value: 255, success: () => {}, fail: () => {} })
-    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
   },
   onHide() {
-    this.restore()
+    screen.leave()
   },
   onDestroy() {
-    this.restore()
-  },
-  restore() {
-    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
-    if (this.saved >= 0) {
-      brightness.setValue({ value: this.saved, success: () => {}, fail: () => {} })
-    }
+    screen.leave()
   },
   apply(i) {
     this.index = i % MODES.length
@@ -75,9 +61,9 @@ export default {
     this.fg = m.fg
     this.hint = m.hint
     if (m.color === '#000000') {
-      this.restore()
+      screen.leave()
     } else {
-      brightness.setValue({ value: 255, success: () => {}, fail: () => {} })
+      screen.enter()
     }
     haptic.short()
   },

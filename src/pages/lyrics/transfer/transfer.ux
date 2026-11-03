@@ -16,7 +16,7 @@
       <list-item type="pad" class="pad"></list-item>
     </list>
 
-    <text class="f tip">保持本页打开，然后在手机 AstroBox 插件中选择 LRC 文件</text>
+    <text class="f tip">保持本页打开，并在手机上打开 AstroBox 的「BandBox歌词同步」插件</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -45,14 +45,29 @@ import prompt from '@system.prompt'
 import brightness from '@system.brightness'
 
 /**
- * 页面内部状态：定时器、订阅句柄、分片会话。
+ * 页面内部状态：定时器、订阅句柄、分片会话、心跳状态。
  * 这些值不是可序列化的界面数据，放在模块闭包里，
  * 不进入 data 的响应式代理（与 app.ux 的 layoutState 同一思路）。
  */
 const state = {
   timer: null,
   subscriber: null,
-  session: null
+  statusSubscriber: null,
+  session: null,
+  pingId: '',
+  pingSeq: 0,
+  lastProbeAt: 0,
+  lastHeardAt: 0,
+  connected: false,
+  timeoutReported: false,
+  diagnosing: false
+}
+
+/**
+ * 生成心跳 id（不依赖 crypto，手环 JS 环境可用）。
+ */
+function newId(prefix) {
+  return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6)
 }
 
 export default {
@@ -60,7 +75,7 @@ export default {
     clock: '--:--',
     rows: [],
     connText: '检测中',
-    stateText: '等待手机发送',
+    stateText: '正在检测手机插件',
     receivedName: '',
     receivedLines: 0
   },
@@ -68,10 +83,20 @@ export default {
   onShow() {
     this.clock = time.formatClock(new Date())
     state.session = transfer.createSession()
+    state.connected = false
+    // 从进入页面开始给手机插件 12 秒心跳宽限
+    state.lastHeardAt = Date.now()
+    state.lastProbeAt = 0
+    state.pingId = ''
+    state.timeoutReported = false
+    state.diagnosing = false
+
+    this.connText = '检测中'
+    this.stateText = '等待手机心跳'
     this.refreshRows()
 
     this.arm()
-    this.checkConnection()
+    this.probe()
     this.notifyReady()
 
     brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
@@ -79,21 +104,26 @@ export default {
     if (state.timer) clearInterval(state.timer)
     state.timer = setInterval(() => {
       this.clock = time.formatClock(new Date())
-      this.checkConnection()
-    }, 20000)
+      this.tick()
+    }, 5000)
   },
 
   onHide() {
     this.disarm()
-    state.timer && clearInterval(state.timer)
-    state.timer = null
+    if (state.timer) {
+      clearInterval(state.timer)
+      state.timer = null
+    }
     brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
   },
 
   onDestroy() {
     this.disarm()
-    state.timer && clearInterval(state.timer)
-    state.timer = null
+    if (state.timer) {
+      clearInterval(state.timer)
+      state.timer = null
+    }
+    state.session = null
     brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
   },
 
@@ -116,7 +146,7 @@ export default {
     }
     rows.push({
       title: '重新检测连接',
-      sub: '重新检测与手机的连接状态',
+      sub: '重新检测与手机插件的连接状态',
       act: 'recheck',
       arrow: '>'
     })
@@ -130,16 +160,36 @@ export default {
   },
 
   /**
-   * 订阅手机消息。进入页面时 arm，离开时 disarm（同一时刻只允许一个页面接收）。
+   * 订阅手机消息与连接状态。进入页面时 arm，离开时 disarm（同一时刻只允许一个页面接收）。
    */
   arm() {
     if (state.subscriber) return
     state.subscriber = interconnectUtil.onMessage((text) => {
       this.handle(text)
     })
-    // 兼容「刚进页面就收到消息」：立刻消费缓存
+    state.statusSubscriber = interconnectUtil.onStatus((status) => {
+      // 连接刚打开时补一次探测；避免和 onShow 里的 probe 同时发
+      if (
+        status === 1 &&
+        !state.connected &&
+        state.lastProbeAt > 0 &&
+        Date.now() - state.lastProbeAt > 1000
+      ) {
+        this.probe()
+      }
+    })
+    // 兼容「刚进页面就收到消息」：只补处理缓存里的歌词推送，
+    // 不用缓存的 pong 判断连接（可能是上一次会话的旧消息）
     const cached = interconnectUtil.getLastMessage()
-    if (cached) this.handle(cached)
+    if (cached) {
+      const parsed = transfer.parse(cached)
+      if (
+        parsed.ok &&
+        (parsed.msg.type === 'lyrics' || parsed.msg.type === 'chunk')
+      ) {
+        this.handle(cached)
+      }
+    }
   },
 
   disarm() {
@@ -147,42 +197,124 @@ export default {
       try {
         state.subscriber()
       } catch (e) {}
+      state.subscriber = null
     }
-    state.subscriber = null
+    if (state.statusSubscriber) {
+      try {
+        state.statusSubscriber()
+      } catch (e) {}
+      state.statusSubscriber = null
+    }
+    interconnectUtil.clearLastMessage()
   },
 
   /**
    * 告知手机端手环已就绪。
    */
   notifyReady() {
-    interconnectUtil.send(transfer.ready(), () => {}, () => {})
+    if (!interconnectUtil.isReady()) interconnectUtil.init()
+    if (!interconnectUtil.isReady()) return
+    interconnectUtil.send(transfer.ready(newId('r')), () => {}, () => {})
   },
 
   /**
-   * 检测手机端连接状态。
+   * 发一次 ping（best-effort）。
+   *
+   * 部分固件/签名组合下手环→手机方向不可用，因此这里发失败也不判死；
+   * 真正的连接状态以手机插件每 5 秒下发的 hello 心跳为准。
    */
-  checkConnection() {
-    interconnectUtil.readyState((status) => {
-      if (status === 1) {
-        this.connText = '已连接手机'
-      } else if (status === 2) {
-        this.connText = '未连接手机'
+  probe() {
+    state.lastProbeAt = Date.now()
+
+    // 上次 instance() 失败时允许重试，不再因为 inited 标志永久卡死
+    if (!interconnectUtil.isReady()) interconnectUtil.init()
+    if (!interconnectUtil.isReady()) return
+
+    state.pingSeq++
+    const id = newId('p')
+    state.pingId = id
+    const sent = interconnectUtil.send(transfer.ping(id), () => {}, () => {})
+    if (!sent) {
+      // 手环→手机方向不可用时不要立刻判死；手机→手环心跳仍然会到达
+      state.pingId = ''
+    }
+  },
+
+  /**
+   * 5 秒一次的定时任务：未连接时继续探测，已连接时检查心跳是否超时。
+   */
+  tick() {
+    const now = Date.now()
+    if (state.connected) {
+      if (now - state.lastHeardAt > 20000) {
+        this.markDisconnected('未收到插件心跳')
+        this.diagnose()
+      }
+      return
+    }
+
+    // 进页面后给手机插件 12 秒心跳宽限；超时只提示一次
+    if (now - state.lastHeardAt > 12000 && !state.timeoutReported) {
+      state.timeoutReported = true
+      this.markDisconnected('未收到插件心跳')
+      this.diagnose()
+    }
+
+    // 即使超时也继续探测，兼容旧版插件/连接恢复
+    if (now - state.lastProbeAt >= 5000) {
+      this.probe()
+    }
+  },
+
+  /**
+   * 标记已连接手机插件。
+   */
+  markConnected() {
+    const was = state.connected
+    state.connected = true
+    state.lastHeardAt = Date.now()
+    state.timeoutReported = false
+    state.pingId = ''
+    if (!was) {
+      this.connText = '已连接手机'
+      this.stateText = '插件在线，等待发送'
+      this.refreshRows()
+      haptic.short()
+    }
+  },
+
+  /**
+   * 标记未连接，并保留具体原因。
+   */
+  markDisconnected(reason) {
+    const was = state.connected
+    state.connected = false
+    this.connText = '未连接手机'
+    this.stateText = reason || '请打开手机插件'
+    this.refreshRows()
+    if (was) haptic.short()
+  },
+
+  /**
+   * 诊断对端。getReadyState/diagnosis 在 AstroBox 场景下只作为提示，
+   * 真正的连接状态以 ping/pong 为准。
+   */
+  diagnose() {
+    if (state.diagnosing) return
+    state.diagnosing = true
+    interconnectUtil.diagnosis(3000, (code) => {
+      state.diagnosing = false
+      if (state.connected) return
+      if (code === 0) {
+        this.stateText = '蓝牙已连，插件未响应'
+      } else if (code === 1001) {
+        this.stateText = '未启用歌词同步插件'
+      } else if (code === 204) {
+        this.stateText = '连接超时，请检查蓝牙'
+      } else if (code) {
+        this.stateText = '诊断码 ' + code
       } else {
-        // 状态未知时用 diagnosis 进一步确认对端是否安装
-        interconnectUtil.diagnosis(3000, (code) => {
-          if (code === 0) {
-            this.connText = '已连接手机'
-          } else if (code === 1001) {
-            this.connText = '对端未安装'
-          } else if (code === 204) {
-            this.connText = '连接超时'
-          } else {
-            this.connText = '未连接手机'
-          }
-          this.refreshRows()
-        })
-        this.refreshRows()
-        return
+        this.stateText = '请打开手机插件'
       }
       this.refreshRows()
     })
@@ -203,6 +335,20 @@ export default {
 
     const msg = parsed.msg
     const type = msg.type
+
+    if (type === 'pong') {
+      this.markConnected()
+      return
+    }
+
+    if (type === 'ping') {
+      this.markConnected()
+      this.reply(transfer.pong(msg.id))
+      return
+    }
+
+    // 收到任何合法协议消息都说明手机插件在线
+    this.markConnected()
 
     if (type === 'hello') {
       this.reply(transfer.pong(msg.id))
@@ -231,7 +377,10 @@ export default {
         return
       }
       const lines = res.text === '' ? [] : res.text.split('\n')
-      this.save(msg.id, res.title || '未命名', res.text, lines.length)
+      // 分片只承载正文，标题随 chunk 元数据单独传递；
+      // 落盘仍走「首行标题 + 正文」格式，否则展示页会把首行当标题吃掉。
+      const title = res.title || '未命名'
+      this.save(msg.id, title, transfer.buildText(title, res.text), lines.length)
       return
     }
   },
@@ -272,10 +421,15 @@ export default {
   onRow(item) {
     if (item.act === 'recheck') {
       haptic.short()
+      // 重新检测时先回到未连接状态，这样收到心跳会触发一次刷新
+      state.connected = false
+      state.lastHeardAt = Date.now()
+      state.timeoutReported = false
       this.connText = '检测中'
-      this.stateText = '等待手机发送'
+      this.stateText = '等待手机心跳'
       this.refreshRows()
-      this.checkConnection()
+      state.lastProbeAt = 0
+      this.probe()
       this.notifyReady()
       return
     }

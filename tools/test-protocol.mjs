@@ -215,6 +215,27 @@ test('ready() 文案', () => {
   assert.equal(r.v, 1)
 })
 
+test('ready() 可带心跳 id', () => {
+  const r = T.ready('r-1')
+  assert.equal(r.type, 'ready')
+  assert.equal(r.id, 'r-1')
+  const parsed = T.parse(JSON.stringify(r))
+  assert.equal(parsed.ok, true)
+  assert.equal(parsed.msg.id, 'r-1')
+})
+
+test('ping() / pong() 文案', () => {
+  const p = T.ping('p-1')
+  assert.equal(p.type, 'ping')
+  assert.equal(p.id, 'p-1')
+  assert.equal(T.parse(JSON.stringify(p)).ok, true)
+
+  const po = T.pong('p-1')
+  assert.equal(po.type, 'pong')
+  assert.equal(po.id, 'p-1')
+  assert.equal(T.parse(JSON.stringify(po)).ok, true)
+})
+
 // ---------- 端到端：分片 -> 重组 -> 落盘文本 ----------
 test('端到端：分片传输后可还原成落盘文本', () => {
   const lines = []
@@ -239,6 +260,52 @@ test('端到端：分片传输后可还原成落盘文本', () => {
   // 分片重组出的正文应与原文一致，拼上标题即为落盘内容
   assert.equal(last.text, body)
   assert.equal(T.buildText(title, last.text), T.buildText(title, lines))
+})
+
+// ---------- 落盘契约：分片路径也必须写出标题行 ----------
+test('落盘契约：分片路径落盘文本 = buildText(title, body)', () => {
+  // transfer.ux 的分片分支用 transfer.buildText(title, res.text) 落盘，
+  // 与单包路径（payload.text 已由 buildText 生成）保持同一格式。
+  const title = '稻香'
+  const body = '第一句\n第二句'
+  const res = { title, text: body }
+  const saved = T.buildText(res.title || '未命名', res.text)
+  assert.equal(saved, '稻香\n第一句\n第二句')
+  assert.equal(saved.split('\n')[0], title, '落盘首行必须是标题')
+})
+
+test('落盘契约：分片重组后的落盘文本首行是标题', () => {
+  const title = '测试歌曲'
+  const lines = ['一', '二', '三']
+  const { chunks, total } = T.splitChunks(lines.join('\n'), 4)
+  const s = T.createSession()
+  let last = null
+  for (let i = 0; i < chunks.length; i++) {
+    last = T.acceptChunk(s, { id: 'c', seq: i, total, title, data: chunks[i] })
+  }
+  assert.equal(last.done, true)
+  const saved = T.buildText(last.title, last.text)
+  assert.equal(saved.split('\n')[0], title)
+  assert.deepEqual(saved.split('\n').slice(1), lines)
+})
+
+// ---------- 端到端：分片传输 -> 落盘 -> 解析，正文逐行不丢 ----------
+test('端到端：分片传输 -> 落盘 -> 解析，正文与原始逐行相等', async () => {
+  const L = (await import(pathToFileURL(path.join(root, 'src/utils/lyricsDoc.js')).href)).default
+  const lines = ['对这个世界如果你有太多的抱怨', '跌倒了就不敢继续往前走', 'HELLO WORLD LINE']
+  const title = '稻香'
+  const { chunks, total } = T.splitChunks(lines.join('\n'), 12)
+  const s = T.createSession()
+  let last = null
+  for (let i = 0; i < chunks.length; i++) {
+    last = T.acceptChunk(s, { id: 'e2e2', seq: i, total, title, data: chunks[i] })
+  }
+  assert.equal(last.done, true)
+  const saved = T.buildText(title, last.text)
+  const doc = L.parseLyricsDoc(saved, title)
+  assert.equal(doc.ok, true)
+  assert.equal(doc.title, title)
+  assert.deepEqual(doc.body.split('\n'), lines, '解析后的正文应与原始 lines 逐行相等')
 })
 
 // ---------- 清理 ----------

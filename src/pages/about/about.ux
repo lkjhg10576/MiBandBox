@@ -5,11 +5,19 @@
   <div class="page">
     <pagehead title="关于" clock="{{ clock }}"></pagehead>
     <scroll class="body" scroll-y="true">
-      <div class="inner" style="height: 640px;">
+      <div class="inner" style="height: 880px;">
       <img class="logo" src="/common/icon.png" />
       <text class="f name">BandBox</text>
-      <text class="f ver">v0.2.0</text>
+      <text class="f ver">v0.3.2</text>
       <text class="f desc">为小米手环窄长屏设计的小工具箱，包含 27 个本地小工具：计算、记录、查询与趣味功能。</text>
+      <div class="card" @click="goImeTest">
+        <text class="f cTitle">输入法诊断</text>
+        <text class="f cBody">检查系统输入法是否可用，结果直接显示在屏幕上。</text>
+      </div>
+      <div class="card" @click="goKeyboardTest">
+        <text class="f cTitle">内置键盘验证</text>
+        <text class="f cBody">打开垃圾分类页，点输入框试拼音输入。</text>
+      </div>
       <div class="card">
         <text class="f cTitle">设计原则</text>
         <text class="f cBody">不联网、不收费、不引流；数据全部保存在本机，删除应用即删除数据。</text>
@@ -48,6 +56,7 @@
 
 <script>
 import time from '../../utils/time'
+import router from '../../utils/router'
 
 export default {
   data: { clock: '--:--', timer: null },
@@ -65,6 +74,12 @@ export default {
   onDestroy() {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
+  },
+  goImeTest() {
+    router.push('/pages/imeTest')
+  },
+  goKeyboardTest() {
+    router.push('/pages/wasteSorting')
   }
 }
 </script>

@@ -12,12 +12,15 @@
       <text class="f cTitle">编辑内容</text>
       <text class="f arrow">></text>
     </div>
-    <div class="card card3" @click="play">
-      <text class="f cTitle">全屏播放</text>
+    <div class="card card3" @click="play('v')">
+      <text class="f cTitle">竖屏播放</text>
+      <text class="f arrow">></text>
+    </div>
+    <div class="card card4" @click="play('h')">
+      <text class="f cTitle">横屏播放</text>
       <text class="f arrow">></text>
     </div>
 
-    <div class="go" @click="play"><text class="f goT">开始播放</text></div>
     <backbtn></backbtn>
   </div>
 </template>
@@ -30,17 +33,16 @@
 .card { position: absolute; left: 3px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 16px; }
 .card2 { top: 178px; }
 .card3 { top: 258px; }
+.card4 { top: 338px; }
 .cTitle { width: 160px; font-size: 17px; color: #FFFFFF; }
-.cSub { width: 70px; font-size: 14px; color: rgba(255,255,255,0.4); }
 .arrow { width: 16px; text-align: right; font-size: 20px; color: rgba(255,255,255,0.4); }
-.go { position: absolute; left: 26px; top: 382px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
-.goT { font-size: 14px; color: #FFFFFF; }
 </style>
 
 <script>
 import time from '../../utils/time'
 import kv from '../../utils/kv'
 import router from '../../utils/router'
+import haptic from '../../utils/haptic'
 
 export default {
   data: {
@@ -78,15 +80,23 @@ export default {
     this.timer = null
   },
   edit() {
+    haptic.short()
     router.push('/pages/marqueeSet')
   },
-  play() {
-    router.push('/pages/textShow', {
-      text: this.text,
-      size: this.size,
-      speed: this.speed,
-      color: this.color,
-      bg: this.bg
+  play(mode) {
+    haptic.short()
+    // 播放模式走 KV 一次性传递（路由参数在当前 Vela 上绑定不稳定），push 前立即落盘
+    kv.init(() => {
+      kv.set('marqueeMode', mode)
+      kv.flush()
+      router.push('/pages/textShow', {
+        text: this.text,
+        size: this.size,
+        speed: this.speed,
+        color: this.color,
+        bg: this.bg,
+        mode: mode
+      })
     })
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "BandBox歌词同步",
   "icon": "icon.png",
-  "version": "0.2.1",
+  "version": "0.2.5",
   "description": "在手机端选择 LRC 歌词，自动兼容逐行 / 逐字 / 增强逐字（ESLyric），解析为纯文本并推送到手环 BandBox 的歌词本",
   "author": "BandBox",
   "website": "https://github.com/gcw_MchqrexB/MiBandBox",

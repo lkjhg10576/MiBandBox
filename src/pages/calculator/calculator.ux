@@ -49,7 +49,7 @@ const LAYOUT = [
   { t: '±', v: 'SIGN', cls: 'fn' }, { t: '0', v: '0', cls: 'num' },
   { t: '.', v: '.', cls: 'num' }, { t: '=', v: 'EQ', cls: 'eq' },
   { t: '(', v: '(', cls: 'fn' }, { t: ')', v: ')', cls: 'fn' },
-  { t: '开方', v: '√', cls: 'fn' }, { t: '^', v: '^', cls: 'fn' }
+  { t: '√', v: '√', cls: 'fn' }, { t: '^', v: '^', cls: 'fn' }
 ]
 
 export default {

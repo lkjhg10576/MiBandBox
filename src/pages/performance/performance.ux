@@ -7,9 +7,10 @@
     <text class="f ref" @click="pfinfo">参考</text>
 
     <div class="scoreCard">
-      <text class="f sLabel">综合参考分</text>
+      <text class="f sLabel">{{ calibrated ? '综合参考分' : '性能校准' }}</text>
       <text class="f sVal">{{ score }}</text>
       <text class="f sSub">{{ compare }}</text>
+      <text class="f sRaw" if="{{ rawTotal > 0 }}">原始总耗时 {{ rawTotal }} ms</text>
     </div>
 
     <div class="tests">
@@ -23,7 +24,7 @@
     </div>
 
     <div class="go" @click="run"><text class="f goT">{{ running ? '测试中...' : '开始测试' }}</text></div>
-    <text class="f hint">分数受温度与后台影响</text>
+    <text class="f hint">{{ hint }}</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -36,6 +37,7 @@
 .sLabel { font-size: 14px; color: rgba(255,255,255,0.45); }
 .sVal { width: 206px; height: 56px; line-height: 56px; text-align: center; font-size: 38px; color: #0D6EFF; }
 .sSub { width: 190px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+.sRaw { width: 190px; height: 16px; line-height: 16px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.28); }
 .tests { position: absolute; left: 3px; top: 198px; width: 206px; height: 200px; flex-direction: column; }
 .test { width: 206px; height: 44px; margin-bottom: 4px; border-radius: 16px; background-color: #1C1C1C; padding: 3px 12px; flex-direction: column; }
 .tTop { width: 182px; height: 20px; flex-direction: row; align-items: center; justify-content: space-between; }
@@ -58,10 +60,14 @@ import router from '../../utils/router'
 export default {
   data: {
     clock: '--:--',
-    score: '待测',
-    compare: '点击开始，约需 1 秒',
+    score: perf.calibrated ? '待测' : '校准中',
+    compare: perf.calibrated ? '点击开始，约需 2 秒' : '点击开始，记录四项 ms',
+    hint: perf.calibrated ? '分数受温度与后台影响' : '请记录四项 ms',
+    calibrated: perf.calibrated,
+    rawTotal: 0,
     running: false,
     rows: perf.tests.map((t) => ({ name: t.name, ms: '—', percent: 0 })),
+    results: [],
     timer: null
   },
   onShow() {
@@ -94,8 +100,10 @@ export default {
     this.running = true
     haptic.short()
     this.rows = perf.tests.map((t) => ({ name: t.name, ms: '—', percent: 0 }))
-    this.score = '—'
+    this.score = perf.calibrated ? '—' : '校准中'
     this.compare = '正在测试...'
+    this.hint = perf.calibrated ? '分数受温度与后台影响' : '正在采集原始耗时...'
+    this.rawTotal = 0
     this.results = []
     this.next(0)
   },
@@ -107,11 +115,13 @@ export default {
     setTimeout(() => {
       const t = perf.tests[index]
       const ms = this.measure(t.key)
+      const ref = perf.calibrated && t.refMs > 0 ? t.refMs : 0
+      const rawPercent = ref > 0 ? (ref / ms) * 100 : (1000 / ms) * 100
       const rows = this.rows.slice()
       rows[index] = {
         name: t.name,
         ms,
-        percent: Math.max(6, Math.min(100, Math.round((1 - Math.min(1, ms / 260)) * 100)))
+        percent: Math.max(6, Math.min(100, Math.round(rawPercent)))
       }
       this.rows = rows
       this.results.push({ key: t.key, ms, weight: t.weight })
@@ -151,12 +161,21 @@ export default {
     return ms
   },
   finish() {
-    let raw = 0
-    this.results.forEach((r) => {
-      raw += r.weight * (60 / (r.ms + 2))
-    })
-    const score = Math.max(1, Math.round(raw * 22))
+    const totalMs = this.results.reduce((sum, r) => sum + r.ms, 0)
+    this.rawTotal = totalMs
+
+    if (!perf.calibrated) {
+      this.score = '校准中'
+      this.compare = '原始总耗时 ' + totalMs + ' ms'
+      this.hint = '记录四项 ms 后反馈'
+      this.running = false
+      haptic.pattern(3, 140)
+      return
+    }
+
+    const score = perf.scoreFor(this.results)
     this.score = String(score)
+
     let best = null
     let bestDiff = 1e9
     perf.devices.forEach((d) => {
@@ -167,6 +186,7 @@ export default {
       }
     })
     if (best) this.compare = '接近 ' + best.name + '（参考 ' + best.score + '）'
+    this.hint = '分数受温度与后台影响'
     this.running = false
     haptic.pattern(3, 140)
   }

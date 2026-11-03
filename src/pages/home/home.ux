@@ -93,6 +93,7 @@
 }
 .listApps {
   background-color: #000000;
+  padding: 0px 6px 0px 6px;
 }
 .grid {
   width: 212px;
@@ -128,7 +129,7 @@
 .rowCell {
   width: 200px;
   height: 68px;
-  margin: 3px 6px 8px 6px;
+  margin: 0px 0px 8px 0px;
   border-radius: 26px;
   background-color: #1A1A1A;
   flex-direction: row;

@@ -12,10 +12,11 @@
 
     <text class="f label">脉冲间隔</text>
     <div class="chips">
-      <div class="chip {{ gap === 200 ? 'on' : '' }}" @click="setGap(200)"><text class="f chipT">200ms</text></div>
-      <div class="chip {{ gap === 500 ? 'on' : '' }}" @click="setGap(500)"><text class="f chipT">500ms</text></div>
-      <div class="chip {{ gap === 1000 ? 'on' : '' }}" @click="setGap(1000)"><text class="f chipT">1s</text></div>
+      <div class="chip" style="background-color: {{ gap === 200 ? '#0D6EFF' : '#262626' }}; border-width: {{ gap === 200 ? 2 : 0 }}px; border-style: solid; border-color: #7EB1FF;" @click="setGap(200)"><text class="f chipT">{{ gap === 200 ? '✓ 200ms' : '200ms' }}</text></div>
+      <div class="chip" style="background-color: {{ gap === 500 ? '#0D6EFF' : '#262626' }}; border-width: {{ gap === 500 ? 2 : 0 }}px; border-style: solid; border-color: #7EB1FF;" @click="setGap(500)"><text class="f chipT">{{ gap === 500 ? '✓ 500ms' : '500ms' }}</text></div>
+      <div class="chip" style="background-color: {{ gap === 1000 ? '#0D6EFF' : '#262626' }}; border-width: {{ gap === 1000 ? 2 : 0 }}px; border-style: solid; border-color: #7EB1FF;" @click="setGap(1000)"><text class="f chipT">{{ gap === 1000 ? '✓ 1s' : '1s' }}</text></div>
     </div>
+    <text class="f cur">当前间隔：{{ gap === 1000 ? '1 秒' : gap + ' 毫秒' }}</text>
 
     <div class="visual">
       <div class="wave" for="{{ bars }}" style="height: {{ $item }}px; background-color: {{ playing ? '#0D6EFF' : '#333333' }};"></div>
@@ -39,9 +40,9 @@
 .label { position: absolute; left: 12px; top: 148px; width: 100px; font-size: 14px; color: rgba(255,255,255,0.5); }
 .chips { position: absolute; left: 6px; top: 174px; width: 200px; height: 40px; flex-direction: row; justify-content: space-between; }
 .chip { width: 62px; height: 36px; border-radius: 18px; background-color: #262626; align-items: center; justify-content: center; }
-.chip.on { background-color: rgba(13,110,255,0.3); }
-.chipT { font-size: 14px; color: #FFFFFF; }
-.visual { position: absolute; left: 16px; top: 240px; width: 180px; height: 100px; flex-direction: row; align-items: center; justify-content: space-between; }
+.chipT { font-size: 13px; color: #FFFFFF; }
+.cur { position: absolute; left: 0px; top: 216px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
+.visual { position: absolute; left: 16px; top: 244px; width: 180px; height: 96px; flex-direction: row; align-items: center; justify-content: space-between; }
 .wave { width: 8px; border-radius: 4px; }
 .go { position: absolute; left: 26px; top: 378px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .go.stop { background-color: #FF3B30; }
@@ -91,6 +92,7 @@ export default {
     }
   },
   setGap(g) {
+    haptic.short()
     this.gap = g
     if (this.playing) {
       this.stop()

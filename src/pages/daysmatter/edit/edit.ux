@@ -1,14 +1,16 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
+<import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="目标日" clock="{{ clock }}"></pagehead>
     <div class="save" @click="save"><text class="f saveT">保存</text></div>
 
-    <div class="card" @click="focusTitle">
+    <div class="card" @click="openKb">
       <text class="f label">事件名称</text>
-      <input id="dmTitleInput" class="f value" type="text" value="{{ title }}" maxlength="20" placeholder="例如：考试、生日、旅行" enterkeytype="done" @change="onTitleChange" @click="focusTitle" />
+      <text class="f value" if="{{ title }}">{{ title }}</text>
+      <text class="f iPlace" if="{{ !title }}">例如：考试、生日、旅行</text>
     </div>
 
     <div class="card card2" @click="pickDate">
@@ -21,6 +23,8 @@
     <div class="del" @click="del"><text class="f delT">{{ delStep === 0 ? '删除这个目标日' : '再次点击确认删除' }}</text></div>
 
     <backbtn></backbtn>
+    <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
+    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
   </div>
 </template>
 
@@ -32,7 +36,8 @@
 .card { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
 .card2 { top: 168px; }
 .label { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); }
-.value { width: 174px; height: 38px; font-size: 17px; line-height: 38px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
+.value { width: 174px; height: 38px; line-height: 38px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.iPlace { width: 174px; height: 38px; line-height: 38px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .delta { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.55); }
 .del { position: absolute; left: 48px; top: 330px; width: 116px; height: 34px; border-radius: 17px; background-color: rgba(255,59,48,0.14); align-items: center; justify-content: center; }
 .delT { font-size: 14px; color: #FF6B6B; }
@@ -42,10 +47,10 @@
 import time from '../../../utils/time'
 import router from '../../../utils/router'
 import fs from '../../../utils/fs'
-import kv from '../../../utils/kv'
 import haptic from '../../../utils/haptic'
 import prompt from '@system.prompt'
 import textInput from '../../../utils/textInput'
+import pickState from '../pickState'
 
 const PATH = 'internal://files/bandbox/events.json'
 const DIR = 'internal://files/bandbox/'
@@ -60,6 +65,7 @@ export default {
     delStep: 0,
     list: [],
     loaded: false,
+    kbShow: false,
     timer: null
   },
   onShow() {
@@ -104,14 +110,6 @@ export default {
           this.refreshDelta()
         }
       }
-      kv.init(() => {
-        const picked = kv.get('pickDate', '')
-        if (picked) {
-          this.date = picked
-          kv.set('pickDate', '')
-          this.refreshDelta()
-        }
-      })
     })
   },
   refreshDelta() {
@@ -122,24 +120,32 @@ export default {
     this.deltaText = this.date + ' · ' + time.weekdayName(d) + ' · ' + h.text
   },
   applyPickedDate() {
-    const picked = kv.get('pickDate', '')
+    const picked = pickState.date
     if (picked) {
       this.date = picked
-      kv.set('pickDate', '')
+      pickState.date = ''
       this.refreshDelta()
     }
   },
-  onTitleChange(e) {
-    this.title = textInput.clamp(textInput.eventValue(e), 20, false)
+  openKb() {
+    this.kbShow = true
   },
-  focusTitle() {
-    textInput.focus(this, 'dmTitleInput')
+  closeKb() {
+    this.kbShow = false
+  },
+  onKey(e) {
+    const content = e && e.detail && e.detail.content ? e.detail.content : ''
+    this.title = textInput.clamp(this.title + content, 20, false)
+  },
+  onDel() {
+    this.title = this.title.slice(0, -1)
   },
   pickDate() {
+    pickState.date = ''
     router.push('/pages/daysmatter/inputdate', { date: this.date })
   },
   save() {
-    textInput.blur(this, 'dmTitleInput')
+    this.kbShow = false
     const title = this.title.trim()
     if (!title) {
       prompt.showToast({ message: '请填写事件名称', duration: 1400 })

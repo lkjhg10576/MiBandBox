@@ -65,12 +65,18 @@ export function renderUI(elementId, state) {
   // ---- 顶部：手环信息 ----
   const devLines = []
   if (state.deviceName) {
-    devLines.push(text('手环：' + state.deviceName, C.text, 15))
+    const online = state.watchOnline ? ' · 在线' : ''
+    const saved = state.deviceSource === 'saved' ? ' · 历史设备' : ''
+    devLines.push(text('手环：' + state.deviceName + saved + online, C.text, 15))
   } else {
     devLines.push(text('未检测到已连接的手环', C.dim, 15))
+    devLines.push(text('请确认 AstroBox 已连接手环，并允许插件的设备权限', C.dim, 12))
   }
   if (state.deviceAddr) {
     devLines.push(text(state.deviceAddr, C.dim, 12))
+  }
+  if (state.deviceCount > 1) {
+    devLines.push(text('共 ' + state.deviceCount + ' 个已连接设备', C.dim, 12))
   }
   root.child(card(devLines))
 
@@ -80,6 +86,32 @@ export function renderUI(elementId, state) {
     state.status === 'failed' ? C.warn :
     state.status === 'sending' ? C.accent : C.dim
   root.child(card([text(state.statusText, statusColor, 15)]))
+
+  // ---- 设备刷新 / 诊断 ----
+  const tools = el('DIV').flex().flexDirection('ROW').gap(8).widthFull()
+  tools.child(button('刷新设备', 'refresh-devices', '#33383D').flexGrow(1))
+  tools.child(button(state.debug ? '关闭诊断' : '诊断', 'toggle-debug', '#33383D').flexGrow(1))
+  root.child(tools)
+
+  // ---- 诊断（放在顶部，避免被预览区挤出屏幕）----
+  if (state.debug) {
+    const dbg = []
+    dbg.push(text('平台：' + (state.platform || '未知'), C.dim, 12))
+    dbg.push(
+      text(
+        '设备：' + state.deviceCount + ' 个' +
+          (state.deviceSource ? '（' + state.deviceSource + '）' : ''),
+        C.dim,
+        12
+      )
+    )
+    dbg.push(text('UI：' + (state.lastUiEvent || '无'), C.dim, 12))
+    dbg.push(text('动作：' + (state.lastAction || '无'), C.dim, 12))
+    dbg.push(text('手环：' + (state.lastReply || '无'), C.dim, 12))
+    dbg.push(text('选择：' + (state.pickResult || '无'), C.dim, 12))
+    dbg.push(text('宿主：' + (state.lastHost || '无'), C.dim, 12))
+    root.child(card(dbg))
+  }
 
   // ---- 选择文件 ----
   root.child(button('选择 LRC 文件', 'pick-file'))

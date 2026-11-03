@@ -1,8 +1,8 @@
 {
   "package": "com.miband.box",
   "name": "BandBox",
-  "versionName": "0.2.1",
-  "versionCode": 201,
+  "versionName": "0.3.3",
+  "versionCode": 213,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -209,6 +209,9 @@
       },
       "pages/level": {
         "component": "level"
+      },
+      "pages/imeTest": {
+        "component": "imeTest"
       }
     }
   }

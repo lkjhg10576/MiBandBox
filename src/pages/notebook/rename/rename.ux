@@ -1,18 +1,22 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
+<import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="重命名" clock="{{ clock }}"></pagehead>
-    <div class="card" @click="focusValue">
+    <div class="card" @click="openKb">
       <text class="f label">新名称</text>
-      <input id="renameInput" class="f value" type="text" value="{{ value }}" maxlength="20" placeholder="点击输入" enterkeytype="done" @change="onValueChange" @click="focusValue" />
+      <text class="f value" if="{{ value }}">{{ value }}</text>
+      <text class="f iPlace" if="{{ !value }}">点击输入</text>
     </div>
 
     <div class="check" @click="save"><img class="checkImg" src="/common/check.png" /></div>
     <text class="f tip">名称最多 20 个字</text>
 
     <backbtn></backbtn>
+    <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
+    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
   </div>
 </template>
 
@@ -21,7 +25,8 @@
 .page { width: 212px; height: 520px; background-color: #000000; }
 .card { position: absolute; left: 3px; top: 86px; width: 206px; height: 84px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
 .label { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.45); }
-.value { width: 174px; height: 40px; font-size: 17px; line-height: 40px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
+.value { width: 174px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.iPlace { width: 174px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .check { position: absolute; left: 74px; top: 210px; width: 64px; height: 64px; align-items: center; justify-content: center; }
 .checkImg { width: 64px; height: 64px; }
 .tip { position: absolute; left: 0px; top: 292px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
@@ -37,7 +42,7 @@ import textInput from '../../../utils/textInput'
 
 export default {
   protected: { docName: '' },
-  private: { clock: '--:--', value: '', oldName: '', timer: null },
+  private: { clock: '--:--', value: '', oldName: '', kbShow: false, timer: null },
   onShow() {
     this.clock = time.formatClock(new Date())
     this.oldName = this.docName
@@ -55,14 +60,21 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
-  onValueChange(e) {
-    this.value = textInput.clamp(textInput.eventValue(e), 20, false)
+  openKb() {
+    this.kbShow = true
   },
-  focusValue() {
-    textInput.focus(this, 'renameInput')
+  closeKb() {
+    this.kbShow = false
+  },
+  onKey(e) {
+    const content = e && e.detail && e.detail.content ? e.detail.content : ''
+    this.value = textInput.clamp(this.value + content, 20, false)
+  },
+  onDel() {
+    this.value = this.value.slice(0, -1)
   },
   save() {
-    textInput.blur(this, 'renameInput')
+    this.kbShow = false
     const clean = docs.safeName(this.value)
     if (!clean) {
       prompt.showToast({ message: '名称不能为空', duration: 1400 })

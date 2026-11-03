@@ -4,17 +4,23 @@
 <template>
   <div class="page">
     <pagehead title="木鱼" clock="{{ clock }}"></pagehead>
-    <div class="fishWrap" @click="knock">
-      <div class="fish {{ hit ? 'hit' : '' }}">
-        <div class="slit"></div>
-        <div class="tail"></div>
-      </div>
-      <text class="f plusOne" if="{{ hit }}">功德 +1</text>
-    </div>
 
-    <text class="f meritLabel">功德</text>
-    <text class="f merit">{{ merit }}</text>
-    <text class="f hint">轻触木鱼，静心一下</text>
+    <div class="fishBox {{ hit ? 'hit' : '' }}" @click="knock">
+      <img class="fishImg" src="/common/images/muyu.png" />
+    </div>
+    <text class="f plusOne" style="opacity: {{ plusOpacity }}; transform: translateY({{ plusShift }}px);">功德 +1</text>
+
+    <div class="statCard"></div>
+    <text class="f statLabelL">今日</text>
+    <text class="f statNumL">{{ dayCount }}</text>
+    <text class="f statLabelR">累计</text>
+    <text class="f statNumR">{{ total }}</text>
+
+    <text class="f autoLabel">自动敲击</text>
+    <div class="chip chipOff" style="background-color: {{ autoMode === 'off' ? '#0D6EFF' : '#262626' }};" @click="setAuto('off')"><text class="f chipT">关</text></div>
+    <div class="chip chipSlow" style="background-color: {{ autoMode === 'slow' ? '#0D6EFF' : '#262626' }};" @click="setAuto('slow')"><text class="f chipT">慢</text></div>
+    <div class="chip chipMid" style="background-color: {{ autoMode === 'mid' ? '#0D6EFF' : '#262626' }};" @click="setAuto('mid')"><text class="f chipT">中</text></div>
+    <div class="chip chipFast" style="background-color: {{ autoMode === 'fast' ? '#0D6EFF' : '#262626' }};" @click="setAuto('fast')"><text class="f chipT">快</text></div>
 
     <div class="reset" @click="reset"><text class="f resetT">{{ delStep === 0 ? '功德归零' : '再次点击确认' }}</text></div>
     <backbtn></backbtn>
@@ -24,16 +30,22 @@
 <style>
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.fishWrap { position: absolute; left: 0px; top: 82px; width: 212px; height: 180px; align-items: center; justify-content: center; }
-.fish { width: 156px; height: 112px; border-radius: 78px 78px 56px 56px; background-color: #8A5A2B; transform: scale(1); }
-.fish.hit { transform: scale(0.93); }
-.slit { position: absolute; left: 46px; top: 34px; width: 64px; height: 9px; border-radius: 5px; background-color: #3A2410; }
-.tail { position: absolute; left: 144px; top: 48px; width: 26px; height: 26px; border-radius: 4px; background-color: #6E4520; transform: rotate(45deg); }
-.plusOne { position: absolute; left: 0px; top: 24px; width: 212px; text-align: center; font-size: 18px; color: #FFD166; opacity: 0; }
-.plusOne.show { opacity: 1; }
-.meritLabel { position: absolute; left: 0px; top: 286px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
-.merit { position: absolute; left: 0px; top: 306px; width: 212px; height: 64px; line-height: 64px; text-align: center; font-size: 48px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.hint { position: absolute; left: 0px; top: 390px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+.fishBox { position: absolute; left: 31px; top: 96px; width: 150px; height: 150px; align-items: center; justify-content: center; transition: transform 120ms; }
+.fishBox.hit { transform: scale(0.93); }
+.fishImg { width: 150px; height: 150px; }
+.plusOne { position: absolute; left: 0px; top: 112px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 18px; color: #FFD166; opacity: 0; transition: opacity 300ms ease-out, transform 300ms ease-out; }
+.statCard { position: absolute; left: 3px; top: 268px; width: 206px; height: 84px; border-radius: 26px; background-color: #262626; }
+.statLabelL { position: absolute; left: 24px; top: 286px; width: 60px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.45); }
+.statNumL { position: absolute; left: 24px; top: 308px; width: 60px; height: 32px; line-height: 32px; text-align: center; font-size: 24px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.statLabelR { position: absolute; left: 128px; top: 286px; width: 60px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.45); }
+.statNumR { position: absolute; left: 128px; top: 308px; width: 60px; height: 32px; line-height: 32px; text-align: center; font-size: 24px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.autoLabel { position: absolute; left: 4px; top: 366px; width: 56px; height: 30px; line-height: 30px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.chip { position: absolute; top: 366px; width: 35px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
+.chipOff { left: 60px; }
+.chipSlow { left: 97px; }
+.chipMid { left: 134px; }
+.chipFast { left: 171px; }
+.chipT { font-size: 13px; color: #FFFFFF; }
 .reset { position: absolute; left: 62px; top: 424px; width: 88px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
 .resetT { font-size: 14px; color: rgba(255,255,255,0.55); }
 </style>
@@ -44,29 +56,68 @@ import kv from '../../utils/kv'
 import haptic from '../../utils/haptic'
 
 export default {
-  data: { clock: '--:--', merit: 0, hit: false, delStep: 0, timer: null },
+  data: {
+    clock: '--:--',
+    dayCount: 0,
+    total: 0,
+    hit: false,
+    plusOpacity: 0,
+    plusShift: 0,
+    delStep: 0,
+    autoMode: 'off',
+    autoSpeed: 800,
+    timer: null,
+    autoTimer: null
+  },
   onShow() {
     this.clock = time.formatClock(new Date())
     this.delStep = 0
     kv.init(() => {
-      this.merit = kv.get('fishMerit', 0) || 0
+      const today = time.todayKey()
+      const day = kv.get('fishMeritDay', '')
+      let dayCount = kv.get('fishMeritDayCount', 0) || 0
+      let total = kv.get('fishMeritTotal', null)
+      if (total === null || total === undefined) {
+        // 旧版本把总功德存在 fishMerit，迁移一次
+        total = kv.get('fishMerit', 0) || 0
+        kv.set('fishMeritTotal', total)
+      }
+      total = total || 0
+      if (day !== today) {
+        dayCount = 0
+        kv.set('fishMeritDay', today)
+        kv.set('fishMeritDayCount', 0)
+      }
+      this.dayCount = dayCount
+      this.total = total
     })
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => {
       this.clock = time.formatClock(new Date())
     }, 20000)
+    if (this.autoMode !== 'off') {
+      this.stopAuto()
+      this.autoTimer = setInterval(() => {
+        this.knock()
+      }, this.autoSpeed)
+    }
   },
   onHide() {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
+    this.stopAuto()
   },
   onDestroy() {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
+    this.stopAuto()
   },
   knock() {
-    this.merit++
-    kv.set('fishMerit', this.merit)
+    this.dayCount = this.dayCount + 1
+    this.total = this.total + 1
+    kv.set('fishMeritDay', time.todayKey())
+    kv.set('fishMeritDayCount', this.dayCount)
+    kv.set('fishMeritTotal', this.total)
     haptic.short()
     this.hit = false
     setTimeout(() => {
@@ -75,14 +126,41 @@ export default {
     setTimeout(() => {
       this.hit = false
     }, 140)
+    this.plusOpacity = 0
+    this.plusShift = 0
+    setTimeout(() => {
+      this.plusOpacity = 1
+      this.plusShift = -36
+    }, 10)
+    setTimeout(() => {
+      this.plusOpacity = 0
+      this.plusShift = 0
+    }, 350)
+  },
+  setAuto(mode) {
+    this.autoMode = mode
+    this.autoSpeed = mode === 'slow' ? 1200 : (mode === 'fast' ? 500 : 800)
+    haptic.short()
+    this.stopAuto()
+    if (mode === 'off') return
+    this.autoTimer = setInterval(() => {
+      this.knock()
+    }, this.autoSpeed)
+  },
+  stopAuto() {
+    if (this.autoTimer) clearInterval(this.autoTimer)
+    this.autoTimer = null
   },
   reset() {
     if (this.delStep === 0) {
       this.delStep = 1
       return
     }
-    this.merit = 0
-    kv.set('fishMerit', 0)
+    this.dayCount = 0
+    this.total = 0
+    kv.set('fishMeritDay', time.todayKey())
+    kv.set('fishMeritDayCount', 0)
+    kv.set('fishMeritTotal', 0)
     this.delStep = 0
     haptic.long()
   }

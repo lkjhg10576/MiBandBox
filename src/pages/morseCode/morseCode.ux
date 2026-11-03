@@ -1,12 +1,14 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
+<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="摩斯密码" clock="{{ clock }}"></pagehead>
-    <div class="inputCard" @click="focusText">
+    <div class="inputCard" @click="openKb">
       <text class="f iLabel">文本</text>
-      <input id="morseInput" class="f iText" type="text" value="{{ text }}" maxlength="30" placeholder="仅支持英文/数字/符号" enterkeytype="done" @change="onTextChange" @click="focusText" />
+      <text class="f iText" if="{{ text }}">{{ text }}</text>
+      <text class="f iPlace" if="{{ !text }}">仅支持英文/数字/符号</text>
     </div>
 
     <div class="morseCard">
@@ -34,6 +36,8 @@
     </div>
 
     <backbtn></backbtn>
+    <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
+    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
   </div>
 </template>
 
@@ -42,7 +46,8 @@
 .page { width: 212px; height: 520px; background-color: #000000; }
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
 .iLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.iText { width: 174px; height: 32px; font-size: 18px; line-height: 32px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
+.iText { width: 174px; height: 32px; line-height: 32px; font-size: 18px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.iPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .morseCard { position: absolute; left: 3px; top: 152px; width: 206px; height: 116px; border-radius: 26px; background-color: #1A1A1A; padding: 8px 16px; flex-direction: column; }
 .mLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: #4E87FF; }
 .morseScroll { width: 174px; height: 78px; }
@@ -86,6 +91,7 @@ export default {
     timers: [],
     startAt: 0,
     morseWarned: false,
+    kbShow: false,
     timer: null
   },
   onShow() {
@@ -104,22 +110,30 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
-  onTextChange(e) {
-    const raw = textInput.eventValue(e)
-    const clean = textInput.sanitizeMorse(raw)
-    if (clean !== raw && !this.morseWarned) {
+  openKb() {
+    this.kbShow = true
+  },
+  closeKb() {
+    this.kbShow = false
+  },
+  onKey(e) {
+    const raw = e && e.detail && e.detail.content ? e.detail.content : ''
+    const before = this.text + raw
+    const clean = textInput.sanitizeMorse(before)
+    if (clean !== before.toUpperCase() && !this.morseWarned) {
       this.morseWarned = true
       prompt.showToast({ message: '摩斯密码仅支持英文、数字和常用符号', duration: 1800 })
     }
-    this.text = clean
-    this.code = morse.encode(clean)
+    this.text = textInput.clamp(clean, 30, false)
+    this.code = morse.encode(this.text)
   },
-  focusText() {
-    textInput.focus(this, 'morseInput')
+  onDel() {
+    this.text = this.text.slice(0, -1)
+    this.code = morse.encode(this.text)
   },
   play() {
     if (!this.text) {
-      this.focusText()
+      this.kbShow = true
       return
     }
     this.stop()

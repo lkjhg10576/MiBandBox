@@ -17,14 +17,7 @@
           <text class="f cTitle">关于 BandBox</text>
           <text class="f arrow">></text>
         </div>
-        <text class="f cSub">版本 0.2.0</text>
-      </div>
-      <div class="card" @click="showPrivacy">
-        <div class="cardTop">
-          <text class="f cTitle">数据与隐私</text>
-          <text class="f arrow">></text>
-        </div>
-        <text class="f cSub">仅保存在本机，不联网</text>
+        <text class="f cSub">版本 0.3.3</text>
       </div>
       <div class="card" @click="reset">
         <div class="cardTop">
@@ -89,9 +82,6 @@ export default {
   },
   goAbout() {
     router.push('/pages/about')
-  },
-  showPrivacy() {
-    prompt.showToast({ message: '笔记、目标日、歌词与设置都只保存在本机', duration: 2200 })
   },
   reset() {
     if (this.resetStep === 0) {

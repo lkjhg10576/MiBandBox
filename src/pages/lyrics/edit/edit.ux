@@ -1,14 +1,16 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
+<import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="编辑歌词" clock="{{ clock }}"></pagehead>
     <div class="save" @click="save"><text class="f saveT">保存</text></div>
 
-    <div class="field {{ active === 'title' ? 'on' : '' }}" @click="focusTitle">
+    <div class="field {{ active === 'title' ? 'on' : '' }}" @click="openKb">
       <text class="f fLabel">标题</text>
-      <input id="lyTitleInput" class="f fTitle" type="text" value="{{ title }}" maxlength="20" placeholder="歌曲名称" enterkeytype="done" @change="onTitleChange" @click="focusTitle" />
+      <text class="f fTitle" if="{{ title }}">{{ title }}</text>
+      <text class="f fPlace" if="{{ !title }}">歌曲名称</text>
     </div>
 
     <div class="bodyCard {{ active === 'body' ? 'on' : '' }}" @click="openBody">
@@ -19,9 +21,11 @@
       </scroll>
     </div>
 
-    <text class="f tip">系统输入法 · 支持中英文</text>
+    <text class="f tip">内置输入法 · 支持中英文</text>
 
     <backbtn></backbtn>
+    <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
+    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
   </div>
 </template>
 
@@ -35,7 +39,7 @@
 .bodyCard { position: absolute; left: 3px; top: 150px; width: 206px; height: 100px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
 .bodyCard.on { border-color: #0D6EFF; }
 .fLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.45); }
-.fTitle { width: 174px; height: 32px; font-size: 17px; color: #FFFFFF; background-color: transparent; border-width: 0px; padding: 0px; margin: 0px; caret-color: #0D6EFF; placeholder-color: rgba(255,255,255,0.3); }
+.fTitle { width: 174px; height: 32px; line-height: 32px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .fPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); }
 .bodyScroll { width: 174px; height: 68px; }
 .fBody { width: 174px; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.85); }
@@ -46,6 +50,7 @@
 import time from '../../../utils/time'
 import router from '../../../utils/router'
 import docs from '../../../utils/docs'
+import { parseLyricsDoc } from '../../../utils/lyricsDoc'
 import haptic from '../../../utils/haptic'
 import prompt from '@system.prompt'
 import inputResult from '../../../utils/inputResult'
@@ -60,6 +65,7 @@ export default {
     active: 'title',
     oldName: '',
     loaded: false,
+    kbShow: false,
     timer: null
   },
   onShow() {
@@ -71,15 +77,15 @@ export default {
     if (this.name && !this.loaded) {
       this.loaded = true
       docs.read('lyrics', this.name, (text) => {
-        const raw = text || ''
-        const pos = raw.indexOf('\n')
-        if (pos >= 0) {
-          this.title = raw.slice(0, pos)
-          this.body = raw.slice(pos + 1)
-        } else {
-          this.title = raw
-          this.body = ''
+        // 读失败：docs.read 回调收到 null；给出显式提示而不是留空
+        if (text === null || text === undefined) {
+          prompt.showToast({ message: '歌词读取失败', duration: 1500 })
+          return
         }
+        // 与展示页共用同一套解析规则，正文逐行一致
+        const doc = parseLyricsDoc(text, this.name)
+        this.title = doc.title
+        this.body = doc.body
       })
     }
     if (this.timer) clearInterval(this.timer)
@@ -95,16 +101,23 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
-  onTitleChange(e) {
-    this.title = textInput.clamp(textInput.eventValue(e), 20, false)
-  },
-  focusTitle() {
+  openKb() {
     this.active = 'title'
-    textInput.focus(this, 'lyTitleInput')
+    this.kbShow = true
+  },
+  closeKb() {
+    this.kbShow = false
+  },
+  onKey(e) {
+    const content = e && e.detail && e.detail.content ? e.detail.content : ''
+    this.title = textInput.clamp(this.title + content, 20, false)
+  },
+  onDel() {
+    this.title = this.title.slice(0, -1)
   },
   openBody() {
     this.active = 'body'
-    textInput.blur(this, 'lyTitleInput')
+    this.kbShow = false
     router.push('/pages/input', {
       field: 'lyBody',
       inputTitle: '歌词正文',
@@ -115,7 +128,7 @@ export default {
     })
   },
   save() {
-    textInput.blur(this, 'lyTitleInput')
+    this.kbShow = false
     let name = docs.safeName(this.title)
     if (!name) name = docs.safeName((this.body || '').split('\n')[0] || '未命名歌词')
     if (!name) name = '未命名歌词'

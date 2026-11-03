@@ -18,7 +18,7 @@
 - **JS 快应用**（与原件一致，生态/API 最匹配）
 - `deviceTypeList: ["watch"]`，`config.designWidth: 212`，`display.backgroundColor: "#000000"`
 - 纯 JS，无构建依赖；数据本地化，**零联网必需**（联网功能作为可选）
-- 目标机型：当前以小米手环 10 / 11（212×520 跑道屏）为准；系统输入法依赖真机固件，其他机型需单独验证
+- 目标机型：当前以小米手环 10 / 11（212×520 跑道屏）为准；输入法组件随包，其他机型需单独验证布局
 
 ---
 
@@ -40,7 +40,8 @@ src/
 │   ├── fs.js                  # 文件读写/列目录/删除封装
 │   ├── time.js                # 时钟源、格式化、天数差、闰年
 │   ├── haptic.js              # 振动封装（短/长/节奏）
-│   ├── textInput.js           # 原生 input/textarea 取值、换行、长度规则
+│   ├── textInput.js           # 文本换行、长度、摩斯字符规则
+│   ├── keyboardText.js        # 内置输入法追加/删除
 │   └── router.js              # 路由封装（push/back/param 传递）
 ├── data/                      # 全部自建数据集
 │   ├── quotes.js  food.js  history.js  waste.js  answers.js
@@ -67,7 +68,7 @@ src/
 
 ### M2 输入类（5 页，2 天）
 `marquee` → `marqueeSet` → `textShow`；`num`；`qrcode` → `show`；`morseCode`；`diet`；`answer` → `a1`；`sentence`；`history`；`wasteSorting`
-（依赖系统输入法与原生 `input`/`textarea`；`qrcode` 依赖自研二维码编码器）
+（依赖内置 `Vela_input_method` 组件；`qrcode` 依赖自研二维码编码器）
 
 ### M3 内容管理（4 组页面，3 天）
 - 笔记本：`notebook/{list,show,edit,rename,more}`
@@ -101,11 +102,13 @@ src/
 `PageShell` 统一时间刷新（`setInterval` 每 10s 对齐分钟）+ 顶部 `shadow.png` 遮罩 + 标题。
 卡片统一 `206×≥72 / radius 27 / #262626 / padding 12.5px 16.5px / margin-bottom 8px`。
 
-### 5.2 输入法（系统输入法）
-- 使用 Vela 原生 `<input type="text">` / `<textarea>`，获得焦点时由系统输入法接管，支持中英文
-- 短字段（标题、名称、跑马灯、二维码、摩斯、垃圾分类）在页面内直接输入；长文本（笔记/歌词正文）走 `pages/input` 原生 textarea
-- `utils/textInput.js` 统一取值（`value`/`text`）、换行归一、长度裁剪、摩斯字符过滤
-- 不再内置英文键盘和字体子集；字体使用系统字体，避免用户输入出现豆腐块
+### 5.2 输入法（内置输入法组件）
+- 使用 `NEORUAA/Vela_input_method`（MIT）随包打包，支持中文拼音、英文、数字、胶囊屏 QWERTY 布局
+- 短字段（标题、名称、跑马灯、二维码、摩斯、垃圾分类）在页面内直接输入；长文本（笔记/歌词正文）走 `pages/input`
+- 组件放在 `components/InputMethod/`，词库通过 `@system.file` 从包内 `assets/dictionary/` 懒加载
+- `utils/textInput.js` 负责换行归一、长度裁剪、摩斯字符过滤；`utils/keyboardText.js` 统一键盘追加/删除
+- 键盘根节点为页面级绝对层（`z-index: 999`），页面通过 `.kbBar` 提供“完成”收起栏
+- 不使用 `<input type="text">` / `<textarea>`：部分固件不向三方快应用开放系统输入法，原生输入框不会弹键盘
 
 ### 5.3 二维码（纯 JS，自研）
 `utils/qr.js`：字节模式、版本 1~10 自动选择、纠错等级 M、掩码择优（8 种惩罚评分）。

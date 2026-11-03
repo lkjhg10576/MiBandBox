@@ -1,9 +1,10 @@
 <template>
-  <div class="page" style="background-color: {{ color }};">
+  <div class="page">
+    <div class="fill" style="background-color: {{ color }};"></div>
     <div class="top">
       <text class="f exit" @click="exit">退出</text>
       <text class="f name" style="color: {{ fg }};">{{ name }}</text>
-      <text class="f count" style="color: {{ fg }};">{{ index + 1 }}/{{ total }}</text>
+      <text class="f count" style="color: {{ fg }};">{{ index < 0 ? '—' : (index + 1) + '/' + total }}</text>
     </div>
     <div class="zoneL" @click="prev">
       <text class="f arrow" style="color: {{ fg }};"><</text>
@@ -16,7 +17,8 @@
 </template>
 
 <style>
-.page { width: 212px; height: 520px; overflow: hidden; }
+.page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
+.fill { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
 .top { position: absolute; left: 30px; top: 42px; width: 152px; height: 28px; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px; }
 .exit { width: 40px; height: 28px; line-height: 28px; text-align: center; font-size: 14px; color: #FFFFFF; background-color: rgba(0,0,0,0.35); border-radius: 14px; }
 .name { width: 68px; text-align: center; font-size: 15px; }
@@ -41,10 +43,10 @@ function fgFor(hex) {
 
 export default {
   data: {
-    index: 0,
-    color: colors[0].hex,
-    name: colors[0].name,
-    fg: '#111111',
+    index: -1,
+    color: '#000000',
+    name: '',
+    fg: '#FFFFFF',
     total: colors.length
   },
   onShow() {

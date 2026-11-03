@@ -161,6 +161,9 @@ export function decodeText(bytes) {
     u8 = new Uint8Array(bytes)
   } else if (ArrayBuffer.isView(bytes)) {
     u8 = new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  } else if (Array.isArray(bytes)) {
+    // 有些宿主把 WIT list<u8> 映射成普通数组
+    u8 = new Uint8Array(bytes)
   } else {
     return String(bytes)
   }

@@ -79,6 +79,28 @@ function splitDuration(sec) {
   return { days, hours, minutes, seconds }
 }
 
+function countdownEndOfMinute(now) {
+  const d = now || new Date()
+  const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), d.getMinutes(), 59)
+  return Math.max(0, Math.floor((end.getTime() - d.getTime()) / 1000) + 1)
+}
+
+function countdownEndOfHour(now) {
+  const d = now || new Date()
+  const end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), d.getHours(), 59, 59)
+  return Math.max(0, Math.floor((end.getTime() - d.getTime()) / 1000) + 1)
+}
+
+/**
+ * 本周倒计时：一周按周一开头、周日结束；周日当天终点就是当天 23:59:59。
+ */
+function countdownEndOfWeek(now) {
+  const d = now || new Date()
+  const daysLeft = (7 - d.getDay()) % 7
+  const end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + daysLeft, 23, 59, 59)
+  return Math.max(0, Math.floor((end.getTime() - d.getTime()) / 1000) + 1)
+}
+
 function weekdayName(d) {
   return ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][d.getDay()]
 }
@@ -96,6 +118,9 @@ export default {
   humanDelta,
   countdownToEndOfDay,
   countdownToEndOfYear,
+  countdownEndOfMinute,
+  countdownEndOfHour,
+  countdownEndOfWeek,
   splitDuration,
   weekdayName,
   dateOnly

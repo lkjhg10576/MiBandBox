@@ -3,6 +3,7 @@
  * 目录下每个 txt 为一个文档，标题取文件名。
  */
 import fs from './fs'
+import { normalizeTitle } from './lyricsDoc'
 
 const ROOT = 'internal://files/bandbox/'
 
@@ -10,12 +11,13 @@ function join(dir, name) {
   return ROOT + dir + '/' + encodeURIComponent(name) + '.txt'
 }
 
+/**
+ * 文件名/标题归一化。
+ * 实现收敛到 lyricsDoc.js（纯函数，无平台依赖），与歌词解析器共用同一套规则，
+ * 避免「判定是不是标题」和「生成文件名」两处规则漂移。
+ */
 function safeName(name) {
-  return String(name || '')
-    .replace(/[\\/:*?"<>|]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 24)
+  return normalizeTitle(name)
 }
 
 function list(dir, cb) {
@@ -80,5 +82,7 @@ function rename(dir, oldName, newName, cb) {
 function exists(dir, name, cb) {
   fs.exists(join(dir, name), cb)
 }
+
+export { safeName }
 
 export default { list, read, save, remove, rename, exists, safeName, ROOT }

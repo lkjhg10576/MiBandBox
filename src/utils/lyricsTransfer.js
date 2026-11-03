@@ -245,9 +245,24 @@ function progress(id, received, total) {
 
 /**
  * 生成 ready 文案（手环进入「从手机传输」页时上报）。
+ * id 可选：插件会原样回 pong，手环用它确认这次探测。
  */
-function ready() {
-  return message('ready', {})
+function ready(id) {
+  return message('ready', id ? { id } : {})
+}
+
+/**
+ * 生成 ping 文案（手环主动探活手机插件）。
+ */
+function ping(id) {
+  return message('ping', { id: id || '' })
+}
+
+/**
+ * 生成 pong 文案（手环回复手机插件的 hello / ping）。
+ */
+function pong(id) {
+  return message('pong', { id: id || '' })
 }
 
 export default {
@@ -268,5 +283,7 @@ export default {
   ack,
   err,
   progress,
-  ready
+  ready,
+  ping,
+  pong
 }

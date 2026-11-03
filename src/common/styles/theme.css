@@ -25,3 +25,7 @@
 /* 按钮与提示 */
 .btnText { font-size: 14px; color: #FFFFFF; }
 .hint { font-size: 14px; color: rgba(255,255,255,0.4); text-align: center; }
+
+/* 内置输入法顶部“完成”栏：页面可通过同名样式覆盖 top。 */
+.kbBar { position: absolute; left: 0px; top: 155px; width: 212px; height: 32px; background-color: #111111; z-index: 1000; flex-direction: row; justify-content: flex-end; align-items: center; padding-right: 14px; }
+.kbBarT { font-size: 14px; color: #0D6EFF; }

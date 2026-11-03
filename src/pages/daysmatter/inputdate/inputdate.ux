@@ -4,23 +4,29 @@
 <template>
   <div class="page">
     <pagehead title="选择日期" clock="{{ clock }}"></pagehead>
-    <div class="row">
+
+    <!-- 第一步：选年 -->
+    <div class="row" if="{{ step === 1 }}">
       <text class="f label">年</text>
       <picker class="pk" type="text" range="{{ years }}" selected="{{ yi }}" onchange="onYear"></picker>
     </div>
-    <div class="row row2">
+    <text class="f previewY" if="{{ step === 1 }}">{{ y }} 年</text>
+
+    <!-- 第二步：选月 / 选日 -->
+    <div class="row" if="{{ step === 2 }}">
       <text class="f label">月</text>
       <picker class="pk" type="text" range="{{ months }}" selected="{{ mi }}" onchange="onMonth"></picker>
     </div>
-    <div class="row row3">
+    <div class="row row2" if="{{ step === 2 }}">
       <text class="f label">日</text>
       <picker class="pk" type="text" range="{{ days }}" selected="{{ di }}" onchange="onDay"></picker>
     </div>
+    <text class="f preview" if="{{ step === 2 }}">{{ dateText }}</text>
 
-    <text class="f preview">{{ dateText }}</text>
+    <div class="go" if="{{ step === 1 }}" @click="nextStep"><text class="f goT">下一步</text></div>
+    <div class="go" if="{{ step === 2 }}" @click="confirm"><text class="f goT">✓ 完成</text></div>
 
-    <div class="go" @click="confirm"><text class="f goT">确定</text></div>
-    <text class="f tip">上下滚动选择，点确定返回</text>
+    <text class="f tip">{{ step === 1 ? '先选年份，再选月和日' : '上下滚动选择，点完成返回' }}</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -30,10 +36,10 @@
 .page { width: 212px; height: 520px; background-color: #000000; }
 .row { position: absolute; left: 3px; top: 82px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 12px; }
 .row2 { top: 154px; }
-.row3 { top: 226px; }
 .label { width: 34px; font-size: 15px; color: rgba(255,255,255,0.55); }
 .pk { width: 148px; height: 56px; color: #FFFFFF; font-size: 20px; selected-color: #0D6EFF; }
-.preview { position: absolute; left: 0px; top: 312px; width: 212px; text-align: center; font-size: 15px; color: #FFFFFF; }
+.previewY { position: absolute; left: 0px; top: 160px; width: 212px; height: 34px; line-height: 34px; text-align: center; font-size: 24px; color: #FFFFFF; }
+.preview { position: absolute; left: 0px; top: 240px; width: 212px; height: 24px; text-align: center; font-size: 15px; color: #FFFFFF; }
 .go { position: absolute; left: 26px; top: 370px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goT { font-size: 14px; color: #FFFFFF; }
 .tip { position: absolute; left: 0px; top: 430px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
@@ -42,13 +48,36 @@
 <script>
 import time from '../../../utils/time'
 import router from '../../../utils/router'
-import kv from '../../../utils/kv'
 import haptic from '../../../utils/haptic'
+import pickState from '../pickState'
+
+/**
+ * 取 picker 当前选中的下标。
+ * 兼容三种事件形态：e.detail.newSelected、e.newSelected、e.detail.index；
+ * 若事件只带选中值文本，则回退到 range 里的下标。
+ */
+function pickIndex(e, range) {
+  const detail = e && e.detail ? e.detail : null
+  let raw = null
+  if (detail && detail.newSelected !== undefined && detail.newSelected !== null) {
+    raw = detail.newSelected
+  } else if (e && e.newSelected !== undefined && e.newSelected !== null) {
+    raw = e.newSelected
+  } else if (detail && detail.index !== undefined && detail.index !== null) {
+    raw = detail.index
+  } else if (detail && typeof detail.value === 'string' && range) {
+    const pos = range.indexOf(detail.value)
+    if (pos >= 0) return pos
+  }
+  const num = parseInt(raw, 10)
+  return isNaN(num) ? -1 : num
+}
 
 export default {
   protected: { date: '' },
   private: {
     clock: '--:--',
+    step: 1,
     years: [],
     months: [],
     days: [],
@@ -105,7 +134,8 @@ export default {
     this.dateText = this.y + ' 年 ' + this.m + ' 月 ' + this.d + ' 日 · ' + time.weekdayName(dt)
   },
   onYear(e) {
-    const idx = e.detail ? e.detail.newSelected : e.newSelected
+    const idx = pickIndex(e, this.years)
+    if (idx < 0) return
     this.yi = idx
     this.y = 1970 + idx
     this.buildDays()
@@ -113,27 +143,32 @@ export default {
     haptic.short()
   },
   onMonth(e) {
-    const idx = e.detail ? e.detail.newSelected : e.newSelected
+    const idx = pickIndex(e, this.months)
+    if (idx < 0) return
     this.mi = idx
     this.m = idx + 1
+    // 换月后天数变化，重算并把日夹紧到当月最大值
     this.buildDays()
     this.refreshText()
     haptic.short()
   },
   onDay(e) {
-    const idx = e.detail ? e.detail.newSelected : e.newSelected
+    const idx = pickIndex(e, this.days)
+    if (idx < 0) return
     this.di = idx
     this.d = idx + 1
     this.refreshText()
     haptic.short()
   },
+  nextStep() {
+    this.step = 2
+    haptic.short()
+  },
   confirm() {
     const str = this.y + '-' + time.pad2(this.m) + '-' + time.pad2(this.d)
-    kv.init(() => {
-      kv.set('pickDate', str)
-      haptic.short()
-      router.back()
-    })
+    pickState.date = str
+    haptic.short()
+    router.back()
   }
 }
 </script>

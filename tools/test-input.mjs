@@ -85,27 +85,6 @@ test('sanitizeMorse 去掉不支持的符号', () => {
   assert.equal(T.sanitizeMorse('a#b'), 'AB')
 })
 
-test('focus/blur 在没有 $element 时静默失败', () => {
-  T.focus({}, 'x')
-  T.blur({}, 'x')
-  T.focus(null, 'x')
-})
-
-test('focus/blur 调用组件 focus 方法', () => {
-  const calls = []
-  const vm = {
-    $element: (id) => ({
-      focus: (arg) => calls.push({ id, arg })
-    })
-  }
-  T.focus(vm, 'editor')
-  T.blur(vm, 'editor')
-  assert.deepEqual(calls, [
-    { id: 'editor', arg: { focus: true } },
-    { id: 'editor', arg: { focus: false } }
-  ])
-})
-
 console.log('')
 console.log(`${passed} passed, ${failed} failed`)
 if (failed) {

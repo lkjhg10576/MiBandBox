@@ -3,7 +3,7 @@
 import math
 import os
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.abspath(os.path.join(ROOT, "..", "..", "src", "common"))
@@ -338,6 +338,47 @@ def icon_settings():
     save(im, os.path.join(ICONS, "settings.png"))
 
 
+def icon_num():
+    """数字滚动：大圆弧 + 箭头 + 开口旁三个小点。"""
+    im = canvas(); d = ImageDraw.Draw(im)
+    rr(d, (7, 9, 37, 35), 5)
+    # 圆弧留 60° 开口（开口在右侧 330°~30°）
+    arc(d, 20, 21.5, 6, 30, 330, width=4)
+    # 箭头头部：两条短线，沿圆弧切线指向滚动方向
+    line(d, [(25.2, 18.5), (25.2, 14.5)], width=3, color=BLUE)
+    line(d, [(25.2, 18.5), (21.7, 16.5)], width=3, color=BLUE)
+    # 开口旁三个小点，示意滚动中的数字序列
+    for y in (14.5, 21.5, 28.5):
+        dot(d, 31, y, 1.2, color=BLUE)
+    save(im, os.path.join(ICONS, "num.png"))
+
+
+def fish_big():
+    """木鱼大图（填充风格，168px 画布），用于木鱼页面。"""
+    size = 168
+    wood = (138, 90, 43, 255)       # #8A5A2B 鱼身
+    wood_dark = (110, 69, 32, 255)  # #6E4520 尾鳍
+    slot = (58, 36, 16, 255)        # #3A2410 鱼口
+    light = (200, 155, 98, 255)     # #C89B62 鱼背高光
+    im = canvas(size)
+    # 底部淡投影（单独一层做高斯模糊，柔和无硬边）
+    shadow = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    sd = ImageDraw.Draw(shadow)
+    sd.ellipse([26 * S, 120 * S, 132 * S, 150 * S], fill=(0, 0, 0, 130))
+    shadow = shadow.filter(ImageFilter.GaussianBlur(3 * S))
+    im = Image.alpha_composite(shadow, im)
+    d = ImageDraw.Draw(im)
+    # 尾鳍：先画，鱼身压住内侧，形成圆润衔接
+    d.ellipse([116 * S, 50 * S, 163 * S, 120 * S], fill=wood_dark)
+    # 鱼身
+    d.ellipse([8 * S, 30 * S, 146 * S, 140 * S], fill=wood)
+    # 鱼背高光：左上浅色弧线
+    d.arc([35 * S, 43 * S, 119 * S, 127 * S], 200, 255, fill=light, width=9 * S)
+    # 鱼口：深色横向长圆槽
+    d.rounded_rectangle([50 * S, 60 * S, 110 * S, 72 * S], radius=6 * S, fill=slot)
+    save(im, os.path.join(OUT, "images", "muyu.png"), size)
+
+
 def common_shadow():
     w, h = 212, 84
     im = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -431,15 +472,17 @@ def app_icon():
 
 def main():
     os.makedirs(ICONS, exist_ok=True)
+    os.makedirs(os.path.join(OUT, "images"), exist_ok=True)
     for fn in (
         icon_calculator, icon_notebook, icon_fluorescence, icon_daysmatter,
         icon_calendar, icon_sentence, icon_password, icon_answer, icon_vibrate, icon_time,
         icon_storage, icon_fish, icon_display, icon_flashlight, icon_cps,
         icon_diet, icon_random, icon_system, icon_performance, icon_history,
         icon_scoreboard, icon_morse, icon_waste, icon_qrcode, icon_marquee,
-        icon_lylist, icon_level, icon_settings,
+        icon_lylist, icon_level, icon_settings, icon_num,
     ):
         fn()
+    fish_big()
     common_shadow()
     common_more()
     common_plus()

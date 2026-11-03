@@ -1,33 +1,29 @@
 <template>
-  <div class="page">
-    <div class="stripes">
-      <div class="stripe" for="{{ stripes }}" style="background-color: {{ $item }};"></div>
-    </div>
+  <div class="page" style="background-color: {{ color }};">
+    <div class="tap" @click="toggle"></div>
     <div class="top">
       <div class="btn" @click="exit"><text class="f btnT">退出</text></div>
       <text class="f title">荧光棒</text>
       <div class="btn" @click="toggle"><text class="f btnT">{{ paused ? '继续' : '暂停' }}</text></div>
     </div>
-    <div class="tap" @click="toggle"></div>
     <text class="f hint">{{ paused ? '已暂停 · 轻触继续' : '轻触暂停' }}</text>
   </div>
 </template>
 
 <style>
 .page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
-.stripes { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; flex-direction: row; }
-.stripe { flex: 1; height: 520px; }
-.top { position: absolute; left: 32px; top: 44px; width: 148px; height: 28px; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px; }
+.tap { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
+.top { position: absolute; left: 32px; top: 44px; width: 148px; height: 28px; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px; z-index: 2; }
 .btn { width: 44px; height: 28px; border-radius: 14px; background-color: rgba(0,0,0,0.35); align-items: center; justify-content: center; }
 .btnT { font-size: 14px; color: #FFFFFF; }
 .title { width: 60px; text-align: center; font-size: 17px; color: #FFFFFF; }
-.tap { position: absolute; left: 0px; top: 82px; width: 212px; height: 360px; }
-.hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.75); }
+.hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.75); z-index: 2; }
 </style>
 
 <script>
 import haptic from '../../utils/haptic'
 import router from '../../utils/router'
+import screen from '../../utils/screen'
 
 function hsl(h, s, l) {
   const c = (1 - Math.abs(2 * l - 1)) * s
@@ -54,30 +50,29 @@ for (let i = 0; i < 36; i++) PALETTE.push(hsl((i * 10) % 360, 0.92, 0.56))
 
 export default {
   data: {
+    color: PALETTE[0],
     paused: false,
     offset: 0,
-    stripes: [PALETTE[0], PALETTE[4], PALETTE[8], PALETTE[12], PALETTE[16], PALETTE[20]],
     timer: null
   },
   onShow() {
+    screen.enter()
     this.start()
   },
   onHide() {
     this.stop()
+    screen.leave()
   },
   onDestroy() {
     this.stop()
+    screen.leave()
   },
   start() {
     this.stop()
     this.timer = setInterval(() => {
       this.offset = (this.offset + 1) % PALETTE.length
-      const list = []
-      for (let i = 0; i < 6; i++) {
-        list.push(PALETTE[(this.offset + i * 4) % PALETTE.length])
-      }
-      this.stripes = list
-    }, 90)
+      this.color = PALETTE[this.offset % PALETTE.length]
+    }, 120)
   },
   stop() {
     if (this.timer) clearInterval(this.timer)

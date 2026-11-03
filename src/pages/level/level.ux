@@ -1,19 +1,21 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
-<import name="ring" src="../../components/Ring.ux"></import>
-
 <template>
   <div class="page">
     <pagehead title="水平仪" clock="{{ clock }}"></pagehead>
-    <div class="ringWrap">
-      <ring percent="{{ percent }}" color="{{ color }}" size="{{ 170 }}" label="{{ angleText }}"></ring>
-    </div>
-    <text class="f state" style="color: {{ color }};">{{ state }}</text>
-    <text class="f tip">{{ tip }}</text>
+
+    <div class="dial"></div>
+    <div class="crossH"></div>
+    <div class="crossV"></div>
+    <div class="target" style="border-color: {{ stateColor }};"></div>
+    <div class="dot" style="left: {{ dotLeft }}px; top: {{ dotTop }}px; background-color: {{ stateColor }};"></div>
+
+    <text class="f angles">Roll {{ rollText }} · Pitch {{ pitchText }}</text>
+    <text class="f state" style="color: {{ stateColor }};">{{ state }}</text>
 
     <div class="btn" @click="calibrate"><text class="f btnT">校准为零</text></div>
-    <text class="f foot">放平设备，读数接近 0°</text>
+    <text class="f foot">放平设备，圆点回到中心</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -21,12 +23,16 @@
 <style>
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.ringWrap { position: absolute; left: 21px; top: 84px; width: 170px; height: 170px; }
-.state { position: absolute; left: 0px; top: 264px; width: 212px; height: 30px; line-height: 30px; text-align: center; font-size: 17px; }
-.tip { position: absolute; left: 16px; top: 296px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.4); }
-.btn { position: absolute; left: 48px; top: 360px; width: 116px; height: 42px; border-radius: 21px; background-color: #262626; align-items: center; justify-content: center; }
+.dial { position: absolute; left: 16px; top: 92px; width: 180px; height: 180px; border-radius: 90px; background-color: #151515; border-width: 2px; border-style: solid; border-color: #333333; }
+.crossH { position: absolute; left: 26px; top: 181px; width: 160px; height: 2px; background-color: #3A3A3A; }
+.crossV { position: absolute; left: 105px; top: 102px; width: 2px; height: 160px; background-color: #3A3A3A; }
+.target { position: absolute; left: 78px; top: 154px; width: 56px; height: 56px; border-radius: 28px; background-color: transparent; border-width: 2px; border-style: solid; }
+.dot { position: absolute; width: 18px; height: 18px; border-radius: 9px; }
+.angles { position: absolute; left: 0px; top: 284px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.7); }
+.state { position: absolute; left: 0px; top: 312px; width: 212px; height: 28px; line-height: 28px; text-align: center; font-size: 17px; }
+.btn { position: absolute; left: 48px; top: 352px; width: 116px; height: 42px; border-radius: 21px; background-color: #262626; align-items: center; justify-content: center; }
 .btnT { font-size: 14px; color: #FFFFFF; }
-.foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.foot { position: absolute; left: 21px; top: 424px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
 </style>
 
 <script>
@@ -34,18 +40,36 @@ import time from '../../utils/time'
 import sensor from '@system.sensor'
 import haptic from '../../utils/haptic'
 
+const RAD2DEG = 180 / Math.PI
+const MAX_ANGLE = 45
+const MAX_OFFSET = 70
+const DOT_BASE_LEFT = 97
+const DOT_BASE_TOP = 173
+
+function clamp(v, min, max) {
+  if (v < min) return min
+  if (v > max) return max
+  return v
+}
+
+function formatAngle(v) {
+  return (v > 0 ? '+' : '') + v.toFixed(1) + '°'
+}
+
 export default {
   data: {
     clock: '--:--',
-    angle: 0,
-    offset: 0,
-    percent: 0,
-    color: '#0D6EFF',
-    angleText: '0°',
+    roll: null,
+    pitch: null,
+    rollText: '0.0°',
+    pitchText: '0.0°',
     state: '等待传感器',
-    tip: '把设备放平，读数接近 0°',
-    timer: null,
-    smoothed: null
+    stateColor: '#0D6EFF',
+    dotLeft: DOT_BASE_LEFT,
+    dotTop: DOT_BASE_TOP,
+    offsetRoll: 0,
+    offsetPitch: 0,
+    timer: null
   },
   onShow() {
     this.clock = time.formatClock(new Date())
@@ -71,21 +95,22 @@ export default {
           const x = ret.x || 0
           const y = ret.y || 0
           const z = ret.z || 0
-          let deg = (Math.atan2(x, Math.sqrt(y * y + z * z)) * 180) / Math.PI
-          deg = deg - this.offset
-          if (this.smoothed === null) this.smoothed = deg
-          else this.smoothed = this.smoothed * 0.8 + deg * 0.2
-          this.apply(this.smoothed)
+          // 左右倾斜（roll）与前后倾斜（pitch），z 接近 0 时结果仍在 ±90 内
+          const rollRaw = Math.atan2(x, z) * RAD2DEG - this.offsetRoll
+          const pitchRaw = Math.atan2(y, z) * RAD2DEG - this.offsetPitch
+          // 双轴各自平滑：0.8 旧值 + 0.2 新值
+          this.roll = this.roll === null ? rollRaw : this.roll * 0.8 + rollRaw * 0.2
+          this.pitch = this.pitch === null ? pitchRaw : this.pitch * 0.8 + pitchRaw * 0.2
+          this.apply()
         },
         fail: () => {
           this.state = '传感器不可用'
-          this.tip = '当前设备或模拟器未提供加速度计'
-          this.color = '#FF9500'
+          this.stateColor = '#FF9500'
         }
       })
     } catch (e) {
       this.state = '传感器不可用'
-      this.color = '#FF9500'
+      this.stateColor = '#FF9500'
     }
   },
   unsubscribe() {
@@ -93,33 +118,40 @@ export default {
       sensor.unsubscribeAccelerometer()
     } catch (e) {}
   },
-  apply(deg) {
-    const abs = Math.abs(deg)
-    const angle = Math.round(deg * 10) / 10
-    const percent = Math.min(100, Math.round((abs / 45) * 100))
-    if (angle === this.angle && percent === this.percent) return
-    this.angle = angle
-    this.percent = percent
-    this.angleText = (deg > 0 ? '+' : '') + this.angle.toFixed(1) + '°'
-    if (abs < 1.5) {
-      this.color = '#00C853'
+  apply() {
+    const roll = this.roll === null ? 0 : this.roll
+    const pitch = this.pitch === null ? 0 : this.pitch
+    const absRoll = Math.abs(roll)
+    const absPitch = Math.abs(pitch)
+
+    this.rollText = formatAngle(roll)
+    this.pitchText = formatAngle(pitch)
+
+    // 圆点偏移：最大 70px，roll 为正向右，pitch 为正向上
+    const cr = clamp(roll, -MAX_ANGLE, MAX_ANGLE)
+    const cp = clamp(pitch, -MAX_ANGLE, MAX_ANGLE)
+    this.dotLeft = DOT_BASE_LEFT + (cr / MAX_ANGLE) * MAX_OFFSET
+    this.dotTop = DOT_BASE_TOP - (cp / MAX_ANGLE) * MAX_OFFSET
+
+    if (absRoll < 1.5 && absPitch < 1.5) {
+      this.stateColor = '#00C853'
       this.state = '已水平'
-      this.tip = '保持在 0° 附近即可'
-    } else if (abs < 8) {
-      this.color = '#0D6EFF'
-      this.state = deg > 0 ? '向右微倾' : '向左微倾'
-      this.tip = '再调整一点就水平了'
+    } else if (absRoll < 8 && absPitch < 8) {
+      this.stateColor = '#0D6EFF'
+      this.state = '微倾'
     } else {
-      this.color = abs > 30 ? '#FF3B30' : '#FF9500'
-      this.state = deg > 0 ? '向右倾斜' : '向左倾斜'
-      this.tip = '缓慢调整设备角度'
+      this.stateColor = absRoll > 30 || absPitch > 30 ? '#FF3B30' : '#FF9500'
+      this.state = '倾斜'
     }
   },
   calibrate() {
     haptic.short()
-    this.offset = (this.angle || 0) + this.offset
-    this.smoothed = 0
-    this.apply(0)
+    // 把当前角度计入偏移，两轴归零
+    this.offsetRoll = this.offsetRoll + (this.roll === null ? 0 : this.roll)
+    this.offsetPitch = this.offsetPitch + (this.pitch === null ? 0 : this.pitch)
+    this.roll = 0
+    this.pitch = 0
+    this.apply()
   }
 }
 </script>

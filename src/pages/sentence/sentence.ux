@@ -39,6 +39,18 @@ import quotes from '../../data/quotes'
 import kv from '../../utils/kv'
 import haptic from '../../utils/haptic'
 import prompt from '@system.prompt'
+import crypto from '@system.crypto'
+
+function randInt(max) {
+  try {
+    if (crypto && typeof crypto.getRandomValues === 'function') {
+      const arr = new Uint8Array(2)
+      crypto.getRandomValues(arr)
+      return (arr[0] * 256 + arr[1]) % max
+    }
+  } catch (e) {}
+  return Math.floor(Math.random() * max)
+}
 
 export default {
   data: {
@@ -57,10 +69,7 @@ export default {
       this.clock = time.formatClock(new Date())
     }, 20000)
     kv.init(() => {
-      const now = new Date()
-      const day = Math.floor(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()) / 86400000)
-      this.index = day % quotes.length
-      this.quote = quotes[this.index]
+      this.draw()
       this.refreshFav()
     })
   },
@@ -72,6 +81,36 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
+  /**
+   * 洗牌队列：把全部索引随机排序后依次抽用，抽完再重洗。
+   * 保证连续多次进入/换一条几乎不会重复，直到一轮耗尽。
+   */
+  draw() {
+    let deck = kv.get('quoteDeck', [])
+    let pos = kv.get('quoteDeckPos', -1)
+    const ok = Array.isArray(deck) && deck.length === quotes.length &&
+      typeof pos === 'number' && pos >= 0 && pos < deck.length
+    if (!ok) {
+      deck = this.shuffledDeck()
+      pos = 0
+    }
+    const idx = deck[pos]
+    this.index = idx
+    this.quote = quotes[idx]
+    kv.set('quoteDeck', deck)
+    kv.set('quoteDeckPos', pos + 1)
+  },
+  shuffledDeck() {
+    const deck = []
+    for (let i = 0; i < quotes.length; i++) deck.push(i)
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = randInt(i + 1)
+      const t = deck[i]
+      deck[i] = deck[j]
+      deck[j] = t
+    }
+    return deck
+  },
   refreshFav() {
     const list = kv.get('quoteFavs', [])
     this.favCount = Array.isArray(list) ? list.length : 0
@@ -79,8 +118,7 @@ export default {
   },
   next() {
     haptic.short()
-    this.index = (this.index + 1) % quotes.length
-    this.quote = quotes[this.index]
+    this.draw()
     this.refreshFav()
   },
   favorite() {

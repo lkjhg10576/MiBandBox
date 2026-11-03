@@ -4,6 +4,7 @@
  * 约定：所有消息都是 UTF-8 JSON 字符串。
  * 公共字段：app = "bandbox-lyrics"、v = 1、type。
  */
+import { decodeText } from './lrc.js'
 
 export const APP_ID = 'bandbox-lyrics'
 export const VERSION = 1
@@ -87,6 +88,74 @@ export function decode(raw) {
   if (obj.v !== VERSION) return { ok: false, reason: ERRORS.VERSION }
   if (typeof obj.type !== 'string') return { ok: false, reason: ERRORS.BAD_TYPE }
   return { ok: true, msg: obj }
+}
+
+/**
+ * 解宿主的 interconnect-message 信封。
+ *
+ * 宿主可能把快应用消息包成：
+ *   { addr, pkgName, payloadText, payloadHex, payload }
+ * 也可能直接传协议 JSON（旧宿主 / 裸消息）。统一返回 { addr, pkgName, data }。
+ *
+ * @param {string} raw
+ * @returns {{addr: string, pkgName: string, data: string}}
+ */
+export function unwrapInterconnectPayload(raw) {
+  if (typeof raw !== 'string') {
+    if (raw && typeof raw === 'object' && typeof raw.data === 'string') {
+      return { addr: '', pkgName: '', data: raw.data }
+    }
+    return { addr: '', pkgName: '', data: '' }
+  }
+
+  let obj
+  try {
+    obj = JSON.parse(raw)
+  } catch (e) {
+    return { addr: '', pkgName: '', data: raw }
+  }
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+    return { addr: '', pkgName: '', data: raw }
+  }
+
+  // 已经是协议消息本身
+  if (obj.app === APP_ID) {
+    return { addr: '', pkgName: '', data: raw }
+  }
+
+  const addr = typeof obj.addr === 'string' ? obj.addr : ''
+  const pkgName = typeof obj.pkgName === 'string' ? obj.pkgName : ''
+
+  if (typeof obj.payloadText === 'string' && obj.payloadText) {
+    return { addr, pkgName, data: obj.payloadText }
+  }
+  if (typeof obj.payload === 'string' && obj.payload) {
+    return { addr, pkgName, data: obj.payload }
+  }
+  if (obj.payload && typeof obj.payload === 'object') {
+    return { addr, pkgName, data: JSON.stringify(obj.payload) }
+  }
+  if (typeof obj.payloadHex === 'string' && obj.payloadHex) {
+    return { addr, pkgName, data: hexToText(obj.payloadHex) }
+  }
+  if (typeof obj.data === 'string' && obj.data) {
+    return { addr, pkgName, data: obj.data }
+  }
+
+  return { addr, pkgName, data: raw }
+}
+
+/**
+ * 十六进制字符串 → UTF-8/GBK 文本。
+ */
+function hexToText(hex) {
+  const clean = String(hex).replace(/[^0-9a-fA-F]/g, '')
+  const len = Math.floor(clean.length / 2)
+  const bytes = new Uint8Array(len)
+  for (let i = 0; i < len; i++) {
+    bytes[i] = parseInt(clean.substr(i * 2, 2), 16)
+  }
+  return decodeText(bytes)
 }
 
 /**
@@ -233,6 +302,13 @@ export function hello(id) {
 }
 
 /**
+ * 生成 pong 消息（回复手环的 ready / ping）。
+ */
+export function pong(id) {
+  return encode('pong', { id: id || '' })
+}
+
+/**
  * 解释手环回执，产出给用户看的中文文案。
  */
 export function describeReply(msg) {
@@ -270,6 +346,7 @@ export default {
   message,
   encode,
   decode,
+  unwrapInterconnectPayload,
   jsonTextCost,
   chunkBudget,
   splitChunks,
@@ -280,5 +357,6 @@ export default {
   planSend,
   chunkMessage,
   hello,
+  pong,
   describeReply
 }

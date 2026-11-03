@@ -4,10 +4,18 @@
 <template>
   <div class="page">
     <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
-    <div class="contentWrap {{ mode === 'h' ? 'land' : '' }}">
-      <scroll id="lyScroll" class="lyScroll" scroll-y="true">
-        <text class="f lyric {{ mode === 'h' ? 'lyricLand' : '' }}">{{ body || '（空歌词）' }}</text>
-        <div class="pad"></div>
+
+    <!-- 竖屏正文 -->
+    <scroll id="lyScroll" class="lyScroll" if="{{ mode !== 'h' }}" scroll-y="true">
+      <text class="f lyric">{{ body || '（空歌词）' }}</text>
+      <div class="pad"></div>
+    </scroll>
+
+    <!-- 横屏正文：整块旋转 90°。注意旋转容器与内部滚动容器都用显式像素。 -->
+    <div class="lyLandWrap" if="{{ mode === 'h' }}">
+      <scroll id="lyScrollLand" class="lyScrollLand" scroll-y="true">
+        <text class="f lyricLand">{{ body || '（空歌词）' }}</text>
+        <div class="padLand"></div>
       </scroll>
     </div>
 
@@ -22,12 +30,20 @@
 <style>
 @import '../../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.contentWrap { position: absolute; left: 0px; top: 80px; width: 212px; height: 336px; }
-.contentWrap.land { left: -154px; top: 154px; width: 520px; height: 212px; transform: rotate(90deg); }
-.lyScroll { width: 100%; height: 100%; padding: 0px 12px; }
+/* 竖屏：绝对定位 + 显式像素 + align-items: flex-start（与 notebook/show / history / morseCode 同款） */
+.lyScroll { position: absolute; left: 0px; top: 80px; width: 212px; height: 336px; padding: 0px 12px; align-items: flex-start; }
 .lyric { width: 188px; font-size: 18px; line-height: 28px; color: rgba(255,255,255,0.9); }
-.lyricLand { width: 492px; font-size: 20px; line-height: 30px; }
-.pad { width: 100%; height: 40px; }
+.pad { width: 188px; height: 40px; }
+/* 横屏：520x212 的内容条旋转 90°，铺满 212x520 屏幕。
+   旋转中心取左上角（transform-origin: 0 0）+ left:212px：
+   旋转后正好落在 (0,0)-(212,520)。若沿用原来的 left:-154px（绕中心旋转），
+   元素框会向左溢出页面，被裁剪掉 → 整块不渲染（实测）。 */
+.lyLandWrap { position: absolute; left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); }
+.lyScrollLand { width: 520px; height: 212px; padding: 0px 12px; align-items: flex-start; }
+/* 正文宽 412px + 左内边距 80px = 492px，正好落在滚动容器 496px 的内容宽度内，
+   既给页头让出 80px（旋转后即屏幕顶部），又不会把长句的尾巴裁掉。 */
+.lyricLand { width: 412px; padding-left: 80px; font-size: 20px; line-height: 30px; color: rgba(255,255,255,0.9); }
+.padLand { width: 412px; height: 40px; padding-left: 80px; }
 .bar { position: absolute; left: 18px; top: 420px; width: 176px; height: 44px; flex-direction: row; justify-content: space-between; }
 .btn { width: 84px; height: 44px; border-radius: 22px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .btn.on { background-color: #00A846; }
@@ -39,9 +55,11 @@
 import time from '../../../utils/time'
 import router from '../../../utils/router'
 import docs from '../../../utils/docs'
+import { parseLyricsDoc } from '../../../utils/lyricsDoc'
 import kv from '../../../utils/kv'
 import haptic from '../../../utils/haptic'
 import brightness from '@system.brightness'
+import prompt from '@system.prompt'
 
 export default {
   protected: { name: '' },
@@ -74,14 +92,17 @@ export default {
   load() {
     if (!this.name) return
     docs.read('lyrics', this.name, (text) => {
-      const raw = text || ''
-      const pos = raw.indexOf('\n')
-      if (pos >= 0) {
-        this.title = raw.slice(0, pos) || this.name
-        this.body = raw.slice(pos + 1)
-      } else {
-        this.body = raw
+      // 读失败：docs.read 回调收到 null；此时给出显式提示，不静默空白
+      if (text === null || text === undefined) {
+        this.title = this.name || '歌词'
+        this.body = ''
+        prompt.showToast({ message: '歌词读取失败', duration: 1500 })
+        return
       }
+      // 与编辑页共用同一套解析规则：首行与文件名一致才算标题，否则首行属于正文
+      const doc = parseLyricsDoc(text, this.name)
+      this.title = doc.title || this.name || '歌词'
+      this.body = doc.body
     })
   },
   toggleAuto() {
@@ -93,7 +114,8 @@ export default {
     this.auto = true
     this.scrollTimer = setInterval(() => {
       try {
-        this.$element('lyScroll').scrollBy({ top: 3, behavior: 'instant' })
+        const el = this.mode === 'h' ? this.$element('lyScrollLand') : this.$element('lyScroll')
+        if (el) el.scrollBy({ top: 3, behavior: 'instant' })
       } catch (e) {}
     }, 260)
   },

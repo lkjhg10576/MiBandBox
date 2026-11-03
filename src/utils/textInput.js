@@ -1,5 +1,5 @@
 /**
- * 文本输入工具：统一原生 input / textarea 的取值、换行和长度规则。
+ * 文本工具：长度裁剪、换行归一、摩斯字符过滤。
  * 纯 JS，不依赖 @system.*，可以在 Node 下单测。
  */
 
@@ -39,22 +39,4 @@ export function sanitizeMorse(value) {
     .replace(MORSE_ALLOWED, '')
 }
 
-/** 让原生输入框获得焦点（触发系统输入法）；不支持时静默失败。 */
-export function focus(vm, id) {
-  try {
-    if (!vm || typeof vm.$element !== 'function') return
-    const el = vm.$element(id)
-    if (el && typeof el.focus === 'function') el.focus({ focus: true })
-  } catch (e) {}
-}
-
-/** 收起输入法。 */
-export function blur(vm, id) {
-  try {
-    if (!vm || typeof vm.$element !== 'function') return
-    const el = vm.$element(id)
-    if (el && typeof el.focus === 'function') el.focus({ focus: false })
-  } catch (e) {}
-}
-
-export default { eventValue, normalize, clamp, sanitizeMorse, focus, blur }
+export default { eventValue, normalize, clamp, sanitizeMorse }

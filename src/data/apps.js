@@ -16,9 +16,10 @@ const apps = [
   { id: 'fish', name: '木鱼', route: '/pages/fish', icon: '/common/icons/fish.png', desc: '敲一敲 · 静心' },
   { id: 'display', name: '显示测试', route: '/pages/display', icon: '/common/icons/display.png', desc: '纯色 · 坏点' },
   { id: 'flashlight', name: '红光手电', route: '/pages/flashlight', icon: '/common/icons/flashlight.png', desc: '高亮 · 护眼' },
-  { id: 'cpsTest', name: '手速测试', route: '/pages/cpsTest', icon: '/common/icons/cpsTest.png', desc: '3 秒 · 点击次数' },
+  { id: 'cpsTest', name: '手速测试', route: '/pages/cpsTest', icon: '/common/icons/cpsTest.png', desc: '5 秒 · 点击次数' },
   { id: 'diet', name: '今日饮食', route: '/pages/diet', icon: '/common/icons/diet.png', desc: '吃什么 · 喝什么' },
   { id: 'random', name: '随机数', route: '/pages/random', icon: '/common/icons/random.png', desc: '区间 · 抽号' },
+  { id: 'num', name: '数字滚动', route: '/pages/num', icon: '/common/icons/num.png', desc: '自动计数 · 滚动' },
   { id: 'system', name: '系统信息', route: '/pages/system', icon: '/common/icons/system.png', desc: '型号 · 屏幕 · 版本' },
   { id: 'performance', name: '性能测试', route: '/pages/performance', icon: '/common/icons/performance.png', desc: '四项跑分 · 参考' },
   { id: 'history', name: '史载今日', route: '/pages/history', icon: '/common/icons/history.png', desc: '今天的科技文化' },
@@ -28,7 +29,7 @@ const apps = [
   { id: 'qrcode', name: '快捷生码', route: '/pages/qrcode', icon: '/common/icons/qrcode.png', desc: '文本 · 二维码' },
   { id: 'marquee', name: '跑马灯', route: '/pages/marquee', icon: '/common/icons/marquee.png', desc: '滚动字幕 · 颜色' },
   { id: 'lylist', name: '歌词本', route: '/pages/lylist', icon: '/common/icons/lylist.png', desc: '本地歌词 · 滚动' },
-  { id: 'level', name: '水平仪', route: '/pages/level', icon: '/common/icons/level.png', desc: '倾角 · 圆环' }
+  { id: 'level', name: '水平仪', route: '/pages/level', icon: '/common/icons/level.png', desc: '双轴 · 圆点' }
 ]
 
 export default apps
