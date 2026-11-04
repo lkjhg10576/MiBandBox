@@ -3,7 +3,7 @@
 import math
 import os
 
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.abspath(os.path.join(ROOT, "..", "..", "src", "common"))
@@ -354,28 +354,23 @@ def icon_num():
 
 
 def fish_big():
-    """木鱼大图（填充风格，168px 画布），用于木鱼页面。"""
-    size = 168
+    """木鱼大图：150px 纯色硬边 RGBA，无超采样/高斯模糊/半透明渐变，页面 1:1 显示。"""
+    size = 150
     wood = (138, 90, 43, 255)       # #8A5A2B 鱼身
     wood_dark = (110, 69, 32, 255)  # #6E4520 尾鳍
     slot = (58, 36, 16, 255)        # #3A2410 鱼口
     light = (200, 155, 98, 255)     # #C89B62 鱼背高光
-    im = canvas(size)
-    # 底部淡投影（单独一层做高斯模糊，柔和无硬边）
-    shadow = Image.new("RGBA", im.size, (0, 0, 0, 0))
-    sd = ImageDraw.Draw(shadow)
-    sd.ellipse([26 * S, 120 * S, 132 * S, 150 * S], fill=(0, 0, 0, 130))
-    shadow = shadow.filter(ImageFilter.GaussianBlur(3 * S))
-    im = Image.alpha_composite(shadow, im)
+    # 直接在目标尺寸绘制：避免超采样后经 LANCZOS 缩放产生大量抗锯齿中间色与半透明边缘
+    im = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(im)
     # 尾鳍：先画，鱼身压住内侧，形成圆润衔接
-    d.ellipse([116 * S, 50 * S, 163 * S, 120 * S], fill=wood_dark)
+    d.ellipse([104, 45, 146, 107], fill=wood_dark)
     # 鱼身
-    d.ellipse([8 * S, 30 * S, 146 * S, 140 * S], fill=wood)
+    d.ellipse([7, 27, 130, 125], fill=wood)
     # 鱼背高光：左上浅色弧线
-    d.arc([35 * S, 43 * S, 119 * S, 127 * S], 200, 255, fill=light, width=9 * S)
+    d.arc([31, 38, 106, 113], 200, 255, fill=light, width=8)
     # 鱼口：深色横向长圆槽
-    d.rounded_rectangle([50 * S, 60 * S, 110 * S, 72 * S], radius=6 * S, fill=slot)
+    d.rounded_rectangle([45, 54, 98, 64], radius=5, fill=slot)
     save(im, os.path.join(OUT, "images", "muyu.png"), size)
 
 
