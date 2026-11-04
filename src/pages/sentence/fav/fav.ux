@@ -1,0 +1,100 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="我的收藏" clock="{{ clock }}"></pagehead>
+    <scroll class="body" scroll-y="true" bounces="true">
+      <div class="inner">
+        <div class="favCard" style="background-color: {{ $item.armed ? '#4A2020' : '#262626' }};" for="{{ items }}" @click="tapItem($item)">
+          <text class="f favText" style="color: {{ $item.armed ? '#FF6B6B' : '#FFFFFF' }};">{{ $item.armed ? '再点一次删除' : $item.text }}</text>
+        </div>
+        <div class="empty" if="{{ items.length === 0 }}">
+          <text class="f emptyT">还没有收藏</text>
+          <text class="f emptyS">在每日一言页点「收藏」句子</text>
+        </div>
+        <div class="pad"></div>
+      </div>
+    </scroll>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
+.inner { width: 212px; flex-direction: column; }
+.favCard { width: 206px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 14px 16px; flex-direction: column; }
+.favText { width: 174px; font-size: 18px; line-height: 26px; color: #FFFFFF; }
+.empty { width: 212px; height: 200px; align-items: center; justify-content: center; flex-direction: column; }
+.emptyT { font-size: 16px; color: rgba(255,255,255,0.5); }
+.emptyS { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.3); }
+.pad { width: 212px; height: 16px; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import kv from '../../../utils/kv'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+
+export default {
+  data: {
+    clock: '--:--',
+    items: [],
+    confirmIndex: -1,
+    timer: null
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    this.confirmIndex = -1
+    this.loadItems()
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  loadItems() {
+    kv.init(() => {
+      const list = kv.get('quoteFavs', [])
+      const arr = Array.isArray(list) ? list : []
+      // armed 状态放进 item 数据：$index 在绑定表达式里不可靠，绑定一律走 $item
+      this.items = arr.map((t, i) => ({ text: t, armed: i === this.confirmIndex }))
+    })
+  },
+  /**
+   * 两次点击确认删除（同设置页“恢复默认”模式）：首次点按条目变红并提示，
+   * 再次点按同一删除并落盘；点其他条目会转移确认态。
+   */
+  tapItem(item) {
+    haptic.short()
+    // scroll+for 里 $index/$item 引用都不可靠，用文本值定位（收藏按文本去重，必然唯一）
+    const index = this.items.findIndex((it) => it.text === item.text)
+    if (index < 0) return
+    if (this.confirmIndex === index) {
+      const list = kv.get('quoteFavs', [])
+      const arr = Array.isArray(list) ? list.slice() : []
+      if (index < arr.length) {
+        arr.splice(index, 1)
+        kv.set('quoteFavs', arr)
+        kv.flush()
+        prompt.showToast({ message: '已删除', duration: 1200 })
+      }
+      this.confirmIndex = -1
+      this.loadItems()
+    } else {
+      this.confirmIndex = index
+      this.items = this.items.map((it, i) => ({ text: it.text, armed: i === index }))
+    }
+  }
+}
+</script>

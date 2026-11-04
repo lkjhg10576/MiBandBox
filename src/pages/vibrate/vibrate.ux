@@ -11,10 +11,10 @@
     </div>
 
     <text class="f label">脉冲间隔</text>
-    <div class="chips">
-      <div class="chip" style="background-color: {{ gap === 200 ? '#0D6EFF' : '#262626' }}; border-width: {{ gap === 200 ? 2 : 0 }}px; border-style: solid; border-color: #7EB1FF;" @click="setGap(200)"><text class="f chipT">{{ gap === 200 ? '✓ 200ms' : '200ms' }}</text></div>
-      <div class="chip" style="background-color: {{ gap === 500 ? '#0D6EFF' : '#262626' }}; border-width: {{ gap === 500 ? 2 : 0 }}px; border-style: solid; border-color: #7EB1FF;" @click="setGap(500)"><text class="f chipT">{{ gap === 500 ? '✓ 500ms' : '500ms' }}</text></div>
-      <div class="chip" style="background-color: {{ gap === 1000 ? '#0D6EFF' : '#262626' }}; border-width: {{ gap === 1000 ? 2 : 0 }}px; border-style: solid; border-color: #7EB1FF;" @click="setGap(1000)"><text class="f chipT">{{ gap === 1000 ? '✓ 1s' : '1s' }}</text></div>
+    <div class="gaps">
+      <div class="gap" style="background-color: {{ gap === 200 ? '#0D6EFF' : 'transparent' }};" @click="setGap(200)"><text class="f gapT">200ms</text></div>
+      <div class="gap" style="background-color: {{ gap === 500 ? '#0D6EFF' : 'transparent' }};" @click="setGap(500)"><text class="f gapT">500ms</text></div>
+      <div class="gap" style="background-color: {{ gap === 1000 ? '#0D6EFF' : 'transparent' }};" @click="setGap(1000)"><text class="f gapT">1s</text></div>
     </div>
     <text class="f cur">当前间隔：{{ gap === 1000 ? '1 秒' : gap + ' 毫秒' }}</text>
 
@@ -37,11 +37,11 @@
 .mode { flex: 1; height: 38px; border-radius: 19px; align-items: center; justify-content: center; }
 .mode.on { background-color: #0D6EFF; }
 .modeT { font-size: 14px; color: #FFFFFF; }
-.label { position: absolute; left: 12px; top: 148px; width: 100px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.chips { position: absolute; left: 6px; top: 174px; width: 200px; height: 40px; flex-direction: row; justify-content: space-between; }
-.chip { width: 62px; height: 36px; border-radius: 18px; background-color: #262626; align-items: center; justify-content: center; }
-.chipT { font-size: 13px; color: #FFFFFF; }
-.cur { position: absolute; left: 0px; top: 216px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
+.label { position: absolute; left: 12px; top: 144px; width: 100px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.gaps { position: absolute; left: 6px; top: 170px; width: 200px; height: 44px; flex-direction: row; border-radius: 22px; background-color: #1A1A1A; padding: 3px; }
+.gap { flex: 1; height: 38px; border-radius: 19px; align-items: center; justify-content: center; }
+.gapT { font-size: 14px; color: #FFFFFF; }
+.cur { position: absolute; left: 0px; top: 222px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
 .visual { position: absolute; left: 16px; top: 244px; width: 180px; height: 96px; flex-direction: row; align-items: center; justify-content: space-between; }
 .wave { width: 8px; border-radius: 4px; }
 .go { position: absolute; left: 26px; top: 378px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }

@@ -1,8 +1,8 @@
 {
   "package": "com.miband.box",
   "name": "BandBox",
-  "versionName": "0.3.3",
-  "versionCode": 213,
+  "versionName": "0.3.4",
+  "versionCode": 214,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -93,6 +93,9 @@
       "pages/fluorescence": {
         "component": "fluorescence"
       },
+      "pages/fluorescence/play": {
+        "component": "play"
+      },
       "pages/daysmatter/list": {
         "component": "list"
       },
@@ -107,6 +110,9 @@
       },
       "pages/sentence": {
         "component": "sentence"
+      },
+      "pages/sentence/fav": {
+        "component": "fav"
       },
       "pages/password": {
         "component": "password"

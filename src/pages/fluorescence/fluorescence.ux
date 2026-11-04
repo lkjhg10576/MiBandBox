@@ -1,92 +1,111 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
 <template>
-  <div class="page" style="background-color: {{ color }};">
-    <div class="tap" @click="toggle"></div>
-    <div class="top">
-      <div class="btn" @click="exit"><text class="f btnT">退出</text></div>
-      <text class="f title">荧光棒</text>
-      <div class="btn" @click="toggle"><text class="f btnT">{{ paused ? '继续' : '暂停' }}</text></div>
+  <div class="page">
+    <pagehead title="荧光棒" clock="{{ clock }}"></pagehead>
+
+    <text class="f label l1">变色速度</text>
+    <div class="segs s1">
+      <div class="seg" style="background-color: {{ interval === 240 ? '#0D6EFF' : 'transparent' }};" @click="setSpeed(240)"><text class="f segT">慢</text></div>
+      <div class="seg" style="background-color: {{ interval === 120 ? '#0D6EFF' : 'transparent' }};" @click="setSpeed(120)"><text class="f segT">中</text></div>
+      <div class="seg" style="background-color: {{ interval === 60 ? '#0D6EFF' : 'transparent' }};" @click="setSpeed(60)"><text class="f segT">快</text></div>
     </div>
-    <text class="f hint">{{ paused ? '已暂停 · 轻触继续' : '轻触暂停' }}</text>
+
+    <text class="f label l2">高亮屏幕</text>
+    <div class="segs s2">
+      <div class="seg" style="background-color: {{ bright ? '#0D6EFF' : 'transparent' }};" @click="setBright(true)"><text class="f segT">开</text></div>
+      <div class="seg" style="background-color: {{ bright ? 'transparent' : '#0D6EFF' }};" @click="setBright(false)"><text class="f segT">关</text></div>
+    </div>
+
+    <text class="f label l3">阻止熄屏</text>
+    <div class="segs s3">
+      <div class="seg" style="background-color: {{ keepOn ? '#0D6EFF' : 'transparent' }};" @click="setKeepOn(true)"><text class="f segT">开</text></div>
+      <div class="seg" style="background-color: {{ keepOn ? 'transparent' : '#0D6EFF' }};" @click="setKeepOn(false)"><text class="f segT">关</text></div>
+    </div>
+
+    <div class="go" @click="start"><text class="f goT">启动</text></div>
+    <text class="f hint">选择参数后点启动进入荧光棒</text>
+    <backbtn></backbtn>
   </div>
 </template>
 
 <style>
-.page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
-.tap { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
-.top { position: absolute; left: 32px; top: 44px; width: 148px; height: 28px; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px; z-index: 2; }
-.btn { width: 44px; height: 28px; border-radius: 14px; background-color: rgba(0,0,0,0.35); align-items: center; justify-content: center; }
-.btnT { font-size: 14px; color: #FFFFFF; }
-.title { width: 60px; text-align: center; font-size: 17px; color: #FFFFFF; }
-.hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.75); z-index: 2; }
+@import '../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+.label { position: absolute; left: 12px; width: 100px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.l1 { top: 92px; }
+.l2 { top: 176px; }
+.l3 { top: 260px; }
+.segs { position: absolute; left: 6px; width: 200px; height: 44px; flex-direction: row; border-radius: 22px; background-color: #1A1A1A; padding: 3px; }
+.s1 { top: 118px; }
+.s2 { top: 202px; }
+.s3 { top: 286px; }
+.seg { flex: 1; height: 38px; border-radius: 19px; align-items: center; justify-content: center; }
+.segT { font-size: 14px; color: #FFFFFF; }
+.go { position: absolute; left: 26px; top: 368px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.hint { position: absolute; left: 16px; top: 436px; width: 180px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
 </style>
 
 <script>
+import time from '../../utils/time'
+import kv from '../../utils/kv'
 import haptic from '../../utils/haptic'
 import router from '../../utils/router'
-import screen from '../../utils/screen'
-
-function hsl(h, s, l) {
-  const c = (1 - Math.abs(2 * l - 1)) * s
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
-  const m = l - c / 2
-  let r = 0
-  let g = 0
-  let b = 0
-  if (h < 60) { r = c; g = x }
-  else if (h < 120) { r = x; g = c }
-  else if (h < 180) { g = c; b = x }
-  else if (h < 240) { g = x; b = c }
-  else if (h < 300) { r = x; b = c }
-  else { r = c; b = x }
-  const to = (v) => {
-    const n = Math.round((v + m) * 255)
-    return (n < 16 ? '0' : '') + n.toString(16)
-  }
-  return '#' + to(r) + to(g) + to(b)
-}
-
-const PALETTE = []
-for (let i = 0; i < 36; i++) PALETTE.push(hsl((i * 10) % 360, 0.92, 0.56))
 
 export default {
   data: {
-    color: PALETTE[0],
-    paused: false,
-    offset: 0,
-    timer: null
+    clock: '--:--',
+    interval: 120,
+    bright: true,
+    keepOn: true,
+    clockTimer: null
   },
   onShow() {
-    screen.enter()
-    this.start()
+    this.clock = time.formatClock(new Date())
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.clockTimer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    // 记住上次的选择
+    kv.init(() => {
+      const cfg = kv.get('fluoroCfg', null)
+      if (cfg && typeof cfg === 'object') {
+        if (cfg.interval === 240 || cfg.interval === 120 || cfg.interval === 60) this.interval = cfg.interval
+        if (typeof cfg.bright === 'boolean') this.bright = cfg.bright
+        if (typeof cfg.keepOn === 'boolean') this.keepOn = cfg.keepOn
+      }
+    })
   },
   onHide() {
-    this.stop()
-    screen.leave()
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.clockTimer = null
   },
   onDestroy() {
-    this.stop()
-    screen.leave()
+    if (this.clockTimer) clearInterval(this.clockTimer)
+    this.clockTimer = null
+  },
+  setSpeed(v) {
+    haptic.short()
+    this.interval = v
+  },
+  setBright(v) {
+    haptic.short()
+    this.bright = v
+  },
+  setKeepOn(v) {
+    haptic.short()
+    this.keepOn = v
   },
   start() {
-    this.stop()
-    this.timer = setInterval(() => {
-      this.offset = (this.offset + 1) % PALETTE.length
-      this.color = PALETTE[this.offset % PALETTE.length]
-    }, 120)
-  },
-  stop() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
-  },
-  toggle() {
     haptic.short()
-    this.paused = !this.paused
-    if (this.paused) this.stop()
-    else this.start()
-  },
-  exit() {
-    haptic.short()
-    router.back()
+    // 配置走 KV 一次性传递（路由参数在当前 Vela 上绑定不稳定），push 前立即落盘
+    kv.init(() => {
+      kv.set('fluoroCfg', { interval: this.interval, bright: this.bright, keepOn: this.keepOn })
+      kv.flush()
+      router.push('/pages/fluorescence/play')
+    })
   }
 }
 </script>

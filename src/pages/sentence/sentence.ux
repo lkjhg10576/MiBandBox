@@ -4,17 +4,22 @@
 <template>
   <div class="page">
     <pagehead title="每日一言" clock="{{ clock }}"></pagehead>
-    <div class="card">
-      <text class="f quoteMark">“</text>
-      <text class="f quote">{{ quote }}</text>
-      <text class="f idx">第 {{ index + 1 }} / {{ total }} 条</text>
-    </div>
-
-    <div class="actions">
-      <div class="btn" @click="next"><text class="f btnT">换一条</text></div>
-      <div class="btn fav" @click="favorite"><text class="f btnT">{{ faved ? '已收藏' : '收藏' }}</text></div>
-    </div>
-    <text class="f favCount">已收藏 {{ favCount }} 条 · 保存在本机</text>
+    <scroll class="body" scroll-y="true" bounces="true">
+      <div class="inner">
+        <div class="card">
+          <text class="f quoteMark">“</text>
+          <text class="f quote">{{ quote }}</text>
+          <text class="f idx">第 {{ index + 1 }} / {{ total }} 条</text>
+        </div>
+        <div class="actions">
+          <div class="btn" @click="next"><text class="f btnT">换一条</text></div>
+          <div class="btn fav" @click="favorite"><text class="f btnT">{{ faved ? '已收藏' : '收藏' }}</text></div>
+        </div>
+        <text class="f favCount">已收藏 {{ favCount }} 条 · 保存在本机</text>
+        <div class="favEntry" @click="openFavs"><text class="f favEntryT">我的收藏 ({{ favCount }})</text></div>
+        <div class="pad"></div>
+      </div>
+    </scroll>
     <backbtn></backbtn>
   </div>
 </template>
@@ -22,15 +27,20 @@
 <style>
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.card { position: absolute; left: 3px; top: 82px; width: 206px; height: 250px; border-radius: 26px; background-color: #262626; padding: 14px 18px; flex-direction: column; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
+.inner { width: 212px; height: 414px; flex-direction: column; }
+.card { width: 206px; height: 250px; margin: 0px 3px; border-radius: 26px; background-color: #262626; padding: 14px 18px; flex-direction: column; }
 .quoteMark { width: 170px; height: 36px; line-height: 36px; font-size: 44px; color: #4E87FF; }
 .quote { width: 170px; height: 150px; font-size: 23px; line-height: 34px; color: #FFFFFF; }
 .idx { width: 170px; height: 20px; line-height: 20px; text-align: right; font-size: 14px; color: rgba(255,255,255,0.3); }
-.actions { position: absolute; left: 18px; top: 358px; width: 176px; height: 46px; flex-direction: row; justify-content: space-between; }
+.actions { margin: 20px 18px 0px 18px; height: 46px; flex-direction: row; justify-content: space-between; }
 .btn { width: 84px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .fav { background-color: #262626; }
 .btnT { font-size: 14px; color: #FFFFFF; }
-.favCount { position: absolute; left: 0px; top: 424px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.favCount { margin-top: 8px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.favEntry { margin: 14px 26px 0px 26px; width: 160px; height: 48px; border-radius: 24px; background-color: #262626; align-items: center; justify-content: center; }
+.favEntryT { font-size: 15px; color: #FFFFFF; }
+.pad { width: 212px; height: 8px; }
 </style>
 
 <script>
@@ -38,6 +48,7 @@ import time from '../../utils/time'
 import quotes from '../../data/quotes'
 import kv from '../../utils/kv'
 import haptic from '../../utils/haptic'
+import router from '../../utils/router'
 import prompt from '@system.prompt'
 import crypto from '@system.crypto'
 
@@ -115,6 +126,10 @@ export default {
     const list = kv.get('quoteFavs', [])
     this.favCount = Array.isArray(list) ? list.length : 0
     this.faved = Array.isArray(list) && list.indexOf(this.quote) >= 0
+  },
+  openFavs() {
+    haptic.short()
+    router.push('/pages/sentence/fav')
   },
   next() {
     haptic.short()

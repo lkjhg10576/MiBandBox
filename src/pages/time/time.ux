@@ -8,11 +8,15 @@
       <div class="inner">
         <div class="card c1">
           <text class="f cLabel">本分钟还剩</text>
-          <text class="f mid">{{ minuteSec }} <text class="f unit">秒</text></text>
+          <div class="vrow"><text class="f midNum">{{ minuteSec }}</text><text class="f unit">秒</text></div>
+          <div class="bar"><div class="fill" style="width: {{ minutePercent }}%;"></div></div>
+          <text class="f sub">本分钟已过去 {{ minutePercent }}%</text>
         </div>
         <div class="card c2">
           <text class="f cLabel">本小时还剩</text>
           <text class="f mid">{{ hourText }}</text>
+          <div class="bar"><div class="fill" style="width: {{ hourPercent }}%;"></div></div>
+          <text class="f sub">本小时已过去 {{ hourPercent }}%</text>
         </div>
         <div class="card c3">
           <text class="f cLabel">今天还剩</text>
@@ -22,12 +26,14 @@
         </div>
         <div class="card c4">
           <text class="f cLabel">本周还剩</text>
-          <text class="f mid">{{ weekText }}</text>
+          <div class="vrowBig"><text class="f bigNum">{{ weekDays }}</text><text class="f unit">天</text></div>
+          <text class="f blue">{{ weekTime }}</text>
+          <div class="bar"><div class="fill" style="width: {{ weekPercent }}%;"></div></div>
           <text class="f sub">本周已过去 {{ weekPercent }}%</text>
         </div>
         <div class="card c5">
           <text class="f cLabel">今年还剩</text>
-          <text class="f big">{{ yearDays }} <text class="f unit">天</text></text>
+          <div class="vrowBig"><text class="f bigNum">{{ yearDays }}</text><text class="f unit">天</text></div>
           <text class="f blue">{{ yearTime }}</text>
           <div class="bar"><div class="fill green" style="width: {{ yearPercent }}%;"></div></div>
           <text class="f sub">今年已过去 {{ yearPercent }}%</text>
@@ -44,17 +50,21 @@
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
-.inner { width: 212px; height: 596px; flex-direction: column; }
+.inner { width: 212px; height: 668px; flex-direction: column; }
 .card { width: 206px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
-.c1 { height: 84px; }
-.c2 { height: 84px; }
+.c1 { height: 104px; }
+.c2 { height: 104px; }
 .c3 { height: 116px; }
-.c4 { height: 100px; }
+.c4 { height: 132px; }
 .c5 { height: 132px; }
 .cLabel { width: 174px; height: 22px; line-height: 22px; font-size: 15px; color: rgba(255,255,255,0.55); }
 .mid { width: 174px; height: 40px; line-height: 40px; font-size: 32px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .big { width: 174px; height: 48px; line-height: 48px; font-size: 38px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.unit { font-size: 16px; color: rgba(255,255,255,0.6); }
+.vrow { width: 174px; height: 40px; flex-direction: row; align-items: center; }
+.vrowBig { width: 174px; height: 48px; flex-direction: row; align-items: center; }
+.midNum { height: 40px; line-height: 40px; font-size: 32px; color: #FFFFFF; }
+.bigNum { height: 48px; line-height: 48px; font-size: 38px; color: #FFFFFF; }
+.unit { font-size: 16px; color: rgba(255,255,255,0.6); margin-left: 6px; }
 .blue { width: 174px; height: 22px; line-height: 22px; font-size: 16px; color: #0D6EFF; }
 .bar { width: 174px; height: 6px; border-radius: 3px; background-color: #3A3A3A; margin-top: 4px; margin-bottom: 4px; }
 .fill { height: 6px; border-radius: 3px; background-color: #0D6EFF; }
@@ -72,20 +82,17 @@ function hms(sec) {
   return time.pad2(d.hours) + ':' + time.pad2(d.minutes) + ':' + time.pad2(d.seconds)
 }
 
-function dhms(sec) {
-  const d = time.splitDuration(sec)
-  if (d.days <= 0) return hms(sec)
-  return d.days + ' 天 ' + time.pad2(d.hours) + ':' + time.pad2(d.minutes) + ':' + time.pad2(d.seconds)
-}
-
 export default {
   data: {
     clock: '--:--',
     minuteSec: 0,
+    minutePercent: 0,
     hourText: '--:--',
+    hourPercent: 0,
     todayText: '--:--:--',
     dayPercent: 0,
-    weekText: '--',
+    weekDays: 0,
+    weekTime: '--:--:--',
     weekPercent: 0,
     yearDays: 0,
     yearTime: '--:--:--',
@@ -110,12 +117,17 @@ export default {
     const now = new Date()
     this.clock = time.formatClock(now)
     this.minuteSec = time.countdownEndOfMinute(now)
-    this.hourText = hms(time.countdownEndOfHour(now)).slice(3)
+    this.minutePercent = Math.min(100, Math.round(((60 - this.minuteSec) / 60) * 100))
+    const remainHour = time.countdownEndOfHour(now)
+    this.hourText = hms(remainHour).slice(3)
+    this.hourPercent = Math.min(100, Math.round(((3600 - remainHour) / 3600) * 100))
     const remainDay = time.countdownToEndOfDay(now)
     this.todayText = hms(remainDay)
     this.dayPercent = Math.min(100, Math.round(((86400 - remainDay) / 86400) * 100))
     const remainWeek = time.countdownEndOfWeek(now)
-    this.weekText = dhms(remainWeek)
+    const wd = time.splitDuration(remainWeek)
+    this.weekDays = wd.days
+    this.weekTime = time.pad2(wd.hours) + ':' + time.pad2(wd.minutes) + ':' + time.pad2(wd.seconds)
     this.weekPercent = Math.min(100, Math.round(((7 * 86400 - remainWeek) / (7 * 86400)) * 100))
     const remainYear = time.countdownToEndOfYear(now)
     const yd = time.splitDuration(remainYear)

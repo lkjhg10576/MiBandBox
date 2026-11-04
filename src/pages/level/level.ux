@@ -38,6 +38,7 @@
 <script>
 import time from '../../utils/time'
 import sensor from '@system.sensor'
+import brightness from '@system.brightness'
 import haptic from '../../utils/haptic'
 
 const RAD2DEG = 180 / Math.PI
@@ -77,13 +78,17 @@ export default {
     this.timer = setInterval(() => {
       this.clock = time.formatClock(new Date())
     }, 20000)
+    // 读数时避免自动熄屏（只常亮，不动亮度）
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
     this.subscribe()
   },
   onHide() {
     this.unsubscribe()
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
   },
   onDestroy() {
     this.unsubscribe()
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
     if (this.timer) clearInterval(this.timer)
     this.timer = null
   },
