@@ -53,6 +53,7 @@ import time from '../../utils/time'
 import kv from '../../utils/kv'
 import haptic from '../../utils/haptic'
 import router from '../../utils/router'
+import fluoroState from './fluoroState'
 
 export default {
   data: {
@@ -60,6 +61,7 @@ export default {
     interval: 120,
     bright: true,
     keepOn: true,
+    dirty: false,
     clockTimer: null
   },
   onShow() {
@@ -68,8 +70,9 @@ export default {
     this.clockTimer = setInterval(() => {
       this.clock = time.formatClock(new Date())
     }, 20000)
-    // 记住上次的选择
+    // 记住上次的选择（dirty：用户已手动改过时不用存储旧值覆盖 UI）
     kv.init(() => {
+      if (this.dirty) return
       const cfg = kv.get('fluoroCfg', null)
       if (cfg && typeof cfg === 'object') {
         if (cfg.interval === 240 || cfg.interval === 120 || cfg.interval === 60) this.interval = cfg.interval
@@ -88,21 +91,27 @@ export default {
   },
   setSpeed(v) {
     haptic.short()
+    this.dirty = true
     this.interval = v
   },
   setBright(v) {
     haptic.short()
+    this.dirty = true
     this.bright = v
   },
   setKeepOn(v) {
     haptic.short()
+    this.dirty = true
     this.keepOn = v
   },
   start() {
     haptic.short()
-    // 配置走 KV 一次性传递（路由参数在当前 Vela 上绑定不稳定），push 前立即落盘
+    // 配置经 fluoroState（globalThis）同步传给 play 页，规避 KV 异步读写竞态；
+    // KV 仅供下次进入时“记住上次选择”，push 前立即落盘
+    const cfg = { interval: this.interval, bright: this.bright, keepOn: this.keepOn }
+    fluoroState.cfg = cfg
     kv.init(() => {
-      kv.set('fluoroCfg', { interval: this.interval, bright: this.bright, keepOn: this.keepOn })
+      kv.set('fluoroCfg', cfg)
       kv.flush()
       router.push('/pages/fluorescence/play')
     })

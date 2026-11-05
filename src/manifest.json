@@ -114,6 +114,9 @@
       "pages/sentence/fav": {
         "component": "fav"
       },
+      "pages/sentence/favdetail": {
+        "component": "favdetail"
+      },
       "pages/password": {
         "component": "password"
       },

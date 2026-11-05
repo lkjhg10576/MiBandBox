@@ -429,6 +429,15 @@ def common_back():
     save(im, os.path.join(OUT, "back.png"), 32)
 
 
+def common_arrow():
+    # 白色向右箭头（透明底）：确认胶囊键内使用，避免字体缺 "→" 字形变豆腐
+    im = canvas(32)
+    d = ImageDraw.Draw(im)
+    line(d, [(8, 16), (23, 16)], color=(255, 255, 255, 255), width=4)
+    line(d, [(16, 9), (23, 16), (16, 23)], color=(255, 255, 255, 255), width=4)
+    save(im, os.path.join(OUT, "arrow.png"), 32)
+
+
 def common_empty():
     im = canvas(92)
     d = ImageDraw.Draw(im)
@@ -484,6 +493,7 @@ def main():
     common_check()
     common_enter()
     common_back()
+    common_arrow()
     common_empty()
     common_switch()
     app_icon()

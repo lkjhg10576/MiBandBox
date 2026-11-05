@@ -3,30 +3,20 @@
 
 <template>
   <div class="page">
-    <pagehead title="选择日期" clock="{{ clock }}"></pagehead>
+    <pagehead title="{{ headTitle }}" clock="{{ clock }}"></pagehead>
 
-    <!-- 第一步：选年 -->
-    <div class="row" if="{{ step === 1 }}">
-      <text class="f label">年</text>
-      <picker class="pk" type="text" range="{{ years }}" selected="{{ yi }}" onchange="onYear"></picker>
+    <!-- 第一步：选年（单列滚轮，复刻系统定时器“设置 小时”样式） -->
+    <picker class="pkYear" if="{{ step === 1 }}" type="text" range="{{ years }}" selected="{{ yi }}" onchange="onYear"></picker>
+
+    <!-- 第二步：选月 / 选日（双列滚轮，复刻“设置 分秒”样式） -->
+    <div class="mdRow" if="{{ step === 2 }}">
+      <picker class="pkMd" type="text" range="{{ months }}" selected="{{ mi }}" onchange="onMonth"></picker>
+      <text class="f sep">/</text>
+      <picker class="pkMd" type="text" range="{{ days }}" selected="{{ di }}" onchange="onDay"></picker>
     </div>
-    <text class="f previewY" if="{{ step === 1 }}">{{ y }} 年</text>
 
-    <!-- 第二步：选月 / 选日 -->
-    <div class="row" if="{{ step === 2 }}">
-      <text class="f label">月</text>
-      <picker class="pk" type="text" range="{{ months }}" selected="{{ mi }}" onchange="onMonth"></picker>
-    </div>
-    <div class="row row2" if="{{ step === 2 }}">
-      <text class="f label">日</text>
-      <picker class="pk" type="text" range="{{ days }}" selected="{{ di }}" onchange="onDay"></picker>
-    </div>
-    <text class="f preview" if="{{ step === 2 }}">{{ dateText }}</text>
-
-    <div class="go" if="{{ step === 1 }}" @click="nextStep"><text class="f goT">下一步</text></div>
-    <div class="go" if="{{ step === 2 }}" @click="confirm"><text class="f goT">✓ 完成</text></div>
-
-    <text class="f tip">{{ step === 1 ? '先选年份，再选月和日' : '上下滚动选择，点完成返回' }}</text>
+    <div class="go" if="{{ step === 1 }}" @click="nextStep"><img class="goImg" src="/common/arrow.png"></img></div>
+    <div class="go" if="{{ step === 2 }}" @click="confirm"><img class="goImg" src="/common/arrow.png"></img></div>
     <backbtn></backbtn>
   </div>
 </template>
@@ -34,15 +24,13 @@
 <style>
 @import '../../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.row { position: absolute; left: 3px; top: 82px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 12px; }
-.row2 { top: 154px; }
-.label { width: 34px; font-size: 15px; color: rgba(255,255,255,0.55); }
-.pk { width: 148px; height: 56px; color: #FFFFFF; font-size: 20px; selected-color: #0D6EFF; }
-.previewY { position: absolute; left: 0px; top: 160px; width: 212px; height: 34px; line-height: 34px; text-align: center; font-size: 24px; color: #FFFFFF; }
-.preview { position: absolute; left: 0px; top: 240px; width: 212px; height: 24px; text-align: center; font-size: 15px; color: #FFFFFF; }
-.go { position: absolute; left: 26px; top: 370px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
-.goT { font-size: 14px; color: #FFFFFF; }
-.tip { position: absolute; left: 0px; top: 430px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+/* 滚轮高度决定可见行数（原版 HyperBox 同页 picker 高 140px、选中行 30px）；非选中行压暗 */
+.pkYear { position: absolute; left: 46px; top: 140px; width: 120px; height: 176px; color: rgba(255,255,255,0.35); font-size: 22px; selected-color: #FFFFFF; selected-font-size: 30px; selected-background-color: rgba(255,255,255,0.08); }
+.mdRow { position: absolute; left: 0px; top: 140px; width: 212px; height: 176px; flex-direction: row; align-items: center; justify-content: center; }
+.pkMd { width: 76px; height: 176px; color: rgba(255,255,255,0.35); font-size: 22px; selected-color: #FFFFFF; selected-font-size: 30px; selected-background-color: rgba(255,255,255,0.08); }
+.sep { width: 24px; text-align: center; font-size: 22px; color: rgba(255,255,255,0.35); }
+.go { position: absolute; left: 58px; top: 404px; width: 96px; height: 52px; border-radius: 26px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goImg { width: 28px; height: 28px; }
 </style>
 
 <script>
@@ -77,6 +65,7 @@ export default {
   protected: { date: '' },
   private: {
     clock: '--:--',
+    headTitle: '设置 年份',
     step: 1,
     years: [],
     months: [],
@@ -87,7 +76,6 @@ export default {
     y: 2026,
     m: 1,
     d: 1,
-    dateText: '',
     timer: null
   },
   onInit() {
@@ -95,7 +83,7 @@ export default {
     const years = []
     for (let y = 1970; y <= 2100; y++) years.push(String(y))
     const months = []
-    for (let m = 1; m <= 12; m++) months.push(m + ' 月')
+    for (let m = 1; m <= 12; m++) months.push(String(m))
     this.years = years
     this.months = months
     const base = time.parseDate(this.date) || new Date()
@@ -105,7 +93,6 @@ export default {
     this.yi = this.y - 1970
     this.mi = this.m - 1
     this.buildDays()
-    this.refreshText()
   },
   onShow() {
     if (this.timer) clearInterval(this.timer)
@@ -124,14 +111,11 @@ export default {
   buildDays() {
     const max = time.daysInMonth(this.y, this.m)
     const days = []
-    for (let i = 1; i <= max; i++) days.push(i + ' 日')
+    for (let i = 1; i <= max; i++) days.push(String(i))
     this.days = days
+    // 换月后天数变化，重算并把日夹紧到当月最大值
     if (this.d > max) this.d = max
     this.di = this.d - 1
-  },
-  refreshText() {
-    const dt = new Date(this.y, this.m - 1, this.d)
-    this.dateText = this.y + ' 年 ' + this.m + ' 月 ' + this.d + ' 日 · ' + time.weekdayName(dt)
   },
   onYear(e) {
     const idx = pickIndex(e, this.years)
@@ -139,7 +123,6 @@ export default {
     this.yi = idx
     this.y = 1970 + idx
     this.buildDays()
-    this.refreshText()
     haptic.short()
   },
   onMonth(e) {
@@ -147,9 +130,7 @@ export default {
     if (idx < 0) return
     this.mi = idx
     this.m = idx + 1
-    // 换月后天数变化，重算并把日夹紧到当月最大值
     this.buildDays()
-    this.refreshText()
     haptic.short()
   },
   onDay(e) {
@@ -157,11 +138,11 @@ export default {
     if (idx < 0) return
     this.di = idx
     this.d = idx + 1
-    this.refreshText()
     haptic.short()
   },
   nextStep() {
     this.step = 2
+    this.headTitle = '设置 月日'
     haptic.short()
   },
   confirm() {

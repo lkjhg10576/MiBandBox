@@ -25,6 +25,7 @@ import kv from '../../../utils/kv'
 import haptic from '../../../utils/haptic'
 import router from '../../../utils/router'
 import screen from '../../../utils/screen'
+import fluoroState from '../fluoroState'
 
 function hsl(h, s, l) {
   const c = (1 - Math.abs(2 * l - 1)) * s
@@ -59,16 +60,24 @@ export default {
     ready: false
   },
   onShow() {
-    // 配置由荧光棒配置页 push 前写入 KV 并 flush（路由参数在当前 Vela 上绑定不稳定）。
-    // ready 必须先置位：kv 已就绪时 init 回调会同步触发。
+    // 配置由设置页 push 前写入 fluoroState（globalThis，同步读），规避 KV 异步竞态。
+    // 亮度/常亮必须在 onShow 同步路径上立即执行，不能塞进异步回调（会被时序吞掉）。
     this.ready = true
-    kv.init(() => {
-      if (!this.ready) return
-      const cfg = kv.get('fluoroCfg', null) || {}
-      if (cfg.interval === 240 || cfg.interval === 120 || cfg.interval === 60) this.interval = cfg.interval
-      screen.enter({ bright: cfg.bright !== false, keepOn: cfg.keepOn !== false })
-      this.start()
-    })
+    const cfg = fluoroState.cfg
+    if (cfg && typeof cfg === 'object') {
+      this.applyCfg(cfg)
+    } else {
+      // 兜底：绕过设置页直接进入（正常流程不会发生）时退回 KV 读取
+      kv.init(() => {
+        if (!this.ready) return
+        this.applyCfg(kv.get('fluoroCfg', null) || {})
+      })
+    }
+  },
+  applyCfg(cfg) {
+    if (cfg.interval === 240 || cfg.interval === 120 || cfg.interval === 60) this.interval = cfg.interval
+    screen.enter({ bright: cfg.bright !== false, keepOn: cfg.keepOn !== false })
+    this.start()
   },
   onHide() {
     this.ready = false

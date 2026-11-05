@@ -1,0 +1,93 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="收藏详情" clock="{{ clock }}"></pagehead>
+    <div class="card">
+      <text class="f quoteMark">“</text>
+      <text class="f quote" style="font-size: {{ long ? '19px' : '23px' }}; line-height: {{ long ? '28px' : '34px' }};">{{ text }}</text>
+    </div>
+    <div class="delBtn" style="background-color: {{ armed ? '#FF3B30' : '#262626' }};" @click="tapDelete">
+      <text class="f delT">{{ armed ? '再次点击以取消' : '取消收藏' }}</text>
+    </div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; }
+/* 卡片复刻每日一言主界面样式，竖直居中（body 区 82~520 高 438） */
+.card { position: absolute; left: 3px; top: 140px; width: 206px; height: 250px; border-radius: 26px; background-color: #262626; padding: 14px 18px; flex-direction: column; }
+.quoteMark { width: 170px; height: 36px; line-height: 36px; font-size: 44px; color: #4E87FF; }
+.quote { width: 170px; height: 170px; color: #FFFFFF; }
+.delBtn { position: absolute; left: 26px; top: 410px; width: 160px; height: 48px; border-radius: 24px; align-items: center; justify-content: center; }
+.delT { font-size: 14px; color: #FFFFFF; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import kv from '../../../utils/kv'
+import haptic from '../../../utils/haptic'
+import router from '../../../utils/router'
+import prompt from '@system.prompt'
+import favState from '../favState'
+
+export default {
+  data: {
+    clock: '--:--',
+    text: '',
+    long: false,
+    armed: false,
+    timer: null
+  },
+  onInit() {
+    const item = favState.item
+    this.text = item && item.text ? item.text : ''
+    this.long = this.text.length > 16
+  },
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    this.armed = false
+  },
+  onHide() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  onDestroy() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+  },
+  /**
+   * 两次点击确认取消收藏（同设置页“恢复默认”模式）：
+   * 首次点按震动并把按钮转红提示；再次点按才删 KV 收藏并返回列表。
+   * 只操作 quoteFavs，不碰每日一言语料库（src/data/quotes.js）。
+   */
+  tapDelete() {
+    if (!this.armed) {
+      haptic.short()
+      this.armed = true
+      return
+    }
+    haptic.long()
+    // 每个页面是独立 bundle，本页 kv 模块缓存尚未加载，必须先 init 读文件再改
+    kv.init(() => {
+      const list = kv.get('quoteFavs', [])
+      const arr = Array.isArray(list) ? list.slice() : []
+      const pos = arr.indexOf(this.text)
+      if (pos >= 0) {
+        arr.splice(pos, 1)
+        kv.set('quoteFavs', arr)
+        kv.flush()
+      }
+      prompt.showToast({ message: '已取消收藏', duration: 1200 })
+      router.back()
+    })
+  }
+}
+</script>
