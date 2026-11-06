@@ -1,14 +1,13 @@
 # BandBox
 
-BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 28 个应用、51 个页面。
+BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 29 个便捷功能。
 
 - 包名：`com.miband.box`
-- 版本：0.3.6
+- 版本：0.4.0
 - 技术栈：Vela JS 快应用（`.ux`）
-- 屏幕：212 × 520 跑道屏；模拟器应用区 212 × 466，真机可绘制到约 500（底部为药丸收窄区）
-- 体积：约 380 KB（使用系统字体，无内置字体子集）
-- 无联网必需、无收费、无授权、无第三方 App 依赖
-- 手机端可选装 AstroBox 插件「BandBox歌词同步」，把手上的 LRC 歌词推到手表歌词本
+- 屏幕：当前仅适配手环设备 212 × 520 跑道屏
+- 无联网必需、无收费、无授权、除官方 AstroBox 插件外没有其他依赖
+- 可选装 AstroBox 插件，把手上的 LRC 歌词推到手表歌词本，以及使用动态口令功能
 
 ## 功能
 
@@ -45,16 +44,16 @@ BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地�
 | 跑马灯 | 文字、字号、速度、颜色；竖屏横向滚动，横屏把内容旋转 90° 后滚动 |
 | 歌词本 | 本地歌词、自动滚动、横竖屏，支持「从手机传输」接收手机推送的歌词 |
 | 水平仪 | 双轴倾角小圆点 + 十字准星，可校准归零 |
+| 动态口令 | TOTP 本地生成 + 倒计时环，手机插件批量导入 / 编辑 / 删除并同步（详见下文） |
 
 ## 从手机传输歌词
 
 歌词本首页顶部有一张「从手机传输」卡片，点进去进入接收页：
 
 1. 手机装 AstroBox 插件 **BandBox歌词同步**（源码在 `plugin/bandbox-lyrics-sync/`）
-2. 手环停在「从手机传输」页面（页面会置常亮，并用 ping/pong 心跳检测手机插件是否在线）
+2. 手环停在「从手机传输」页面（保持长亮）
 3. 手机插件里点「选择 LRC 文件」→ 选一个 `.lrc`
-4. 插件自动识别逐行 LRC、常规逐字 LRC（行内时间标签）和增强逐字 LRC（ESLyric），
-   剥掉时间轴与元数据标签、还原成逐行纯文本，点「发送到手环」
+4. 插件自动识别逐行 LRC、常规逐字 LRC、增强逐字 LRC（ESLyric），并自动剥离时间轴与元数据标签、还原成逐行纯文本，点「发送到手环」
 5. 手环弹出「已接收：<歌名>」，歌词本里随即出现该条目
 
 连接状态不再依赖 Vela 的 `getReadyState`（AstroBox 不是官方配套 App，该状态不可靠）：
@@ -69,19 +68,32 @@ BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地�
 没有局域网 HTTP 兜底。长歌词分片按 UTF-8 字节计量（中文 3 字节/字），
 单片正文预算 = 12 KB − 256 B 外层预留 − 标题字节；含超长单行的文件会在插件端被拒绝导入。
 
-### 落盘格式
+## 动态口令（TOTP）
 
-歌词统一存在 `internal://files/bandbox/lyrics/<encodeURIComponent(歌名)>.txt`：
+「动态口令」是内置第 29 个工具：手表本地生成 TOTP 验证码（M1 支持 TOTP / SHA1 / 6 位 / 30 秒，
+字段模型与 otpauth 协议已为 HOTP、SHA256/512、8 位、自定义周期预留），与手机插件共享同一条
+`bandbox-lyrics` BLE 通道（协议 `bandbox-otp`，靠 `app` 字段分流，互不干扰）。
 
-```
-第 1 行：歌名（标题）
-第 2 行起：歌词正文（逐行）
-```
+**手表端**：列表页实时验证码 + 剩余秒；详情页大字验证码 + 倒计时环；编辑页手输 Base32
+（走内置输入法）；设置页可调时间偏移（±300s）并说明明文存储风险；支持 otpauth URI 二维码导出
+（可被标准 Authenticator 扫码）。密钥保存在手环本地 KV，写后立即落盘。
 
-单包与分片两条导入路径都按这个格式落盘（分片正文在重组后补上标题行）。
-展示页与编辑页共用同一套解析规则（`src/utils/lyricsDoc.js`）：**只有首行归一化后与文件名一致
-才当作标题**，否则首行属于正文——所以早期版本分片导入、缺少标题行的文件，
-打开后第一句歌词不会丢。读取失败时展示页会提示「歌词读取失败」而不是留白。
+**手机插件**：插件顶部新增「动态口令」Tab（与歌词同步同插件、同连接，无双插件注册冲突）：
+
+1. 「拉取数据」从手环读取全部账户
+2. 「批量粘贴」粘贴多行 `otpauth://` 文本导入（兼容 `\/`、`&amp;` 转义与 issuer 前缀），或逐条添加/编辑
+3. 编辑/删除先写本地三态（baseline / local / deletedIds），点「保存修改」二次确认后按增量下发
+4. 增量按单账户条目分片（每片 ≤ 12 KB），手环逐片确认；回执丢失时本地修改保留可重试
+5. 检测到手表时间偏差 ≥ 5 秒会提示一键校时（`set_offset`，不改系统时间）
+
+协议消息：`hello / ready / pong / list_accounts / accounts / sync_delta / set_offset /
+chunk / ack / err / progress`，两端实现见 `src/utils/otpProtocol.js` 与
+`plugin/bandbox-lyrics-sync/src/otpProtocol.js`（常量与行为一致），算法内核
+`otp.js` 双端逐字一致（SHA-256 校验），RFC 4226/6238 向量全量通过。
+
+**安全须知**：密钥以明文存于手环本地文件（Vela 无加密存储 API），请勿把手环当作唯一 2FA
+设备；建议在插件「批量导出」中离线备份 otpauth 文本。时间校准只有手动偏移与手机辅助提示，
+不做联网校时。与 WhistleO 官方插件/应用互不相通（包名与协议封装不同，仅数据格式兼容）。
 
 ## 构建
 
@@ -98,7 +110,7 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 ## 安装到模拟器
 
 模拟器需先启动（AIoT-IDE 的 Vela 模拟器，212×520，skin `xiaomi_band_10`）；
-也可以脱离 IDE 从命令行启动（必须带 `-vela` 旗标），见 `docs/emulator-fix.md`。
+也可以脱离 IDE 从命令行启动（必须带 `-vela` 旗标）
 
 ```bash
 # 自动构建 + 安装 + 启动
@@ -113,19 +125,11 @@ adb shell am start com.miband.box
 > 不要用 `rm -rf /data/app/<pkg>` + `unzip` 的方式安装：那样 AMS 里会残留
 > 「文件已删、状态还在」的坏应用，之后 `am start` 只出黑屏。用 `pm install` 覆盖即可。
 
-截图 / 触摸 / 日志：
-
-```bash
-.venv-emu/bin/python tools/emu.py shot out.png
-.venv-emu/bin/python tools/emu.py tap 106 260
-.venv-emu/bin/python tools/emu.py swipe 106 450 106 120 --ms 600
-```
-
 ## 目录
 
 ```
 src/
-├── manifest.json          50 条路由、权限、features
+├── manifest.json          54 条路由、权限、features
 ├── app.ux                 全局 KV / 互联初始化
 ├── common/                自绘图标、公共图
 ├── components/
@@ -134,36 +138,28 @@ src/
 ├── data/                  自建数据集（apps/quotes/answers/food/history/waste/morse/colors/perf）
 ├── utils/                 kv / fs / docs / time / haptic / router / calc / inputResult / textInput / keyboardText / homeLayout
 │                          interconnect（手机互传通道）/ lyricsTransfer（歌词传输协议）
+│                          otp / otpAccounts / otpProtocol（动态口令内核与协议，双端一致副本）
+│                          otpStore（口令存储）/ otpBridge（常驻接收层）
 │                          marqueeState（跑马灯配置的跨页同步传递）
-└── pages/                 50 个页面（含 input 文本输入页、lyrics/transfer 接收页）
+└── pages/                 54 个页面（含 input 文本输入页、lyrics/transfer 接收页、otp/ 动态口令四页）
 
 plugin/
 └── bandbox-lyrics-sync/   AstroBox 插件（API Level 4）：手机端选 LRC 并推送
-
-tools/
-├── test-protocol.mjs       手环端协议单测（node tools/test-protocol.mjs）
-├── test-calendar.mjs       农历 / 日历纯逻辑单测（node tools/test-calendar.mjs）
-├── test-input.mjs          原生输入工具单测（node tools/test-input.mjs）
-├── test-history.mjs        史载今日数据单测（node tools/test-history.mjs）
-├── test-marquee.mjs        跑马灯配置与宽度估算单测（node tools/test-marquee.mjs）
-├── test-screen.mjs         屏幕亮度与常亮控制单测（node tools/test-screen.mjs）
-└── gen-assets/gen.py       图标与公共图生成
 ```
 
 ## 许可
 
-- 字体使用设备系统字体（Band 10/11 的 MiSans / MiLan Pro），不再内置字体子集。
-- 内置输入法组件来自 [NEORUAA/Vela_input_method](https://github.com/NEORUAA/Vela_input_method)（MIT），许可证见 `src/components/InputMethod/LICENSE`。
+- 字体使用设备系统字体（Band 10/11 的 MiSans / MiLan Pro），不内置字体子集。
+- 内置输入法组件来自 [NEORUAA/Vela_input_method](https://github.com/NEORUAA/Vela_input_method)（MIT），许可证见 `src/components/InputMethod/LICENSE`，在此感谢该作者对 Vela 提供输入法的支持。
 
 ## 已知限制
 
 - 文本输入使用随包内置的 `Vela_input_method` 组件（MIT），支持中文拼音、英文、数字；短字段在页面内直接输入，长文本（笔记正文、歌词正文）在独立编辑页输入。
-- 输入法词库通过 `@system.file` 从包内 `components/InputMethod/assets/dictionary/` 懒加载，不依赖手环固件是否提供系统输入法。
 - 歌词本完全离线，不提供在线搜索（避免第三方接口依赖）。
-- 跑马灯的「横屏」是**内容旋转 90°**（与歌词本横屏同一套做法），不是系统级方向切换：
-  Vela 快应用没有页面级 `orientation` 配置，系统方向无法由快应用改写。
 - 「从手机传输」需要手机端安装 AstroBox 插件「BandBox歌词同步」，且手环需停留在接收页；
   没装插件或插件未加载时，手环页会显示「未连接手机」并给出诊断提示。
+- 动态口令密钥明文存储（Vela 无加密存储 API），仅适合低敏账户或做备用 2FA；
+  时间校准依赖手动偏移 / 手机提示，不联网校时。
 - 性能分为相对参考值，受温度、后台任务和模拟器影响。
 - 模拟器里的快应用绘制区域为 212×466（底部 54px 为系统手势栏）；真机照片显示可继续绘制到约 500，但底部是药丸屏收窄区，仅适合居中窄内容。
 - 模拟器冷启动约 10 秒，是 Vela 运行时调试器发现超时导致；真机通常更快。
@@ -173,7 +169,7 @@ tools/
 
 ## 致谢
 
-感谢小米 Vela 平台、AIoT-IDE 、AstroBox平台、米坛社区，以及各开源社区提供的文档与示例。
+感谢小米 Vela 平台、AstroBox 平台、米坛社区，以及各开源社区提供的文档与示例。没有你们，这个项目将无法诞生。
 
 ## 赞助
-本项目开源免费，若你愿意小小的赞助作者一杯咖啡，那就更好了，感激不尽！
+本项目开源免费，若你从任何渠道购买，请立即申请退款，并前往官方渠道下载。若你愿意小小的赞助作者一杯咖啡，作者将感激不尽，并会在赞助者名单中写上你的名字！

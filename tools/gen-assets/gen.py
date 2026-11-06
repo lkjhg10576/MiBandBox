@@ -474,6 +474,17 @@ def app_icon():
     save(im, os.path.join(OUT, "icon.png"), size)
 
 
+def icon_otp():
+    im = canvas(); d = ImageDraw.Draw(im)
+    rr(d, (7, 11, 37, 33), 6)
+    # 六位口令：两排各三个点，一位用主色高亮表示「当前位」
+    for col in range(3):
+        dot(d, 14 + col * 8, 19, 1.7)
+    for col in range(3):
+        dot(d, 14 + col * 8, 27, 1.7, fill=BLUE if col == 1 else C)
+    save(im, os.path.join(ICONS, "otp.png"))
+
+
 def main():
     os.makedirs(ICONS, exist_ok=True)
     os.makedirs(os.path.join(OUT, "images"), exist_ok=True)
@@ -483,7 +494,7 @@ def main():
         icon_storage, icon_fish, icon_display, icon_flashlight, icon_cps,
         icon_diet, icon_random, icon_system, icon_performance, icon_history,
         icon_scoreboard, icon_morse, icon_waste, icon_qrcode, icon_marquee,
-        icon_lylist, icon_level, icon_settings, icon_num,
+        icon_lylist, icon_level, icon_settings, icon_num, icon_otp,
     ):
         fn()
     fish_big()

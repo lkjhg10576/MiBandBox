@@ -1,0 +1,137 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="口令设置" clock="{{ clock }}"></pagehead>
+
+    <div class="card">
+      <text class="f cTitle">时间偏移（秒）</text>
+      <div class="stepper">
+        <div class="stepBtn" @click="offsetDown"><text class="f stepT">−</text></div>
+        <text class="f offsetText">{{ offsetText }}</text>
+        <div class="stepBtn" @click="offsetUp"><text class="f stepT">＋</text></div>
+      </div>
+      <text class="f cHint">验证码不对？手表钟快了用负值，慢了用正值</text>
+    </div>
+
+    <div class="card" @click="clearAll">
+      <text class="f cTitle">清空全部账户（{{ accountCount }}）</text>
+      <text class="f cHint" if="{{ !clearArm }}">明文存储，仅存本机。点击两次确认清空</text>
+      <text class="f cWarn" if="{{ clearArm }}">再点一次「清空」确认，不可恢复</text>
+    </div>
+
+    <text class="f note">· 账户密钥明文保存在手环本地，请勿当作唯一 2FA 设备</text>
+    <text class="f note">· 建议在手机插件中导出 otpauth 文本离线备份</text>
+    <text class="f note">· 手机插件「动态口令」页可批量导入与同步</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
+.card { position: absolute; left: 3px; width: 206px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.cTitle { width: 174px; height: 26px; line-height: 26px; font-size: 16px; color: #FFFFFF; }
+.stepper { flex-direction: row; align-items: center; justify-content: center; width: 174px; height: 44px; }
+.stepBtn { width: 44px; height: 36px; border-radius: 18px; background-color: #333333; align-items: center; justify-content: center; }
+.stepT { font-size: 20px; color: #FFFFFF; }
+.offsetText { width: 86px; height: 36px; line-height: 36px; text-align: center; font-size: 22px; color: #0D6EFF; }
+.cHint { width: 174px; line-height: 18px; font-size: 12px; color: rgba(255,255,255,0.4); }
+.cWarn { width: 174px; line-height: 18px; font-size: 12px; color: #FF9F0A; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+import otpStore from '../../../utils/otpStore'
+
+const state = {
+  timer: null,
+  subscriber: null,
+  clearArmAt: 0
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    offsetText: '0',
+    accountCount: 0,
+    clearArm: false
+  },
+
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (state.timer) clearInterval(state.timer)
+    state.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    if (state.subscriber) {
+      try {
+        state.subscriber()
+      } catch (e) {}
+      state.subscriber = null
+    }
+    state.subscriber = otpStore.subscribe(() => this.refresh())
+    this.refresh()
+  },
+
+  onHide() {
+    if (state.timer) clearInterval(state.timer)
+    state.timer = null
+    if (state.subscriber) {
+      try {
+        state.subscriber()
+      } catch (e) {}
+      state.subscriber = null
+    }
+    this.clearArm = false
+    state.clearArmAt = 0
+  },
+
+  onDestroy() {
+    if (state.timer) clearInterval(state.timer)
+    state.timer = null
+    if (state.subscriber) {
+      try {
+        state.subscriber()
+      } catch (e) {}
+      state.subscriber = null
+    }
+  },
+
+  refresh() {
+    const offset = otpStore.getTimeOffsetSec()
+    this.offsetText = offset > 0 ? '+' + offset : String(offset)
+    this.accountCount = otpStore.list().length
+  },
+
+  offsetUp() {
+    haptic.short()
+    const cur = otpStore.getTimeOffsetSec()
+    otpStore.setTimeOffsetSec(Math.min(cur + 5, otpStore.OFFSET_MAX))
+  },
+
+  offsetDown() {
+    haptic.short()
+    const cur = otpStore.getTimeOffsetSec()
+    otpStore.setTimeOffsetSec(Math.max(cur - 5, otpStore.OFFSET_MIN))
+  },
+
+  clearAll() {
+    haptic.short()
+    const now = Date.now()
+    if (!this.clearArm || now - state.clearArmAt > 4000) {
+      state.clearArmAt = now
+      this.clearArm = true
+      return
+    }
+    otpStore.clearAll()
+    this.clearArm = false
+    state.clearArmAt = 0
+    prompt.showToast({ message: '已清空全部账户', duration: 1500 })
+  }
+}
+</script>

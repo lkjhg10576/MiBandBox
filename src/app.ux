@@ -7,6 +7,7 @@
 <script>
 import kv from './utils/kv'
 import interconnectUtil from './utils/interconnect'
+import otpBridge from './utils/otpBridge'
 
 function normalizeLayout(mode) {
   return mode === 'list' ? 'list' : 'grid'
@@ -42,6 +43,11 @@ export default {
     // 初始化手机互传通道（全局一次），供「从手机传输」页面订阅消息
     try {
       interconnectUtil.init()
+    } catch (e) {}
+    // OTP 常驻接收层：注册 bandbox-otp 协议订阅（按 app 字段过滤，
+    // 与歌词传输页共存；app 生命周期内不退订）
+    try {
+      otpBridge.init()
     } catch (e) {}
     kv.init(() => {
       if (!layoutState.ready) {

@@ -9,10 +9,33 @@
  */
 
 /** 没有参数的动作 id。 */
-export const ACTIONS = ['pick-file', 'send', 'refresh-devices', 'toggle-debug']
+export const ACTIONS = [
+  // 歌词 Tab（原有）
+  'pick-file',
+  'send',
+  'refresh-devices',
+  'toggle-debug',
+  // Tab 切换
+  'tab-lyrics',
+  'tab-otp',
+  // 动态口令
+  'otp-pull',
+  'otp-add',
+  'otp-save',
+  'otp-confirm-save',
+  'otp-paste',
+  'otp-paste-apply',
+  'otp-edit-done',
+  'otp-del-yes',
+  'otp-export',
+  'otp-export-close',
+  'otp-dialog-close',
+  'otp-offset-apply',
+  'otp-offset-dismiss'
+]
 
 /** 带参数的动作前缀。 */
-const PICK_DEVICE_PREFIX = 'pick-device:'
+const PREFIXES = ['pick-device:', 'otp-edit:', 'otp-del:', 'otp-field:', 'otp-uri:']
 
 /** 极端情况下宿主可能把按钮文案当事件数据传回来，作为最后兜底。 */
 const LABEL_ACTIONS = {
@@ -20,7 +43,18 @@ const LABEL_ACTIONS = {
   '发送到手环': 'send',
   '刷新设备': 'refresh-devices',
   '诊断': 'toggle-debug',
-  '关闭诊断': 'toggle-debug'
+  '关闭诊断': 'toggle-debug',
+  // Tab
+  '歌词同步': 'tab-lyrics',
+  '动态口令': 'tab-otp',
+  // OTP
+  '拉取数据': 'otp-pull',
+  '添加账户': 'otp-add',
+  '保存修改': 'otp-save',
+  '确认保存': 'otp-confirm-save',
+  '批量粘贴': 'otp-paste',
+  '解析并导入': 'otp-paste-apply',
+  '批量导出': 'otp-export'
 }
 
 /**
@@ -29,7 +63,10 @@ const LABEL_ACTIONS = {
 export function isAction(id) {
   if (typeof id !== 'string' || !id) return false
   if (ACTIONS.indexOf(id) >= 0) return true
-  return id.indexOf(PICK_DEVICE_PREFIX) === 0
+  for (let i = 0; i < PREFIXES.length; i++) {
+    if (id.indexOf(PREFIXES[i]) === 0) return true
+  }
+  return false
 }
 
 /**
@@ -42,12 +79,14 @@ function actionFromString(value) {
   for (let i = 0; i < ACTIONS.length; i++) {
     if (value.indexOf(ACTIONS[i]) >= 0) return ACTIONS[i]
   }
-  const at = value.indexOf(PICK_DEVICE_PREFIX)
-  if (at >= 0) {
-    const rest = value.slice(at)
-    // 动作 id 后面可能跟着 JSON 的引号/括号，截到第一个分隔符
-    const hit = rest.match(/^pick-device:[^\s"',}\]]+/)
-    return hit ? hit[0] : rest
+  for (let i = 0; i < PREFIXES.length; i++) {
+    const at = value.indexOf(PREFIXES[i])
+    if (at >= 0) {
+      const rest = value.slice(at)
+      // 动作 id 后面可能跟着 JSON 的引号/括号，截到第一个分隔符
+      const hit = rest.match(new RegExp('^' + PREFIXES[i] + '[^\\s"\',}\\]]+'))
+      return hit ? hit[0] : rest
+    }
   }
   return ''
 }
@@ -94,4 +133,4 @@ export function resolveAction(eventId, payload) {
   return actionFromString(eventId)
 }
 
-export default { ACTIONS, isAction, resolveAction }
+export default { ACTIONS, PREFIXES, isAction, resolveAction }

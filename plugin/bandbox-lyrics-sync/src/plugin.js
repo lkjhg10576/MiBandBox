@@ -40,6 +40,10 @@ import protocol from './protocol.js'
 import device from './device.js'
 import { resolveAction } from './actions.js'
 import { renderUI } from './ui.js'
+import otp from './otp.js'
+import otpAccounts from './otpAccounts.js'
+import otpProtocol from './otpProtocol.js'
+import otpSync from './otpSync.js'
 
 /** 等 ACK 的超时时间（毫秒） */
 const ACK_TIMEOUT = 20000
@@ -80,7 +84,23 @@ const state = {
   lastReply: '',
   pickResult: '',
   lastHost: '',
-  watchOnline: false
+  watchOnline: false,
+  // ---- 动态口令（0.3.0 新增）----
+  tab: 'lyrics',
+  otpSync: otpSync.createOtpSync(),
+  otpLoaded: false, // 已从手环拉取过全量
+  otpBusy: false, // 下发中
+  otpStatusText: '点击「拉取数据」从手环读取账户',
+  otpPendingId: '',
+  otpPendingKind: '', // 'save' | 'pull' | 'offset'
+  otpTimer: null, // OTP ACK 超时 timer（与歌词 state.timer 互不复用）
+  tickTimer: null, // 1s 验证码刷新 timer
+  otpOffsetSec: 0, // 手表侧 timeOffsetSec（pong/ready 同步回来）
+  otpWatchCount: 0, // 手表侧账户数（pong/ready 同步回来）
+  timeSkewSec: 0, // 手表时间 - 手机时间（秒），由 pong/ready 的 time 字段估算
+  timeSkewHandled: false,
+  otpDialog: null, // { kind, ... } 自绘弹窗
+  lastOtpReply: ''
 }
 
 /**
@@ -252,8 +272,55 @@ function viewState() {
     lastAction: state.lastAction,
     lastReply: state.lastReply,
     pickResult: state.pickResult,
-    lastHost: state.lastHost
+    lastHost: state.lastHost,
+    // ---- 动态口令 ----
+    tab: state.tab,
+    otpLoaded: state.otpLoaded,
+    otpBusy: state.otpBusy,
+    otpStatusText: state.otpStatusText,
+    otpPending: otpPendingCount(),
+    otpAccounts: otpViewAccounts(),
+    otpDialog: state.otpDialog,
+    timeSkewSec: state.timeSkewSec
   }
+}
+
+/**
+ * 待保存修改数（三态 delta）。
+ */
+function otpPendingCount() {
+  if (!state.otpLoaded) return 0
+  try {
+    const d = otpSync.getSyncDelta(state.otpSync)
+    return d.upsert.length + d.remove.length
+  } catch (e) {
+    return 0
+  }
+}
+
+/**
+ * OTP 列表视图：每个账户一行，带实时验证码与倒计时。
+ * 每秒由 otp-tick 驱动 repaint（弹窗打开时跳过）。
+ */
+function otpViewAccounts() {
+  if (!state.otpLoaded) return []
+  const now = otp.epochSeconds()
+  const offset = Number(state.otpOffsetSec) || 0
+  const out = []
+  for (let i = 0; i < state.otpSync.local.length; i++) {
+    const a = state.otpSync.local[i]
+    const st = otp.resolveOtpState(a, now, offset)
+    const issuerName = a.issuer ? a.issuer + ' · ' + a.name : a.name || '未命名'
+    out.push({
+      id: a.id,
+      title: issuerName,
+      sub: a.type === 'hotp' ? 'HOTP' : 'TOTP · ' + a.period + 's',
+      code: st.ok ? otp.formatCode(st.code) : '',
+      remaining: st.ok ? st.remaining : 0,
+      state: st.ok ? 'ok' : st.reason === 'unsupported-algorithm' ? 'unsupported' : 'invalid'
+    })
+  }
+  return out
 }
 
 /**
@@ -362,6 +429,9 @@ async function sendHeartbeat() {
     state.heartbeatSeq++
     const id = protocol.makeId('hb')
     const json = protocol.hello(id)
+    // OTP 心跳：同一设备遍历里多发一条 bandbox-otp hello（带手机 Unix 秒，
+    // 手表用于时间偏差提示）。不新建第二个心跳 timer。
+    const otpJson = otpProtocol.helloMessage(Math.floor(Date.now() / 1000))
     let sent = 0
     let lastError = ''
     for (let i = 0; i < state.devices.length; i++) {
@@ -371,6 +441,10 @@ async function sendHeartbeat() {
       )
       if (res.ok) {
         sent++
+        // OTP hello 发送失败不影响歌词在线状态（手表→手机方向部分固件不可用）
+        await hostCall('sendQaicMessage', () =>
+          sendQaicMessage(addr, otpProtocol.TARGET_PKG, otpJson)
+        )
       } else {
         lastError = res.error
       }
@@ -433,6 +507,19 @@ function stopTimer() {
 }
 
 /**
+ * 取消 OTP ACK 超时定时器（与歌词 stopTimer 互不复用）。
+ */
+function stopOtpTimer() {
+  if (state.otpTimer === null || state.otpTimer === undefined) return
+  try {
+    clearTimer(state.otpTimer)
+  } catch (e) {
+    // 定时器可能已经触发，忽略
+  }
+  state.otpTimer = null
+}
+
+/**
  * 处理宿主 timer 事件。
  *
  * 宿主投递的 payload 是 JSON：{ timerId, kind, payload }。
@@ -448,6 +535,24 @@ async function handleTimer(raw) {
     await sendHeartbeat()
     return
   }
+  // OTP 1s tick：重算验证码与倒计时；弹窗打开时跳过 repaint（防输入被清空）
+  if (info && info.payload === 'otp-tick') {
+    if (state.tab === 'otp' && !state.otpDialog) repaint()
+    return
+  }
+  // OTP ACK 超时（payload 前缀 otp-ack:<id>，与歌词 pendingId 区分）
+  if (info && typeof info.payload === 'string' && info.payload.indexOf('otp-ack:') === 0) {
+    const id = info.payload.slice('otp-ack:'.length)
+    if (id !== state.otpPendingId) return
+    state.otpTimer = null
+    if (!state.otpBusy) return
+    state.otpBusy = false
+    state.otpPendingId = ''
+    state.otpPendingKind = ''
+    state.otpStatusText = '未收到手环确认，内容已保留，可重试保存'
+    if (state.tab === 'otp') repaint()
+    return
+  }
   if (!info || info.payload !== state.pendingId) return
   state.timer = null
   if (state.status !== 'sending') return
@@ -458,12 +563,140 @@ async function handleTimer(raw) {
 }
 
 /**
- * 处理手环回执。
- *
- * 宿主可能把消息包在 { addr, pkgName, payloadText } 信封里，先解包再解析。
+ * 处理手环回执（信封解包后按 app 字段分流到歌词 / OTP）。
  */
 async function handleReply(raw) {
   const env = protocol.unwrapInterconnectPayload(raw)
+
+  // OTP 与歌词共用一条通道：先探测 app 字段，分流到对应处理分支。
+  // 非 JSON、非 OTP 的消息一律交给歌词分支（decode 会回 bad-app 静默忽略）。
+  let isOtp = false
+  try {
+    const probe = JSON.parse(env.data)
+    if (probe && typeof probe === 'object' && probe.app === otpProtocol.APP_ID) {
+      isOtp = true
+    }
+  } catch (e) {}
+
+  if (isOtp) {
+    await handleOtpReply(env)
+  } else {
+    await handleLyricsReply(env)
+  }
+}
+
+/**
+ * 动态口令协议回执。
+ */
+async function handleOtpReply(env) {
+  const parsed = otpProtocol.parse(env.data)
+  if (!parsed.ok) return
+  const msg = parsed.msg
+  state.lastOtpReply = clip(msg.type + (msg.id ? ' ' + msg.id : ''), 40)
+  if (state.debug && state.tab === 'otp') repaint()
+
+  if (msg.type === 'ready' || msg.type === 'pong') {
+    state.watchOnline = true
+    state.otpWatchCount = Math.floor(Number(msg.accountsCount) || 0)
+    state.otpOffsetSec = Math.floor(Number(msg.timeOffsetSec) || 0)
+    if (msg.time) {
+      const skew = otp.epochSeconds() - Math.floor(Number(msg.time))
+      state.timeSkewSec = Math.abs(skew) >= 3 ? skew : 0
+      if (Math.abs(state.timeSkewSec) >= 5 && !state.timeSkewHandled && state.tab === 'otp') {
+        state.otpDialog = {
+          kind: 'offset',
+          suggested: -state.timeSkewSec
+        }
+        state.timeSkewHandled = true
+      }
+      state.otpStatusText =
+        '手环在线 · ' + state.otpWatchCount + ' 个账户 · 偏移 ' + state.otpOffsetSec + 's'
+    }
+    if (state.tab === 'otp') repaint()
+    return
+  }
+
+  // 与本次 OTP 发送无关的迟到回执：按 pendingId 过滤
+  if (msg.id && state.otpPendingId && msg.id !== state.otpPendingId) return
+
+  if (msg.type === 'ack') {
+    stopOtpTimer()
+    state.otpBusy = false
+    if (state.otpPendingKind === 'save') {
+      otpSync.commitSuccess(state.otpSync)
+      state.otpStatusText = '已保存到手环（' + (msg.received || 0) + ' 条）'
+    } else if (state.otpPendingKind === 'offset') {
+      state.otpStatusText = '已下发校时偏移，验证码应已恢复'
+      state.timeSkewSec = 0
+    } else {
+      state.otpStatusText = '手环已确认'
+    }
+    state.otpPendingId = ''
+    state.otpPendingKind = ''
+    if (state.tab === 'otp') repaint()
+    return
+  }
+
+  if (msg.type === 'err') {
+    stopOtpTimer()
+    state.otpBusy = false
+    state.otpStatusText = otpProtocol.ERROR_TEXT[msg.reason] || ('失败：' + msg.reason)
+    // 保留 otpLocal，用户可重试
+    state.otpPendingId = ''
+    state.otpPendingKind = ''
+    if (state.tab === 'otp') repaint()
+    return
+  }
+
+  if (msg.type === 'progress') {
+    state.otpStatusText = '传输中 ' + (msg.received || 0) + '/' + (msg.total || 0)
+    if (state.tab === 'otp' && !state.otpDialog) repaint()
+    return
+  }
+
+  if (msg.type === 'accounts') {
+    // list_accounts 的单条应答（小数据）
+    stopOtpTimer()
+    otpSync.replaceAll(state.otpSync, msg.accounts || [])
+    state.otpLoaded = true
+    state.otpBusy = false
+    state.otpPendingId = ''
+    state.otpPendingKind = ''
+    state.otpStatusText = '已拉取 ' + state.otpSync.local.length + ' 个账户'
+    if (state.tab === 'otp' && !state.otpDialog) repaint()
+    return
+  }
+
+  if (msg.type === 'chunk') {
+    // 手表→手机方向的 accounts 应答也可能分片（账户多时）
+    if (!state.otpSession) state.otpSession = otpProtocol.createSession()
+    const res = otpProtocol.acceptChunk(state.otpSession, msg)
+    if (!res.ok) {
+      state.otpSession = otpProtocol.createSession()
+      return
+    }
+    if (!res.done) return
+    const kind = res.kind
+    const payload = res.payload
+    state.otpSession = otpProtocol.createSession()
+    if (kind === 'accounts') {
+      stopOtpTimer()
+      otpSync.replaceAll(state.otpSync, payload.accounts || [])
+      state.otpLoaded = true
+      state.otpBusy = false
+      state.otpPendingId = ''
+      state.otpPendingKind = ''
+      state.otpStatusText = '已拉取 ' + state.otpSync.local.length + ' 个账户'
+      if (state.tab === 'otp' && !state.otpDialog) repaint()
+    }
+    return
+  }
+}
+
+/**
+ * 歌词协议回执（0.2.x 逻辑逐字保留）。
+ */
+async function handleLyricsReply(env) {
   const parsed = protocol.decode(env.data)
 
   if (state.debug) {
@@ -738,6 +971,218 @@ async function doPickDevice(addr) {
 }
 
 // ------------------------------------------------------------------
+// 动态口令（0.3.0 新增）
+// ------------------------------------------------------------------
+
+/**
+ * 选一台目标手环（OTP 与歌词共用设备选择）。
+ */
+async function otpPickDevice() {
+  if (!state.devices.length) await refreshDevices()
+  const picked = device.pick(state.devices, state.deviceAddr)
+  if (!picked.ok) {
+    if (picked.needChoice) {
+      state.needsDeviceChoice = true
+      state.otpStatusText = '请选择目标手环'
+    } else {
+      state.otpStatusText = picked.reason
+    }
+    return null
+  }
+  state.deviceAddr = picked.device.addr
+  state.deviceName = picked.device.name
+  state.needsDeviceChoice = false
+  return picked.device
+}
+
+/**
+ * 从手环拉取全量账户。
+ */
+async function doOtpPull() {
+  const dev = await otpPickDevice()
+  if (!dev) {
+    repaint()
+    return
+  }
+  const registered = await registerRecvAll()
+  if (!registered) {
+    state.otpStatusText = '注册手环消息接收失败'
+    repaint()
+    return
+  }
+  state.otpBusy = true
+  state.otpStatusText = '正在拉取…'
+  repaint()
+  const id = otpProtocol.makeId('ol')
+  state.otpPendingId = id
+  state.otpPendingKind = 'pull'
+  const res = await hostCall('sendQaicMessage', () =>
+    sendQaicMessage(dev.addr, otpProtocol.TARGET_PKG, otpProtocol.listAccountsMessage(id))
+  )
+  if (!res.ok) {
+    state.otpBusy = false
+    state.otpPendingId = ''
+    state.otpPendingKind = ''
+    state.otpStatusText = '拉取失败：' + res.error
+    repaint()
+    return
+  }
+  stopOtpTimer()
+  state.otpTimer = setHostTimeout(ACK_TIMEOUT, 'otp-ack:' + id)
+}
+
+/**
+ * 下发增量（保存修改）。
+ */
+async function doOtpSave() {
+  if (!state.otpLoaded) {
+    state.otpStatusText = '请先「拉取数据」'
+    repaint()
+    return
+  }
+  const delta = otpSync.getSyncDelta(state.otpSync)
+  if (!delta.upsert.length && !delta.remove.length) {
+    state.otpStatusText = '没有待保存的修改'
+    repaint()
+    return
+  }
+  const dev = await otpPickDevice()
+  if (!dev) {
+    repaint()
+    return
+  }
+  const registered = await registerRecvAll()
+  if (!registered) {
+    state.otpStatusText = '注册手环消息接收失败'
+    repaint()
+    return
+  }
+  const plan = otpProtocol.planSync('sync_delta', delta)
+  if (plan.mode === 'invalid') {
+    state.otpStatusText =
+      otpProtocol.ERROR_TEXT[plan.reason] + '（第 ' + (plan.index + 1) + ' 条）'
+    repaint()
+    return
+  }
+  state.otpBusy = true
+  state.otpStatusText = '正在下发…'
+  repaint()
+  const jsons = plan.mode === 'single' ? [plan.json] : plan.jsons
+  for (let i = 0; i < jsons.length; i++) {
+    const res = await hostCall('sendQaicMessage', () =>
+      sendQaicMessage(dev.addr, otpProtocol.TARGET_PKG, jsons[i])
+    )
+    if (!res.ok) {
+      state.otpBusy = false
+      state.otpPendingId = ''
+      state.otpPendingKind = ''
+      state.otpStatusText = '下发失败：' + res.error
+      // 保留 otpLocal 可重试
+      repaint()
+      return
+    }
+  }
+  state.otpPendingId = plan.id
+  state.otpPendingKind = 'save'
+  stopOtpTimer()
+  state.otpTimer = setHostTimeout(ACK_TIMEOUT, 'otp-ack:' + plan.id)
+}
+
+/**
+ * 应用时间偏差：向手环下发 set_offset。
+ */
+async function doOtpApplyOffset() {
+  const suggested = state.otpDialog && state.otpDialog.suggested
+    ? Math.floor(state.otpDialog.suggested)
+    : -state.timeSkewSec
+  if (!suggested) {
+    state.otpDialog = null
+    repaint()
+    return
+  }
+  const dev = await otpPickDevice()
+  if (!dev) {
+    repaint()
+    return
+  }
+  state.otpDialog = null
+  state.otpBusy = true
+  state.otpStatusText = '正在下发校时偏移…'
+  repaint()
+  const id = otpProtocol.makeId('os')
+  state.otpPendingId = id
+  state.otpPendingKind = 'offset'
+  const res = await hostCall('sendQaicMessage', () =>
+    sendQaicMessage(dev.addr, otpProtocol.TARGET_PKG, otpProtocol.setOffsetMessage(suggested, id))
+  )
+  if (!res.ok) {
+    state.otpBusy = false
+    state.otpPendingId = ''
+    state.otpPendingKind = ''
+    state.otpStatusText = '校时失败：' + res.error
+    repaint()
+    return
+  }
+  stopOtpTimer()
+  state.otpTimer = setHostTimeout(ACK_TIMEOUT, 'otp-ack:' + id)
+}
+
+/**
+ * 从 eventPayload 提取输入值（TEXTAREA 的 INPUT 事件）。
+ * 宿主可能给字符串、JSON 或 { value | text | content | data } 对象。
+ */
+function extractInputValue(payload) {
+  if (payload === null || payload === undefined) return ''
+  if (typeof payload === 'string') {
+    try {
+      const obj = JSON.parse(payload)
+      if (obj && typeof obj === 'object') {
+        for (const k of ['value', 'text', 'content', 'data', 'input']) {
+          if (typeof obj[k] === 'string') return obj[k]
+        }
+        return ''
+      }
+    } catch (e) {
+      // 非 JSON：就是原始文本
+      return payload
+    }
+    return payload
+  }
+  if (typeof payload === 'object') {
+    for (const k of ['value', 'text', 'content', 'data', 'input']) {
+      if (typeof payload[k] === 'string') return payload[k]
+    }
+  }
+  return ''
+}
+
+/**
+ * 批量粘贴导入：解析 otpauth 文本 → 写 local（待「保存修改」下发）。
+ */
+async function doOtpPasteApply() {
+  if (!state.otpDialog || state.otpDialog.kind !== 'paste') return
+  const text = String((state.otpDialog.draft && state.otpDialog.draft.pasteText) || '')
+  if (!text.trim()) {
+    state.otpStatusText = '粘贴内容为空'
+    repaint()
+    return
+  }
+  const parsed = otpAccounts.parseOtpauthText(text)
+  if (!parsed.accounts.length) {
+    state.otpStatusText = '没有解析到有效账户，请检查文本格式'
+    repaint()
+    return
+  }
+  const count = otpSync.applyLocalUpsert(state.otpSync, parsed.accounts)
+  state.otpDialog = null
+  state.otpStatusText =
+    '已导入 ' + count + ' 条' +
+    (parsed.invalid.length ? '，' + parsed.invalid.length + ' 行无法识别' : '') +
+    '，点「保存修改」同步到手环'
+  repaint()
+}
+
+// ------------------------------------------------------------------
 // 导出给宿主的接口
 // ------------------------------------------------------------------
 
@@ -797,6 +1242,133 @@ export const event = {
       repaint()
     } else if (action && action.indexOf('pick-device:') === 0) {
       await doPickDevice(action.slice('pick-device:'.length))
+    } else if (action === 'tab-lyrics') {
+      state.tab = 'lyrics'
+      repaint()
+    } else if (action === 'tab-otp') {
+      state.tab = 'otp'
+      repaint()
+    } else if (action === 'otp-pull') {
+      await doOtpPull()
+    } else if (action === 'otp-add') {
+      state.otpDialog = {
+        kind: 'edit',
+        editId: '',
+        draft: { name: '', issuer: '', secret: '' }
+      }
+      repaint()
+    } else if (action && action.indexOf('otp-edit:') === 0) {
+      const editId = action.slice('otp-edit:'.length)
+      const account = state.otpSync.local.find((a) => a.id === editId)
+      if (account) {
+        state.otpDialog = {
+          kind: 'edit',
+          editId,
+          draft: {
+            name: account.name || '',
+            issuer: account.issuer || '',
+            secret: account.secret || ''
+          }
+        }
+        repaint()
+      }
+    } else if (action && action.indexOf('otp-del:') === 0) {
+      const delId = action.slice('otp-del:'.length)
+      const account = state.otpSync.local.find((a) => a.id === delId)
+      if (account) {
+        state.otpDialog = {
+          kind: 'del',
+          id: delId,
+          title: (account.issuer ? account.issuer + ' · ' : '') + (account.name || '未命名')
+        }
+        repaint()
+      }
+    } else if (action === 'otp-del-yes') {
+      if (state.otpDialog && state.otpDialog.kind === 'del') {
+        otpSync.applyLocalRemove(state.otpSync, state.otpDialog.id)
+        state.otpDialog = null
+        state.otpStatusText = '已标记删除，点「保存修改」同步到手环'
+      }
+      repaint()
+    } else if (action === 'otp-edit-done') {
+      if (state.otpDialog && state.otpDialog.kind === 'edit') {
+        const draft = state.otpDialog.draft
+        if (!draft.secret) {
+          state.otpStatusText = '密钥不能为空'
+        } else {
+          // 同凭据复用已有 id：编辑场景沿用 editId，新建场景去重
+          const reuse = state.otpDialog.editId
+          const incoming = {
+            id: reuse || otpAccounts.makeAccountId(),
+            name: draft.name || '',
+            issuer: draft.issuer || '',
+            secret: draft.secret,
+            type: 'totp',
+            algorithm: 'SHA1',
+            digits: 6,
+            period: 30
+          }
+          otpSync.applyLocalUpsert(state.otpSync, [incoming])
+          state.otpDialog = null
+          state.otpStatusText = '已记入本地，点「保存修改」同步到手环'
+        }
+      }
+      repaint()
+    } else if (action === 'otp-save') {
+      const pending = otpPendingCount()
+      if (!pending) {
+        state.otpStatusText = '没有待保存的修改'
+        repaint()
+        return ''
+      }
+      const delta = otpSync.getSyncDelta(state.otpSync)
+      state.otpDialog = {
+        kind: 'confirm-save',
+        upsertCount: delta.upsert.length,
+        removeCount: delta.remove.length
+      }
+      repaint()
+    } else if (action === 'otp-confirm-save') {
+      state.otpDialog = null
+      await doOtpSave()
+    } else if (action === 'otp-paste') {
+      state.otpDialog = {
+        kind: 'paste',
+        draft: { pasteText: (state.otpDialog && state.otpDialog.draft && state.otpDialog.draft.pasteText) || '' }
+      }
+      repaint()
+    } else if (action === 'otp-paste-apply') {
+      await doOtpPasteApply()
+    } else if (action === 'otp-export') {
+      state.otpDialog = {
+        kind: 'export',
+        exportText: otpAccounts.exportAllAsUris(state.otpSync.local)
+      }
+      repaint()
+    } else if (action === 'otp-export-close' || action === 'otp-dialog-close') {
+      state.otpDialog = null
+      repaint()
+    } else if (action === 'otp-offset-apply') {
+      await doOtpApplyOffset()
+    } else if (action === 'otp-offset-dismiss') {
+      state.timeSkewSec = 0
+      if (state.otpDialog && state.otpDialog.kind === 'offset') state.otpDialog = null
+      repaint()
+    } else if (action && action.indexOf('otp-field:') === 0) {
+      // TEXTAREA 的 INPUT 事件：只更新草稿不 repaint（避免输入被重绘清空）
+      if (state.otpDialog && state.otpDialog.draft) {
+        const field = action.slice('otp-field:'.length)
+        const value = extractInputValue(eventPayload)
+        if (field === 'pasteText') {
+          state.otpDialog.draft.pasteText = value
+        } else if (field === 'name') {
+          state.otpDialog.draft.name = value.slice(0, otpAccounts.NAME_LIMIT)
+        } else if (field === 'issuer') {
+          state.otpDialog.draft.issuer = value.slice(0, otpAccounts.ISSUER_LIMIT)
+        } else if (field === 'secret') {
+          state.otpDialog.draft.secret = value
+        }
+      }
     } else if (state.debug) {
       repaint()
     }
@@ -814,6 +1386,15 @@ export const event = {
     await refreshDevices()
     await registerRecvAll()
     await startHeartbeat()
+    // OTP 1s tick：验证码/倒计时刷新。onUiRender 可能被多次调用，
+    // 用 tickTimer !== null 防重复（照 startHeartbeat 的 heartbeatTimer 写法）
+    if (state.tickTimer === null) {
+      try {
+        state.tickTimer = setHostInterval(1000, 'otp-tick')
+      } catch (e) {
+        state.tickTimer = null
+      }
+    }
     repaint()
   },
 

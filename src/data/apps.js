@@ -29,7 +29,8 @@ const apps = [
   { id: 'qrcode', name: '快捷生码', route: '/pages/qrcode', icon: '/common/icons/qrcode.png', desc: '文本 · 二维码' },
   { id: 'marquee', name: '跑马灯', route: '/pages/marquee', icon: '/common/icons/marquee.png', desc: '滚动字幕 · 颜色' },
   { id: 'lylist', name: '歌词本', route: '/pages/lylist', icon: '/common/icons/lylist.png', desc: '本地歌词 · 滚动' },
-  { id: 'level', name: '水平仪', route: '/pages/level', icon: '/common/icons/level.png', desc: '双轴 · 圆点' }
+  { id: 'level', name: '水平仪', route: '/pages/level', icon: '/common/icons/level.png', desc: '双轴 · 圆点' },
+  { id: 'otp', name: '动态口令', route: '/pages/otp/list', icon: '/common/icons/otp.png', desc: 'TOTP · 本地生成 · 手机同步' }
 ]
 
 export default apps

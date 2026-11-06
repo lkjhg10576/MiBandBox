@@ -1,0 +1,209 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ isNew ? '添加账户' : '编辑账户' }}" clock="{{ clock }}"></pagehead>
+    <div class="save" @click="save"><text class="f saveT">保存</text></div>
+
+    <div class="field" @click="openName">
+      <text class="f fLabel">名称</text>
+      <text class="f fValue" if="{{ name }}">{{ name }}</text>
+      <text class="f fPlace" if="{{ !name }}">例如：alice</text>
+    </div>
+
+    <div class="field" @click="openIssuer">
+      <text class="f fLabel">颁发者</text>
+      <text class="f fValue" if="{{ issuer }}">{{ issuer }}</text>
+      <text class="f fPlace" if="{{ !issuer }}">例如：GitHub</text>
+    </div>
+
+    <div class="fieldBig" @click="openSecret">
+      <text class="f fLabel">密钥（Base32）</text>
+      <text class="f fSecret" if="{{ secret }}">{{ secret }}</text>
+      <text class="f fPlace" if="{{ !secret }}">粘贴或手输 Base32 密钥</text>
+    </div>
+
+    <text class="f tip" if="{{ !isEdit }}">名称/颁发者选填，密钥必填</text>
+
+    <div class="delBtn" if="{{ isEdit }}" @click="del">
+      <text class="f delT" if="{{ !delArm }}">删除账户</text>
+      <text class="f delT" if="{{ delArm }}">再点一次确认删除</text>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
+.save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
+.saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
+.field { position: absolute; left: 3px; top: 82px; width: 206px; height: 62px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
+.fieldBig { position: absolute; left: 3px; top: 152px; width: 206px; height: 88px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
+.fLabel { width: 174px; height: 20px; line-height: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.fValue { width: 174px; height: 30px; line-height: 30px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.fSecret { width: 174px; height: 56px; line-height: 22px; font-size: 16px; color: #FFFFFF; }
+.fPlace { width: 174px; height: 30px; line-height: 30px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.tip { position: absolute; left: 21px; top: 250px; width: 170px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
+.delBtn { position: absolute; left: 21px; top: 416px; width: 170px; height: 40px; border-radius: 20px; background-color: #B3261E; align-items: center; justify-content: center; }
+.delT { font-size: 15px; color: #FFFFFF; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+import otpStore from '../../../utils/otpStore'
+import otpAccounts from '../../../utils/otpAccounts'
+import inputResult from '../../../utils/inputResult'
+import otpSession from '../otpSession'
+
+const state = {
+  delArmAt: 0,
+  timer: null
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    isNew: true,
+    isEdit: false,
+    name: '',
+    issuer: '',
+    secret: '',
+    delArm: false
+  },
+
+  onInit() {
+    const editId = otpSession.editId
+    this.isNew = !editId
+    this.isEdit = !!editId
+    if (editId) {
+      const account = otpStore.getById(editId)
+      if (account) {
+        this.name = account.name || ''
+        this.issuer = account.issuer || ''
+        this.secret = account.secret || ''
+      } else {
+        this.isNew = true
+        this.isEdit = false
+      }
+    }
+  },
+
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    if (state.timer) clearInterval(state.timer)
+    state.timer = setInterval(() => {
+      this.clock = time.formatClock(new Date())
+    }, 20000)
+    // 消费 /pages/input 的结果（一次性文件，take 后即删除）
+    inputResult.take((r) => {
+      if (!r || !r.field) return
+      if (r.field === 'otpName') {
+        this.name = String(r.value || '').slice(0, otpAccounts.NAME_LIMIT)
+      } else if (r.field === 'otpIssuer') {
+        this.issuer = String(r.value || '').slice(0, otpAccounts.ISSUER_LIMIT)
+      } else if (r.field === 'otpSecret') {
+        const clean = otpAccounts.normalizeBase32(String(r.value || ''))
+        if (clean) {
+          this.secret = clean
+        } else {
+          prompt.showToast({ message: '没有识别到 Base32 字符', duration: 1500 })
+        }
+      }
+    })
+  },
+
+  onHide() {
+    if (state.timer) clearInterval(state.timer)
+    state.timer = null
+    this.delArm = false
+    state.delArmAt = 0
+  },
+
+  onDestroy() {
+    if (state.timer) clearInterval(state.timer)
+    state.timer = null
+  },
+
+  openName() {
+    haptic.short()
+    router.push('/pages/input', {
+      field: 'otpName',
+      inputTitle: '账户名称',
+      text: this.name,
+      max: otpAccounts.NAME_LIMIT,
+      hint: '选填，最多 ' + otpAccounts.NAME_LIMIT + ' 字'
+    })
+  },
+
+  openIssuer() {
+    haptic.short()
+    router.push('/pages/input', {
+      field: 'otpIssuer',
+      inputTitle: '颁发者',
+      text: this.issuer,
+      max: otpAccounts.ISSUER_LIMIT,
+      hint: '选填，最多 ' + otpAccounts.ISSUER_LIMIT + ' 字'
+    })
+  },
+
+  openSecret() {
+    haptic.short()
+    router.push('/pages/input', {
+      field: 'otpSecret',
+      inputTitle: '密钥（Base32）',
+      text: this.secret,
+      max: 64,
+      hint: '必填，字母 A-Z 与数字 2-7'
+    })
+  },
+
+  save() {
+    haptic.short()
+    if (!this.secret) {
+      prompt.showToast({ message: '请先输入密钥', duration: 1500 })
+      return
+    }
+    const editId = this.isNew ? '' : otpSession.editId
+    const res = otpStore.upsert({
+      id: editId || otpAccounts.makeAccountId(),
+      name: this.name,
+      issuer: this.issuer,
+      secret: this.secret,
+      type: 'totp',
+      algorithm: 'SHA1',
+      digits: 6,
+      period: 30
+    })
+    if (!res.ok) {
+      prompt.showToast({
+        message: res.reason === 'bad-secret' ? '密钥无效（需 Base32）' : '保存失败：' + res.reason,
+        duration: 2000
+      })
+      return
+    }
+    prompt.showToast({ message: '已保存', duration: 1200 })
+    router.back()
+  },
+
+  del() {
+    haptic.short()
+    const now = Date.now()
+    if (!this.delArm || now - state.delArmAt > 4000) {
+      state.delArmAt = now
+      this.delArm = true
+      return
+    }
+    otpStore.remove(otpSession.editId)
+    this.delArm = false
+    state.delArmAt = 0
+    prompt.showToast({ message: '已删除', duration: 1200 })
+    router.back()
+  }
+}
+</script>

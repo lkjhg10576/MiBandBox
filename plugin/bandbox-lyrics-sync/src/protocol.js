@@ -118,8 +118,10 @@ export function unwrapInterconnectPayload(raw) {
     return { addr: '', pkgName: '', data: raw }
   }
 
-  // 已经是协议消息本身
-  if (obj.app === APP_ID) {
+  // 已经是协议消息本身（歌词协议与动态口令协议都按裸消息放行，
+  // 由 plugin.js 的 handleReply 按 app 字段分流；否则 OTP 的 chunk.data
+  // 字符串会被误当成信封 payload）
+  if (obj.app === APP_ID || obj.app === 'bandbox-otp') {
     return { addr: '', pkgName: '', data: raw }
   }
 

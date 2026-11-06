@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # 生成 release/BandBox-<版本>/ 下的构建产物与校验和。
-# 用法：./tools/make-release.sh 0.3.6
+# 用法：./tools/make-release.sh 0.4.0
 set -e
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-VER=${1:-0.3.6}
+VER=${1:-0.4.0}
 DIR="release/BandBox-$VER"
 mkdir -p "$DIR"
 

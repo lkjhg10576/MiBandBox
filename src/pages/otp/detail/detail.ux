@@ -1,0 +1,210 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+<import name="ring" src="../../../components/Ring.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="验证码" clock="{{ clock }}"></pagehead>
+
+    <text class="f aName">{{ name }}</text>
+
+    <text class="f aCode" if="{{ codeOk }}">{{ code }}</text>
+    <text class="f aBad" if="{{ !codeOk }}">{{ badText }}</text>
+
+    <div class="aRing">
+      <ring percent="{{ percent }}" color="{{ ringColor }}" size="110" label="{{ remaining }}"></ring>
+    </div>
+
+    <text class="f aHint" if="{{ !delArm }}">轻触下方按钮操作</text>
+    <text class="f aHintDel" if="{{ delArm }}">再点一次「删除」确认删除</text>
+
+    <div class="bar">
+      <div class="barBtn2" @click="edit">
+        <text class="f barT2">编辑</text>
+      </div>
+      <div class="barBtn2" @click="exportQr">
+        <text class="f barT2">导出</text>
+      </div>
+      <div class="delBtn" @click="del">
+        <text class="f delT" if="{{ !delArm }}">删除</text>
+        <text class="f delT" if="{{ delArm }}">确认删</text>
+      </div>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
+.aName { position: absolute; left: 21px; top: 84px; width: 170px; height: 24px; line-height: 24px; text-align: center; font-size: 16px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.aCode { position: absolute; left: 0px; top: 116px; width: 212px; height: 44px; line-height: 44px; text-align: center; font-size: 34px; color: #FFFFFF; }
+.aBad { position: absolute; left: 0px; top: 126px; width: 212px; height: 30px; line-height: 30px; text-align: center; font-size: 17px; color: #FF9F0A; }
+.aRing { position: absolute; left: 51px; top: 178px; width: 110px; height: 110px; }
+.aHint { position: absolute; left: 21px; top: 306px; width: 170px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
+.aHintDel { position: absolute; left: 21px; top: 306px; width: 170px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: #FF9F0A; }
+.bar { position: absolute; left: 0px; top: 416px; width: 212px; height: 40px; flex-direction: row; justify-content: center; }
+.barBtn2 { width: 62px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; margin-left: 6px; }
+.delBtn { width: 62px; height: 40px; border-radius: 20px; background-color: #B3261E; align-items: center; justify-content: center; margin-left: 6px; }
+.barT2 { font-size: 15px; color: rgba(255,255,255,0.85); }
+.delT { font-size: 15px; color: #FFFFFF; }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+import otpStore from '../../../utils/otpStore'
+import otp from '../../../utils/otp'
+import otpAccounts from '../../../utils/otpAccounts'
+import otpSession from '../otpSession'
+
+const state = {
+  timer: null,
+  alignTimer: null,
+  subscriber: null,
+  armed: false,
+  delArmAt: 0
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    name: '',
+    code: '',
+    codeOk: true,
+    badText: '',
+    percent: 100,
+    ringColor: '#0D6EFF',
+    remaining: '',
+    delArm: false
+  },
+
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.arm()
+    this.refresh()
+    this.startTick()
+  },
+
+  onHide() {
+    this.disarm()
+    state.delArmAt = 0
+    this.delArm = false
+  },
+
+  onDestroy() {
+    this.disarm()
+  },
+
+  arm() {
+    if (state.armed) return
+    state.armed = true
+    state.subscriber = otpStore.subscribe(() => {
+      this.refresh()
+    })
+  },
+
+  disarm() {
+    if (!state.armed) return
+    state.armed = false
+    if (state.subscriber) {
+      try {
+        state.subscriber()
+      } catch (e) {}
+      state.subscriber = null
+    }
+    this.stopTick()
+  },
+
+  startTick() {
+    this.stopTick()
+    state.alignTimer = setTimeout(() => {
+      state.alignTimer = null
+      this.refresh()
+      state.timer = setInterval(() => {
+        this.clock = time.formatClock(new Date())
+        this.refresh()
+      }, 1000)
+    }, 1000 - (Date.now() % 1000))
+  },
+
+  stopTick() {
+    if (state.alignTimer) {
+      clearTimeout(state.alignTimer)
+      state.alignTimer = null
+    }
+    if (state.timer) {
+      clearInterval(state.timer)
+      state.timer = null
+    }
+  },
+
+  refresh() {
+    const id = otpSession.currentId
+    const account = id ? otpStore.getById(id) : null
+    if (!account) {
+      this.name = '账户不存在'
+      this.codeOk = false
+      this.badText = '账户不存在或已删除'
+      this.remaining = ''
+      this.percent = 0
+      return
+    }
+    this.name = account.issuer ? account.issuer + ' · ' + account.name : account.name || '未命名'
+    const now = otp.epochSeconds()
+    const st = otp.resolveOtpState(account, now, otpStore.getTimeOffsetSec())
+    if (!st.ok) {
+      this.codeOk = false
+      this.badText = st.reason === 'unsupported-algorithm' ? '算法暂不支持（M2 支持）' : '密钥无效，请检查'
+      this.remaining = ''
+      this.percent = 0
+      this.ringColor = '#FF9F0A'
+      return
+    }
+    this.codeOk = true
+    this.code = otp.formatCode(st.code)
+    this.remaining = String(st.remaining)
+    this.percent = Math.round((st.remaining / (st.period || 30)) * 100)
+    this.ringColor = st.remaining <= 5 ? '#FF9F0A' : '#0D6EFF'
+  },
+
+  edit() {
+    haptic.short()
+    otpSession.editId = otpSession.currentId
+    router.push('/pages/otp/edit')
+  },
+
+  exportQr() {
+    haptic.short()
+    const account = otpStore.getById(otpSession.currentId)
+    if (!account) return
+    const uri = otpAccounts.buildOtpauthUri(account)
+    if (!uri) {
+      prompt.showToast({ message: '导出失败：账户数据无效', duration: 1500 })
+      return
+    }
+    // 复用通用二维码展示页；URI 明文随二维码显示（M1 已限制 name/issuer 长度）
+    router.push('/pages/qrcode/show', { qr: uri })
+  },
+
+  del() {
+    haptic.short()
+    const now = Date.now()
+    if (!this.delArm || now - state.delArmAt > 4000) {
+      state.delArmAt = now
+      this.delArm = true
+      return
+    }
+    // 二次确认：删除并返回
+    const id = otpSession.currentId
+    otpStore.remove(id)
+    this.delArm = false
+    state.delArmAt = 0
+    prompt.showToast({ message: '已删除', duration: 1200 })
+    router.back()
+  }
+}
+</script>

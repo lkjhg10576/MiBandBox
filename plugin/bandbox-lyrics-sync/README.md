@@ -6,7 +6,7 @@
 支持三种常见歌词格式：逐行 LRC、常规逐字 LRC（行内 `[mm:ss.xx]`）、
 增强逐字 LRC（ESLyric 的 `<mm:ss.xx>` 标签）。
 
-- 版本：`0.2.5`
+- 版本：`0.3.0`（新增「动态口令」Tab：TOTP 账户批量导入 / 编辑 / 删除并同步到手环）
 - API Level：**4**（`wasi_version: 3`）
 - 目标快应用包名：`com.miband.box`（手环端 BandBox）
 - 协议：本仓库自定义的 `bandbox-lyrics`，与手环端 `src/utils/lyricsTransfer.js` 一一对应
@@ -27,9 +27,13 @@ bandbox-lyrics-sync/
 │   ├── actions.js        UI 动作解析（兼容 eventId / eventPayload 两种宿主形态）
 │   ├── lrc.js            LRC 解析（逐行/逐字/增强逐字，纯函数）
 │   ├── gbk-table.js      GBK 映射表（由 scripts/gen-gbk-table.mjs 生成）
-│   ├── protocol.js       消息构造与解析
+│   ├── protocol.js       歌词协议消息构造与解析（信封解包同时放行 bandbox-otp 裸消息）
+│   ├── otp.js            OTP 内核（与手表端 src/utils/otp.js 逐字一致，SHA-256 校验）
+│   ├── otpAccounts.js    账户模型 / otpauth:// 解析（与手表端逐字一致）
+│   ├── otpProtocol.js    bandbox-otp 协议（常量与行为和手表端一致）
+│   ├── otpSync.js        三态同步模型（baseline / local / deletedIds）
 │   ├── device.js         设备选择
-│   └── ui.js             声明式 UI
+│   └── ui.js             声明式 UI（双 Tab：歌词同步 / 动态口令）
 ├── scripts/
 │   ├── build.mjs         componentize → dist/plugin.wasm → dist/*.abp
 │   ├── fetch-wit.mjs     拉取 WIT
@@ -220,6 +224,32 @@ if (!res.ok) { /* res.error 是宿主给的失败原因 */ }
 
 错误原因：`bad-json` / `not-armed` / `write-failed` / `bad-seq` / `version` / `bad-app` / `bad-type` / `empty`。
 
+## 动态口令协议（bandbox-otp）
+
+0.3.0 起，同一个插件、同一条 `registerInterconnectRecv(addr, "com.miband.box")` 通道同时承载
+歌词协议与动态口令协议：`handleReply` 按 `app` 字段分流（歌词 `bandbox-lyrics`，口令
+`bandbox-otp`），`protocol.unwrapInterconnectPayload` 对两种裸消息都直接放行。
+`hello` 心跳在每次设备遍历里多发一条 `bandbox-otp` 的 hello（带手机 Unix 秒，手表用于偏差提示），
+不新建第二个心跳 timer；OTP 的 ACK 超时用独立 `otpTimer` 与 `otp-ack:<id>` payload 前缀，
+与歌词的 `pendingId` 互不串扰。
+
+| 方向 | type | 载荷 |
+|---|---|---|
+| 手机→手环 | `hello` | `{id, time}` 心跳 + 手机时间 |
+| 手机→手环 | `list_accounts` | `{id}` 拉全量 |
+| 手机→手环 | `sync_delta` | `{id, upsert[], remove[]}` 增量（超 12KB 按单账户条目分片） |
+| 手机→手环 | `set_offset` | `{id, offset}` 时间偏移（秒，快了为负） |
+| 手机→手环 | `chunk` | `{id, seq, total, kind, field, data}` |
+| 手环→手机 | `ready` / `pong` | `{accountsCount, timeOffsetSec, time, id?}` |
+| 手环→手机 | `accounts` | `{id, accounts[]}` 全量应答（账户多时也分片） |
+| 手环→手机 | `ack` / `err` / `progress` | `{id, ok?/reason/received,total}` |
+
+account 字段与 otpauth:// 数据格式同两类参考实现（MIT）：`{id, name, issuer, secret, type,
+algorithm, digits, period, counter, createdAt, counterModifiedAt, extraParams}`；
+M1 固定 `totp/SHA1/6/30`，字段全保留以便后续扩展。同步是三态模型：拉取重建 baseline →
+本地编辑写 local/deletedIds → 「保存修改」二次确认后 `getSyncDelta` 增量下发 → ack 后推进
+baseline；回执丢失时 local 保留可重试。单账户超预算（too-large）在解析期拒绝。
+
 ## LRC 解析规则
 
 1. 编码：先严格 UTF-8，失败再按 GBK/GB18030 解码（国内 LRC 常见 GBK）；去 BOM
@@ -259,6 +289,18 @@ if (!res.ok) { /* res.error 是宿主给的失败原因 */ }
 - [ ] 含超长单行的 LRC 被拒绝导入，提示「歌词文件存在异常（单行过长）…导入失败」，
       且不出现「发送到手环」按钮
 - [ ] 多设备同时连接时，插件能选择目标手环
+
+动态口令 Tab（0.3.0 新增，与歌词互不干扰）：
+
+- [ ] 插件顶部两个 Tab 可切换，歌词功能全回归正常（发歌词不误改 OTP 账户）
+- [ ] 「拉取数据」5 秒内回显账户数；0 / 1 / 20 条各验一次
+- [ ] 批量粘贴 3 条 otpauth://（含 `\/`、`&amp;`、大小写参数、issuer 前缀）→ 二次确认 →
+      手环列表出现且验证码正确；手表与手机同一账户同一时刻显示相同验证码
+- [ ] 编辑一条 → 下发只含 1 条 upsert；删除一条 → 两端一致消失
+- [ ] ≥60 个账户触发分片，逐片 progress、收齐一次性落盘，无乱码缺条
+- [ ] 杀插件后重发 → 提示「未收到手环确认」且本地修改保留可重试
+- [ ] 手表钟快 90 秒 → 插件提示偏差 → 一键校时后双端验证码恢复一致
+- [ ] 账户密钥明文存储风险已在 UI 与 README 提示；「批量导出」能导出 otpauth 多行文本
 
 ## 排障
 

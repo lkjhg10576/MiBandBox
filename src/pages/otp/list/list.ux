@@ -1,0 +1,202 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="动态口令" clock="{{ clock }}"></pagehead>
+
+    <list class="list" bounces="true">
+      <list-item type="row" class="row" for="{{ rows }}" @click="onRow($item)">
+        <div class="rMain">
+          <text class="f rName">{{ $item.name }}</text>
+          <text class="f rCode" style="color: {{ $item.color }};">{{ $item.codeText }}</text>
+        </div>
+        <text class="f rLeft">{{ $item.left }}</text>
+      </list-item>
+      <list-item type="pad" class="pad"></list-item>
+    </list>
+
+    <div class="bar">
+      <div class="barBtn" @click="add">
+        <text class="f barT">添加</text>
+      </div>
+      <div class="barBtn2" @click="syncTip">
+        <text class="f barT2">同步</text>
+      </div>
+      <div class="barBtn2" @click="openSettings">
+        <text class="f barT2">设置</text>
+      </div>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
+.list { position: absolute; left: 0px; top: 82px; width: 212px; height: 330px; }
+.row { width: 206px; height: 68px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px 0px 16px; }
+.rMain { width: 130px; height: 54px; flex-direction: column; justify-content: center; }
+.rName { width: 130px; height: 24px; line-height: 24px; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.rCode { width: 130px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
+.rLeft { position: absolute; right: 14px; top: 24px; width: 48px; height: 20px; line-height: 20px; text-align: right; font-size: 13px; color: rgba(255,255,255,0.4); }
+.pad { width: 212px; height: 60px; }
+.bar { position: absolute; left: 0px; top: 416px; width: 212px; height: 40px; flex-direction: row; justify-content: center; }
+.barBtn { width: 62px; height: 40px; border-radius: 20px; background-color: #0D6EFF; align-items: center; justify-content: center; margin-left: 6px; }
+.barBtn2 { width: 62px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; margin-left: 6px; }
+.barT { font-size: 15px; color: #FFFFFF; }
+.barT2 { font-size: 15px; color: rgba(255,255,255,0.85); }
+</style>
+
+<script>
+import time from '../../../utils/time'
+import router from '../../../utils/router'
+import haptic from '../../../utils/haptic'
+import prompt from '@system.prompt'
+import otpStore from '../../../utils/otpStore'
+import otp from '../../../utils/otp'
+import otpSession from '../otpSession'
+
+/**
+ * 页面内部状态：定时器与订阅句柄放模块闭包，不进 data 响应式代理。
+ * 1s tick 先对齐整秒，验证码到点整切换。
+ */
+const state = {
+  timer: null,
+  alignTimer: null,
+  subscriber: null,
+  armed: false
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    rows: []
+  },
+
+  onShow() {
+    this.clock = time.formatClock(new Date())
+    this.arm()
+    this.refresh()
+    this.startTick()
+  },
+
+  onHide() {
+    this.disarm()
+  },
+
+  onDestroy() {
+    this.disarm()
+  },
+
+  /** 订阅存储变化与连接状态（幂等）。 */
+  arm() {
+    if (state.armed) return
+    state.armed = true
+    state.subscriber = otpStore.subscribe(() => {
+      this.refresh()
+    })
+  },
+
+  disarm() {
+    if (!state.armed) return
+    state.armed = false
+    if (state.subscriber) {
+      try {
+        state.subscriber()
+      } catch (e) {}
+      state.subscriber = null
+    }
+    this.stopTick()
+  },
+
+  startTick() {
+    this.stopTick()
+    // 先对齐整秒再进入 1s 周期，验证码切换不抖
+    state.alignTimer = setTimeout(() => {
+      state.alignTimer = null
+      this.refresh()
+      state.timer = setInterval(() => {
+        this.clock = time.formatClock(new Date())
+        this.refresh()
+      }, 1000)
+    }, 1000 - (Date.now() % 1000))
+  },
+
+  stopTick() {
+    if (state.alignTimer) {
+      clearTimeout(state.alignTimer)
+      state.alignTimer = null
+    }
+    if (state.timer) {
+      clearInterval(state.timer)
+      state.timer = null
+    }
+  },
+
+  /** 重建列表行：每 tick 只读不写存储。 */
+  refresh() {
+    const now = otp.epochSeconds()
+    const offset = otpStore.getTimeOffsetSec()
+    const accounts = otpStore.list()
+    const rows = []
+    if (!accounts.length) {
+      rows.push({
+        key: 'empty',
+        name: '还没有账户',
+        codeText: '点下方「添加」手动录入，或在手机插件中批量导入',
+        color: 'rgba(255,255,255,0.45)',
+        left: '',
+        act: ''
+      })
+    }
+    for (let i = 0; i < accounts.length; i++) {
+      const a = accounts[i]
+      const st = otp.resolveOtpState(a, now, offset)
+      let codeText = ''
+      let color = '#FFFFFF'
+      if (!st.ok) {
+        codeText = st.reason === 'unsupported-algorithm' ? '算法暂不支持' : '密钥无效'
+        color = '#FF9F0A'
+      } else {
+        codeText = otp.formatCode(st.code)
+        color = st.remaining <= 5 ? '#FF9F0A' : '#FFFFFF'
+      }
+      rows.push({
+        key: a.id,
+        name: a.issuer ? a.issuer + ' · ' + a.name : a.name || '未命名',
+        codeText,
+        color,
+        left: st.ok ? st.remaining + 's' : '',
+        act: 'detail',
+        id: a.id
+      })
+    }
+    this.rows = rows
+  },
+
+  onRow(item) {
+    if (!item || item.act !== 'detail') return
+    haptic.short()
+    otpSession.currentId = item.id
+    router.push('/pages/otp/detail')
+  },
+
+  add() {
+    haptic.short()
+    otpSession.editId = ''
+    router.push('/pages/otp/edit')
+  },
+
+  syncTip() {
+    haptic.short()
+    prompt.showToast({ message: '在手机 AstroBox 插件「动态口令」页同步', duration: 2000 })
+  },
+
+  openSettings() {
+    haptic.short()
+    router.push('/pages/otp/settings')
+  }
+}
+</script>
