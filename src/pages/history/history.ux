@@ -10,20 +10,22 @@
       <div class="arrowBtn" @click="nextDay"><text class="f arrowT">></text></div>
     </div>
 
-    <div class="card" if="{{ event }}">
-      <text class="f tag">历史上的今天</text>
-      <scroll class="eventScroll" scroll-y="true">
-        <text class="f eventText">{{ event }}</text>
-      </scroll>
-    </div>
+    <!-- 当天内容改成可滚动的多条列表：史实条目 + 小知识兜底 -->
+    <scroll class="listScroll" scroll-y="true" bounces="true">
+      <div class="inner">
+        <div class="item" for="{{ items }}">
+          <text class="f meta">{{ $item.meta }}</text>
+          <text class="f title">{{ $item.title }}</text>
+          <text class="f body">{{ $item.body }}</text>
+        </div>
+        <div class="empty" if="{{ items.length === 0 }}">
+          <text class="f emptyT">今日小知识</text>
+        </div>
+        <div class="pad"></div>
+      </div>
+    </scroll>
 
-    <div class="card" if="{{ !event }}">
-      <text class="f tag">今日暂无大事记</text>
-      <text class="f eventText">{{ tip }}</text>
-      <text class="f tipLabel">读一则科技小知识</text>
-    </div>
-
-    <text class="f foot">公共领域科技事实</text>
+    <text class="f foot">公共领域历史与科技事实</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -35,11 +37,16 @@
 .arrowBtn { width: 40px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; }
 .arrowT { font-size: 24px; color: #FFFFFF; }
 .dateText { width: 110px; text-align: center; font-size: 17px; color: #FFFFFF; }
-.card { position: absolute; left: 3px; top: 146px; width: 206px; height: 280px; border-radius: 26px; background-color: #262626; padding: 14px 18px; flex-direction: column; }
-.tag { width: 170px; height: 26px; line-height: 26px; font-size: 14px; color: #4E87FF; }
-.eventScroll { width: 170px; height: 214px; }
-.eventText { width: 170px; font-size: 18px; line-height: 27px; color: #FFFFFF; }
-.tipLabel { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.35); }
+.listScroll { position: absolute; left: 0px; top: 146px; width: 212px; height: 268px; }
+.inner { width: 212px; flex-direction: column; }
+/* 条目高度随正文行数自适应，正文完整可读，不做省略号截断 */
+.item { width: 206px; margin: 0px 3px 10px 3px; border-radius: 26px; background-color: #262626; padding: 12px 16px; flex-direction: column; }
+.meta { width: 174px; height: 18px; line-height: 18px; font-size: 13px; color: #4E87FF; }
+.title { width: 174px; height: 22px; line-height: 22px; font-size: 16px; color: #FFFFFF; }
+.body { width: 174px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.82); }
+.empty { width: 212px; height: 200px; align-items: center; justify-content: center; flex-direction: column; }
+.emptyT { font-size: 16px; color: rgba(255,255,255,0.5); }
+.pad { width: 212px; height: 12px; }
 .foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
 </style>
 
@@ -55,8 +62,7 @@ export default {
     m: 1,
     d: 1,
     dateText: '',
-    event: '',
-    tip: '',
+    items: [],
     timer: null
   },
   onShow() {
@@ -82,9 +88,20 @@ export default {
   refresh() {
     const dt = new Date(this.y, this.m - 1, this.d)
     this.dateText = this.m + '月' + this.d + '日 ' + time.weekdayName(dt)
-    const ev = history.getByDate(this.m, this.d)
-    this.event = ev || ''
-    this.tip = history.tipOfDay(this.m, this.d)
+    const items = []
+    // 1) 当天的史实条目
+    const events = history.getByDate(this.m, this.d)
+    for (let i = 0; i < events.length; i++) {
+      const e = events[i]
+      const meta = (e.year ? e.year + ' · ' : '') + (e.tag || '史实')
+      items.push({ meta: meta, title: e.title || '历史上的今天', body: e.text })
+    }
+    // 2) 小知识兜底，保证每天至少有两条可读内容
+    const tips = history.tipOfDay(this.m, this.d)
+    for (let i = 0; i < tips.length; i++) {
+      items.push({ meta: '小知识', title: '随手一读', body: tips[i] })
+    }
+    this.items = items
   },
   shift(delta) {
     haptic.short()
