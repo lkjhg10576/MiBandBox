@@ -1,27 +1,66 @@
 <template>
   <div class="page" style="background-color: {{ bg }};" @click="back">
-    <div class="band" show="{{ !hBig }}">
-      <marquee class="f mqV" scrollamount="{{ speed }}" text-offset="40" loop="-1" style="color: {{ color }};">{{ text }}</marquee>
+    <!-- 竖屏：横向滚动跑马灯。
+         内容由 4 个等宽内容块拼成，滚动满一个周期后整块回退一个周期宽，
+         画面与周期边界完全一致 → 无缝循环。
+         flex-shrink:0 必须显式写：内容块的父容器是 div，缺省会把它压扁导致不滚动。 -->
+    <scroll id="mqScrollV" class="mqScrollV" scroll-x="true" bounces="false" if="{{ mode === 'v' }}">
+      <div class="mqRow" style="width: {{ rowW }}px;">
+        <div class="mqCopy" style="width: {{ copyW }}px;" for="{{ copies }}">
+          <text class="f mqText" style="font-size: {{ size }}px; color: {{ color }};">{{ text }}</text>
+        </div>
+      </div>
+    </scroll>
+
+    <!-- 横屏：整块内容旋转 90° 铺满 212×520。
+         坐标照抄歌词页已验证的写法（transform-origin:0 0 + left:212px），
+         绕中心旋转会向左溢出被裁剪掉，导致整块不渲染。 -->
+    <div class="landWrap" if="{{ mode === 'h' }}">
+      <scroll id="mqScrollH" class="mqScrollH" scroll-x="true" bounces="false">
+        <div class="mqRowH" style="width: {{ rowW }}px;">
+          <div class="mqCopyH" style="width: {{ copyW }}px;" for="{{ copies }}">
+            <text class="f mqTextH" style="font-size: {{ size }}px; color: {{ color }};">{{ text }}</text>
+          </div>
+        </div>
+      </scroll>
     </div>
-    <div class="band" show="{{ hBig }}">
-      <text class="f mqH" style="color: {{ color }};">{{ stepText }}</text>
-    </div>
+
     <text class="f hint" style="color: {{ color }};">轻触屏幕退出</text>
   </div>
 </template>
 
 <style>
-.page { width: 212px; height: 520px; overflow: hidden; }
-.band { position: absolute; left: 0px; top: 160px; width: 212px; height: 200px; align-items: center; }
-.mqV { width: 212px; height: 200px; line-height: 200px; font-weight: bold; }
-.mqH { width: 212px; height: 200px; line-height: 200px; text-align: center; font-size: 56px; font-weight: bold; text-overflow: ellipsis; lines: 1; }
-.hint { position: absolute; left: 21px; top: 462px; width: 170px; text-align: center; font-size: 14px; opacity: 0.4; }
+/* 底色兜底用配置里的默认蓝；动态 style 生效时会被覆盖 */
+.page { width: 212px; height: 520px; overflow: hidden; background-color: #0D6EFF; }
+/* 竖屏 */
+.mqScrollV { position: absolute; left: 0px; top: 160px; width: 212px; height: 200px; }
+.mqRow { flex-direction: row; height: 200px; }
+.mqCopy { flex-shrink: 0; height: 200px; }
+.mqText { height: 200px; line-height: 200px; font-weight: bold; color: #FFFFFF; }
+/* 横屏：520x212 的内容条旋转 90°，旋转后正好落在 (0,0)-(212,520)。
+   旋转中心取左上角（transform-origin: 0 0）+ left:212px；
+   沿用歌词页坐标，不要自行改 left/top/width/height。 */
+.landWrap { position: absolute; left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); z-index: 1; }
+.mqScrollH { width: 520px; height: 212px; }
+.mqRowH { flex-direction: row; height: 212px; }
+.mqCopyH { flex-shrink: 0; height: 212px; }
+.mqTextH { height: 212px; line-height: 212px; font-weight: bold; color: #FFFFFF; }
+/* 提示压在旋转内容之上，避免被盖住 */
+.hint { position: absolute; left: 21px; top: 462px; width: 170px; text-align: center; font-size: 14px; opacity: 0.4; z-index: 10; color: #FFFFFF; }
 </style>
 
 <script>
+import marqueeState from '../../utils/marqueeState'
 import kv from '../../utils/kv'
 import router from '../../utils/router'
 import brightness from '@system.brightness'
+
+// 滚动步进：每 TICK_MS 走 step 像素，step 由速度档换算（3→2 / 6→4 / 12→8）
+const TICK_MS = 50
+
+// 内容块副本数与 marqueeState.COPY_COUNT 保持一致
+const COPIES = []
+for (let i = 0; i < marqueeState.COPY_COUNT; i++) COPIES.push(i)
 
 export default {
   protected: {
@@ -32,52 +71,94 @@ export default {
     bg: '#0D6EFF',
     mode: 'v'
   },
+  data: {
+    mode: 'v',
+    text: 'BandBox',
+    size: 30,
+    speed: 6,
+    color: '#FFFFFF',
+    bg: '#0D6EFF',
+    copyW: 240,
+    rowW: 960,
+    copies: COPIES
+  },
   private: {
-    hBig: false,
-    stepText: ''
+    offset: 0,
+    scrollId: 'mqScrollV',
+    timer: null
   },
   onShow() {
-    // 跑马灯配置与播放模式都走 KV（路由参数在当前 Vela 上绑定不稳定）。
-    // marquee 页 push 前已 kv.set + kv.flush，这里能读到最新值。
-    // 竖屏 = marquee 组件平滑滚动（组件字号在本渲染器上不可调）。
-    // 横屏 = 纯 text 元素 56px 特大字号 + 定时器逐字步进滚动
-    //（marquee 字号锁死、transform rotate 容器不渲染、canvas 缺失，均为本渲染器实测）。
-    kv.init(() => {
-      const m = kv.get('marquee', null)
-      this.text = (m && m.text) || 'BandBox'
-      this.size = (m && m.size) || 30
-      this.speed = (m && m.speed) || 6
-      this.color = (m && m.color) || '#FFFFFF'
-      this.bg = (m && m.bg) || '#0D6EFF'
-      const mode = kv.get('marqueeMode', this.mode) || this.mode
-      this.hBig = mode === 'h'
-      if (this.hBig) this.startStep()
-    })
+    // 播放内容与模式以 globalThis 上的 marqueeState 为唯一真源（同步读取），
+    // 缺失时才回落路由参数 / KV（KV 只用于记住上次配置）。
+    const cfg = marqueeState.cfg
+    if (cfg) {
+      this.applyCfg(cfg)
+    } else {
+      this.applyCfg({
+        text: this.text,
+        size: this.size,
+        speed: this.speed,
+        color: this.color,
+        bg: this.bg,
+        mode: this.mode
+      })
+      kv.init(() => {
+        const m = kv.get('marquee', null)
+        if (m) {
+          this.applyCfg({ text: m.text, size: m.size, speed: m.speed, color: m.color, bg: m.bg, mode: this.mode })
+        }
+      })
+    }
     brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
   },
+  onReady() {
+    this.startScroll()
+  },
   onHide() {
-    this.stopStep()
+    this.stopScroll()
     brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
   },
   onDestroy() {
-    this.stopStep()
+    this.stopScroll()
     brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
   },
-  startStep() {
-    this.stopStep()
-    const cycle = String(this.text || 'BandBox') + '　　'
-    let i = 0
-    this.stepText = cycle
-    const step = () => {
-      i = (i + 1) % cycle.length
-      this.stepText = cycle.slice(i) + cycle.slice(0, i)
-    }
-    const gap = this.speed >= 12 ? 220 : this.speed >= 6 ? 360 : 560
-    this.stepTimer = setInterval(step, gap)
+  applyCfg(cfg) {
+    const c = cfg || {}
+    this.text = String(c.text || 'BandBox')
+    this.size = Number(c.size) || 30
+    this.speed = Number(c.speed) || 6
+    this.color = c.color || '#FFFFFF'
+    this.bg = c.bg || '#0D6EFF'
+    this.mode = c.mode === 'h' ? 'h' : 'v'
+    this.copyW = marqueeState.copyWidth(this.text, this.size)
+    this.rowW = this.copyW * marqueeState.COPY_COUNT
+    this.offset = 0
+    // 配置是异步补齐的（KV 兜底路径）时页面早已渲染过，需要按新周期重启滚动
+    if (this.timer) this.startScroll()
   },
-  stopStep() {
-    if (this.stepTimer) clearInterval(this.stepTimer)
-    this.stepTimer = null
+  startScroll() {
+    this.stopScroll()
+    this.scrollId = this.mode === 'h' ? 'mqScrollH' : 'mqScrollV'
+    this.offset = 0
+    const step = Math.max(1, Math.round(this.speed / 1.5))
+    this.timer = setInterval(() => {
+      try {
+        const el = this.$element(this.scrollId)
+        if (!el) return
+        this.offset += step
+        if (this.offset >= this.copyW) {
+          // 走满一个周期：整块回退一个周期宽，画面与周期边界完全一致 → 无缝
+          this.offset -= this.copyW
+          el.scrollBy({ left: -this.copyW, behavior: 'instant' })
+        } else {
+          el.scrollBy({ left: step, behavior: 'instant' })
+        }
+      } catch (e) {}
+    }, TICK_MS)
+  },
+  stopScroll() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
   },
   back() {
     router.back()

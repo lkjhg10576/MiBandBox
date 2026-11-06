@@ -76,6 +76,7 @@ import kv from '../../utils/kv'
 import router from '../../utils/router'
 import haptic from '../../utils/haptic'
 import textInput from '../../utils/textInput'
+import marqueeState from '../../utils/marqueeState'
 import prompt from '@system.prompt'
 
 export default {
@@ -153,6 +154,9 @@ export default {
     }
     this.kbShow = false
     const m = { text: this.text, size: this.size, speed: this.speed, color: this.color, bg: this.bg, mode: 'v' }
+    // 播放内容与模式同步写进全局状态：播放页 onShow 直接读到，
+    // 不会被 KV 里上一次残留的 marqueeMode 覆盖
+    marqueeState.cfg = m
     kv.init(() => {
       kv.set('marquee', m)
       kv.flush()

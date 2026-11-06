@@ -4,8 +4,10 @@
 <template>
   <div class="page">
     <pagehead title="跑马灯" clock="{{ clock }}"></pagehead>
+    <!-- 预览用静态文字（与设置页一致）：播放页用的是横向滚动实现，
+         这里不滚动才不会让人误以为播放效果是静止的。 -->
     <div class="preview" style="background-color: {{ bg }};">
-      <marquee class="f mq" scrollamount="6" text-offset="30" style="color: {{ color }}; font-size: {{ size }}px;">{{ text }}</marquee>
+      <text class="f pv" style="color: {{ color }}; font-size: {{ size }}px;">{{ text }}</text>
     </div>
 
     <div class="card card2" @click="edit">
@@ -28,8 +30,8 @@
 <style>
 @import '../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; }
-.preview { position: absolute; left: 3px; top: 78px; width: 206px; height: 84px; border-radius: 26px; align-items: center; }
-.mq { width: 190px; height: 60px; line-height: 60px; }
+.preview { position: absolute; left: 3px; top: 78px; width: 206px; height: 84px; border-radius: 26px; align-items: center; justify-content: center; }
+.pv { width: 190px; text-align: center; text-overflow: ellipsis; lines: 1; }
 .card { position: absolute; left: 3px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 16px; }
 .card2 { top: 178px; }
 .card3 { top: 258px; }
@@ -43,6 +45,7 @@ import time from '../../utils/time'
 import kv from '../../utils/kv'
 import router from '../../utils/router'
 import haptic from '../../utils/haptic'
+import marqueeState from '../../utils/marqueeState'
 
 export default {
   data: {
@@ -85,18 +88,22 @@ export default {
   },
   play(mode) {
     haptic.short()
-    // 播放模式走 KV 一次性传递（路由参数在当前 Vela 上绑定不稳定），push 前立即落盘
+    const m = {
+      text: this.text,
+      size: this.size,
+      speed: this.speed,
+      color: this.color,
+      bg: this.bg,
+      mode: mode
+    }
+    // 播放内容与模式同步写进全局状态：播放页 onShow 直接读到，不受 KV 异步与残留影响
+    marqueeState.cfg = m
+    // KV 只负责「记住上次配置」；落盘完成后再跳转，避免页面销毁打断写入
     kv.init(() => {
       kv.set('marqueeMode', mode)
+      kv.set('marquee', m)
       kv.flush()
-      router.push('/pages/textShow', {
-        text: this.text,
-        size: this.size,
-        speed: this.speed,
-        color: this.color,
-        bg: this.bg,
-        mode: mode
-      })
+      router.push('/pages/textShow', m)
     })
   }
 }
