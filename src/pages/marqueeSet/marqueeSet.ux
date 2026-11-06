@@ -157,11 +157,11 @@ export default {
     // 播放内容与模式同步写进全局状态：播放页 onShow 直接读到，
     // 不会被 KV 里上一次残留的 marqueeMode 覆盖
     marqueeState.cfg = m
-    kv.init(() => {
+    try {
       kv.set('marquee', m)
       kv.flush()
-      router.push('/pages/textShow', m)
-    })
+    } catch (e) {}
+    router.push('/pages/textShow', m)
   }
 }
 </script>

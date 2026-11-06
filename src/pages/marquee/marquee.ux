@@ -98,13 +98,12 @@ export default {
     }
     // 播放内容与模式同步写进全局状态：播放页 onShow 直接读到，不受 KV 异步与残留影响
     marqueeState.cfg = m
-    // KV 只负责「记住上次配置」；落盘完成后再跳转，避免页面销毁打断写入
-    kv.init(() => {
+    try {
       kv.set('marqueeMode', mode)
       kv.set('marquee', m)
       kv.flush()
-      router.push('/pages/textShow', m)
-    })
+    } catch (e) {}
+    router.push('/pages/textShow', m)
   }
 }
 </script>

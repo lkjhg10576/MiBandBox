@@ -64,25 +64,17 @@ for (let i = 0; i < marqueeState.COPY_COUNT; i++) COPIES.push(i)
 
 export default {
   protected: {
-    text: '',
+    text: 'BandBox',
     size: '30',
     speed: '6',
     color: '#FFFFFF',
     bg: '#0D6EFF',
     mode: 'v'
   },
-  data: {
-    mode: 'v',
-    text: 'BandBox',
-    size: 30,
-    speed: 6,
-    color: '#FFFFFF',
-    bg: '#0D6EFF',
+  private: {
     copyW: 240,
     rowW: 960,
-    copies: COPIES
-  },
-  private: {
+    copies: COPIES,
     offset: 0,
     scrollId: 'mqScrollV',
     timer: null
@@ -110,6 +102,7 @@ export default {
       })
     }
     brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+    this.startScroll()
   },
   onReady() {
     this.startScroll()

@@ -11,12 +11,12 @@
     </div>
 
     <!-- 当天内容改成可滚动的多条列表：史实条目 + 小知识兜底 -->
-    <scroll class="listScroll" scroll-y="true" bounces="true">
-      <div class="inner">
+    <scroll id="listScroll" class="listScroll" scroll-y="true" bounces="true">
+      <div class="inner" style="height: {{ innerHeight }}px;">
         <div class="item" for="{{ items }}">
-          <text class="f meta">{{ $item.meta }}</text>
-          <text class="f title">{{ $item.title }}</text>
-          <text class="f body">{{ $item.body }}</text>
+          <text class="f itemMeta">{{ $item.meta }}</text>
+          <text class="f itemTitle">{{ $item.title }}</text>
+          <text class="f itemBody">{{ $item.body }}</text>
         </div>
         <div class="empty" if="{{ items.length === 0 }}">
           <text class="f emptyT">今日小知识</text>
@@ -37,16 +37,16 @@
 .arrowBtn { width: 40px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; }
 .arrowT { font-size: 24px; color: #FFFFFF; }
 .dateText { width: 110px; text-align: center; font-size: 17px; color: #FFFFFF; }
-.listScroll { position: absolute; left: 0px; top: 146px; width: 212px; height: 268px; }
-.inner { width: 212px; flex-direction: column; }
+.listScroll { position: absolute; left: 0px; top: 140px; width: 212px; height: 300px; }
+.inner { width: 212px; flex-direction: column; flex-shrink: 0; }
 /* 条目高度随正文行数自适应，正文完整可读，不做省略号截断 */
-.item { width: 206px; margin: 0px 3px 10px 3px; border-radius: 26px; background-color: #262626; padding: 12px 16px; flex-direction: column; }
-.meta { width: 174px; height: 18px; line-height: 18px; font-size: 13px; color: #4E87FF; }
-.title { width: 174px; height: 22px; line-height: 22px; font-size: 16px; color: #FFFFFF; }
-.body { width: 174px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.82); }
+.item { width: 206px; margin: 0px 3px 10px 3px; border-radius: 26px; background-color: #262626; padding: 12px 16px 14px 16px; flex-direction: column; flex-shrink: 0; }
+.itemMeta { width: 174px; height: 18px; line-height: 18px; font-size: 13px; color: #4E87FF; flex-shrink: 0; margin-bottom: 2px; }
+.itemTitle { width: 174px; font-size: 16px; line-height: 22px; color: #FFFFFF; font-weight: bold; flex-shrink: 0; margin-bottom: 6px; }
+.itemBody { width: 174px; font-size: 14px; line-height: 21px; color: rgba(255,255,255,0.85); flex-shrink: 0; }
 .empty { width: 212px; height: 200px; align-items: center; justify-content: center; flex-direction: column; }
 .emptyT { font-size: 16px; color: rgba(255,255,255,0.5); }
-.pad { width: 212px; height: 12px; }
+.pad { width: 212px; height: 24px; flex-shrink: 0; }
 .foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
 </style>
 
@@ -54,6 +54,30 @@
 import time from '../../utils/time'
 import history from '../../data/history'
 import haptic from '../../utils/haptic'
+
+function estimateInnerHeight(items) {
+  if (!items || items.length === 0) return 300
+  let total = 0
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i]
+    // padding 26 + margin 10 = 36
+    let h = 36
+    // meta 18 + margin 2 = 20
+    h += 20
+    // title
+    const tLen = (it.title || '').length
+    const tLines = tLen > 10 ? 2 : 1
+    h += tLines * 22 + 6
+    // body: 中文字符约 11-12 字一行
+    const bLen = (it.body || '').length
+    const bLines = Math.max(1, Math.ceil(bLen / 11))
+    h += bLines * 21
+    total += h
+  }
+  // 底部留白 pad(24px)
+  total += 24
+  return Math.max(300, total)
+}
 
 export default {
   data: {
@@ -63,6 +87,7 @@ export default {
     d: 1,
     dateText: '',
     items: [],
+    innerHeight: 300,
     timer: null
   },
   onShow() {
@@ -102,6 +127,7 @@ export default {
       items.push({ meta: '小知识', title: '随手一读', body: tips[i] })
     }
     this.items = items
+    this.innerHeight = estimateInnerHeight(items)
   },
   shift(delta) {
     haptic.short()
@@ -110,6 +136,9 @@ export default {
     this.m = dt.getMonth() + 1
     this.d = dt.getDate()
     this.refresh()
+    try {
+      this.$element('listScroll').scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    } catch (e) {}
   },
   prevDay() {
     this.shift(-1)
