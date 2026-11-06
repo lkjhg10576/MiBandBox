@@ -1,18 +1,38 @@
 <template>
-  <div class="page" style="background-color: {{ color }};">
+  <div class="page">
+    <!-- 首帧兜底色层：颜色写死在 CSS 里，不依赖任何动态 style 插值。
+         index 初始为 0 → 首帧即整屏红光，切换模式只改哪个静态层可见。 -->
+    <div class="fill fill0" if="{{ index === 0 }}"></div>
+    <div class="fill fill1" if="{{ index === 1 }}"></div>
+    <div class="fill fill2" if="{{ index === 2 }}"></div>
+    <div class="fill fill3" if="{{ index === 3 }}"></div>
+    <div class="fill fill4" if="{{ index === 4 }}"></div>
+
     <div class="top">
       <div class="exit" @click="exit"><text class="f exitT">退出</text></div>
-      <text class="f name" style="color: {{ fg }};">{{ name }}</text>
-      <text class="f hint" style="color: {{ fg }};">{{ hint }}</text>
+      <text class="f name fgLight" if="{{ index === 0 || index === 1 || index === 4 }}">{{ name }}</text>
+      <text class="f name fgDark" if="{{ index === 2 || index === 3 }}">{{ name }}</text>
+      <text class="f hint fgLight" if="{{ index === 0 || index === 1 || index === 4 }}">{{ hint }}</text>
+      <text class="f hint fgDark" if="{{ index === 2 || index === 3 }}">{{ hint }}</text>
     </div>
     <div class="zone" @click="next">
-      <text class="f arrow" style="color: {{ fg }};">轻触切换</text>
+      <text class="f arrow fgLight" if="{{ index === 0 || index === 1 || index === 4 }}">轻触切换</text>
+      <text class="f arrow fgDark" if="{{ index === 2 || index === 3 }}">轻触切换</text>
     </div>
   </div>
 </template>
 
 <style>
-.page { width: 212px; height: 520px; overflow: hidden; }
+/* .page 的静态红色是最终兜底：即使色层一个都没渲染出来，也不会露出应用级黑底。
+   「关闭」档由 .fill4（黑色）覆盖，视觉上仍是全黑。 */
+.page { width: 212px; height: 520px; overflow: hidden; background-color: #FF0000; }
+.fill { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
+/* 五档颜色与脚本里的 MODES[i].color 一一对应（改一处要同时改另一处） */
+.fill0 { background-color: #FF0000; }
+.fill1 { background-color: #FF6A00; }
+.fill2 { background-color: #FFFFFF; }
+.fill3 { background-color: #00E5FF; }
+.fill4 { background-color: #000000; }
 .top { position: absolute; left: 0px; top: 42px; width: 212px; height: 78px; flex-direction: column; align-items: center; }
 .exit { width: 52px; height: 28px; border-radius: 14px; background-color: rgba(0,0,0,0.35); align-items: center; justify-content: center; }
 .exitT { font-size: 14px; color: #FFFFFF; }
@@ -20,6 +40,9 @@
 .hint { width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; opacity: 0.7; }
 .zone { position: absolute; left: 0px; top: 128px; width: 212px; height: 348px; align-items: center; justify-content: center; }
 .arrow { font-size: 15px; opacity: 0.35; }
+/* 前景色同样静态化：红/橙/黑底用白字，白/冷光底用深色字 */
+.fgLight { color: #FFFFFF; }
+.fgDark { color: #111111; }
 </style>
 
 <script>
@@ -27,6 +50,7 @@ import screen from '../../utils/screen'
 import haptic from '../../utils/haptic'
 import router from '../../utils/router'
 
+// color 仅作元数据留档，实际显示由 CSS 里写死的 .fill0~.fill4 决定。
 const MODES = [
   { name: '红光', color: '#FF0000', fg: '#FFFFFF', hint: '高亮红光，适合夜间' },
   { name: '暖橙', color: '#FF6A00', fg: '#FFFFFF', hint: '柔和暖光' },
@@ -35,15 +59,17 @@ const MODES = [
   { name: '关闭', color: '#000000', fg: '#FFFFFF', hint: '轻触重新点亮' }
 ]
 
+// 「关闭」档的序号：判断关灯用序号而不是字符串比色，避免误判
+const OFF_INDEX = 4
+
 export default {
   data: {
     index: 0,
-    color: MODES[0].color,
     name: MODES[0].name,
-    fg: MODES[0].fg,
     hint: MODES[0].hint
   },
   onShow() {
+    // screen.enter() 必须留在同步路径上（塞进异步回调会被时序吞掉）
     screen.enter()
     this.apply(0)
   },
@@ -56,11 +82,9 @@ export default {
   apply(i) {
     this.index = i % MODES.length
     const m = MODES[this.index]
-    this.color = m.color
     this.name = m.name
-    this.fg = m.fg
     this.hint = m.hint
-    if (m.color === '#000000') {
+    if (this.index === OFF_INDEX) {
       screen.leave()
     } else {
       screen.enter()
