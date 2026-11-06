@@ -3,7 +3,7 @@
 BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 28 个应用、51 个页面。
 
 - 包名：`com.miband.box`
-- 版本：0.3.5
+- 版本：0.3.6
 - 技术栈：Vela JS 快应用（`.ux`）
 - 屏幕：212 × 520 跑道屏；模拟器应用区 212 × 466，真机可绘制到约 500（底部为药丸收窄区）
 - 体积：约 380 KB（使用系统字体，无内置字体子集）
@@ -146,6 +146,7 @@ tools/
 ├── test-input.mjs          原生输入工具单测（node tools/test-input.mjs）
 ├── test-history.mjs        史载今日数据单测（node tools/test-history.mjs）
 ├── test-marquee.mjs        跑马灯配置与宽度估算单测（node tools/test-marquee.mjs）
+├── test-screen.mjs         屏幕亮度与常亮控制单测（node tools/test-screen.mjs）
 └── gen-assets/gen.py       图标与公共图生成
 ```
 
