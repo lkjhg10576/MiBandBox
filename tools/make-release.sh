@@ -2,7 +2,8 @@
 # 生成 release/BandBox-<版本>/ 下的构建产物与校验和。
 # 用法：./tools/make-release.sh 0.3.5
 set -e
-cd "$(dirname "$0")/.."
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
 VER=${1:-0.3.5}
 DIR="release/BandBox-$VER"
 mkdir -p "$DIR"
@@ -13,10 +14,20 @@ RPK=$(ls -t dist/*.rpk | head -1)
 cp "$RPK" "$DIR/"
 cp "release/BandBox-0.3.4/BandBox歌词同步.abp" "$DIR/" 2>/dev/null || true
 
-cd "$DIR"
+cd "$ROOT/$DIR"
 rm -f SHA256SUMS.txt
 sha256sum com.miband.box.debug.*.rpk "BandBox歌词同步.abp" > SHA256SUMS.txt
 echo "== $DIR =="
 ls -l
 echo
 cat SHA256SUMS.txt
+
+cd "$ROOT"
+ZIP="release/BandBox-$VER.zip"
+rm -f "$ZIP"
+zip -rq "$ZIP" "$DIR"
+echo
+echo "== $ZIP =="
+ls -lh "$ZIP"
+
+

@@ -24,6 +24,7 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "emugrpc"))
 
 import grpc  # noqa: E402
+from google.protobuf import empty_pb2  # noqa: E402
 import emulator_controller_pb2 as pb  # noqa: E402
 import emulator_controller_pb2_grpc as pbg  # noqa: E402
 
@@ -174,7 +175,7 @@ def main():
     port, _, st = stub(a.port)
     print(f"[gRPC :{port}]", file=sys.stderr)
     if a.cmd == "status":
-        s_ = st.getStatus(pb.Empty(), timeout=5)
+        s_ = st.getStatus(empty_pb2.Empty(), timeout=5)
         print(s_)
     elif a.cmd == "shot":
         do_shot(st, a.out, a.scale)
