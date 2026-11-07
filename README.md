@@ -3,7 +3,7 @@
 BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地小工具箱，包含 29 个便捷功能。
 
 - 包名：`com.miband.box`
-- 版本：0.4.0
+- 版本：0.4.1
 - 技术栈：Vela JS 快应用（`.ux`）
 - 屏幕：当前仅适配手环设备 212 × 520 跑道屏
 - 无联网必需、无收费、无授权、除官方 AstroBox 插件外没有其他依赖
@@ -50,7 +50,7 @@ BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地�
 
 歌词本首页顶部有一张「从手机传输」卡片，点进去进入接收页：
 
-1. 手机装 AstroBox 插件 **BandBox歌词同步**（源码在 `plugin/bandbox-lyrics-sync/`）
+1. 手机装 AstroBox 插件 **BandBox辅助**（源码在 `plugin/bandbox-helper/`）
 2. 手环停在「从手机传输」页面（保持长亮）
 3. 手机插件里点「选择 LRC 文件」→ 选一个 `.lrc`
 4. 插件自动识别逐行 LRC、常规逐字 LRC、增强逐字 LRC（ESLyric），并自动剥离时间轴与元数据标签、还原成逐行纯文本，点「发送到手环」
@@ -61,7 +61,7 @@ BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地�
 手环也会发 `ping` 探活，插件回 `pong`（部分固件下手环→手机方向不可用，因此以手机心跳为准）。
 插件在 `onUiRender` / `device-action` 时会注册手环消息接收，所以手环进页面时发出的 `ready`
 也能被收到并回复。协议是本仓库自定义的 `bandbox-lyrics`（JSON 字符串，`app`/`v`/`type` 三个公共字段），
-手环端实现见 `src/utils/lyricsTransfer.js`，插件端实现见 `plugin/bandbox-lyrics-sync/src/protocol.js`，
+手环端实现见 `src/utils/lyricsTransfer.js`，插件端实现见 `plugin/bandbox-helper/src/protocol.js`，
 两端各有一套单测。手机端宿主会把 `interconnect-message` 包在
 `{addr, pkgName, payloadText, payloadHex}` 信封里，插件会先解包再解析。
 传输通道只有 BLE `interconnect` 一条（`system.interconnect`），
@@ -88,7 +88,7 @@ BandBox 是一个为小米手环 10 / 11（212×520 跑道屏）设计的本地�
 
 协议消息：`hello / ready / pong / list_accounts / accounts / sync_delta / set_offset /
 chunk / ack / err / progress`，两端实现见 `src/utils/otpProtocol.js` 与
-`plugin/bandbox-lyrics-sync/src/otpProtocol.js`（常量与行为一致），算法内核
+`plugin/bandbox-helper/src/otpProtocol.js`（常量与行为一致），算法内核
 `otp.js` 双端逐字一致（SHA-256 校验），RFC 4226/6238 向量全量通过。
 
 **安全须知**：密钥以明文存于手环本地文件（Vela 无加密存储 API），请勿把手环当作唯一 2FA
@@ -99,11 +99,13 @@ chunk / ack / err / progress`，两端实现见 `src/utils/otpProtocol.js` 与
 
 ```bash
 npm install
+npm run gate           # 发行门禁：只读静态检查，失败即阻断
 npm run build          # 开发包：dist/*.debug.*.rpk
 npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 ```
 
 `aiot-toolkit` 已写入 `devDependencies`。如果使用 AIoT-IDE 的内置工具链，也可在 IDE 中直接构建。
+`build` / `build:jsc` 的 `pre*` 钩子会先跑门禁，规则见 `tools/release-gate.mjs` 文件头。
 
 发布包需要自己的签名证书（`aiot release`），开发/模拟器验证用 `npm run build` 即可。
 
@@ -115,7 +117,7 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 
 | 指标 | 优化前 | 优化后 |
 |---|---|---|
-| rpk 大小 | 966,411 B | **613,577 B**（−36.5%） |
+| rpk 大小 | 966,411 B | **613,483 B**（−36.5%） |
 | bundle 原始总量 | 8,712,032 B | 4,618,834 B（−47%） |
 | router / file / kv 模块副本 | 59 / 37 / 23 | **1 / 1 / 1** |
 | 20s 时钟定时器 | 49 个 | **1 个**（无订阅时自动停） |
@@ -123,6 +125,20 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 
 包体大小可自行复现：`npm run build:jsc` 后看 `dist/*.rpk` 的大小；
 本表其余指标由内部工具链实测，工具链本身不入库。
+
+### 0.4.1 修的是什么
+
+0.4.0 的 PNG8 瘦身用 `tools/pnglib.mjs` 自己拼 PNG，`assemble()` 漏了 IEND 块，
+47 张图（含应用图标 `common/icon.png`）都成了「以 IDAT 结尾的截断文件」。
+手环开机要解码图标画应用列表，解码器找不到 IEND 就卡死/越界，系统起不来，
+连续启动失败后进 Recovery 报「系统异常」，恢复出厂才恢复。模拟器解码器宽容，因此没被发现。
+
+0.4.1 在 `assemble()` 里补 IEND，另附 `tools/png-fix-iend.mjs` 给已有 47 张图就地补
+12 字节（不动像素），并在门禁里加了 PNG 完整性检查。
+
+发行前跑 `npm run gate`（`tools/release-gate.mjs`）：PNG 完整性（签名 / CRC / 越界 /
+IEND 末块 / PLTE·tRNS 顺序）、`perf` 开关、启动路径打点、`data`/`private` 共存、
+路由缺页、版本号不一致，任何一条不过都阻断。`make-release.sh` 与 `build:jsc` 都会先过这道门。
 
 ## 安装到模拟器
 
@@ -160,7 +176,7 @@ src/
 └── pages/                 54 个页面（含 input 文本输入页、lyrics/transfer 接收页、otp/ 动态口令四页）
 
 plugin/
-└── bandbox-lyrics-sync/   AstroBox 插件（API Level 4）：手机端选 LRC 并推送
+└── bandbox-helper/       AstroBox 插件（API Level 4）：手机端选 LRC 并推送 / 动态口令账户同步
 ```
 
 ## 许可
@@ -172,11 +188,13 @@ plugin/
 
 - 文本输入使用随包内置的 `Vela_input_method` 组件（MIT），支持中文拼音、英文、数字；短字段在页面内直接输入，长文本（笔记正文、歌词正文）在独立编辑页输入。
 - 歌词本完全离线，不提供在线搜索（避免第三方接口依赖）。
-- 「从手机传输」需要手机端安装 AstroBox 插件「BandBox歌词同步」，且手环需停留在接收页；
+- 「从手机传输」需要手机端安装 AstroBox 插件「BandBox辅助」，且手环需停留在接收页；
   没装插件或插件未加载时，手环页会显示「未连接手机」并给出诊断提示。
 - 动态口令密钥明文存储（Vela 无加密存储 API），仅适合低敏账户或做备用 2FA；
   时间校准依赖手动偏移 / 手机提示，不联网校时。
 - 性能分为相对参考值，受温度、后台任务和模拟器影响。
+- 荧光棒与跑马灯用原生 `@keyframes` 驱动（软件渲染的满帧重绘），长亮页面注意发热；
+  动画在 `play.ux` / `textShow.ux` 里，真机若帧率不达标可改回 JS 定时器。
 - 模拟器里的快应用绘制区域为 212×466（底部 54px 为系统手势栏）；真机照片显示可继续绘制到约 500，但底部是药丸屏收窄区，仅适合居中窄内容。
 - 模拟器冷启动约 10 秒，是 Vela 运行时调试器发现超时导致；真机通常更快。
 - 模拟器的鼠标/触摸坐标与画面存在约 40 px 偏移，自动化截图时需自行校准；真机触摸正常。

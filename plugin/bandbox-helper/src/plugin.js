@@ -1,5 +1,5 @@
 /**
- * BandBox歌词同步 —— AstroBox 插件主入口（API Level 4）。
+ * BandBox辅助 —— AstroBox 插件主入口（API Level 4）。
  *
  * ⚠️ 宿主接口的调用约定（踩过的坑，务必保留）：
  *

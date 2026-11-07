@@ -2,7 +2,7 @@
  * OTP 账户模型：规范化 / 校验 / otpauth:// 解析与生成 / 合并与增量。
  *
  * 本文件在手表端（src/utils/otpAccounts.js）与手机插件端
- * （plugin/bandbox-lyrics-sync/src/otpAccounts.js）各存一份，且**必须逐字一致**
+ * （plugin/bandbox-helper/src/otpAccounts.js）各存一份，且**必须逐字一致**
  * （cross 校验）。为保证两份拷贝的 import 路径完全一致，本文件自包含零依赖：
  * Base32 规范化/解码从 src/utils/otp.js 复制最小必需部分（有 RFC 向量单测兜底）。
  *

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * 构建 BandBox歌词同步 插件。
+ * 构建 BandBox辅助 插件。
  *
  *   node scripts/build.mjs            → dist/plugin.wasm
- *   node scripts/build.mjs --package  → dist/plugin.wasm + dist/BandBox歌词同步.abp
+ *   node scripts/build.mjs --package  → dist/plugin.wasm + dist/BandBox辅助.abp
  *
  * 工具链说明（重要）：
  *   官方 @bytecodealliance/componentize-js 0.23.0 **无法** 构建 API Level 4 的

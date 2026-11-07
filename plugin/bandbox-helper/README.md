@@ -1,4 +1,4 @@
-# BandBox歌词同步（AstroBox 插件）
+# BandBox辅助（AstroBox 插件）
 
 手机端 AstroBox 插件：选一个 `.lrc` 文件 → 自动识别并剥离时间轴与元数据标签、
 还原成**逐行纯文本** → 通过 BLE `interconnect` 推送到手环上的 BandBox 歌词本。
@@ -6,7 +6,7 @@
 支持三种常见歌词格式：逐行 LRC、常规逐字 LRC（行内 `[mm:ss.xx]`）、
 增强逐字 LRC（ESLyric 的 `<mm:ss.xx>` 标签）。
 
-- 版本：`0.3.0`（新增「动态口令」Tab：TOTP 账户批量导入 / 编辑 / 删除并同步到手环）
+- 版本：`0.3.1`（插件由「BandBox歌词同步」更名为「BandBox辅助」；0.3.0 新增「动态口令」Tab：TOTP 账户批量导入 / 编辑 / 删除并同步到手环）
 - API Level：**4**（`wasi_version: 3`）
 - 目标快应用包名：`com.miband.box`（手环端 BandBox）
 - 协议：本仓库自定义的 `bandbox-lyrics`，与手环端 `src/utils/lyricsTransfer.js` 一一对应
@@ -15,7 +15,7 @@
 ## 目录
 
 ```
-bandbox-lyrics-sync/
+bandbox-helper/
 ├── package.json          依赖 componentize-qjs（预编译原生二进制）
 ├── manifest.json         AstroBox 插件清单
 ├── icon.png              216×216 图标
@@ -49,13 +49,13 @@ npm install          # 装 componentize-qjs（预编译二进制，约 56 MB，�
 npm run wit          # 拉取 AstroBox 插件 WIT 到 wit/
 npm run gbk          # 重新生成 src/gbk-table.js（仅修改生成逻辑时需要）
 npm test             # 74 项单测
-npm run package      # 产出 dist/plugin.wasm + dist/BandBox歌词同步.abp
+npm run package      # 产出 dist/plugin.wasm + dist/BandBox辅助.abp
 ```
 
 `npm install` 会按当前平台自动装对应的原生包
 （Linux x64/arm64、macOS x64/arm64、Windows x64），无需手工挑版本。
 
-把 `dist/BandBox歌词同步.abp` 装到手机上的 AstroBox 里即可。
+把 `dist/BandBox辅助.abp` 装到手机上的 AstroBox 里即可。
 `.abp` 是标准 deflate zip（带合法 DOS 时间戳），可直接用系统解压工具查看内容。
 
 ### 为什么用 componentize-qjs 而不是官方的 componentize-js

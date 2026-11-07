@@ -2,7 +2,7 @@
  * BandBox 动态口令同步协议：纯 JS 实现（协议规格副本）。
  *
  * 本文件在手表端（src/utils/otpProtocol.js）与手机插件端
- * （plugin/bandbox-lyrics-sync/src/otpProtocol.js）各存一份，行为与常量
+ * （plugin/bandbox-helper/src/otpProtocol.js）各存一份，行为与常量
  * **必须一致**（cross 校验比对常量与 planSync/splitAccountChunks 行为）。
  * 自包含零依赖；不出现 TextEncoder/console/setTimeout。
  *

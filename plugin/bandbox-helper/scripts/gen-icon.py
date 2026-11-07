@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-生成插件图标 plugin/bandbox-lyrics-sync/icon.png。
+生成插件图标 plugin/bandbox-helper/icon.png。
 
 纯标准库实现（zlib + struct），不依赖 Pillow。
 图案：深色圆角方块 + 两条歌词横线 + 向右箭头（表示「把歌词传到手表」）。

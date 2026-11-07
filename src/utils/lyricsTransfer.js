@@ -1,7 +1,7 @@
 /**
  * BandBox 歌词传输协议：纯 JS 实现。
  *
- * 与手机端 AstroBox 插件（BandBox歌词同步）约定的私有协议：
+ * 与手机端 AstroBox 插件（BandBox辅助）约定的私有协议：
  *   - 所有消息都是 UTF-8 JSON 字符串
  *   - 公共字段：app = "bandbox-lyrics"、v = 1、type
  *   - 手机→手环：hello / lyrics / chunk

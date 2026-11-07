@@ -16,7 +16,7 @@
       <list-item type="pad" class="pad"></list-item>
     </list>
 
-    <text class="f tip">保持本页打开，并在手机上打开 AstroBox 的「BandBox歌词同步」插件</text>
+    <text class="f tip">保持本页打开，并在手机上打开 AstroBox 的「BandBox辅助」插件</text>
     <backbtn></backbtn>
   </div>
 </template>
