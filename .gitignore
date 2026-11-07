@@ -20,5 +20,10 @@ plugin/*/dist/
 plugin/*/.mimosa/
 .zcode/
 
+# tools/ 以后不再入库新脚本（本地开发工具）
+# 注意：.gitignore 只对「未跟踪」文件生效，已入库的 tools/* 历史文件仍受版本控制；
+# 若要让某个已在库的工具脚本停止跟踪，需单独 `git rm --cached <path>`。
+tools/
+
 # 本地验证截图（tools/emu-verify.sh 等脚本产出）
 .shots/
