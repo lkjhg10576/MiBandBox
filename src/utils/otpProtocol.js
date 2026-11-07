@@ -395,6 +395,11 @@ export function pongMessage(id, accountsCount, timeOffsetSec, time) {
   })
 }
 
+/** 手表→手机 或 手机→手表 探测心跳。 */
+export function pingMessage(id) {
+  return encode('ping', { id: id || makeId('op') })
+}
+
 /** 手机→手表 拉取全量。 */
 export function listAccountsMessage(id) {
   return encode('list_accounts', { id: id || makeId('ol') })
@@ -440,6 +445,8 @@ export function describeReply(msg) {
       }
     case 'pong':
       return { state: 'pong', text: '手环已响应' }
+    case 'ping':
+      return { state: 'ping', text: '收到心跳探测' }
     case 'ready':
       return { state: 'ready', text: '手环动态口令已就绪' }
     case 'accounts':
@@ -571,6 +578,7 @@ export default {
   helloMessage,
   readyMessage,
   pongMessage,
+  pingMessage,
   listAccountsMessage,
   setOffsetMessage,
   ackMessage,

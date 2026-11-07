@@ -5,7 +5,7 @@
   <div class="page">
     <pagehead title="动态口令" clock="{{ clock }}"></pagehead>
 
-    <list class="list" bounces="true">
+    <list class="list" bounces="true" if="{{ rows.length > 0 }}">
       <list-item type="row" class="row" for="{{ rows }}" @click="onRow($item)">
         <div class="rMain">
           <text class="f rName">{{ $item.name }}</text>
@@ -16,11 +16,16 @@
       <list-item type="pad" class="pad"></list-item>
     </list>
 
+    <div class="empty" if="{{ rows.length === 0 }}">
+      <text class="f emptyT">还没有账户</text>
+      <text class="f emptyS">点下方「添加」或用插件同步</text>
+    </div>
+
     <div class="bar">
       <div class="barBtn" @click="add">
         <text class="f barT">添加</text>
       </div>
-      <div class="barBtn2" @click="syncTip">
+      <div class="barBtn2" @click="openSync">
         <text class="f barT2">同步</text>
       </div>
       <div class="barBtn2" @click="openSettings">
@@ -35,15 +40,18 @@
 <style>
 @import '../../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
-.list { position: absolute; left: 0px; top: 82px; width: 212px; height: 330px; }
-.row { width: 206px; height: 68px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px 0px 16px; }
+.list { position: absolute; left: 0px; top: 82px; width: 212px; height: 330px; padding: 0px 3px 0px 3px; }
+.row { width: 206px; height: 68px; margin: 0px 0px 8px 0px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px 0px 16px; }
 .rMain { width: 130px; height: 54px; flex-direction: column; justify-content: center; }
 .rName { width: 130px; height: 24px; line-height: 24px; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .rCode { width: 130px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
 .rLeft { position: absolute; right: 14px; top: 24px; width: 48px; height: 20px; line-height: 20px; text-align: right; font-size: 13px; color: rgba(255,255,255,0.4); }
-.pad { width: 212px; height: 60px; }
+.pad { width: 206px; height: 60px; }
+.empty { position: absolute; left: 0px; top: 82px; width: 212px; height: 334px; flex-direction: column; align-items: center; justify-content: center; }
+.emptyT { font-size: 16px; color: rgba(255,255,255,0.45); text-align: center; }
+.emptyS { margin-top: 8px; font-size: 13px; color: rgba(255,255,255,0.28); text-align: center; }
 .bar { position: absolute; left: 0px; top: 416px; width: 212px; height: 40px; flex-direction: row; justify-content: center; }
-.barBtn { width: 62px; height: 40px; border-radius: 20px; background-color: #0D6EFF; align-items: center; justify-content: center; margin-left: 6px; }
+.barBtn { width: 62px; height: 40px; border-radius: 20px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .barBtn2 { width: 62px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; margin-left: 6px; }
 .barT { font-size: 15px; color: #FFFFFF; }
 .barT2 { font-size: 15px; color: rgba(255,255,255,0.85); }
@@ -51,7 +59,6 @@
 
 <script>
 import g from '../../../utils/g'
-import prompt from '@system.prompt'
 import otpStore from '../../../utils/otpStore'
 import otp from '../../../utils/otp'
 import otpSession from '../otpSession'
@@ -139,16 +146,6 @@ export default {
     const offset = otpStore.getTimeOffsetSec()
     const accounts = otpStore.list()
     const rows = []
-    if (!accounts.length) {
-      rows.push({
-        key: 'empty',
-        name: '还没有账户',
-        codeText: '点下方「添加」手动录入，或在手机插件中批量导入',
-        color: 'rgba(255,255,255,0.45)',
-        left: '',
-        act: ''
-      })
-    }
     for (let i = 0; i < accounts.length; i++) {
       const a = accounts[i]
       const st = otp.resolveOtpState(a, now, offset)
@@ -187,9 +184,9 @@ export default {
     g.router.push('/pages/otp/edit')
   },
 
-  syncTip() {
+  openSync() {
     g.haptic.short()
-    prompt.showToast({ message: '在手机 AstroBox 插件「动态口令」页同步', duration: 2000 })
+    g.router.push('/pages/otp/sync')
   },
 
   openSettings() {

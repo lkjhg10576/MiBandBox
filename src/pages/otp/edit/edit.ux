@@ -12,7 +12,7 @@
       <text class="f fPlace" if="{{ !name }}">例如：alice</text>
     </div>
 
-    <div class="field" @click="openIssuer">
+    <div class="field field2" @click="openIssuer">
       <text class="f fLabel">颁发者</text>
       <text class="f fValue" if="{{ issuer }}">{{ issuer }}</text>
       <text class="f fPlace" if="{{ !issuer }}">例如：GitHub</text>
@@ -41,12 +41,13 @@
 .save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
 .saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
 .field { position: absolute; left: 3px; top: 82px; width: 206px; height: 62px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
-.fieldBig { position: absolute; left: 3px; top: 152px; width: 206px; height: 88px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
+.field2 { top: 150px; }
+.fieldBig { position: absolute; left: 3px; top: 218px; width: 206px; height: 88px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
 .fLabel { width: 174px; height: 20px; line-height: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
 .fValue { width: 174px; height: 30px; line-height: 30px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .fSecret { width: 174px; height: 56px; line-height: 22px; font-size: 16px; color: #FFFFFF; }
 .fPlace { width: 174px; height: 30px; line-height: 30px; font-size: 15px; color: rgba(255,255,255,0.3); }
-.tip { position: absolute; left: 21px; top: 250px; width: 170px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
+.tip { position: absolute; left: 21px; top: 314px; width: 170px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
 .delBtn { position: absolute; left: 21px; top: 416px; width: 170px; height: 40px; border-radius: 20px; background-color: #B3261E; align-items: center; justify-content: center; }
 .delT { font-size: 15px; color: #FFFFFF; }
 </style>

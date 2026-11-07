@@ -17,7 +17,7 @@
           <text class="f cTitle">关于 BandBox</text>
           <text class="f arrow">></text>
         </div>
-        <text class="f cSub">版本 0.4.0</text>
+        <text class="f cSub">版本 0.4.4</text>
       </div>
       <div class="card" @click="reset">
         <div class="cardTop">

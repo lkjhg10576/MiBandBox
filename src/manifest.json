@@ -1,8 +1,8 @@
 {
   "package": "com.miband.box",
   "name": "BandBox",
-  "versionName": "0.4.2",
-  "versionCode": 219,
+  "versionName": "0.4.4",
+  "versionCode": 221,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -230,6 +230,9 @@
       },
       "pages/otp/settings": {
         "component": "settings"
+      },
+      "pages/otp/sync": {
+        "component": "sync"
       },
       "pages/level": {
         "component": "level"

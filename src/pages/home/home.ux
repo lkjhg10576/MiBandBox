@@ -13,21 +13,14 @@
       <text class="f delta" style="color: {{ eventColor }};">{{ eventDelta }}</text>
     </div>
 
-    <!-- 网格模式：<list> 虚拟化（原来是一个 scroll 里铺满 30 个 cell），
-         常驻节点从 ~100 降到 ~20，常驻图片从 29 降到 8。
-         每行两个 cell；奇数个时最后一行用占位 cell 补齐（list-item 结构必须一致）。 -->
-    <list class="apps" if="{{ layoutReady && layout === 'grid' }}" bounces="true">
-      <list-item type="gridrow" class="gridRow" for="{{ rows }}" tid="id">
-        <div class="f cell" @click="open($item.a)">
-          <img class="icon" src="{{ $item.a.icon }}" />
-          <text class="f name">{{ $item.a.name }}</text>
+    <scroll class="apps" show="{{ layoutReady && layout === 'grid' }}" scroll-y="true" bounces="true">
+      <div class="grid" style="height: {{ gridHeight }}px;">
+        <div class="f cell" for="{{ cells }}" @click="open($item)">
+          <img class="icon" src="{{ $item.icon }}" />
+          <text class="f name">{{ $item.name }}</text>
         </div>
-        <div class="f cell" @click="open($item.b)">
-          <img class="icon" src="{{ $item.b.icon }}" />
-          <text class="f name">{{ $item.b.name }}</text>
-        </div>
-      </list-item>
-    </list>
+      </div>
+    </scroll>
 
     <list class="apps listApps" if="{{ layoutReady && layout === 'list' }}" bounces="true">
       <list-item type="app" class="rowCell" for="{{ cells }}" @click="open($item)">
@@ -101,16 +94,13 @@
   background-color: #000000;
   padding: 0px 6px 0px 6px;
 }
-.gridRow {
-  width: 206px;
-  height: 76px;
+.grid {
+  width: 212px;
+  padding: 0px 3px 40px 3px;
   flex-direction: row;
-  justify-content: space-between;
-  margin: 0px 3px;
+  flex-wrap: wrap;
 }
 .cell {
-  /* 必须显式写：list-item 是 flex 容器，缺省会把它压扁（textShow 已踩过同一个坑） */
-  flex-shrink: 0;
   width: 97px;
   height: 70px;
   margin: 3px;
@@ -200,13 +190,8 @@ const SETTINGS_TILE = {
 
 const CELLS = apps.concat([SETTINGS_TILE])
 
-// 奇数个磁贴时用于补齐最后一行的占位（1×1 透明图，不可点）
-const PAD_TILE = { id: '__pad__', name: '', route: '', icon: '/common/blank.png', desc: '' }
-
-// 每行两个磁贴；<list> 的 list-item 结构必须完全一致，故用占位而不是 if
-const ROWS = []
-for (let i = 0; i < CELLS.length; i += 2) {
-  ROWS.push({ id: 'r' + i, a: CELLS[i], b: CELLS[i + 1] || PAD_TILE })
+function gridHeight(count) {
+  return Math.ceil(count / 2) * 76 + 60
 }
 
 let layoutWatcher = null
@@ -221,7 +206,7 @@ export default {
     layout: 'grid',
     layoutReady: false,
     cells: CELLS,
-    rows: ROWS,
+    gridHeight: gridHeight(CELLS.length),
     timer: null,
     _ck: null
   },

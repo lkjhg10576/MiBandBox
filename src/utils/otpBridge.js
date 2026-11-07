@@ -22,6 +22,25 @@ let session = otpProtocol.createSession()
 let inited = false
 let lastAnnounceAt = 0
 let lastHelloTime = 0
+const syncListeners = []
+
+function notifySync(info) {
+  syncListeners.slice().forEach((fn) => {
+    try {
+      fn(info)
+    } catch (e) {}
+  })
+}
+
+function onSync(cb) {
+  if (typeof cb === 'function' && syncListeners.indexOf(cb) < 0) {
+    syncListeners.push(cb)
+  }
+  return () => {
+    const idx = syncListeners.indexOf(cb)
+    if (idx >= 0) syncListeners.splice(idx, 1)
+  }
+}
 
 /**
  * 发送一条编码消息给手机（失败静默）。
@@ -88,8 +107,10 @@ function handleMessage(msg) {
   const type = msg.type
   const id = typeof msg.id === 'string' ? msg.id : otpProtocol.makeId('or')
 
-  if (type === 'hello') {
-    lastHelloTime = Math.floor(Number(msg.time) || 0)
+  if (type === 'hello' || type === 'ping') {
+    if (type === 'hello') {
+      lastHelloTime = Math.floor(Number(msg.time) || 0)
+    }
     reply(
       otpProtocol.pongMessage(
         id,
@@ -112,6 +133,7 @@ function handleMessage(msg) {
       reply(otpProtocol.errMessage(id, r.firstError))
       return
     }
+    notifySync({ count: r.okCount, type: 'upsert' })
     reply(otpProtocol.ackMessage(id, r.okCount))
     return
   }
@@ -135,6 +157,7 @@ function handleMessage(msg) {
       return
     }
     otpStore.applyDelta(upsert, remove)
+    notifySync({ count: upsert.length, removeCount: remove.length, type: 'delta' })
     reply(otpProtocol.ackMessage(id, upsert.length + remove.length))
     return
   }
@@ -168,6 +191,7 @@ function handleMessage(msg) {
         reply(otpProtocol.errMessage(id, r.firstError))
         return
       }
+      notifySync({ count: r.okCount, type: 'upsert' })
       reply(otpProtocol.ackMessage(id, r.okCount))
       return
     }
@@ -180,6 +204,7 @@ function handleMessage(msg) {
         return
       }
       otpStore.applyDelta(upsert, remove)
+      notifySync({ count: upsert.length, removeCount: remove.length, type: 'delta' })
       reply(otpProtocol.ackMessage(id, upsert.length + remove.length))
       return
     }
@@ -236,4 +261,4 @@ function getLastHelloTime() {
   return lastHelloTime
 }
 
-export default { init, handle, announceReady, getLastHelloTime }
+export default { init, handle, announceReady, getLastHelloTime, onSync }

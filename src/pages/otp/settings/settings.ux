@@ -5,25 +5,33 @@
   <div class="page">
     <pagehead title="口令设置" clock="{{ clock }}"></pagehead>
 
-    <div class="card">
-      <text class="f cTitle">时间偏移（秒）</text>
-      <div class="stepper">
-        <div class="stepBtn" @click="offsetDown"><text class="f stepT">−</text></div>
-        <text class="f offsetText">{{ offsetText }}</text>
-        <div class="stepBtn" @click="offsetUp"><text class="f stepT">＋</text></div>
+    <scroll class="body" scroll-y="true" bounces="true">
+      <div class="inner">
+        <div class="card">
+          <text class="f cTitle">时间偏移（秒）</text>
+          <div class="stepper">
+            <div class="stepBtn" @click="offsetDown"><text class="f stepT">−</text></div>
+            <text class="f offsetText">{{ offsetText }}</text>
+            <div class="stepBtn" @click="offsetUp"><text class="f stepT">＋</text></div>
+          </div>
+          <text class="f cHint">验证码不对？手表钟快了用负值，慢了用正值</text>
+        </div>
+
+        <div class="card" @click="clearAll">
+          <text class="f cTitle">清空全部账户（{{ accountCount }}）</text>
+          <text class="f cHint" if="{{ !clearArm }}">明文存储，仅存本机。点击两次确认清空</text>
+          <text class="f cWarn" if="{{ clearArm }}">再点一次「清空」确认，不可恢复</text>
+        </div>
+
+        <div class="notes">
+          <text class="f note">· 账户密钥明文保存在手环本地，请勿当作唯一 2FA 设备</text>
+          <text class="f note">· 建议在手机插件中导出 otpauth 文本离线备份</text>
+          <text class="f note">· 手机插件「动态口令」页可批量导入与同步</text>
+        </div>
+
+        <div class="pad"></div>
       </div>
-      <text class="f cHint">验证码不对？手表钟快了用负值，慢了用正值</text>
-    </div>
-
-    <div class="card" @click="clearAll">
-      <text class="f cTitle">清空全部账户（{{ accountCount }}）</text>
-      <text class="f cHint" if="{{ !clearArm }}">明文存储，仅存本机。点击两次确认清空</text>
-      <text class="f cWarn" if="{{ clearArm }}">再点一次「清空」确认，不可恢复</text>
-    </div>
-
-    <text class="f note">· 账户密钥明文保存在手环本地，请勿当作唯一 2FA 设备</text>
-    <text class="f note">· 建议在手机插件中导出 otpauth 文本离线备份</text>
-    <text class="f note">· 手机插件「动态口令」页可批量导入与同步</text>
+    </scroll>
 
     <backbtn></backbtn>
   </div>
@@ -32,14 +40,19 @@
 <style>
 @import '../../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
-.card { position: absolute; left: 3px; width: 206px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
+.inner { width: 212px; flex-direction: column; align-items: center; }
+.card { width: 206px; border-radius: 26px; background-color: #262626; padding: 12px 16px; flex-direction: column; margin-bottom: 8px; }
 .cTitle { width: 174px; height: 26px; line-height: 26px; font-size: 16px; color: #FFFFFF; }
-.stepper { flex-direction: row; align-items: center; justify-content: center; width: 174px; height: 44px; }
+.stepper { flex-direction: row; align-items: center; justify-content: center; width: 174px; height: 44px; margin-top: 4px; margin-bottom: 4px; }
 .stepBtn { width: 44px; height: 36px; border-radius: 18px; background-color: #333333; align-items: center; justify-content: center; }
 .stepT { font-size: 20px; color: #FFFFFF; }
 .offsetText { width: 86px; height: 36px; line-height: 36px; text-align: center; font-size: 22px; color: #0D6EFF; }
 .cHint { width: 174px; line-height: 18px; font-size: 12px; color: rgba(255,255,255,0.4); }
 .cWarn { width: 174px; line-height: 18px; font-size: 12px; color: #FF9F0A; }
+.notes { width: 206px; flex-direction: column; padding: 4px 6px; }
+.note { width: 194px; line-height: 18px; font-size: 12px; color: rgba(255,255,255,0.35); margin-bottom: 6px; }
+.pad { width: 206px; height: 40px; }
 </style>
 
 <script>

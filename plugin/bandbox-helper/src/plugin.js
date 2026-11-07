@@ -492,6 +492,26 @@ async function replyPong(addr, id) {
 }
 
 /**
+ * 回复手环 OTP 心跳。
+ */
+async function replyOtpPong(addr, id) {
+  const target = addr || state.deviceAddr
+  if (!target) return
+  const msg = otpProtocol.pongMessage(
+    id,
+    state.otpSync.local.length,
+    Number(state.otpOffsetSec) || 0,
+    otp.epochSeconds()
+  )
+  const res = await hostCall('sendQaicMessage', () =>
+    sendQaicMessage(target, otpProtocol.TARGET_PKG, msg)
+  )
+  if (!res.ok && state.debug) {
+    state.lastError = '回复手环 OTP 心跳失败：' + res.error
+  }
+}
+
+/**
  * 取消当前 ACK 超时定时器。
  *
  * QuickJS 运行时没有 setTimeout/clearTimeout，必须使用宿主 timer 接口。
@@ -595,8 +615,11 @@ async function handleOtpReply(env) {
   state.lastOtpReply = clip(msg.type + (msg.id ? ' ' + msg.id : ''), 40)
   if (state.debug && state.tab === 'otp') repaint()
 
-  if (msg.type === 'ready' || msg.type === 'pong') {
+  if (msg.type === 'ready' || msg.type === 'pong' || msg.type === 'ping') {
     state.watchOnline = true
+    if (msg.type === 'ping') {
+      await replyOtpPong(env.addr, msg.id)
+    }
     state.otpWatchCount = Math.floor(Number(msg.accountsCount) || 0)
     state.otpOffsetSec = Math.floor(Number(msg.timeOffsetSec) || 0)
     if (msg.time) {

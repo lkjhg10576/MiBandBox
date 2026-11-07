@@ -1,0 +1,381 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="从手机同步" clock="{{ clock }}"></pagehead>
+
+    <list class="list" bounces="true">
+      <list-item type="row" class="card" for="{{ rows }}" @click="onRow($item)">
+        <div class="cMain">
+          <text class="f cTitle">{{ $item.title }}</text>
+          <text class="f cSub">{{ $item.sub }}</text>
+        </div>
+        <text class="f arrow" if="{{ $item.arrow }}">{{ $item.arrow }}</text>
+      </list-item>
+      <list-item type="pad" class="pad"></list-item>
+    </list>
+
+    <text class="f tip">保持本页打开，并在手机上打开 AstroBox 的「BandBox辅助」插件</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
+.list { position: absolute; left: 0px; top: 82px; width: 212px; height: 408px; }
+.card { width: 206px; height: 72px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px 0px 16px; }
+.cMain { width: 140px; height: 54px; flex-direction: column; justify-content: center; }
+.cTitle { width: 140px; height: 28px; line-height: 28px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.cSub { width: 140px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); }
+.arrow { width: 26px; height: 24px; line-height: 24px; text-align: right; font-size: 20px; color: rgba(255,255,255,0.4); }
+.pad { width: 212px; height: 60px; }
+.tip { position: absolute; left: 21px; top: 410px; width: 170px; height: 54px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); background-color: #000000; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import interconnectUtil from '../../../utils/interconnect'
+import otpProtocol from '../../../utils/otpProtocol'
+import otpStore from '../../../utils/otpStore'
+import otpBridge from '../../../utils/otpBridge'
+import otp from '../../../utils/otp'
+import prompt from '@system.prompt'
+import brightness from '@system.brightness'
+
+/**
+ * 页面内部状态：定时器、订阅句柄、心跳状态。
+ * 这些值放在模块闭包里，不进入 data 的响应式代理。
+ */
+const state = {
+  timer: null,
+  subscriber: null,
+  statusSubscriber: null,
+  syncSubscriber: null,
+  storeSubscriber: null,
+  pingId: '',
+  pingSeq: 0,
+  lastProbeAt: 0,
+  lastHeardAt: 0,
+  connected: false,
+  timeoutReported: false,
+  diagnosing: false
+}
+
+function newId(prefix) {
+  return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6)
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    rows: [],
+    connText: '检测中',
+    stateText: '正在检测手机插件',
+    syncedCount: 0,
+    totalCount: 0
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    state.connected = false
+    // 从进入页面开始给手机插件 12 秒心跳宽限
+    state.lastHeardAt = Date.now()
+    state.lastProbeAt = 0
+    state.pingId = ''
+    state.timeoutReported = false
+    state.diagnosing = false
+
+    this.connText = '检测中'
+    this.stateText = '等待手机心跳'
+    this.totalCount = otpStore.list().length
+    this.syncedCount = 0
+    this.refreshRows()
+
+    this.arm()
+    this.probe()
+    this.notifyReady()
+
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+
+    if (state.timer) clearInterval(state.timer)
+    state.timer = setInterval(() => {
+      this.clock = g.time.formatClock(new Date())
+      this.tick()
+    }, 5000)
+  },
+
+  onHide() {
+    this.disarm()
+    if (state.timer) {
+      clearInterval(state.timer)
+      state.timer = null
+    }
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+  },
+
+  onDestroy() {
+    this.disarm()
+    if (state.timer) {
+      clearInterval(state.timer)
+      state.timer = null
+    }
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+  },
+
+  /**
+   * 重建列表行。
+   */
+  refreshRows() {
+    const rows = []
+    rows.push({
+      title: this.connText,
+      sub: this.stateText,
+      act: ''
+    })
+    if (this.syncedCount > 0) {
+      rows.push({
+        title: '已同步：' + this.syncedCount + ' 个账户',
+        sub: '共 ' + this.totalCount + ' 个账户，已保存到手环',
+        act: ''
+      })
+    }
+    rows.push({
+      title: '重新检测连接',
+      sub: '重新检测与手机插件的连接状态',
+      act: 'recheck',
+      arrow: '>'
+    })
+    rows.push({
+      title: '返回动态口令',
+      sub: '回到口令列表',
+      act: 'back',
+      arrow: '>'
+    })
+    this.rows = rows
+  },
+
+  /**
+   * 订阅手机消息与连接状态及同步事件。
+   */
+  arm() {
+    if (state.subscriber) return
+    state.subscriber = interconnectUtil.onMessage((text) => {
+      this.handle(text)
+    })
+    state.statusSubscriber = interconnectUtil.onStatus((status) => {
+      if (
+        status === 1 &&
+        !state.connected &&
+        state.lastProbeAt > 0 &&
+        Date.now() - state.lastProbeAt > 1000
+      ) {
+        this.probe()
+      }
+    })
+    if (otpBridge.onSync) {
+      state.syncSubscriber = otpBridge.onSync((info) => {
+        this.onAccountsSynced(info)
+      })
+    }
+    state.storeSubscriber = otpStore.subscribe(() => {
+      const current = otpStore.list().length
+      if (current !== this.totalCount) {
+        const diff = current - this.totalCount
+        this.totalCount = current
+        if (diff > 0 && this.syncedCount === 0) {
+          this.onAccountsSynced({ count: diff, type: 'store' })
+        }
+      }
+    })
+  },
+
+  disarm() {
+    if (state.subscriber) {
+      try { state.subscriber() } catch (e) {}
+      state.subscriber = null
+    }
+    if (state.statusSubscriber) {
+      try { state.statusSubscriber() } catch (e) {}
+      state.statusSubscriber = null
+    }
+    if (state.syncSubscriber) {
+      try { state.syncSubscriber() } catch (e) {}
+      state.syncSubscriber = null
+    }
+    if (state.storeSubscriber) {
+      try { state.storeSubscriber() } catch (e) {}
+      state.storeSubscriber = null
+    }
+  },
+
+  /**
+   * 收到插件同步或新增账户后的界面更新。
+   */
+  onAccountsSynced(info) {
+    this.markConnected()
+    const count = (info && info.count) || 0
+    this.totalCount = otpStore.list().length
+    this.syncedCount = count || this.totalCount
+    this.connText = '已同步'
+    this.stateText = '共 ' + this.totalCount + ' 个账户，已保存到手环'
+    this.refreshRows()
+    prompt.showToast({ message: '已同步 ' + (count || this.totalCount) + ' 个账户' })
+    g.haptic.short()
+  },
+
+  /**
+   * 告知手机端手环已就绪。
+   */
+  notifyReady() {
+    if (!interconnectUtil.isReady()) interconnectUtil.init()
+    if (!interconnectUtil.isReady()) return
+    const now = otp.epochSeconds()
+    const msg = otpProtocol.readyMessage(
+      otpStore.list().length,
+      otpStore.getTimeOffsetSec(),
+      now
+    )
+    interconnectUtil.send(msg, () => {}, () => {})
+  },
+
+  /**
+   * 向手机插件发送一次心跳探测。
+   */
+  probe() {
+    state.lastProbeAt = Date.now()
+    if (!interconnectUtil.isReady()) interconnectUtil.init()
+    if (!interconnectUtil.isReady()) return
+
+    state.pingSeq++
+    const id = newId('op')
+    state.pingId = id
+    const sent = interconnectUtil.send(otpProtocol.pingMessage(id), () => {}, () => {})
+    if (!sent) {
+      state.pingId = ''
+    }
+  },
+
+  /**
+   * 5 秒一次的定时心跳任务：
+   * 未连接时继续探测，已连接时双向保持心跳并检查超时。
+   */
+  tick() {
+    const now = Date.now()
+    if (state.connected) {
+      if (now - state.lastHeardAt > 20000) {
+        this.markDisconnected('未收到插件心跳')
+        this.diagnose()
+      } else {
+        // 互传心跳：双方定时探测，保持在线状态
+        this.probe()
+      }
+      return
+    }
+
+    // 进页面后给手机插件 12 秒心跳宽限；超时只提示一次
+    if (now - state.lastHeardAt > 12000 && !state.timeoutReported) {
+      state.timeoutReported = true
+      this.markDisconnected('未收到插件心跳')
+      this.diagnose()
+    }
+
+    if (now - state.lastProbeAt >= 5000) {
+      this.probe()
+    }
+  },
+
+  /**
+   * 标记已连接手机插件。
+   */
+  markConnected() {
+    const was = state.connected
+    state.connected = true
+    state.lastHeardAt = Date.now()
+    state.timeoutReported = false
+    state.pingId = ''
+    if (!was) {
+      this.connText = '已连接手机'
+      this.stateText = '插件在线，等待同步'
+      this.refreshRows()
+      g.haptic.short()
+    }
+  },
+
+  /**
+   * 标记未连接，并保留具体原因。
+   */
+  markDisconnected(reason) {
+    const was = state.connected
+    state.connected = false
+    this.connText = '未连接手机'
+    this.stateText = reason || '请打开手机插件'
+    this.refreshRows()
+    if (was) g.haptic.short()
+  },
+
+  /**
+   * 诊断对端连接状态。
+   */
+  diagnose() {
+    if (state.diagnosing) return
+    state.diagnosing = true
+    interconnectUtil.diagnosis(3000, (code) => {
+      state.diagnosing = false
+      if (state.connected) return
+      if (code === 0) {
+        this.stateText = '蓝牙已连，插件未响应'
+      } else if (code === 1001) {
+        this.stateText = '未启用动态口令插件'
+      } else if (code === 204) {
+        this.stateText = '连接超时，请检查蓝牙'
+      } else if (code) {
+        this.stateText = '诊断码 ' + code
+      } else {
+        this.stateText = '请打开手机插件'
+      }
+      this.refreshRows()
+    })
+  },
+
+  /**
+   * 处理一条来自手机的原始消息。
+   */
+  handle(raw) {
+    const parsed = otpProtocol.parse(raw)
+    if (!parsed.ok) {
+      try {
+        const obj = typeof raw === 'string' ? JSON.parse(raw) : raw
+        if (obj && (obj.app === 'bandbox-lyrics' || obj.app === 'bandbox-otp')) {
+          this.markConnected()
+        }
+      } catch (e) {}
+      return
+    }
+
+    // 收到任何合法协议消息都说明手机插件在线
+    this.markConnected()
+  },
+
+  onRow(item) {
+    if (item.act === 'recheck') {
+      g.haptic.short()
+      state.connected = false
+      state.lastHeardAt = Date.now()
+      state.timeoutReported = false
+      this.connText = '检测中'
+      this.stateText = '等待手机心跳'
+      this.refreshRows()
+      state.lastProbeAt = 0
+      this.probe()
+      this.notifyReady()
+      return
+    }
+    if (item.act === 'back') {
+      g.haptic.short()
+      g.router.back()
+    }
+  }
+}
+</script>
