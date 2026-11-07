@@ -70,7 +70,9 @@ export default {
     autoMode: 'off',
     autoSpeed: 800,
     timer: null,
-    autoTimer: null
+    autoTimer: null,
+    saveTimer: null,
+    pendingSave: false
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -122,19 +124,48 @@ export default {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     this.stopAuto()
     this.clearAnim()
+    this.flushSave()
   },
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     this.stopAuto()
     this.clearAnim()
+    this.flushSave()
   },
   knock() {
     this.dayCount = this.dayCount + 1
     this.total = this.total + 1
     // 单键写入：一次 g.kv.set 代替三次（每次落盘只序列化一次）
-    g.kv.set('fishMerit', { d: g.time.todayKey(), c: this.dayCount, t: this.total })
+    this.queueSave()
     g.haptic.short()
     this.playAnim()
+  },
+  /**
+   * 节流落盘：自动敲击 500ms/次，若每次都写，整份 store.json 每秒被重写 2 次，
+   * 手环上的 littlefs 要一直做 GC。改成 2s 合并一次，离开页面时 flushSave() 强制落盘。
+   */
+  queueSave() {
+    this.pendingSave = true
+    if (this.saveTimer) return
+    this.saveTimer = setTimeout(() => {
+      this.saveTimer = null
+      this.writeMerit()
+    }, 2000)
+  },
+  writeMerit() {
+    if (!this.pendingSave) return
+    this.pendingSave = false
+    g.kv.set('fishMerit', { d: g.time.todayKey(), c: this.dayCount, t: this.total })
+    // 跳过 kv 的 120ms 防抖：这一笔本来就是攒过的，直接落盘，
+    // 避免刚离开页面就被杀进程时丢掉最后一次计数。
+    g.kv.flush()
+  },
+  flushSave() {
+    if (this.saveTimer) {
+      clearTimeout(this.saveTimer)
+      this.saveTimer = null
+    }
+    this.writeMerit()
   },
   playAnim() {
     this.clearAnim()
@@ -173,9 +204,10 @@ export default {
     }
     this.dayCount = 0
     this.total = 0
-    g.kv.set('fishMeritDay', g.time.todayKey())
-    g.kv.set('fishMeritDayCount', 0)
-    g.kv.set('fishMeritTotal', 0)
+    // 必须写回 onShow/knock 实际读取的那个键（fishMerit 对象）。
+    // 0.4.0 这里还在写 fishMeritDay / fishMeritDayCount / fishMeritTotal 三个旧键，
+    // 下次进页面读到的仍是旧对象，归零等于没做。
+    g.kv.set('fishMerit', { d: g.time.todayKey(), c: 0, t: 0 })
     this.delStep = 0
     g.haptic.long()
   }

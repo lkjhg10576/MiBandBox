@@ -8,7 +8,6 @@
 import g from './global'
 import interconnectUtil from './utils/interconnect'
 import otpBridge from './utils/otpBridge'
-import perf from './utils/perf'
 import layoutFlag from './utils/layoutFlag'
 
 function normalizeLayout(mode) {
@@ -39,7 +38,6 @@ function notifyLayout() {
 
 export default {
   onCreate() {
-    perf.mark('app.create')
     layoutState.mode = 'grid'
     layoutState.ready = false
     layoutState.watchers = []
@@ -61,7 +59,6 @@ export default {
       notifyLayout()
     })
     g.kv.init(() => {
-      perf.mark('kv.ready')
       const mode = normalizeLayout(g.kv.get('home', 'grid'))
       if (!layoutState.ready) {
         layoutState.mode = mode

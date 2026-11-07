@@ -19,9 +19,13 @@ plugin/*/dist/
 .v2c/
 plugin/*/.mimosa/
 .zcode/
+.workbuddy/
 
 # tools/ 整个目录不入库（本地开发工具链，不随项目开源）
-tools/
+# 用 tools/* 而不是 tools/：目录整体被排除时，下面的 ! 例外不会生效
+tools/*
+# 例外：发行门禁是构建链的一部分，必须跟着仓库走
+!tools/release-gate.mjs
 
 # 本地验证截图（本地工具产出）
 .shots/
