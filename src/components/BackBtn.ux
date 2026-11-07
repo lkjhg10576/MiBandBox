@@ -20,11 +20,11 @@
 </style>
 
 <script>
-import router from '../utils/router'
 
+import g from '../utils/g'
 export default {
   go() {
-    router.back()
+    g.router.back()
   }
 }
 </script>

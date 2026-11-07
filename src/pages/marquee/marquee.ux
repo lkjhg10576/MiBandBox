@@ -29,7 +29,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .preview { position: absolute; left: 3px; top: 78px; width: 206px; height: 84px; border-radius: 26px; align-items: center; justify-content: center; }
 .pv { width: 190px; text-align: center; text-overflow: ellipsis; lines: 1; }
 .card { position: absolute; left: 3px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 16px; }
@@ -41,14 +40,12 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import kv from '../../utils/kv'
-import router from '../../utils/router'
-import haptic from '../../utils/haptic'
+import g from '../../utils/g'
 import marqueeState from '../../utils/marqueeState'
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     text: 'BandBox · 手腕上的百宝箱',
     size: 28,
@@ -58,13 +55,12 @@ export default {
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
-    kv.init(() => {
-      const m = kv.get('marquee', null)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    g.kv.init(() => {
+      const m = g.kv.get('marquee', null)
       if (m) {
         this.text = m.text || this.text
         this.size = m.size || this.size
@@ -75,19 +71,17 @@ export default {
     })
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   edit() {
-    haptic.short()
-    router.push('/pages/marqueeSet')
+    g.haptic.short()
+    g.router.push('/pages/marqueeSet')
   },
   play(mode) {
-    haptic.short()
+    g.haptic.short()
     const m = {
       text: this.text,
       size: this.size,
@@ -99,11 +93,11 @@ export default {
     // 播放内容与模式同步写进全局状态：播放页 onShow 直接读到，不受 KV 异步与残留影响
     marqueeState.cfg = m
     try {
-      kv.set('marqueeMode', mode)
-      kv.set('marquee', m)
-      kv.flush()
+      g.kv.set('marqueeMode', mode)
+      g.kv.set('marquee', m)
+      g.kv.flush()
     } catch (e) {}
-    router.push('/pages/textShow', m)
+    g.router.push('/pages/textShow', m)
   }
 }
 </script>

@@ -32,7 +32,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .dateRow { position: absolute; left: 3px; top: 78px; width: 206px; height: 52px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 8px; }
 .arrowBtn { width: 40px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; }
 .arrowT { font-size: 24px; color: #FFFFFF; }
@@ -51,9 +50,8 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import history from '../../data/history'
-import haptic from '../../utils/haptic'
+import g from '../../utils/g'
+import historyData from '../../utils/historyData'
 
 function estimateInnerHeight(items) {
   if (!items || items.length === 0) return 300
@@ -81,6 +79,7 @@ function estimateInnerHeight(items) {
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     y: 2026,
     m: 1,
@@ -91,46 +90,47 @@ export default {
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     const now = new Date()
     this.y = now.getFullYear()
     this.m = now.getMonth() + 1
     this.d = now.getDate()
     this.refresh()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   refresh() {
     const dt = new Date(this.y, this.m - 1, this.d)
-    this.dateText = this.m + '月' + this.d + '日 ' + time.weekdayName(dt)
-    const items = []
-    // 1) 当天的史实条目
-    const events = history.getByDate(this.m, this.d)
-    for (let i = 0; i < events.length; i++) {
-      const e = events[i]
-      const meta = (e.year ? e.year + ' · ' : '') + (e.tag || '史实')
-      items.push({ meta: meta, title: e.title || '历史上的今天', body: e.text })
-    }
-    // 2) 小知识兜底，保证每天至少有两条可读内容
-    const tips = history.tipOfDay(this.m, this.d)
-    for (let i = 0; i < tips.length; i++) {
-      items.push({ meta: '小知识', title: '随手一读', body: tips[i] })
-    }
-    this.items = items
-    this.innerHeight = estimateInnerHeight(items)
+    this.dateText = this.m + '月' + this.d + '日 ' + g.time.weekdayName(dt)
+    // 按月读盘：只取当月的数据（约 8 KB），不再整份物化 366 天
+    historyData.getByDate(this.m, this.d, (events) => {
+      const items = []
+      // 1) 当天的史实条目
+      for (let i = 0; i < events.length; i++) {
+        const e = events[i]
+        const meta = (e.year ? e.year + ' · ' : '') + (e.tag || '史实')
+        items.push({ meta: meta, title: e.title || '历史上的今天', body: e.text })
+      }
+      // 2) 小知识兜底，保证每天至少有两条可读内容
+      historyData.tipOfDay(this.m, this.d, (tips) => {
+        for (let i = 0; i < tips.length; i++) {
+          items.push({ meta: '小知识', title: '随手一读', body: tips[i] })
+        }
+        if (!this.$valid) return
+        this.items = items
+        this.innerHeight = estimateInnerHeight(items)
+      })
+    })
   },
   shift(delta) {
-    haptic.short()
+    g.haptic.short()
     const dt = new Date(this.y, this.m - 1, this.d + delta)
     this.y = dt.getFullYear()
     this.m = dt.getMonth() + 1

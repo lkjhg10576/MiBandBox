@@ -50,7 +50,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 78px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
 .iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
 .iText { width: 158px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
@@ -71,16 +70,14 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import kv from '../../utils/kv'
-import router from '../../utils/router'
-import haptic from '../../utils/haptic'
+import g from '../../utils/g'
 import textInput from '../../utils/textInput'
 import marqueeState from '../../utils/marqueeState'
 import prompt from '@system.prompt'
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     text: 'BandBox · 手腕上的百宝箱',
     size: 30,
@@ -93,13 +90,12 @@ export default {
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
-    kv.init(() => {
-      const m = kv.get('marquee', null)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    g.kv.init(() => {
+      const m = g.kv.get('marquee', null)
       if (m) {
         this.text = m.text || this.text
         this.size = m.size || this.size
@@ -110,12 +106,10 @@ export default {
     })
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   openKb() {
     this.kbShow = true
@@ -132,20 +126,20 @@ export default {
   },
   setSize(v) {
     this.size = v
-    haptic.short()
+    g.haptic.short()
   },
   setSpeed(v) {
     this.speed = v
-    haptic.short()
+    g.haptic.short()
   },
   setColor(v) {
     this.color = v
-    haptic.short()
+    g.haptic.short()
   },
   setBg(v) {
     this.bg = v
     if (v === '#FFFFFF') this.color = '#111111'
-    haptic.short()
+    g.haptic.short()
   },
   save() {
     if (!this.text) {
@@ -158,10 +152,10 @@ export default {
     // 不会被 KV 里上一次残留的 marqueeMode 覆盖
     marqueeState.cfg = m
     try {
-      kv.set('marquee', m)
-      kv.flush()
+      g.kv.set('marquee', m)
+      g.kv.flush()
     } catch (e) {}
-    router.push('/pages/textShow', m)
+    g.router.push('/pages/textShow', m)
   }
 }
 </script>

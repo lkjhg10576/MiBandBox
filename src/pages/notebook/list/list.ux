@@ -27,7 +27,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .list { position: absolute; left: 0px; top: 82px; width: 212px; height: 408px; }
 .card { width: 206px; height: 72px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px 0px 16px; }
 .cMain { width: 140px; height: 54px; flex-direction: column; justify-content: center; }
@@ -43,10 +42,8 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
+import g from '../../../utils/g'
 import docs from '../../../utils/docs'
-import haptic from '../../../utils/haptic'
 
 function sizeText(n) {
   if (!n && n !== 0) return '0 B'
@@ -57,26 +54,23 @@ function sizeText(n) {
 function dateText(ms) {
   if (!ms) return '—'
   const d = new Date(ms)
-  return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + time.formatClock(d)
+  return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + g.time.formatClock(d)
 }
 
 export default {
   data: { clock: '--:--', items: [], timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.load()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   load() {
     docs.list('notes', (list) => {
@@ -89,11 +83,11 @@ export default {
     })
   },
   open(item) {
-    router.push('/pages/notebook/show', { name: item.name })
+    g.router.push('/pages/notebook/show', { name: item.name })
   },
   create() {
-    haptic.short()
-    router.push('/pages/notebook/edit', { name: '' })
+    g.haptic.short()
+    g.router.push('/pages/notebook/edit', { name: '' })
   }
 }
 </script>

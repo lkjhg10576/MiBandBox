@@ -46,10 +46,8 @@
 </style>
 
 <script>
-import screen from '../../utils/screen'
-import haptic from '../../utils/haptic'
-import router from '../../utils/router'
 
+import g from '../../utils/g'
 // color 仅作元数据留档，实际显示由 CSS 里写死的 .fill0~.fill4 决定。
 const MODES = [
   { name: '红光', color: '#FF0000', fg: '#FFFFFF', hint: '高亮红光，适合夜间' },
@@ -69,15 +67,15 @@ export default {
     hint: MODES[0].hint
   },
   onShow() {
-    // screen.enter() 必须留在同步路径上（塞进异步回调会被时序吞掉）
-    screen.enter()
+    // g.screen.enter() 必须留在同步路径上（塞进异步回调会被时序吞掉）
+    g.screen.enter()
     this.apply(0)
   },
   onHide() {
-    screen.leave()
+    g.screen.leave()
   },
   onDestroy() {
-    screen.leave()
+    g.screen.leave()
   },
   apply(i) {
     this.index = i % MODES.length
@@ -85,18 +83,18 @@ export default {
     this.name = m.name
     this.hint = m.hint
     if (this.index === OFF_INDEX) {
-      screen.leave()
+      g.screen.leave()
     } else {
-      screen.enter()
+      g.screen.enter()
     }
-    haptic.short()
+    g.haptic.short()
   },
   next() {
     this.apply(this.index + 1)
   },
   exit() {
-    haptic.short()
-    router.back()
+    g.haptic.short()
+    g.router.back()
   }
 }
 </script>

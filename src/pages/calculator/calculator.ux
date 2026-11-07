@@ -18,7 +18,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .exprBox { position: absolute; left: 12px; top: 80px; width: 188px; height: 42px; }
 .expr { height: 42px; line-height: 42px; font-size: 24px; color: #FFFFFF; }
 .preview { position: absolute; left: 12px; top: 124px; width: 188px; height: 46px; line-height: 46px; text-align: right; font-size: 34px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; }
@@ -32,9 +31,8 @@
 </style>
 
 <script>
-import time from '../../utils/time'
+import g from '../../utils/g'
 import calc from '../../utils/calc'
-import haptic from '../../utils/haptic'
 import prompt from '@system.prompt'
 
 const LAYOUT = [
@@ -54,6 +52,7 @@ const LAYOUT = [
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     expr: '',
     preview: '',
@@ -62,18 +61,19 @@ export default {
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onKey(key) {
-    haptic.short()
+    g.haptic.short()
     const v = key.v
     if (v === 'C') {
       this.expr = ''
@@ -125,10 +125,10 @@ export default {
       this.preview = calc.format(result)
       this.expr = calc.format(result)
       this.evaluated = true
-      haptic.long()
+      g.haptic.long()
     } catch (e) {
       prompt.showToast({ message: '输入无效', duration: 1400 })
-      haptic.short()
+      g.haptic.short()
     }
   }
 }

@@ -19,7 +19,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 334px; padding: 0px 12px; align-items: flex-start; }
 .content { width: 188px; font-size: 16px; line-height: 25px; color: rgba(255,255,255,0.88); }
 .pad { width: 188px; height: 20px; }
@@ -30,29 +29,25 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
+import g from '../../../utils/g'
 import docs from '../../../utils/docs'
 
 export default {
   protected: { name: '' },
   private: { clock: '--:--', title: '笔记', content: '', loaded: false, timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.title = this.name || '笔记'
     this.load()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   load() {
     if (!this.name) return
@@ -65,10 +60,10 @@ export default {
     })
   },
   edit() {
-    router.push('/pages/notebook/edit', { name: this.name })
+    g.router.push('/pages/notebook/edit', { name: this.name })
   },
   more() {
-    router.push('/pages/notebook/more', { name: this.name })
+    g.router.push('/pages/notebook/more', { name: this.name })
   }
 }
 </script>

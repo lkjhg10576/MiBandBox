@@ -5,9 +5,11 @@
 }
 </style>
 <script>
-import kv from './utils/kv'
+import g from './global'
 import interconnectUtil from './utils/interconnect'
 import otpBridge from './utils/otpBridge'
+import perf from './utils/perf'
+import layoutFlag from './utils/layoutFlag'
 
 function normalizeLayout(mode) {
   return mode === 'list' ? 'list' : 'grid'
@@ -37,6 +39,7 @@ function notifyLayout() {
 
 export default {
   onCreate() {
+    perf.mark('app.create')
     layoutState.mode = 'grid'
     layoutState.ready = false
     layoutState.watchers = []
@@ -49,9 +52,23 @@ export default {
     try {
       otpBridge.init()
     } catch (e) {}
-    kv.init(() => {
+    // 快路径：先读 4 字节的布局标志，首页不必等整份 store.json 读完就能定布局。
+    // 随后 kv.init() 仍然以 KV 里的值为准（两者不一致时以 KV 为准并通知）。
+    layoutFlag.read((flag) => {
+      if (!flag) return
+      layoutState.mode = flag
+      layoutState.ready = true
+      notifyLayout()
+    })
+    g.kv.init(() => {
+      perf.mark('kv.ready')
+      const mode = normalizeLayout(g.kv.get('home', 'grid'))
       if (!layoutState.ready) {
-        layoutState.mode = normalizeLayout(kv.get('home', 'grid'))
+        layoutState.mode = mode
+      } else if (mode !== layoutState.mode) {
+        // 布局标志与 KV 不一致（标志写失败或被外部改动）→ 以 KV 为准
+        layoutState.mode = mode
+        notifyLayout()
       }
       layoutState.ready = true
       notifyLayout()

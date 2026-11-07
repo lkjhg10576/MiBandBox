@@ -43,7 +43,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
 .iLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.5); }
 .iText { width: 174px; height: 32px; line-height: 32px; font-size: 18px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
@@ -67,9 +66,8 @@
 </style>
 
 <script>
-import time from '../../utils/time'
+import g from '../../utils/g'
 import morse from '../../data/morse'
-import haptic from '../../utils/haptic'
 import textInput from '../../utils/textInput'
 import prompt from '@system.prompt'
 
@@ -81,6 +79,7 @@ const WORD_GAP = 1260
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     text: '',
     code: '',
@@ -95,20 +94,19 @@ export default {
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.morseWarned = false
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
     this.stop()
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
     this.stop()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   openKb() {
     this.kbShow = true
@@ -170,12 +168,12 @@ export default {
       delay = DOT
       this.flash = '·'
       this.status = '播放中 ' + (i + 1) + '/' + seq.length
-      haptic.short()
+      g.haptic.short()
     } else if (token === 'dash') {
       delay = DASH
       this.flash = '-'
       this.status = '播放中 ' + (i + 1) + '/' + seq.length
-      haptic.long()
+      g.haptic.long()
     } else if (token === 'char') {
       delay = CHAR_GAP
       this.flash = ''
@@ -195,7 +193,7 @@ export default {
     this.status = ''
     this.timers.forEach((t) => clearTimeout(t))
     this.timers = []
-    haptic.stop()
+    g.haptic.stop()
   },
   touchStart() {
     this.startAt = Date.now()
@@ -208,17 +206,17 @@ export default {
   addDot() {
     this.manual = (this.manual + '·').slice(-18)
     this.flash = '·'
-    haptic.short()
+    g.haptic.short()
   },
   addDash() {
     this.manual = (this.manual + '-').slice(-18)
     this.flash = '-'
-    haptic.long()
+    g.haptic.long()
   },
   clearManual() {
     this.manual = ''
     this.flash = ''
-    haptic.short()
+    g.haptic.short()
   }
 }
 </script>

@@ -22,7 +22,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .stack { position: absolute; left: 0px; top: 96px; width: 212px; height: 300px; align-items: center; justify-content: center; }
 .sheet { position: absolute; width: 130px; height: 180px; border-radius: 16px; background-color: #1C2B4A; }
 .s1 { left: 28px; top: 58px; transform: rotate(-14deg); background-color: #15233C; }
@@ -36,30 +35,25 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import router from '../../utils/router'
-import haptic from '../../utils/haptic'
 
+import g from '../../utils/g'
 export default {
   data: { clock: '--:--', timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   open() {
-    haptic.short()
-    router.push('/pages/answer/a1')
+    g.haptic.short()
+    g.router.push('/pages/answer/a1')
   }
 }
 </script>

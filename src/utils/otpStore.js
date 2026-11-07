@@ -5,7 +5,7 @@
  * kv.flush()（跳过 120ms 防抖），防止杀进程丢密钥。
  * notify() 用 slice().forEach + try/catch（照 app.ux 的 layoutState 范式）。
  */
-import kv from './kv'
+import g from './g'
 import otpAccounts from './otpAccounts'
 
 const KEY_ACCOUNTS = 'otp.accounts'
@@ -29,14 +29,14 @@ function notify() {
  * 初始化（转发 kv.init，读盘完成后回调一次）。
  */
 function init(cb) {
-  kv.init(cb)
+  g.kv.init(cb)
 }
 
 /**
  * 账户列表（normalized 副本；存储损坏时降级为空列表）。
  */
 function list() {
-  const raw = kv.get(KEY_ACCOUNTS, [])
+  const raw = g.kv.get(KEY_ACCOUNTS, [])
   if (!Array.isArray(raw)) return []
   const out = []
   for (let i = 0; i < raw.length; i++) {
@@ -58,8 +58,8 @@ function getById(id) {
 }
 
 function saveAccounts(next) {
-  kv.set(KEY_ACCOUNTS, next)
-  kv.flush()
+  g.kv.set(KEY_ACCOUNTS, next)
+  g.kv.flush()
   notify()
 }
 
@@ -146,7 +146,7 @@ function clearAll() {
 }
 
 function getSettings() {
-  const s = kv.get(KEY_SETTINGS, null)
+  const s = g.kv.get(KEY_SETTINGS, null)
   if (!s || typeof s !== 'object') return { timeOffsetSec: 0 }
   let offset = Math.floor(Number(s.timeOffsetSec) || 0)
   if (offset < OFFSET_MIN) offset = OFFSET_MIN
@@ -160,8 +160,8 @@ function setSettings(next) {
   let offset = Math.floor(Number(merged.timeOffsetSec) || 0)
   if (offset < OFFSET_MIN) offset = OFFSET_MIN
   if (offset > OFFSET_MAX) offset = OFFSET_MAX
-  kv.set(KEY_SETTINGS, { timeOffsetSec: offset })
-  kv.flush()
+  g.kv.set(KEY_SETTINGS, { timeOffsetSec: offset })
+  g.kv.flush()
   notify()
 }
 

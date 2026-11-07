@@ -36,7 +36,6 @@
 <style>
 @import '../../common/styles/theme.css';
 
-.page { width: 212px; height: 520px; background-color: #000000; }
 .opt { position: absolute; left: 3px; width: 206px; height: 116px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 12px 16px; }
 .optA { top: 92px; }
 .optB { top: 216px; }
@@ -54,23 +53,22 @@
 </style>
 
 <script>
-import kv from '../../utils/kv'
+import g from '../../utils/g'
 import layoutApi from '../../utils/homeLayout'
-import router from '../../utils/router'
-import time from '../../utils/time'
+import layoutFlag from '../../utils/layoutFlag'
 
 export default {
   data: { clock: '--:--', current: 'grid', picking: false, four: [1, 2, 3, 4], three: [1, 2, 3] },
   onShow() {
     this.picking = false
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     const app = layoutApi.api(this)
     if (app && app.getHomeLayout && app.isHomeLayoutReady && app.isHomeLayoutReady()) {
       this.current = app.getHomeLayout()
       return
     }
-    kv.init(() => {
-      this.current = kv.get('home', 'grid') === 'list' ? 'list' : 'grid'
+    g.kv.init(() => {
+      this.current = g.kv.get('home', 'grid') === 'list' ? 'list' : 'grid'
     })
   },
   pick(mode) {
@@ -81,10 +79,12 @@ export default {
     if (app && app.setHomeLayout) {
       app.setHomeLayout(mode)
     }
-    kv.init(() => {
-      kv.set('home', mode)
-      kv.flush()
-      setTimeout(() => router.back(), 120)
+    // 布局标志与 KV 同时写：启动时先用标志定布局，再用 KV 校对
+    layoutFlag.write(mode)
+    g.kv.init(() => {
+      g.kv.set('home', mode)
+      g.kv.flush()
+      g.router.back()
     })
   }
 }

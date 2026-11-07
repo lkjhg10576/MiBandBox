@@ -30,7 +30,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .tapZone { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
 .big { position: absolute; left: 0px; top: 120px; width: 212px; height: 96px; line-height: 96px; text-align: center; font-size: 76px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .status { position: absolute; left: 20px; top: 226px; width: 172px; height: 28px; line-height: 28px; text-align: center; font-size: 16px; color: rgba(255,255,255,0.7); }
@@ -44,13 +43,13 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import haptic from '../../utils/haptic'
 
+import g from '../../utils/g'
 const DURATION = 5000
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     state: 'idle',
     big: '5.0',
@@ -65,11 +64,10 @@ export default {
     startAt: 0
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.clockTimer) clearInterval(this.clockTimer)
-    this.clockTimer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     this.resetView()
   },
   onHide() {
@@ -80,7 +78,7 @@ export default {
   },
   clearTimers() {
     if (this.timer) clearInterval(this.timer)
-    if (this.clockTimer) clearInterval(this.clockTimer)
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     this.timer = null
     this.clockTimer = null
     // 回到初始态：避免测试中切后台/退出后回来卡在 countdown 或 running
@@ -101,7 +99,7 @@ export default {
     this.count++
     this.big = String(this.count)
     this.status = '正在计数'
-    haptic.short()
+    g.haptic.short()
   },
   start() {
     // 防重入：连点按钮只产生一个倒计时
@@ -158,7 +156,7 @@ export default {
     this.bigColor = '#0D6EFF'
     this.status = '点击次数'
     this.hint = '点按钮再测一次'
-    haptic.pattern(2, 160)
+    g.haptic.pattern(2, 160)
   }
 }
 </script>

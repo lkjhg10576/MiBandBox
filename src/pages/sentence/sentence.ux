@@ -26,7 +26,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
 .inner { width: 212px; height: 414px; flex-direction: column; }
 .card { width: 206px; height: 250px; margin: 0px 3px; border-radius: 26px; background-color: #262626; padding: 14px 18px; flex-direction: column; }
@@ -44,11 +43,9 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import quotes from '../../data/quotes'
-import kv from '../../utils/kv'
-import haptic from '../../utils/haptic'
-import router from '../../utils/router'
+import g from '../../utils/g'
+import quotesData from '../../utils/quotesData'
+import { shuffledDeck } from '../../utils/seedRandom'
 import prompt from '@system.prompt'
 import crypto from '@system.crypto'
 
@@ -65,80 +62,75 @@ function randInt(max) {
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
-    quote: quotes[0],
+    quote: '',
     index: 0,
-    total: quotes.length,
+    total: 0,
+    quotes: [],
     faved: false,
     favCount: 0,
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
-    kv.init(() => {
-      this.draw()
-      this.refreshFav()
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    quotesData.load((list) => {
+      this.quotes = list
+      this.total = list.length
+      if (!this.quote && list.length) this.quote = list[0]
+      g.kv.init(() => {
+        this.draw()
+        this.refreshFav()
+      })
     })
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   /**
    * 洗牌队列：把全部索引随机排序后依次抽用，抽完再重洗。
    * 保证连续多次进入/换一条几乎不会重复，直到一轮耗尽。
    */
   draw() {
-    let deck = kv.get('quoteDeck', [])
-    let pos = kv.get('quoteDeckPos', -1)
-    const ok = Array.isArray(deck) && deck.length === quotes.length &&
-      typeof pos === 'number' && pos >= 0 && pos < deck.length
-    if (!ok) {
-      deck = this.shuffledDeck()
-      pos = 0
+    const list = this.quotes || []
+    if (!list.length) return
+    // 只存「种子 + 位置」两个数（约 30 字节），队列由种子现场重建
+    let st = g.kv.get('quoteDeckState', null)
+    if (!st || typeof st.p !== 'number' || typeof st.s !== 'number' || st.p >= list.length) {
+      st = { s: randInt(233280) + 1, p: 0 }
     }
-    const idx = deck[pos]
+    const deck = shuffledDeck(list.length, st.s)
+    const idx = deck[st.p]
     this.index = idx
-    this.quote = quotes[idx]
-    kv.set('quoteDeck', deck)
-    kv.set('quoteDeckPos', pos + 1)
-  },
-  shuffledDeck() {
-    const deck = []
-    for (let i = 0; i < quotes.length; i++) deck.push(i)
-    for (let i = deck.length - 1; i > 0; i--) {
-      const j = randInt(i + 1)
-      const t = deck[i]
-      deck[i] = deck[j]
-      deck[j] = t
-    }
-    return deck
+    this.quote = list[idx]
+    g.kv.set('quoteDeckState', { s: st.s, p: st.p + 1 })
+    // 旧版遗留的两个大键（洗牌队列 1000 个索引）用完即删
+    if (g.kv.get('quoteDeck', null)) g.kv.remove('quoteDeck')
+    if (g.kv.get('quoteDeckPos', null) !== null) g.kv.remove('quoteDeckPos')
   },
   refreshFav() {
-    const list = kv.get('quoteFavs', [])
+    const list = g.kv.get('quoteFavs', [])
     this.favCount = Array.isArray(list) ? list.length : 0
     this.faved = Array.isArray(list) && list.indexOf(this.quote) >= 0
   },
   openFavs() {
-    haptic.short()
-    router.push('/pages/sentence/fav')
+    g.haptic.short()
+    g.router.push('/pages/sentence/fav')
   },
   next() {
-    haptic.short()
+    g.haptic.short()
     this.draw()
     this.refreshFav()
   },
   favorite() {
-    haptic.short()
-    const list = kv.get('quoteFavs', [])
+    g.haptic.short()
+    const list = g.kv.get('quoteFavs', [])
     const arr = Array.isArray(list) ? list.slice() : []
     const pos = arr.indexOf(this.quote)
     if (pos >= 0) {
@@ -149,7 +141,7 @@ export default {
       prompt.showToast({ message: '已收藏', duration: 1200 })
     }
     if (arr.length > 50) arr.length = 50
-    kv.set('quoteFavs', arr)
+    g.kv.set('quoteFavs', arr)
     this.favCount = arr.length
     this.faved = arr.indexOf(this.quote) >= 0
   }

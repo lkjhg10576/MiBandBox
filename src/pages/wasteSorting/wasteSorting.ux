@@ -42,7 +42,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .inputCard { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
 .iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
 .iText { width: 174px; height: 36px; line-height: 36px; font-size: 20px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
@@ -62,13 +61,13 @@
 </style>
 
 <script>
-import time from '../../utils/time'
+import g from '../../utils/g'
 import waste from '../../data/waste'
-import haptic from '../../utils/haptic'
 import textInput from '../../utils/textInput'
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     query: '',
     cat: '等待查询',
@@ -80,19 +79,16 @@ export default {
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   openKb() {
     this.kbShow = true
@@ -112,7 +108,7 @@ export default {
   pick(word) {
     this.query = word
     this.live()
-    haptic.short()
+    g.haptic.short()
   },
   live() {
     const r = waste.classify(this.query)
@@ -134,7 +130,7 @@ export default {
       this.color = '#FF9500'
       this.bg = 'rgba(255,149,0,0.12)'
       this.tip = '词表里暂时没有这个物品。建议查看当地分类指南，或换一个更通用的名称。'
-      haptic.short()
+      g.haptic.short()
     }
   },
   show(r) {
@@ -142,7 +138,7 @@ export default {
     this.color = r.color
     this.bg = 'rgba(255,255,255,0.04)'
     this.tip = r.tip
-    haptic.short()
+    g.haptic.short()
   }
 }
 </script>

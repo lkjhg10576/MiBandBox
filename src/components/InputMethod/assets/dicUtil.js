@@ -85,10 +85,6 @@ SimpleInputMethod.getSingleHanzi = function(pinyin, lang = 'cn') {
     || (this.dict.py2hz || {})[pinyin]
     || ''
   }
-  else if (lang === 'jp') {
-    return (this.dict.romaji2kanji || {})[pinyin]
-    || ''
-  }
   // en 模式不查候选
   return ''
 }

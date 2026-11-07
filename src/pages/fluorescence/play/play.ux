@@ -1,5 +1,11 @@
 <template>
   <div class="page" style="background-color: {{ color }};">
+    <!-- 动画层常驻：运行时不会更新「已带动画的元素」的样式，
+         所以暂停不能靠改动画属性，只能叠一层静态色把它盖住 → 暂停期间锁色不跳。
+         实测（模拟器）：运行时每次重渲染都会让动画从头开始，负 animation-delay 不生效，
+         因此「继续」会从周期起点重播（跳一次色），这与计划里的降级口径一致。 -->
+    <div class="paint" style="animation-duration: {{ durMs }}ms; animation-delay: {{ delayMs }}ms;"></div>
+    <div class="frozen" if="{{ paused }}" style="background-color: {{ color }};"></div>
     <div class="tap" @click="toggle"></div>
     <div class="top">
       <div class="btn" @click="exit"><text class="f btnT">退出</text></div>
@@ -18,44 +24,81 @@
 .btnT { font-size: 14px; color: #FFFFFF; }
 .title { width: 60px; text-align: center; font-size: 17px; color: #FFFFFF; }
 .hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.75); z-index: 2; }
+/* @keyframes fc:start */
+@keyframes fc {
+  0% { background-color: #f62828; }
+  3% { background-color: #f64a28; }
+  6% { background-color: #f66c28; }
+  8% { background-color: #f68f28; }
+  11% { background-color: #f6b128; }
+  14% { background-color: #f6d428; }
+  17% { background-color: #f6f628; }
+  19% { background-color: #d4f628; }
+  22% { background-color: #b1f628; }
+  25% { background-color: #8ff628; }
+  28% { background-color: #6cf628; }
+  31% { background-color: #4af628; }
+  33% { background-color: #28f628; }
+  36% { background-color: #28f64a; }
+  39% { background-color: #28f66c; }
+  42% { background-color: #28f68f; }
+  44% { background-color: #28f6b1; }
+  47% { background-color: #28f6d4; }
+  50% { background-color: #28f6f6; }
+  53% { background-color: #28d4f6; }
+  56% { background-color: #28b1f6; }
+  58% { background-color: #288ff6; }
+  61% { background-color: #286cf6; }
+  64% { background-color: #284af6; }
+  67% { background-color: #2828f6; }
+  69% { background-color: #4a28f6; }
+  72% { background-color: #6c28f6; }
+  75% { background-color: #8f28f6; }
+  78% { background-color: #b128f6; }
+  81% { background-color: #d428f6; }
+  83% { background-color: #f628f6; }
+  86% { background-color: #f628d4; }
+  89% { background-color: #f628b1; }
+  92% { background-color: #f6288f; }
+  94% { background-color: #f6286c; }
+  97% { background-color: #f6284a; }
+  100% { background-color: #f62828; }
+}
+/* @keyframes fc:end */
+/* 动画层：铺满整屏，颜色循环由 @keyframes 驱动 */
+.paint {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 212px;
+  height: 520px;
+  animation-name: fc;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+/* 暂停层：静态色盖住动画层，暂停期间颜色锁定不跳 */
+.frozen { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; z-index: 1; }
 </style>
 
 <script>
-import kv from '../../../utils/kv'
-import haptic from '../../../utils/haptic'
-import router from '../../../utils/router'
-import screen from '../../../utils/screen'
+import g from '../../../utils/g'
 import fluoroState from '../fluoroState'
+import { PALETTE, cycleMs } from '../../../utils/fluoroPalette'
 
-function hsl(h, s, l) {
-  const c = (1 - Math.abs(2 * l - 1)) * s
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
-  const m = l - c / 2
-  let r = 0
-  let g = 0
-  let b = 0
-  if (h < 60) { r = c; g = x }
-  else if (h < 120) { r = x; g = c }
-  else if (h < 180) { g = c; b = x }
-  else if (h < 240) { g = x; b = c }
-  else if (h < 300) { r = x; b = c }
-  else { r = c; b = x }
-  const to = (v) => {
-    const n = Math.round((v + m) * 255)
-    return (n < 16 ? '0' : '') + n.toString(16)
-  }
-  return '#' + to(r) + to(g) + to(b)
-}
-
-const PALETTE = []
-for (let i = 0; i < 36; i++) PALETTE.push(hsl((i * 10) % 360, 0.92, 0.56))
+// 播放起始时刻与已播放时长（毫秒），用于暂停/续播的相位计算。
+// 放在模块作用域（本页同时只有一个实例）：Vela 页面对象不允许 data 与 private 并存。
+let startedAt = 0
+let elapsed = 0
 
 export default {
   data: {
     color: PALETTE[0],
     paused: false,
-    offset: 0,
-    timer: null,
+    playing: false,
+    // 一个循环的毫秒数（= interval 毫秒 × 36 色）
+    durMs: 4320,
+    // 续播相位：负延迟（毫秒）。运行时若不支持负延迟，则继续时从 0% 重播（会跳一次色）
+    delayMs: 0,
     interval: 120,
     ready: false
   },
@@ -63,52 +106,61 @@ export default {
     // 配置由设置页 push 前写入 fluoroState（globalThis，同步读），规避 KV 异步竞态。
     // 亮度/常亮必须在 onShow 同步路径上立即执行，不能塞进异步回调（会被时序吞掉）。
     this.ready = true
+    elapsed = 0
+    startedAt = Date.now()
     const cfg = fluoroState.cfg
     if (cfg && typeof cfg === 'object') {
       this.applyCfg(cfg)
     } else {
       // 兜底：绕过设置页直接进入（正常流程不会发生）时退回 KV 读取
-      kv.init(() => {
+      g.kv.init(() => {
         if (!this.ready) return
-        this.applyCfg(kv.get('fluoroCfg', null) || {})
+        this.applyCfg(g.kv.get('fluoroCfg', null) || {})
       })
     }
   },
   applyCfg(cfg) {
     if (cfg.interval === 240 || cfg.interval === 120 || cfg.interval === 60) this.interval = cfg.interval
-    screen.enter({ bright: cfg.bright !== false, keepOn: cfg.keepOn !== false })
+    this.durMs = cycleMs(this.interval)
+    g.screen.enter({ bright: cfg.bright !== false, keepOn: cfg.keepOn !== false })
     this.start()
   },
   onHide() {
     this.ready = false
     this.stop()
-    screen.leave()
+    g.screen.leave()
   },
   onDestroy() {
     this.ready = false
     this.stop()
-    screen.leave()
+    g.screen.leave()
   },
   start() {
-    this.stop()
-    this.timer = setInterval(() => {
-      this.offset = (this.offset + 1) % PALETTE.length
-      this.color = PALETTE[this.offset % PALETTE.length]
-    }, this.interval)
+    startedAt = Date.now() - elapsed
+    // 负延迟把动画起点前移到暂停时的相位，继续时不跳色
+    this.delayMs = elapsed > 0 ? -Math.round(elapsed) : 0
+    this.playing = true
+    this.paused = false
   },
   stop() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    // 原生关键帧驱动，无 JS 定时器需要清理
   },
   toggle() {
-    haptic.short()
-    this.paused = !this.paused
-    if (this.paused) this.stop()
-    else this.start()
+    g.haptic.short()
+    if (this.playing) {
+      // 暂停不跳色：记下相位，摘掉动画 class，用静态色兜底
+      const cycle = cycleMs(this.interval)
+      elapsed = (Date.now() - startedAt) % cycle
+      this.color = PALETTE[Math.floor(elapsed / this.interval) % PALETTE.length]
+      this.playing = false
+      this.paused = true
+    } else {
+      this.start()
+    }
   },
   exit() {
-    haptic.short()
-    router.back()
+    g.haptic.short()
+    g.router.back()
   }
 }
 </script>

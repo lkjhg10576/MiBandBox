@@ -21,7 +21,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 418px; }
 .listInner { width: 212px; flex-direction: column; }
 .card { width: 206px; height: 72px; margin: 0px 3px 7px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 16px; }
@@ -34,22 +33,22 @@
 </style>
 
 <script>
-import time from '../../utils/time'
+import g from '../../utils/g'
 import perf from '../../data/perf'
 import device from '@system.device'
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     devices: perf.devices.map((d) => ({ name: d.name, score: d.score, current: false })),
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     device.getInfo({
       success: (d) => {
         const model = String(d.model || '')
@@ -63,12 +62,10 @@ export default {
     })
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   }
 }
 </script>

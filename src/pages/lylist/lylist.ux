@@ -34,7 +34,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 /* 列表项不留横向 margin：原生 list 会把子项 margin 计入可横向滚动范围（3px 边距即产生可拖动空间，抢占右滑返回），内缩改由 list 自身 padding 提供。 */
 .list { position: absolute; left: 0px; top: 82px; width: 212px; height: 408px; padding: 0px 3px 0px 3px; }
 .card { width: 206px; height: 72px; margin: 0px 0px 8px 0px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px 0px 16px; }
@@ -52,10 +51,8 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import router from '../../utils/router'
+import g from '../../utils/g'
 import docs from '../../utils/docs'
-import haptic from '../../utils/haptic'
 
 function sizeText(n) {
   if (!n && n !== 0) return '0 B'
@@ -72,20 +69,17 @@ function dateText(ms) {
 export default {
   data: { clock: '--:--', items: [], timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.load()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   load() {
     docs.list('lyrics', (list) => {
@@ -98,15 +92,15 @@ export default {
     })
   },
   open(item) {
-    router.push('/pages/lyrics/show', { name: item.name })
+    g.router.push('/pages/lyrics/show', { name: item.name })
   },
   openTransfer() {
-    haptic.short()
-    router.push('/pages/lyrics/transfer')
+    g.haptic.short()
+    g.router.push('/pages/lyrics/transfer')
   },
   create() {
-    haptic.short()
-    router.push('/pages/lyrics/edit', { name: '' })
+    g.haptic.short()
+    g.router.push('/pages/lyrics/edit', { name: '' })
   }
 }
 </script>

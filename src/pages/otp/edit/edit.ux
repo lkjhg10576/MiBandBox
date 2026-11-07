@@ -52,9 +52,7 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
-import haptic from '../../../utils/haptic'
+import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import otpStore from '../../../utils/otpStore'
 import otpAccounts from '../../../utils/otpAccounts'
@@ -68,6 +66,7 @@ const state = {
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     isNew: true,
     isEdit: false,
@@ -95,11 +94,10 @@ export default {
   },
 
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (state.timer) clearInterval(state.timer)
-    state.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     // 消费 /pages/input 的结果（一次性文件，take 后即删除）
     inputResult.take((r) => {
       if (!r || !r.field) return
@@ -119,20 +117,18 @@ export default {
   },
 
   onHide() {
-    if (state.timer) clearInterval(state.timer)
-    state.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     this.delArm = false
     state.delArmAt = 0
   },
 
   onDestroy() {
-    if (state.timer) clearInterval(state.timer)
-    state.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
 
   openName() {
-    haptic.short()
-    router.push('/pages/input', {
+    g.haptic.short()
+    g.router.push('/pages/input', {
       field: 'otpName',
       inputTitle: '账户名称',
       text: this.name,
@@ -142,8 +138,8 @@ export default {
   },
 
   openIssuer() {
-    haptic.short()
-    router.push('/pages/input', {
+    g.haptic.short()
+    g.router.push('/pages/input', {
       field: 'otpIssuer',
       inputTitle: '颁发者',
       text: this.issuer,
@@ -153,8 +149,8 @@ export default {
   },
 
   openSecret() {
-    haptic.short()
-    router.push('/pages/input', {
+    g.haptic.short()
+    g.router.push('/pages/input', {
       field: 'otpSecret',
       inputTitle: '密钥（Base32）',
       text: this.secret,
@@ -164,7 +160,7 @@ export default {
   },
 
   save() {
-    haptic.short()
+    g.haptic.short()
     if (!this.secret) {
       prompt.showToast({ message: '请先输入密钥', duration: 1500 })
       return
@@ -188,11 +184,11 @@ export default {
       return
     }
     prompt.showToast({ message: '已保存', duration: 1200 })
-    router.back()
+    g.router.back()
   },
 
   del() {
-    haptic.short()
+    g.haptic.short()
     const now = Date.now()
     if (!this.delArm || now - state.delArmAt > 4000) {
       state.delArmAt = now
@@ -203,7 +199,7 @@ export default {
     this.delArm = false
     state.delArmAt = 0
     prompt.showToast({ message: '已删除', duration: 1200 })
-    router.back()
+    g.router.back()
   }
 }
 </script>

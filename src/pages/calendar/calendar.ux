@@ -36,7 +36,6 @@
 <style>
 @import '../../common/styles/theme.css';
 
-.page { width: 212px; height: 520px; background-color: #000000; }
 .month { position: absolute; left: 0px; top: 74px; width: 212px; height: 26px; line-height: 26px; text-align: center; font-size: 18px; color: #FFFFFF; }
 .weekRow { position: absolute; left: 1px; top: 102px; width: 210px; height: 18px; flex-direction: row; }
 .wd { width: 30px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.45); }
@@ -56,15 +55,15 @@
 </style>
 
 <script>
+import g from '../../utils/g'
 import lunarUtil from '../../utils/lunar'
 import calendar from '../../utils/calendar'
-import haptic from '../../utils/haptic'
-import time from '../../utils/time'
 
 const WEEK_NAMES = ['日', '一', '二', '三', '四', '五', '六']
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     year: 2026,
     month: 10,
@@ -82,20 +81,17 @@ export default {
     this.year = now.getFullYear()
     this.month = now.getMonth()
     this.day = now.getDate()
-    this.clock = time.formatClock(now)
+    this.clock = g.time.formatClock(now)
     this.update()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   update() {
     const d = new Date(this.year, this.month, this.day)
@@ -103,7 +99,7 @@ export default {
     this.monthText = this.year + '年' + (this.month + 1) + '月'
     this.dateText = this.year + '年' + (this.month + 1) + '月' + this.day + '日'
     this.lunarText = lunar ? lunar.text : '农历不可用'
-    this.weekText = time.weekdayName(d) + '  第' + calendar.isoWeek(d) + '周'
+    this.weekText = g.time.weekdayName(d) + '  第' + calendar.isoWeek(d) + '周'
     this.cells = calendar.buildMonthCells(this.year, this.month, this.day, new Date())
   },
   shift(delta) {
@@ -114,13 +110,13 @@ export default {
     this.month = next.month
     if (this.day > max) this.day = max
     this.update()
-    haptic.short()
+    g.haptic.short()
   },
   pick(item) {
     if (!item || !item.d) return
     this.day = item.d
     this.update()
-    haptic.short()
+    g.haptic.short()
   }
 }
 </script>

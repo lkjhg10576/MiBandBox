@@ -22,7 +22,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .card { position: absolute; left: 3px; top: 86px; width: 206px; height: 84px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
 .label { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.45); }
 .value { width: 174px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
@@ -33,10 +32,8 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
+import g from '../../../utils/g'
 import docs from '../../../utils/docs'
-import haptic from '../../../utils/haptic'
 import prompt from '@system.prompt'
 import textInput from '../../../utils/textInput'
 
@@ -44,21 +41,18 @@ export default {
   protected: { docName: '' },
   private: { clock: '--:--', value: '', oldName: '', kbShow: false, timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.oldName = this.docName
     this.value = this.docName
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   openKb() {
     this.kbShow = true
@@ -81,7 +75,7 @@ export default {
       return
     }
     if (clean === this.oldName) {
-      router.back()
+      g.router.back()
       return
     }
     docs.exists('notes', clean, (exists) => {
@@ -94,10 +88,10 @@ export default {
           prompt.showToast({ message: '重命名失败', duration: 1500 })
           return
         }
-        haptic.short()
+        g.haptic.short()
         prompt.showToast({ message: '保存成功', duration: 1200 })
         this.oldName = clean
-        setTimeout(() => router.replace('/pages/notebook/list'), 320)
+        g.router.replace('/pages/notebook/list')
       })
     })
   }

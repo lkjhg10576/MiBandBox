@@ -24,7 +24,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .card { position: absolute; left: 3px; top: 80px; width: 206px; height: 140px; border-radius: 26px; background-color: #262626; padding: 12px 18px; flex-direction: column; }
 .card2 { top: 232px; }
 .cLabel { width: 170px; height: 24px; line-height: 24px; font-size: 14px; color: rgba(255,255,255,0.5); }
@@ -36,26 +35,30 @@
 </style>
 
 <script>
-import time from '../../utils/time'
+import g from '../../utils/g'
 import food from '../../data/food'
-import haptic from '../../utils/haptic'
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     eatText: '—',
     drinkText: '—',
     eating: false,
     drinking: false,
     timer: null,
-    clockTimer: null
+    clockTimer: null,
+    // 滚动用的 55ms 定时器句柄。
+    // 注意：Vela 运行时不允许页面对象同时出现 data 与 private，故此字段放在 data 里
+    // （句柄数组只在启动/清理时换引用，响应式开销可忽略）。
+    rollTimers: []
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.clockTimer) clearInterval(this.clockTimer)
-    this.clockTimer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.rollTimers = []
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     if (this.eatText === '—') this.rollBoth()
   },
   onHide() {
@@ -66,45 +69,74 @@ export default {
   },
   clear() {
     if (this.timer) clearInterval(this.timer)
-    if (this.clockTimer) clearInterval(this.clockTimer)
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     this.timer = null
     this.clockTimer = null
+    this.clearRoll()
+  },
+  clearRoll() {
+    const list = this.rollTimers
+    this.rollTimers = []
+    list.forEach((t) => {
+      clearInterval(t)
+    })
   },
   pick(list) {
     return list[Math.floor(Math.random() * list.length)]
   },
+  /**
+   * 启动一次 55ms 滚动：句柄进 rollTimers，页面销毁时 $valid 为 false → 自行结束。
+   * @param {Function} next 取下一个文案
+   * @param {Function} apply 写回文案
+   * @param {Function} done 结束回调（清 busy 标记）
+   */
+  startRoll(next, apply, done) {
+    let n = 0
+    const t = setInterval(() => {
+      // 页面已销毁：自杀，避免定时器泄漏
+      if (!this.$valid) {
+        clearInterval(t)
+        return
+      }
+      n++
+      apply(next())
+      if (n > 7) {
+        clearInterval(t)
+        done()
+        apply(next())
+        g.haptic.short()
+      }
+    }, 55)
+    this.rollTimers.push(t)
+  },
   rollEat() {
     if (this.eating) return
     this.eating = true
-    let n = 0
-    const timer = setInterval(() => {
-      n++
-      this.eatText = this.pick(food.eat)
-      if (n > 7) {
-        clearInterval(timer)
+    this.startRoll(
+      () => this.pick(food.eat),
+      (v) => {
+        this.eatText = v
+      },
+      () => {
         this.eating = false
-        this.eatText = this.pick(food.eat)
-        haptic.short()
       }
-    }, 55)
+    )
   },
   rollDrink() {
     if (this.drinking) return
     this.drinking = true
-    let n = 0
-    const timer = setInterval(() => {
-      n++
-      this.drinkText = this.pick(food.drink)
-      if (n > 7) {
-        clearInterval(timer)
+    this.startRoll(
+      () => this.pick(food.drink),
+      (v) => {
+        this.drinkText = v
+      },
+      () => {
         this.drinking = false
-        this.drinkText = this.pick(food.drink)
-        haptic.short()
       }
-    }, 55)
+    )
   },
   rollBoth() {
-    haptic.short()
+    g.haptic.short()
     this.rollEat()
     this.rollDrink()
   }

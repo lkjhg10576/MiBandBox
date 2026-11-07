@@ -46,7 +46,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
 .inner { width: 212px; height: 636px; flex-direction: column; }
 .card { width: 206px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
@@ -72,12 +71,17 @@
 </style>
 
 <script>
-import time from '../../utils/time'
 
+import g from '../../utils/g'
 function hms(sec) {
-  const d = time.splitDuration(sec)
-  return time.pad2(d.hours) + ':' + time.pad2(d.minutes) + ':' + time.pad2(d.seconds)
+  const d = g.time.splitDuration(sec)
+  return g.time.pad2(d.hours) + ':' + g.time.pad2(d.minutes) + ':' + g.time.pad2(d.seconds)
 }
+
+// 分级刷新的边界缓存：小时级/天级字段只在边界变化时才写。
+// 放在模块作用域（本页同时只有一个实例）：Vela 页面对象不允许 data 与 private 并存。
+let lastHour = null
+let lastDay = null
 
 export default {
   data: {
@@ -96,6 +100,8 @@ export default {
     timer: null
   },
   onShow() {
+    lastHour = null
+    lastDay = null
     this.refresh()
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => this.refresh(), 1000)
@@ -110,26 +116,40 @@ export default {
   },
   refresh() {
     const now = new Date()
-    this.clock = time.formatClock(now)
-    this.minuteSec = time.countdownEndOfMinute(now)
+
+    // 秒级：恒刷（5 个字段）
+    this.clock = g.time.formatClock(now)
+    this.minuteSec = g.time.countdownEndOfMinute(now)
     this.minutePercent = Math.min(100, Math.round(((60 - this.minuteSec) / 60) * 100))
-    const remainHour = time.countdownEndOfHour(now)
-    this.hourText = hms(remainHour).slice(3)
-    this.hourPercent = Math.min(100, Math.round(((3600 - remainHour) / 3600) * 100))
-    const remainDay = time.countdownToEndOfDay(now)
+    const remainDay = g.time.countdownToEndOfDay(now)
     this.todayText = hms(remainDay)
     this.dayPercent = Math.min(100, Math.round(((86400 - remainDay) / 86400) * 100))
-    const remainWeek = time.countdownEndOfWeek(now)
-    const wd = time.splitDuration(remainWeek)
-    this.weekDays = wd.days
-    this.weekPercent = Math.min(100, Math.round(((7 * 86400 - remainWeek) / (7 * 86400)) * 100))
-    const remainYear = time.countdownToEndOfYear(now)
-    const yd = time.splitDuration(remainYear)
-    this.yearDays = yd.days
-    const total = time.isLeap(now.getFullYear()) ? 366 : 365
-    const passed = total * 86400 - remainYear
-    this.yearPercent = Math.min(100, Math.round((passed / (total * 86400)) * 100))
-    this.dateText = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日'
+
+    // 小时级：小时数变化时刷
+    const hour = now.getHours()
+    if (hour !== lastHour) {
+      lastHour = hour
+      const remainHour = g.time.countdownEndOfHour(now)
+      this.hourText = hms(remainHour).slice(3)
+      this.hourPercent = Math.min(100, Math.round(((3600 - remainHour) / 3600) * 100))
+    }
+
+    // 天级：跨天时刷
+    const dayKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate()
+    if (dayKey !== lastDay) {
+      lastDay = dayKey
+      const remainWeek = g.time.countdownEndOfWeek(now)
+      const wd = g.time.splitDuration(remainWeek)
+      this.weekDays = wd.days
+      this.weekPercent = Math.min(100, Math.round(((7 * 86400 - remainWeek) / (7 * 86400)) * 100))
+      const remainYear = g.time.countdownToEndOfYear(now)
+      const yd = g.time.splitDuration(remainYear)
+      this.yearDays = yd.days
+      const total = g.time.isLeap(now.getFullYear()) ? 366 : 365
+      const passed = total * 86400 - remainYear
+      this.yearPercent = Math.min(100, Math.round((passed / (total * 86400)) * 100))
+      this.dateText = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日'
+    }
   }
 }
 </script>

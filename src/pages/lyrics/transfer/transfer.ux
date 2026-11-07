@@ -23,7 +23,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .list { position: absolute; left: 0px; top: 82px; width: 212px; height: 408px; }
 .card { width: 206px; height: 72px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px 0px 16px; }
 .cMain { width: 140px; height: 54px; flex-direction: column; justify-content: center; }
@@ -35,10 +34,8 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
+import g from '../../../utils/g'
 import docs from '../../../utils/docs'
-import haptic from '../../../utils/haptic'
 import interconnectUtil from '../../../utils/interconnect'
 import transfer from '../../../utils/lyricsTransfer'
 import prompt from '@system.prompt'
@@ -81,7 +78,7 @@ export default {
   },
 
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     state.session = transfer.createSession()
     state.connected = false
     // 从进入页面开始给手机插件 12 秒心跳宽限
@@ -103,7 +100,7 @@ export default {
 
     if (state.timer) clearInterval(state.timer)
     state.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
+      this.clock = g.time.formatClock(new Date())
       this.tick()
     }, 5000)
   },
@@ -279,7 +276,7 @@ export default {
       this.connText = '已连接手机'
       this.stateText = '插件在线，等待发送'
       this.refreshRows()
-      haptic.short()
+      g.haptic.short()
     }
   },
 
@@ -292,7 +289,7 @@ export default {
     this.connText = '未连接手机'
     this.stateText = reason || '请打开手机插件'
     this.refreshRows()
-    if (was) haptic.short()
+    if (was) g.haptic.short()
   },
 
   /**
@@ -396,7 +393,7 @@ export default {
         this.refreshRows()
         this.reply(transfer.err(id, transfer.ERRORS.WRITE_FAILED))
         prompt.showToast({ message: '歌词保存失败' })
-        haptic.short()
+        g.haptic.short()
         return
       }
       this.receivedName = name
@@ -406,7 +403,7 @@ export default {
       this.refreshRows()
       this.reply(transfer.ack(id, name))
       prompt.showToast({ message: '已接收：' + name })
-      haptic.short()
+      g.haptic.short()
       state.session = transfer.createSession()
     })
   },
@@ -420,7 +417,7 @@ export default {
 
   onRow(item) {
     if (item.act === 'recheck') {
-      haptic.short()
+      g.haptic.short()
       // 重新检测时先回到未连接状态，这样收到心跳会触发一次刷新
       state.connected = false
       state.lastHeardAt = Date.now()
@@ -434,8 +431,8 @@ export default {
       return
     }
     if (item.act === 'back') {
-      haptic.short()
-      router.back()
+      g.haptic.short()
+      g.router.back()
     }
   }
 }

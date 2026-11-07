@@ -23,7 +23,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 /* 滚轮高度决定可见行数（原版 HyperBox 同页 picker 高 140px、选中行 30px）；非选中行压暗 */
 .pkYear { position: absolute; left: 46px; top: 140px; width: 120px; height: 176px; color: rgba(255,255,255,0.35); font-size: 22px; selected-color: #FFFFFF; selected-font-size: 30px; selected-background-color: rgba(255,255,255,0.08); }
 .mdRow { position: absolute; left: 0px; top: 140px; width: 212px; height: 176px; flex-direction: row; align-items: center; justify-content: center; }
@@ -34,9 +33,7 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
-import haptic from '../../../utils/haptic'
+import g from '../../../utils/g'
 import pickState from '../pickState'
 
 /**
@@ -64,6 +61,7 @@ function pickIndex(e, range) {
 export default {
   protected: { date: '' },
   private: {
+    _ck: null,
     clock: '--:--',
     headTitle: '设置 年份',
     step: 1,
@@ -79,14 +77,14 @@ export default {
     timer: null
   },
   onInit() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     const years = []
     for (let y = 1970; y <= 2100; y++) years.push(String(y))
     const months = []
     for (let m = 1; m <= 12; m++) months.push(String(m))
     this.years = years
     this.months = months
-    const base = time.parseDate(this.date) || new Date()
+    const base = g.time.parseDate(this.date) || new Date()
     this.y = base.getFullYear()
     this.m = base.getMonth() + 1
     this.d = base.getDate()
@@ -95,21 +93,18 @@ export default {
     this.buildDays()
   },
   onShow() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   buildDays() {
-    const max = time.daysInMonth(this.y, this.m)
+    const max = g.time.daysInMonth(this.y, this.m)
     const days = []
     for (let i = 1; i <= max; i++) days.push(String(i))
     this.days = days
@@ -123,7 +118,7 @@ export default {
     this.yi = idx
     this.y = 1970 + idx
     this.buildDays()
-    haptic.short()
+    g.haptic.short()
   },
   onMonth(e) {
     const idx = pickIndex(e, this.months)
@@ -131,25 +126,25 @@ export default {
     this.mi = idx
     this.m = idx + 1
     this.buildDays()
-    haptic.short()
+    g.haptic.short()
   },
   onDay(e) {
     const idx = pickIndex(e, this.days)
     if (idx < 0) return
     this.di = idx
     this.d = idx + 1
-    haptic.short()
+    g.haptic.short()
   },
   nextStep() {
     this.step = 2
     this.headTitle = '设置 月日'
-    haptic.short()
+    g.haptic.short()
   },
   confirm() {
-    const str = this.y + '-' + time.pad2(this.m) + '-' + time.pad2(this.d)
+    const str = this.y + '-' + g.time.pad2(this.m) + '-' + g.time.pad2(this.d)
     pickState.date = str
-    haptic.short()
-    router.back()
+    g.haptic.short()
+    g.router.back()
   }
 }
 </script>

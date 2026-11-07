@@ -32,7 +32,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .label { position: absolute; left: 12px; width: 100px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
 .l1 { top: 92px; }
 .l2 { top: 176px; }
@@ -49,14 +48,12 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import kv from '../../utils/kv'
-import haptic from '../../utils/haptic'
-import router from '../../utils/router'
+import g from '../../utils/g'
 import fluoroState from './fluoroState'
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     interval: 120,
     bright: true,
@@ -65,15 +62,14 @@ export default {
     clockTimer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.clockTimer) clearInterval(this.clockTimer)
-    this.clockTimer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     // 记住上次的选择（dirty：用户已手动改过时不用存储旧值覆盖 UI）
-    kv.init(() => {
+    g.kv.init(() => {
       if (this.dirty) return
-      const cfg = kv.get('fluoroCfg', null)
+      const cfg = g.kv.get('fluoroCfg', null)
       if (cfg && typeof cfg === 'object') {
         if (cfg.interval === 240 || cfg.interval === 120 || cfg.interval === 60) this.interval = cfg.interval
         if (typeof cfg.bright === 'boolean') this.bright = cfg.bright
@@ -82,38 +78,36 @@ export default {
     })
   },
   onHide() {
-    if (this.clockTimer) clearInterval(this.clockTimer)
-    this.clockTimer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.clockTimer) clearInterval(this.clockTimer)
-    this.clockTimer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   setSpeed(v) {
-    haptic.short()
+    g.haptic.short()
     this.dirty = true
     this.interval = v
   },
   setBright(v) {
-    haptic.short()
+    g.haptic.short()
     this.dirty = true
     this.bright = v
   },
   setKeepOn(v) {
-    haptic.short()
+    g.haptic.short()
     this.dirty = true
     this.keepOn = v
   },
   start() {
-    haptic.short()
+    g.haptic.short()
     // 配置经 fluoroState（globalThis）同步传给 play 页，规避 KV 异步读写竞态；
     // KV 仅供下次进入时“记住上次选择”，push 前立即落盘
     const cfg = { interval: this.interval, bright: this.bright, keepOn: this.keepOn }
     fluoroState.cfg = cfg
-    kv.init(() => {
-      kv.set('fluoroCfg', cfg)
-      kv.flush()
-      router.push('/pages/fluorescence/play')
+    g.kv.init(() => {
+      g.kv.set('fluoroCfg', cfg)
+      g.kv.flush()
+      g.router.push('/pages/fluorescence/play')
     })
   }
 }

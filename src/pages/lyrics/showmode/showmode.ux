@@ -22,7 +22,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .opt { position: absolute; left: 3px; width: 206px; height: 92px; border-radius: 26px; background-color: #262626; padding: 12px 18px; flex-direction: column; }
 .optA { top: 92px; }
 .optB { top: 200px; }
@@ -34,39 +33,33 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import kv from '../../../utils/kv'
-import router from '../../../utils/router'
-import haptic from '../../../utils/haptic'
 
+import g from '../../../utils/g'
 export default {
   data: { clock: '--:--', mode: 'v', timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    kv.init(() => {
-      this.mode = kv.get('lyricsm', 'v') === 'h' ? 'h' : 'v'
+    this.clock = g.time.formatClock(new Date())
+    g.kv.init(() => {
+      this.mode = g.kv.get('lyricsm', 'v') === 'h' ? 'h' : 'v'
     })
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   pick(m) {
     this.mode = m
-    kv.init(() => {
-      kv.set('lyricsm', m)
-      kv.flush()
+    g.kv.init(() => {
+      g.kv.set('lyricsm', m)
+      g.kv.flush()
     })
-    haptic.short()
-    setTimeout(() => router.back(), 120)
+    g.haptic.short()
+    g.router.back()
   }
 }
 </script>

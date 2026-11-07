@@ -17,7 +17,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 /* 卡片复刻每日一言主界面样式，竖直居中（body 区 82~520 高 438） */
 .card { position: absolute; left: 3px; top: 140px; width: 206px; height: 250px; border-radius: 26px; background-color: #262626; padding: 14px 18px; flex-direction: column; }
 .quoteMark { width: 170px; height: 36px; line-height: 36px; font-size: 44px; color: #4E87FF; }
@@ -27,15 +26,13 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import kv from '../../../utils/kv'
-import haptic from '../../../utils/haptic'
-import router from '../../../utils/router'
+import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import favState from '../favState'
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     text: '',
     long: false,
@@ -48,20 +45,17 @@ export default {
     this.long = this.text.length > 16
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     this.armed = false
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   /**
    * 两次点击确认取消收藏（同设置页“恢复默认”模式）：
@@ -70,23 +64,23 @@ export default {
    */
   tapDelete() {
     if (!this.armed) {
-      haptic.short()
+      g.haptic.short()
       this.armed = true
       return
     }
-    haptic.long()
+    g.haptic.long()
     // 每个页面是独立 bundle，本页 kv 模块缓存尚未加载，必须先 init 读文件再改
-    kv.init(() => {
-      const list = kv.get('quoteFavs', [])
+    g.kv.init(() => {
+      const list = g.kv.get('quoteFavs', [])
       const arr = Array.isArray(list) ? list.slice() : []
       const pos = arr.indexOf(this.text)
       if (pos >= 0) {
         arr.splice(pos, 1)
-        kv.set('quoteFavs', arr)
-        kv.flush()
+        g.kv.set('quoteFavs', arr)
+        g.kv.flush()
       }
       prompt.showToast({ message: '已取消收藏', duration: 1200 })
-      router.back()
+      g.router.back()
     })
   }
 }

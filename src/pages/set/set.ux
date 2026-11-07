@@ -35,7 +35,6 @@
 <style>
 @import '../../common/styles/theme.css';
 
-.page { width: 212px; height: 520px; background-color: #000000; }
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 418px; flex-direction: column; }
 .card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; }
 .cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
@@ -46,42 +45,37 @@
 </style>
 
 <script>
-import kv from '../../utils/kv'
+import g from '../../utils/g'
 import layoutApi from '../../utils/homeLayout'
-import router from '../../utils/router'
-import time from '../../utils/time'
 import prompt from '@system.prompt'
 
 export default {
   data: { clock: '--:--', layoutText: '双栏网格', resetHint: '连按两次清空偏好设置', resetStep: 0, timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     const app = layoutApi.api(this)
     if (app && app.getHomeLayout && app.isHomeLayoutReady && app.isHomeLayoutReady()) {
       this.layoutText = app.getHomeLayout() === 'list' ? '单栏列表' : '双栏网格'
     } else {
-      kv.init(() => {
-        this.layoutText = kv.get('home', 'grid') === 'list' ? '单栏列表' : '双栏网格'
+      g.kv.init(() => {
+        this.layoutText = g.kv.get('home', 'grid') === 'list' ? '单栏列表' : '双栏网格'
       })
     }
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   goStyle() {
-    router.push('/pages/hset')
+    g.router.push('/pages/hset')
   },
   goAbout() {
-    router.push('/pages/about')
+    g.router.push('/pages/about')
   },
   reset() {
     if (this.resetStep === 0) {
@@ -89,8 +83,8 @@ export default {
       this.resetHint = '再次点击确认恢复'
       return
     }
-    kv.reset()
-    kv.flush()
+    g.kv.reset()
+    g.kv.flush()
     const app = layoutApi.api(this)
     if (app && app.setHomeLayout) {
       app.setHomeLayout('grid')

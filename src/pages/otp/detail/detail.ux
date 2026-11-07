@@ -52,9 +52,7 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
-import haptic from '../../../utils/haptic'
+import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import otpStore from '../../../utils/otpStore'
 import otp from '../../../utils/otp'
@@ -83,7 +81,7 @@ export default {
   },
 
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.arm()
     this.refresh()
     this.startTick()
@@ -125,7 +123,7 @@ export default {
       state.alignTimer = null
       this.refresh()
       state.timer = setInterval(() => {
-        this.clock = time.formatClock(new Date())
+        this.clock = g.time.formatClock(new Date())
         this.refresh()
       }, 1000)
     }, 1000 - (Date.now() % 1000))
@@ -172,13 +170,13 @@ export default {
   },
 
   edit() {
-    haptic.short()
+    g.haptic.short()
     otpSession.editId = otpSession.currentId
-    router.push('/pages/otp/edit')
+    g.router.push('/pages/otp/edit')
   },
 
   exportQr() {
-    haptic.short()
+    g.haptic.short()
     const account = otpStore.getById(otpSession.currentId)
     if (!account) return
     const uri = otpAccounts.buildOtpauthUri(account)
@@ -187,11 +185,11 @@ export default {
       return
     }
     // 复用通用二维码展示页；URI 明文随二维码显示（M1 已限制 name/issuer 长度）
-    router.push('/pages/qrcode/show', { qr: uri })
+    g.router.push('/pages/qrcode/show', { qr: uri })
   },
 
   del() {
-    haptic.short()
+    g.haptic.short()
     const now = Date.now()
     if (!this.delArm || now - state.delArmAt > 4000) {
       state.delArmAt = now
@@ -204,7 +202,7 @@ export default {
     this.delArm = false
     state.delArmAt = 0
     prompt.showToast({ message: '已删除', duration: 1200 })
-    router.back()
+    g.router.back()
   }
 }
 </script>

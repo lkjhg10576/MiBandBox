@@ -30,7 +30,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
 .saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
 .card { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
@@ -44,13 +43,11 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
-import fs from '../../../utils/fs'
-import haptic from '../../../utils/haptic'
+import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import textInput from '../../../utils/textInput'
 import pickState from '../pickState'
+import homeEvents from '../../../utils/homeEvents'
 
 const PATH = 'internal://files/bandbox/events.json'
 const DIR = 'internal://files/bandbox/'
@@ -58,6 +55,7 @@ const DIR = 'internal://files/bandbox/'
 export default {
   protected: { id: '' },
   private: {
+    _ck: null,
     clock: '--:--',
     title: '',
     date: '',
@@ -69,30 +67,27 @@ export default {
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.delStep = 0
     if (!this.loaded) {
       this.loaded = true
-      this.date = time.todayKey()
+      this.date = g.time.todayKey()
       this.load()
     } else {
       this.applyPickedDate()
     }
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   load() {
-    fs.readText(PATH, (text) => {
+    g.fs.readText(PATH, (text) => {
       let list = []
       try {
         list = text ? JSON.parse(text) : []
@@ -114,10 +109,10 @@ export default {
   },
   refreshDelta() {
     if (!this.date) return
-    const d = time.parseDate(this.date)
+    const d = g.time.parseDate(this.date)
     if (!d) return
-    const h = time.humanDelta(this.date)
-    this.deltaText = this.date + ' · ' + time.weekdayName(d) + ' · ' + h.text
+    const h = g.time.humanDelta(this.date)
+    this.deltaText = this.date + ' · ' + g.time.weekdayName(d) + ' · ' + h.text
   },
   applyPickedDate() {
     const picked = pickState.date
@@ -142,7 +137,7 @@ export default {
   },
   pickDate() {
     pickState.date = ''
-    router.push('/pages/daysmatter/inputdate', { date: this.date })
+    g.router.push('/pages/daysmatter/inputdate', { date: this.date })
   },
   save() {
     this.kbShow = false
@@ -151,7 +146,7 @@ export default {
       prompt.showToast({ message: '请填写事件名称', duration: 1400 })
       return
     }
-    if (!time.parseDate(this.date)) {
+    if (!g.time.parseDate(this.date)) {
       prompt.showToast({ message: '日期无效', duration: 1400 })
       return
     }
@@ -166,21 +161,22 @@ export default {
       return it
     })
     if (!found) next.push({ id, title, date: this.date, createdAt: Date.now() })
-    fs.ensureDir(DIR, () => {
-      fs.writeText(PATH, JSON.stringify(next), (ok) => {
+    g.fs.ensureDir(DIR, () => {
+      g.fs.writeText(PATH, JSON.stringify(next), (ok) => {
         if (!ok) {
           prompt.showToast({ message: '保存失败，请重试', duration: 1500 })
           return
         }
-        haptic.short()
+        g.haptic.short()
+        homeEvents.invalidate()
         prompt.showToast({ message: '事件保存成功！', duration: 1300 })
-        setTimeout(() => router.back(), 300)
+        g.router.back()
       })
     })
   },
   del() {
     if (!this.id) {
-      router.back()
+      g.router.back()
       return
     }
     if (this.delStep === 0) {
@@ -188,14 +184,15 @@ export default {
       return
     }
     const next = this.list.filter((it) => String(it.id) !== String(this.id))
-    fs.writeText(PATH, JSON.stringify(next), (ok) => {
-      haptic.long()
+    g.fs.writeText(PATH, JSON.stringify(next), (ok) => {
+      g.haptic.long()
       if (!ok) {
         prompt.showToast({ message: '删除失败', duration: 1400 })
         return
       }
+      homeEvents.invalidate()
       prompt.showToast({ message: '已删除', duration: 1200 })
-      setTimeout(() => router.replace('/pages/daysmatter/list'), 300)
+      g.router.replace('/pages/daysmatter/list')
     })
   }
 }

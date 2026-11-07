@@ -2,7 +2,7 @@
  * 文档仓库：笔记本与歌词本共用。
  * 目录下每个 txt 为一个文档，标题取文件名。
  */
-import fs from './fs'
+import g from './g'
 import { normalizeTitle } from './lyricsDoc'
 
 const ROOT = 'internal://files/bandbox/'
@@ -22,8 +22,8 @@ function safeName(name) {
 
 function list(dir, cb) {
   const uri = ROOT + dir + '/'
-  fs.ensureDir(uri, () => {
-    fs.list(uri, (arr) => {
+  g.fs.ensureDir(uri, () => {
+    g.fs.list(uri, (arr) => {
       const docs = (arr || [])
         .filter((it) => it && it.uri && /\.txt$/.test(it.uri))
         .map((it) => {
@@ -44,7 +44,7 @@ function list(dir, cb) {
 }
 
 function read(dir, name, cb) {
-  fs.readText(join(dir, name), cb)
+  g.fs.readText(join(dir, name), cb)
 }
 
 function save(dir, name, text, cb) {
@@ -54,15 +54,15 @@ function save(dir, name, text, cb) {
     return
   }
   const uri = ROOT + dir + '/'
-  fs.ensureDir(uri, () => {
-    fs.writeText(join(dir, clean), String(text == null ? '' : text), (ok, code) => {
+  g.fs.ensureDir(uri, () => {
+    g.fs.writeText(join(dir, clean), String(text == null ? '' : text), (ok, code) => {
       if (cb) cb(ok, code, clean)
     })
   })
 }
 
 function remove(dir, name, cb) {
-  fs.remove(join(dir, name), (ok, code) => {
+  g.fs.remove(join(dir, name), (ok, code) => {
     if (cb) cb(ok, code)
   })
 }
@@ -74,13 +74,13 @@ function rename(dir, oldName, newName, cb) {
     return
   }
   const uri = ROOT + dir + '/'
-  fs.rename(join(dir, oldName), join(dir, clean), (ok, code) => {
+  g.fs.rename(join(dir, oldName), join(dir, clean), (ok, code) => {
     if (cb) cb(ok, code, clean)
   })
 }
 
 function exists(dir, name, cb) {
-  fs.exists(join(dir, name), cb)
+  g.fs.exists(join(dir, name), cb)
 }
 
 export { safeName }

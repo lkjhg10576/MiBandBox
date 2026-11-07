@@ -18,7 +18,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .card { position: absolute; left: 3px; top: 84px; width: 206px; height: 354px; border-radius: 26px; background-color: #262626; padding: 10px 16px 6px 16px; flex-direction: column; }
 .cardTitle { width: 174px; height: 26px; line-height: 26px; font-size: 16px; color: #0D6EFF; }
 .row { width: 174px; height: 26px; flex-direction: row; align-items: center; justify-content: space-between; }
@@ -27,7 +26,7 @@
 </style>
 
 <script>
-import time from '../../utils/time'
+import g from '../../utils/g'
 import device from '@system.device'
 
 function gb(n) {
@@ -50,6 +49,7 @@ function mask(s) {
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     rows: [
       { k: '设备类型', v: '读取中' },
@@ -68,20 +68,17 @@ export default {
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.load()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   load() {
     const rows = this.rows.slice()

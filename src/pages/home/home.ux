@@ -4,7 +4,7 @@
   <div class="page">
     <pagehead title="BandBox" clock="{{ clock }}"></pagehead>
 
-    <div class="today" @click="openDays">
+    <div class="today" id="today" @click="openDays">
       <div class="todayTop">
         <text class="f date">{{ dateText }}</text>
         <text class="f go">目标日 ></text>
@@ -13,14 +13,21 @@
       <text class="f delta" style="color: {{ eventColor }};">{{ eventDelta }}</text>
     </div>
 
-    <scroll class="apps" show="{{ layoutReady && layout === 'grid' }}" scroll-y="true" bounces="true">
-      <div class="grid" style="height: {{ gridHeight }}px;">
-        <div class="f cell" for="{{ cells }}" @click="open($item)">
-          <img class="icon" src="{{ $item.icon }}" />
-          <text class="f name">{{ $item.name }}</text>
+    <!-- 网格模式：<list> 虚拟化（原来是一个 scroll 里铺满 30 个 cell），
+         常驻节点从 ~100 降到 ~20，常驻图片从 29 降到 8。
+         每行两个 cell；奇数个时最后一行用占位 cell 补齐（list-item 结构必须一致）。 -->
+    <list class="apps" if="{{ layoutReady && layout === 'grid' }}" bounces="true">
+      <list-item type="gridrow" class="gridRow" for="{{ rows }}" tid="id">
+        <div class="f cell" @click="open($item.a)">
+          <img class="icon" src="{{ $item.a.icon }}" />
+          <text class="f name">{{ $item.a.name }}</text>
         </div>
-      </div>
-    </scroll>
+        <div class="f cell" @click="open($item.b)">
+          <img class="icon" src="{{ $item.b.icon }}" />
+          <text class="f name">{{ $item.b.name }}</text>
+        </div>
+      </list-item>
+    </list>
 
     <list class="apps listApps" if="{{ layoutReady && layout === 'list' }}" bounces="true">
       <list-item type="app" class="rowCell" for="{{ cells }}" @click="open($item)">
@@ -39,7 +46,6 @@
 <style>
 @import '../../common/styles/theme.css';
 
-.page { width: 212px; height: 520px; background-color: #000000; }
 .today {
   position: absolute;
   left: 3px;
@@ -95,13 +101,16 @@
   background-color: #000000;
   padding: 0px 6px 0px 6px;
 }
-.grid {
-  width: 212px;
-  padding: 0px 3px 40px 3px;
+.gridRow {
+  width: 206px;
+  height: 76px;
   flex-direction: row;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: 0px 3px;
 }
 .cell {
+  /* 必须显式写：list-item 是 flex 容器，缺省会把它压扁（textShow 已踩过同一个坑） */
+  flex-shrink: 0;
   width: 97px;
   height: 70px;
   margin: 3px;
@@ -176,14 +185,11 @@
 </style>
 
 <script>
+import g from '../../utils/g'
 import apps from '../../data/apps'
-import kv from '../../utils/kv'
 import layoutApi from '../../utils/homeLayout'
-import router from '../../utils/router'
-import time from '../../utils/time'
-import fs from '../../utils/fs'
-
-const EVENTS_PATH = 'internal://files/bandbox/events.json'
+import perf from '../../utils/perf'
+import homeEvents from '../../utils/homeEvents'
 
 const SETTINGS_TILE = {
   id: '__settings__',
@@ -195,8 +201,13 @@ const SETTINGS_TILE = {
 
 const CELLS = apps.concat([SETTINGS_TILE])
 
-function gridHeight(count) {
-  return Math.ceil(count / 2) * 76 + 60
+// 奇数个磁贴时用于补齐最后一行的占位（1×1 透明图，不可点）
+const PAD_TILE = { id: '__pad__', name: '', route: '', icon: '/common/blank.png', desc: '' }
+
+// 每行两个磁贴；<list> 的 list-item 结构必须完全一致，故用占位而不是 if
+const ROWS = []
+for (let i = 0; i < CELLS.length; i += 2) {
+  ROWS.push({ id: 'r' + i, a: CELLS[i], b: CELLS[i + 1] || PAD_TILE })
 }
 
 let layoutWatcher = null
@@ -211,24 +222,38 @@ export default {
     layout: 'grid',
     layoutReady: false,
     cells: CELLS,
-    gridHeight: gridHeight(CELLS.length),
-    timer: null
+    rows: ROWS,
+    timer: null,
+    _ck: null
   },
   onShow() {
+    perf.mark('home.show')
     this.watchLayout()
     this.syncLayout()
     this.refresh()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => this.refreshClock(), 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+  onReady() {
+    perf.mark('home.ready')
+    // 首屏渲染完成点（≈FMP）：布局测量回调能触发就用它，否则直接取 onReady 末尾
+    const el = this.$element ? this.$element('today') : null
+    if (el && el.getBoundingClientRect) {
+      el.getBoundingClientRect(() => {
+        perf.mark('home.layout')
+        perf.summary()
+      })
+    }
+    perf.mark('home.layout')
+    perf.summary()
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
     this.unwatchLayout()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   watchLayout() {
     if (layoutWatcher) return
@@ -257,8 +282,8 @@ export default {
       // watchLayout 已注册，应用级数据就绪时会回调
       return
     }
-    kv.init(() => {
-      this.applyLayout(kv.get('home', 'grid'))
+    g.kv.init(() => {
+      this.applyLayout(g.kv.get('home', 'grid'))
     })
   },
   applyLayout(mode) {
@@ -269,43 +294,26 @@ export default {
   refresh() {
     this.refreshClock()
     const now = new Date()
-    this.dateText = now.getMonth() + 1 + '月' + now.getDate() + '日 ' + time.weekdayName(now)
-    fs.readText(EVENTS_PATH, (text) => {
-      if (!text) return
-      let list = []
-      try {
-        list = JSON.parse(text)
-      } catch (e) {
-        list = []
-      }
-      if (!Array.isArray(list) || !list.length) return
-      let best = null
-      let bestAbs = 1e9
-      list.forEach((item) => {
-        if (!item || !item.date) return
-        const d = time.humanDelta(item.date)
-        if (d.status === 'invalid') return
-        const abs = Math.abs(d.days)
-        if (abs < bestAbs) {
-          bestAbs = abs
-          best = { item, d }
-        }
-      })
-      if (best) {
-        this.eventTitle = best.item.title || best.item.display_name || '目标日'
-        this.eventDelta = best.d.text
-        this.eventColor = best.d.status === 'today' ? '#00C853' : '#0D6EFF'
-      }
+    this.dateText = now.getMonth() + 1 + '月' + now.getDate() + '日 ' + g.time.weekdayName(now)
+    // 目标日数据带 60 秒缓存：回到首页不必每次读盘 + 解析 + 全表遍历
+    homeEvents.load((r) => {
+      perf.mark('home.events')
+      if (!r || !r.best) return
+      const best = r.best
+      this.eventTitle = best.item.title || best.item.display_name || '目标日'
+      this.eventDelta = best.d.text
+      this.eventColor = best.d.status === 'today' ? '#00C853' : '#0D6EFF'
     })
   },
   refreshClock() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
   },
   open(item) {
-    router.push(item.route)
+    if (!item || !item.route) return
+    g.router.push(item.route)
   },
   openDays() {
-    router.push('/pages/daysmatter/list')
+    g.router.push('/pages/daysmatter/list')
   }
 }
 </script>

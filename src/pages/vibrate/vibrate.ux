@@ -32,7 +32,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .modes { position: absolute; left: 6px; top: 84px; width: 200px; height: 44px; flex-direction: row; border-radius: 22px; background-color: #1A1A1A; padding: 3px; }
 .mode { flex: 1; height: 38px; border-radius: 19px; align-items: center; justify-content: center; }
 .mode.on { background-color: #0D6EFF; }
@@ -51,37 +50,41 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import haptic from '../../utils/haptic'
 
+import g from '../../utils/g'
 const BARS = [18, 34, 58, 80, 62, 40, 72, 92, 54, 30, 66, 44, 24]
+// 双缓冲：animate() 原地改写备用数组再交换引用，避免每次 tick 新建数组。
+// 注意：Vela 运行时不允许页面对象同时出现 data 与 private（非响应式字段请整页改用 private），
+// 因此缓冲数组放在模块作用域，不进 data。
+let BUF_A = BARS.slice()
+let BUF_B = BARS.slice()
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     mode: 'short',
     gap: 500,
     playing: false,
-    bars: BARS,
+    bars: BARS.slice(),
     hint: '短振每隔一段时间触发一次',
     timer: null,
     clockTimer: null,
     step: 0
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.clockTimer) clearInterval(this.clockTimer)
-    this.clockTimer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
     this.stop()
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
     this.stop()
-    if (this.clockTimer) clearInterval(this.clockTimer)
-    this.clockTimer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   setMode(m) {
     this.mode = m
@@ -92,7 +95,7 @@ export default {
     }
   },
   setGap(g) {
-    haptic.short()
+    g.haptic.short()
     this.gap = g
     if (this.playing) {
       this.stop()
@@ -110,11 +113,11 @@ export default {
       if (!this.playing) return
       this.step++
       this.animate()
-      if (this.mode === 'short') haptic.short()
-      else if (this.mode === 'long') haptic.long()
+      if (this.mode === 'short') g.haptic.short()
+      else if (this.mode === 'long') g.haptic.long()
       else {
-        if (this.step % 3 === 0) haptic.long()
-        else haptic.short()
+        if (this.step % 3 === 0) g.haptic.long()
+        else g.haptic.short()
       }
     }
     tick()
@@ -125,16 +128,17 @@ export default {
     this.playing = false
     if (this.timer) clearInterval(this.timer)
     this.timer = null
-    haptic.stop()
-    this.bars = BARS
+    g.haptic.stop()
+    this.bars = BARS.slice()
   },
   animate() {
-    const list = []
-    for (let i = 0; i < BARS.length; i++) {
-      const base = BARS[(i + this.step) % BARS.length]
-      list.push(base)
+    // 原地更新：写进备用数组再交换引用，既不新建数组也能触发模板刷新
+    const src = this.bars
+    const dst = src === BUF_A ? BUF_B : BUF_A
+    for (let i = 0; i < src.length; i++) {
+      dst[i] = BARS[(i + this.step) % BARS.length]
     }
-    this.bars = list
+    this.bars = dst
   }
 }
 </script>

@@ -19,3 +19,6 @@ plugin/*/dist/
 .v2c/
 plugin/*/.mimosa/
 .zcode/
+
+# 本地验证截图（tools/emu-verify.sh 等脚本产出）
+.shots/

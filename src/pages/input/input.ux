@@ -26,7 +26,6 @@
 <style>
 @import '../../common/styles/theme.css';
 
-.page { width: 212px; height: 520px; background-color: #000000; }
 .done { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
 .doneT { font-size: 14px; color: #FFFFFF; }
 .editorCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
@@ -41,16 +40,15 @@
 </style>
 
 <script>
-import time from '../../utils/time'
+import g from '../../utils/g'
 import inputResult from '../../utils/inputResult'
 import textInput from '../../utils/textInput'
-import router from '../../utils/router'
-import haptic from '../../utils/haptic'
 import prompt from '@system.prompt'
 
 export default {
   protected: { field: '', inputTitle: '', text: '', max: '80', multiline: '0', hint: '' },
   private: {
+    _ck: null,
     clock: '--:--',
     title: '输入',
     value: '',
@@ -72,11 +70,10 @@ export default {
     inputResult.clear()
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     if (!this.opened) {
       this.opened = true
       this.focusTimer = setTimeout(() => {
@@ -86,14 +83,12 @@ export default {
     }
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     if (this.focusTimer) clearTimeout(this.focusTimer)
     this.focusTimer = null
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     if (this.focusTimer) clearTimeout(this.focusTimer)
     this.focusTimer = null
   },
@@ -125,8 +120,8 @@ export default {
         prompt.showToast({ message: '保存失败，请重试', duration: 1500 })
         return
       }
-      haptic.short()
-      router.back()
+      g.haptic.short()
+      g.router.back()
     })
   }
 }

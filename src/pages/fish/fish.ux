@@ -32,7 +32,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .fishBox { position: absolute; left: 31px; top: 96px; width: 150px; height: 150px; align-items: center; justify-content: center; }
 .fishImg { width: 150px; height: 150px; }
 .pressRing { position: absolute; left: 36px; top: 101px; width: 140px; height: 140px; border-radius: 70px; border-width: 2px; border-style: solid; border-color: #C8A24F; }
@@ -56,12 +55,11 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import kv from '../../utils/kv'
-import haptic from '../../utils/haptic'
 
+import g from '../../utils/g'
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     dayCount: 0,
     total: 0,
@@ -75,34 +73,44 @@ export default {
     autoTimer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.delStep = 0
     this.clearAnim()
     this.pressed = false
     this.plusStep = 0
-    kv.init(() => {
-      const today = time.todayKey()
-      const day = kv.get('fishMeritDay', '')
-      let dayCount = kv.get('fishMeritDayCount', 0) || 0
-      let total = kv.get('fishMeritTotal', null)
-      if (total === null || total === undefined) {
-        // 旧版本把总功德存在 fishMerit，迁移一次
-        total = kv.get('fishMerit', 0) || 0
-        kv.set('fishMeritTotal', total)
-      }
-      total = total || 0
-      if (day !== today) {
-        dayCount = 0
-        kv.set('fishMeritDay', today)
-        kv.set('fishMeritDayCount', 0)
+    g.kv.init(() => {
+      const today = g.time.todayKey()
+      const raw = g.kv.get('fishMerit', null)
+      let dayCount = 0
+      let total = 0
+      if (raw && typeof raw === 'object') {
+        // 新结构：{ d: 日期, c: 当日计数, t: 总数 }
+        dayCount = raw.c || 0
+        total = raw.t || 0
+        if ((raw.d || '') !== today) dayCount = 0
+      } else {
+        // 旧结构兼容：fishMeritDay / fishMeritDayCount / fishMeritTotal
+        // （更早的版本把总数存在 fishMerit 里，是个数字）
+        const oldDay = g.kv.get('fishMeritDay', '')
+        const oldCount = g.kv.get('fishMeritDayCount', 0) || 0
+        let oldTotal = g.kv.get('fishMeritTotal', null)
+        if (oldTotal === null || oldTotal === undefined) {
+          oldTotal = (typeof raw === 'number' ? raw : 0) || 0
+        }
+        total = oldTotal || 0
+        dayCount = oldDay === today ? oldCount : 0
+        // 迁移成新键，删掉旧键
+        g.kv.set('fishMerit', { d: today, c: dayCount, t: total })
+        g.kv.remove('fishMeritDay')
+        g.kv.remove('fishMeritDayCount')
+        g.kv.remove('fishMeritTotal')
       }
       this.dayCount = dayCount
       this.total = total
     })
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     if (this.autoMode !== 'off') {
       this.stopAuto()
       this.autoTimer = setInterval(() => {
@@ -111,24 +119,21 @@ export default {
     }
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     this.stopAuto()
     this.clearAnim()
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     this.stopAuto()
     this.clearAnim()
   },
   knock() {
     this.dayCount = this.dayCount + 1
     this.total = this.total + 1
-    kv.set('fishMeritDay', time.todayKey())
-    kv.set('fishMeritDayCount', this.dayCount)
-    kv.set('fishMeritTotal', this.total)
-    haptic.short()
+    // 单键写入：一次 g.kv.set 代替三次（每次落盘只序列化一次）
+    g.kv.set('fishMerit', { d: g.time.todayKey(), c: this.dayCount, t: this.total })
+    g.haptic.short()
     this.playAnim()
   },
   playAnim() {
@@ -150,7 +155,7 @@ export default {
   setAuto(mode) {
     this.autoMode = mode
     this.autoSpeed = mode === 'slow' ? 1200 : (mode === 'fast' ? 500 : 800)
-    haptic.short()
+    g.haptic.short()
     this.stopAuto()
     if (mode === 'off') return
     this.autoTimer = setInterval(() => {
@@ -168,11 +173,11 @@ export default {
     }
     this.dayCount = 0
     this.total = 0
-    kv.set('fishMeritDay', time.todayKey())
-    kv.set('fishMeritDayCount', 0)
-    kv.set('fishMeritTotal', 0)
+    g.kv.set('fishMeritDay', g.time.todayKey())
+    g.kv.set('fishMeritDayCount', 0)
+    g.kv.set('fishMeritTotal', 0)
     this.delStep = 0
-    haptic.long()
+    g.haptic.long()
   }
 }
 </script>

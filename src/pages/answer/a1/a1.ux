@@ -18,7 +18,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .card { position: absolute; left: 3px; top: 86px; width: 206px; height: 240px; border-radius: 26px; background-color: #16213A; padding: 20px 18px; flex-direction: column; opacity: 0; }
 .card.show { opacity: 1; }
 .mark { width: 170px; height: 34px; line-height: 34px; font-size: 42px; color: #4E87FF; }
@@ -30,28 +29,23 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
-import haptic from '../../../utils/haptic'
+import g from '../../../utils/g'
 import answers from '../../../data/answers'
 
 export default {
   data: { clock: '--:--', answer: '…', shown: false, timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     this.again()
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   again() {
     this.shown = false
@@ -59,11 +53,11 @@ export default {
     setTimeout(() => {
       this.shown = true
     }, 40)
-    haptic.short()
+    g.haptic.short()
   },
   close() {
-    haptic.short()
-    router.back()
+    g.haptic.short()
+    g.router.back()
   }
 }
 </script>

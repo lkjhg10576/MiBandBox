@@ -1,10 +1,19 @@
 <template>
   <div class="page" style="background-color: {{ bg }};" @click="back">
-    <!-- 竖屏：横向滚动跑马灯。
-         内容由 4 个等宽内容块拼成，滚动满一个周期后整块回退一个周期宽，
-         画面与周期边界完全一致 → 无缝循环。
+    <!-- 竖屏：横向滚动跑马灯（原生关键帧）。
+         内容由 4 个等宽内容块拼成，关键帧把整行平移 -25%（= 一份内容块宽度），
+         一个周期后画面与起点完全一致 → 无缝循环。
          flex-shrink:0 必须显式写：内容块的父容器是 div，缺省会把它压扁导致不滚动。 -->
-    <scroll id="mqScrollV" class="mqScrollV" scroll-x="true" bounces="false" if="{{ mode === 'v' }}">
+    <div class="mqClip" if="{{ mode === 'v' && useNative }}">
+      <div class="mqRow mqRun" style="width: {{ rowW }}px; animation-duration: {{ dur }}s;">
+        <div class="mqCopy" style="width: {{ copyW }}px;" for="{{ copies }}">
+          <text class="f mqText" style="font-size: {{ size }}px; color: {{ color }};">{{ text }}</text>
+        </div>
+      </div>
+    </div>
+
+    <!-- 竖屏回退路径：JS 定时器 scrollBy（useNative=false 时启用） -->
+    <scroll id="mqScrollV" class="mqScrollV" scroll-x="true" bounces="false" if="{{ mode === 'v' && !useNative }}">
       <div class="mqRow" style="width: {{ rowW }}px;">
         <div class="mqCopy" style="width: {{ copyW }}px;" for="{{ copies }}">
           <text class="f mqText" style="font-size: {{ size }}px; color: {{ color }};">{{ text }}</text>
@@ -16,7 +25,14 @@
          坐标照抄歌词页已验证的写法（transform-origin:0 0 + left:212px），
          绕中心旋转会向左溢出被裁剪掉，导致整块不渲染。 -->
     <div class="landWrap" if="{{ mode === 'h' }}">
-      <scroll id="mqScrollH" class="mqScrollH" scroll-x="true" bounces="false">
+      <div class="mqClipH" if="{{ useNative }}">
+        <div class="mqRowH mqRun" style="width: {{ rowW }}px; animation-duration: {{ dur }}s;">
+          <div class="mqCopyH" style="width: {{ copyW }}px;" for="{{ copies }}">
+            <text class="f mqTextH" style="font-size: {{ size }}px; color: {{ color }};">{{ text }}</text>
+          </div>
+        </div>
+      </div>
+      <scroll id="mqScrollH" class="mqScrollH" scroll-x="true" bounces="false" if="{{ !useNative }}">
         <div class="mqRowH" style="width: {{ rowW }}px;">
           <div class="mqCopyH" style="width: {{ copyW }}px;" for="{{ copies }}">
             <text class="f mqTextH" style="font-size: {{ size }}px; color: {{ color }};">{{ text }}</text>
@@ -34,6 +50,7 @@
 .page { width: 212px; height: 520px; overflow: hidden; background-color: #0D6EFF; }
 /* 竖屏 */
 .mqScrollV { position: absolute; left: 0px; top: 160px; width: 212px; height: 200px; }
+.mqClip { position: absolute; left: 0px; top: 160px; width: 212px; height: 200px; overflow: hidden; }
 .mqRow { flex-direction: row; height: 200px; }
 .mqCopy { flex-shrink: 0; height: 200px; }
 .mqText { height: 200px; line-height: 200px; font-weight: bold; color: #FFFFFF; }
@@ -42,17 +59,27 @@
    沿用歌词页坐标，不要自行改 left/top/width/height。 */
 .landWrap { position: absolute; left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); z-index: 1; }
 .mqScrollH { width: 520px; height: 212px; }
+.mqClipH { width: 520px; height: 212px; overflow: hidden; }
 .mqRowH { flex-direction: row; height: 212px; }
 .mqCopyH { flex-shrink: 0; height: 212px; }
 .mqTextH { height: 212px; line-height: 212px; font-weight: bold; color: #FFFFFF; }
 /* 提示压在旋转内容之上，避免被盖住 */
 .hint { position: absolute; left: 21px; top: 462px; width: 170px; text-align: center; font-size: 14px; opacity: 0.4; z-index: 10; color: #FFFFFF; }
+/* 原生关键帧跑马灯：整行平移 -25%（= 一份内容块宽度），一个周期无缝衔接 */
+@keyframes mqShift {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-25%); }
+}
+.mqRun {
+  animation-name: mqShift;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
 </style>
 
 <script>
+import g from '../../utils/g'
 import marqueeState from '../../utils/marqueeState'
-import kv from '../../utils/kv'
-import router from '../../utils/router'
 import brightness from '@system.brightness'
 
 // 滚动步进：每 TICK_MS 走 step 像素，step 由速度档换算（3→2 / 6→4 / 12→8）
@@ -77,7 +104,12 @@ export default {
     copies: COPIES,
     offset: 0,
     scrollId: 'mqScrollV',
-    timer: null
+    timer: null,
+    // 原生关键帧跑马灯开关：true = @keyframes 驱动（无 JS 定时器），
+    // false = 回退到 JS 定时器 scrollBy。真机若 translateX 语义不符，改 false 即可。
+    useNative: true,
+    // 一个内容块走完所需的秒数（原生关键帧的 animation-duration）
+    dur: 3
   },
   onShow() {
     // 播放内容与模式以 globalThis 上的 marqueeState 为唯一真源（同步读取），
@@ -94,8 +126,8 @@ export default {
         bg: this.bg,
         mode: this.mode
       })
-      kv.init(() => {
-        const m = kv.get('marquee', null)
+      g.kv.init(() => {
+        const m = g.kv.get('marquee', null)
         if (m) {
           this.applyCfg({ text: m.text, size: m.size, speed: m.speed, color: m.color, bg: m.bg, mode: this.mode })
         }
@@ -126,6 +158,9 @@ export default {
     this.copyW = marqueeState.copyWidth(this.text, this.size)
     this.rowW = this.copyW * marqueeState.COPY_COUNT
     this.offset = 0
+    // 原生关键帧：一个内容块（= -25% 位移量）走完的秒数 = copyW / (step px 每 50ms)
+    const step = Math.max(1, Math.round(this.speed / 1.5))
+    this.dur = Math.max(0.5, this.copyW / (step * 20))
     // 配置是异步补齐的（KV 兜底路径）时页面早已渲染过，需要按新周期重启滚动
     if (this.timer) this.startScroll()
   },
@@ -133,6 +168,10 @@ export default {
     this.stopScroll()
     this.scrollId = this.mode === 'h' ? 'mqScrollH' : 'mqScrollV'
     this.offset = 0
+    if (this.useNative) {
+      // 原生关键帧接管：无需任何 JS 定时器
+      return
+    }
     const step = Math.max(1, Math.round(this.speed / 1.5))
     this.timer = setInterval(() => {
       try {
@@ -154,7 +193,7 @@ export default {
     this.timer = null
   },
   back() {
-    router.back()
+    g.router.back()
   }
 }
 </script>

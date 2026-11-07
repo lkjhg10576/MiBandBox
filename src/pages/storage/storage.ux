@@ -33,7 +33,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .ringWrap { position: absolute; left: 22px; top: 86px; width: 168px; height: 168px; }
 .sub { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.55); }
 .card { position: absolute; left: 3px; top: 292px; width: 206px; height: 146px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
@@ -44,7 +43,7 @@
 </style>
 
 <script>
-import time from '../../utils/time'
+import g from '../../utils/g'
 import device from '@system.device'
 
 function gb(n) {
@@ -61,6 +60,7 @@ function gb(n) {
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     percent: 0,
     percentText: '—',
@@ -72,20 +72,17 @@ export default {
     timer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.load()
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   load() {
     if (typeof device.getTotalStorage !== 'function') {

@@ -1,11 +1,21 @@
-import file from '@system.file'
+import g from '../../../utils/g'
 import { createInputMethod } from './dicUtil.js'
 
 const DEFAULT_ROOT = '/components/InputMethod/assets/dictionary/'
 
 // One reader per component: at most one file in flight and one latest request.
 // Keep this object outside reactive data to avoid observing dictionary entries.
-function createDictionaryLoader(root = DEFAULT_ROOT, readText = options => file.readText(options)) {
+function defaultReadText(options) {
+  g.fs.readText(options.uri, (text, code) => {
+    if (text === null || text === undefined) {
+      if (options.fail) options.fail({}, code || 300)
+    } else if (options.success) {
+      options.success({ text: text })
+    }
+  })
+}
+
+function createDictionaryLoader(root = DEFAULT_ROOT, readText = defaultReadText) {
   let engine = createInputMethod()
   let pending = null
   let reading = false
@@ -20,7 +30,7 @@ function createDictionaryLoader(root = DEFAULT_ROOT, readText = options => file.
       engine = createInputMethod()
       language = request.lang
     }
-    if (!request.word || (language !== 'cn' && language !== 'jp')) {
+    if (!request.word || language !== 'cn') {
       pending = null
       request.callback({ chars: [], matched: '', multi: null }, request.word)
       return
@@ -60,7 +70,6 @@ function createDictionaryLoader(root = DEFAULT_ROOT, readText = options => file.
         try {
           const parsed = JSON.parse(data.text)
           if (resource === 'cn') engine.initDict(parsed)
-          else if (resource === 'jp') engine.dict.romaji2kanji = parsed
           else engine.installShard(resource.slice(-1), parsed)
         } catch (failure) { error = failure }
       }

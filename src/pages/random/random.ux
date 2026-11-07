@@ -31,7 +31,6 @@
 
 <style>
 @import '../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .row { position: absolute; left: 3px; top: 84px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px; }
 .label { width: 52px; font-size: 17px; color: rgba(255,255,255,0.65); }
 .step { width: 37px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; }
@@ -46,12 +45,12 @@
 </style>
 
 <script>
-import time from '../../utils/time'
-import haptic from '../../utils/haptic'
+import g from '../../utils/g'
 import prompt from '@system.prompt'
 
 export default {
   data: {
+    _ck: null,
     clock: '--:--',
     min: 1,
     max: 100,
@@ -62,11 +61,10 @@ export default {
     clockTimer: null
   },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.clockTimer) clearInterval(this.clockTimer)
-    this.clockTimer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
     this.clear()
@@ -76,25 +74,25 @@ export default {
   },
   clear() {
     if (this.timer) clearInterval(this.timer)
-    if (this.clockTimer) clearInterval(this.clockTimer)
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     this.timer = null
     this.clockTimer = null
   },
   inc(which) {
     if (which === 'min') this.min = this.min + 1
     else this.max = this.max + 1
-    haptic.short()
+    g.haptic.short()
   },
   dec(which) {
     if (which === 'min') this.min = this.min - 1
     else this.max = this.max - 1
-    haptic.short()
+    g.haptic.short()
   },
   roll() {
     if (this.rolling) return
     if (this.min > this.max) {
       prompt.showToast({ message: '最小值不能大于最大值', duration: 1600 })
-      haptic.long()
+      g.haptic.long()
       return
     }
     this.rolling = true
@@ -109,7 +107,7 @@ export default {
         this.result = this.min + Math.floor(Math.random() * (this.max - this.min + 1))
         this.display = String(this.result)
         this.rolling = false
-        haptic.pattern(2, 120)
+        g.haptic.pattern(2, 120)
       }
     }, 60)
   }

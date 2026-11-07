@@ -50,9 +50,7 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
-import haptic from '../../../utils/haptic'
+import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import otpStore from '../../../utils/otpStore'
 import otp from '../../../utils/otp'
@@ -76,7 +74,7 @@ export default {
   },
 
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.arm()
     this.refresh()
     this.startTick()
@@ -118,7 +116,7 @@ export default {
       state.alignTimer = null
       this.refresh()
       state.timer = setInterval(() => {
-        this.clock = time.formatClock(new Date())
+        this.clock = g.time.formatClock(new Date())
         this.refresh()
       }, 1000)
     }, 1000 - (Date.now() % 1000))
@@ -178,25 +176,25 @@ export default {
 
   onRow(item) {
     if (!item || item.act !== 'detail') return
-    haptic.short()
+    g.haptic.short()
     otpSession.currentId = item.id
-    router.push('/pages/otp/detail')
+    g.router.push('/pages/otp/detail')
   },
 
   add() {
-    haptic.short()
+    g.haptic.short()
     otpSession.editId = ''
-    router.push('/pages/otp/edit')
+    g.router.push('/pages/otp/edit')
   },
 
   syncTip() {
-    haptic.short()
+    g.haptic.short()
     prompt.showToast({ message: '在手机 AstroBox 插件「动态口令」页同步', duration: 2000 })
   },
 
   openSettings() {
-    haptic.short()
-    router.push('/pages/otp/settings')
+    g.haptic.short()
+    g.router.push('/pages/otp/settings')
   }
 }
 </script>

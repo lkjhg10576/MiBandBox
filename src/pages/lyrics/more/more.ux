@@ -15,7 +15,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .card { position: absolute; left: 3px; top: 84px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 18px; }
 .card2 { top: 164px; }
 .card3 { top: 244px; }
@@ -25,36 +24,31 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
+import g from '../../../utils/g'
 import docs from '../../../utils/docs'
-import haptic from '../../../utils/haptic'
 import prompt from '@system.prompt'
 
 export default {
   protected: { name: '' },
   private: { clock: '--:--', delStep: 0, timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
+    this.clock = g.time.formatClock(new Date())
     this.delStep = 0
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   edit() {
-    router.push('/pages/lyrics/edit', { name: this.name })
+    g.router.push('/pages/lyrics/edit', { name: this.name })
   },
   showmode() {
-    router.push('/pages/lyrics/showmode')
+    g.router.push('/pages/lyrics/showmode')
   },
   del() {
     if (this.delStep === 0) {
@@ -62,10 +56,10 @@ export default {
       return
     }
     docs.remove('lyrics', this.name, (ok) => {
-      haptic.long()
+      g.haptic.long()
       if (ok) {
         prompt.showToast({ message: '删除成功', duration: 1200 })
-        setTimeout(() => router.replace('/pages/lylist'), 300)
+        g.router.replace('/pages/lylist')
       } else {
         prompt.showToast({ message: '删除失败', duration: 1400 })
       }

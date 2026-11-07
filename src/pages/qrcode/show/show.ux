@@ -13,7 +13,6 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.page { width: 212px; height: 520px; background-color: #000000; }
 .qrCard { position: absolute; left: 26px; top: 90px; width: 160px; height: 160px; border-radius: 26px; background-color: #FFFFFF; padding: 12px; align-items: center; justify-content: center; }
 .qr { width: 136px; height: 136px; background-color: #FFFFFF; }
 .text { position: absolute; left: 20px; top: 258px; width: 172px; font-size: 15px; line-height: 21px; color: rgba(255,255,255,0.75); text-align: center; }
@@ -21,32 +20,28 @@
 </style>
 
 <script>
-import time from '../../../utils/time'
-import router from '../../../utils/router'
+import g from '../../../utils/g'
 import brightness from '@system.brightness'
 
 export default {
   protected: { qr: '' },
   private: { clock: '--:--', timer: null },
   onShow() {
-    this.clock = time.formatClock(new Date())
-    if (this.timer) clearInterval(this.timer)
-    this.timer = setInterval(() => {
-      this.clock = time.formatClock(new Date())
-    }, 20000)
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
     brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
   },
   onHide() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
     brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
   },
   onDestroy() {
-    if (this.timer) clearInterval(this.timer)
-    this.timer = null
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   back() {
-    router.back()
+    g.router.back()
   }
 }
 </script>

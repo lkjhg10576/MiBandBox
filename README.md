@@ -107,6 +107,29 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 
 发布包需要自己的签名证书（`aiot release`），开发/模拟器验证用 `npm run build` 即可。
 
+## 性能
+
+工具链把每个页面打成独立 bundle，公共模块原本在每个 bundle 里各有一份副本。
+现在公共模块统一挂在全局单例上（`src/global.js` + `src/utils/g.js`），
+页面只 import shim；各页的 20s 时钟合并成一个全局时钟（`src/utils/clock.js`）。
+
+| 指标 | 优化前 | 优化后 |
+|---|---|---|
+| rpk 大小 | 966,411 B | **651,070 B**（−32.6%） |
+| bundle 原始总量 | 8,712,032 B | 4,618,834 B（−47%） |
+| router / file / kv 模块副本 | 59 / 37 / 23 | **1 / 1 / 1** |
+| 20s 时钟定时器 | 49 个 | **1 个**（无订阅时自动停） |
+| PNG 资源 | 102 张 / 156,869 B | 51 张 / 41,714 B（PNG8） |
+
+```bash
+node tools/perf-audit.mjs          # 量化审计（输出与 docs/perf-baseline.md 的 delta）
+node tools/perf-audit.mjs --check  # 静态门禁（data/private 共存等致命写法）
+node tools/test-history.mjs        # 史载今日数据契约单测（读包内 .txt）
+./tools/measure-fmp.sh 3           # 模拟器冷启动 FMP 实测（需模拟器在跑）
+```
+
+细节与遗留项见 `docs/perf-result.md`。
+
 ## 安装到模拟器
 
 模拟器需先启动（AIoT-IDE 的 Vela 模拟器，212×520，skin `xiaomi_band_10`）；
