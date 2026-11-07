@@ -1,6 +1,6 @@
 {
   "name": "bandbox",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "BandBox - 小米手环百宝箱",
   "scripts": {
     "build": "aiot build",
