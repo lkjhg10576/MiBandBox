@@ -142,7 +142,7 @@ src/
 字符集可勾选（大写/小写/数字/符号）、长度 8~32、`crypto.getRandomValues` 优先，
 退化为 `Math.random` + 时间戳混合；收藏写 KV 数组；详情页支持隐藏/二维码/删除。
 
-### 5.10 数据生成（自建，脚本在 `tools/gen-data/`）
+### 5.10 数据生成（自建）
 - `quotes.js`：100 条自撰短句（原创，避免歌词）
 - `answers.js`：100 条自撰占卜短句（避免出版物原文）
 - `history.js`：按 366 天生成的「科技+文化」事件，来源为公共领域事实，措辞自写，每条 >20 字
@@ -151,7 +151,7 @@ src/
 - `perf-baseline.js`：机型 → 参考分（自测或估算，标注为参考值）
 
 ### 5.11 图标与图片资源
-`tools/gen-assets/`（Python + PIL）生成：
+由内部工具链（Python + PIL）生成：
 - 28 个 44×44 线描图标（统一 2px 描边、圆角、蓝色 #4E87FF，但造型自绘）
 - `shadow.png`（顶部渐变）、`more.png`（•••）、`plus.png`、`check.png`、`enter.png`、`empty.png`
 - 应用图标 216×216（工具箱变形，白底蓝图形）

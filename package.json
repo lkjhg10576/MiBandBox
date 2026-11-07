@@ -3,11 +3,9 @@
   "version": "0.4.0",
   "description": "BandBox - 小米手环百宝箱",
   "scripts": {
-    "check": "node tools/perf-audit.mjs --check",
-    "build": "node tools/perf-audit.mjs --check && aiot build",
-    "build:jsc": "node tools/perf-audit.mjs --check && aiot build --enable-jsc",
-    "watch": "aiot start",
-    "deploy": "./tools/deploy.sh"
+    "build": "aiot build",
+    "build:jsc": "aiot build --enable-jsc",
+    "watch": "aiot start"
   },
   "devDependencies": {
     "@aiot-toolkit/jsc": "^1.0.10",

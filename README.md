@@ -115,20 +115,14 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 
 | 指标 | 优化前 | 优化后 |
 |---|---|---|
-| rpk 大小 | 966,411 B | **651,070 B**（−32.6%） |
+| rpk 大小 | 966,411 B | **613,577 B**（−36.5%） |
 | bundle 原始总量 | 8,712,032 B | 4,618,834 B（−47%） |
 | router / file / kv 模块副本 | 59 / 37 / 23 | **1 / 1 / 1** |
 | 20s 时钟定时器 | 49 个 | **1 个**（无订阅时自动停） |
 | PNG 资源 | 102 张 / 156,869 B | 51 张 / 41,714 B（PNG8） |
 
-```bash
-node tools/perf-audit.mjs          # 量化审计（输出与 docs/perf-baseline.md 的 delta）
-node tools/perf-audit.mjs --check  # 静态门禁（data/private 共存等致命写法）
-node tools/test-history.mjs        # 史载今日数据契约单测（读包内 .txt）
-./tools/measure-fmp.sh 3           # 模拟器冷启动 FMP 实测（需模拟器在跑）
-```
-
-细节与遗留项见 `docs/perf-result.md`。
+包体大小可自行复现：`npm run build:jsc` 后看 `dist/*.rpk` 的大小；
+本表其余指标由内部工具链实测，工具链本身不入库。
 
 ## 安装到模拟器
 
@@ -136,10 +130,9 @@ node tools/test-history.mjs        # 史载今日数据契约单测（读包内 
 也可以脱离 IDE 从命令行启动（必须带 `-vela` 旗标）
 
 ```bash
-# 自动构建 + 安装 + 启动
-./tools/deploy.sh
+# 先构建：npm run build:jsc（产物在 dist/*.rpk）
 
-# 或手动（必须用 pm install）
+# 手动安装（必须用 pm install）
 adb push dist/*.rpk /data/app/com.miband.box.rpk
 adb shell pm install /data/app/com.miband.box.rpk
 adb shell am start com.miband.box

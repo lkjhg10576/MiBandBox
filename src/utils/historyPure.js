@@ -2,7 +2,7 @@
  * 史载今日的纯逻辑部分：键格式化、条目归一化、取当天条目、小知识散列。
  *
  * 本文件不得 import 任何 @system.* 或依赖 g（读盘在 historyData.js 里），
- * 以便用 Node 直接跑单测（tools/test-history.mjs）。
+ * 以便用 Node 直接跑单测。
  */
 
 /** 标签分类 */

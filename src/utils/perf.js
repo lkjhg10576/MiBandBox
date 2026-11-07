@@ -1,5 +1,5 @@
 /**
- * 性能埋点（L0 起使用，tools/perf-fmp.mjs 解析 logcat 计算 FMP）
+ * 性能埋点（L0 起使用，埋点日志用于分析冷启动 FMP）
  *
  * 用法：
  *   import perf from '../utils/perf'

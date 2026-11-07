@@ -2,7 +2,7 @@
  * OTP/TOTP 纯逻辑内核：Base32、SHA-1、HMAC、动态截断、TOTP/HOTP 与账户状态机。
  *
  * 本文件在手表端（src/utils/otp.js）与手机插件端（plugin/bandbox-lyrics-sync/src/otp.js）
- * 各存一份，且**必须逐字一致**（tools/test-otp-cross.mjs 与插件 test/otp-cross.test.mjs
+ * 各存一份，且**必须逐字一致**（插件 test/otp-cross.test.mjs
  * 用 SHA-256 校验）。因此本文件：
  *   - 不 import 任何模块（零依赖）
  *   - 不出现 TextEncoder/TextDecoder/console/setTimeout
