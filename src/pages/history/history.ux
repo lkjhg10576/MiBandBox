@@ -10,7 +10,7 @@
       <div class="arrowBtn" @click="nextDay"><text class="f arrowT">></text></div>
     </div>
 
-    <!-- 当天内容改成可滚动的多条列表：史实条目 + 小知识兜底 -->
+    <!-- 当天内容：史实条目列表，无史实时才显示一条小知识兜底 -->
     <scroll id="listScroll" class="listScroll" scroll-y="true" bounces="true">
       <div class="inner" style="height: {{ innerHeight }}px;">
         <div class="item" for="{{ items }}">
@@ -118,15 +118,19 @@ export default {
         const meta = (e.year ? e.year + ' · ' : '') + (e.tag || '史实')
         items.push({ meta: meta, title: e.title || '历史上的今天', body: e.text })
       }
-      // 2) 小知识兜底，保证每天至少有两条可读内容
-      historyData.tipOfDay(this.m, this.d, (tips) => {
-        for (let i = 0; i < tips.length; i++) {
-          items.push({ meta: '小知识', title: '随手一读', body: tips[i] })
-        }
-        if (!this.$valid) return
-        this.items = items
-        this.innerHeight = estimateInnerHeight(items)
-      })
+      // 2) 当天没有史实条目时，才用一条小知识兜底；小知识主体在「每日新知」页
+      if (events.length === 0) {
+        historyData.tipOfDay(this.m, this.d, (tips) => {
+          if (tips.length) items.push({ meta: '小知识', title: '随手一读', body: tips[0] })
+          if (!this.$valid) return
+          this.items = items
+          this.innerHeight = estimateInnerHeight(items)
+        })
+        return
+      }
+      if (!this.$valid) return
+      this.items = items
+      this.innerHeight = estimateInnerHeight(items)
     })
   },
   shift(delta) {

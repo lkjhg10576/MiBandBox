@@ -168,6 +168,9 @@
       "pages/history": {
         "component": "history"
       },
+      "pages/dailytip": {
+        "component": "dailytip"
+      },
       "pages/scoreboard": {
         "component": "scoreboard"
       },

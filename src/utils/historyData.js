@@ -91,5 +91,13 @@ export function tipOfDay(month, day, cb) {
   })
 }
 
+/**
+ * 全量小知识池（「每日新知」页用）
+ * @param {Function} cb 回调参数为字符串数组
+ */
+export function allTips(cb) {
+  loadTips((pool) => cb(pool))
+}
+
 export { tags, keyOf, normalizeItem, pickFrom, hashOf }
-export default { getByDate, tipOfDay, keyOf, tags, normalizeItem, pickFrom, hashOf }
+export default { getByDate, tipOfDay, allTips, keyOf, tags, normalizeItem, pickFrom, hashOf }

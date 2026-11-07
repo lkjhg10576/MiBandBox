@@ -23,6 +23,7 @@ const apps = [
   { id: 'system', name: '系统信息', route: '/pages/system', icon: '/common/icons/system.png', desc: '型号 · 屏幕 · 版本' },
   { id: 'performance', name: '性能测试', route: '/pages/performance', icon: '/common/icons/performance.png', desc: '四项跑分 · 参考' },
   { id: 'history', name: '史载今日', route: '/pages/history', icon: '/common/icons/history.png', desc: '今天的科技文化' },
+  { id: 'dailytip', name: '每日新知', route: '/pages/dailytip', icon: '/common/icons/dailytip.png', desc: '每天一条小知识' },
   { id: 'scoreboard', name: '记分牌', route: '/pages/scoreboard', icon: '/common/icons/scoreboard.png', desc: '红蓝 · 计时' },
   { id: 'morseCode', name: '摩斯密码', route: '/pages/morseCode', icon: '/common/icons/morseCode.png', desc: '点划 · 振动' },
   { id: 'wasteSorting', name: '垃圾分类', route: '/pages/wasteSorting', icon: '/common/icons/wasteSorting.png', desc: '查一查 · 怎么扔' },

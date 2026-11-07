@@ -1,0 +1,93 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="每日新知" clock="{{ clock }}"></pagehead>
+    <div class="card">
+      <text class="f cLabel">{{ label }}</text>
+      <text class="f tip">{{ tip }}</text>
+      <text class="f idx">第 {{ index + 1 }} / {{ total }} 条</text>
+    </div>
+    <div class="actions">
+      <div class="btn" @click="next"><text class="f btnT">换一条</text></div>
+    </div>
+    <text class="f hint">每天一条 · 「换一条」仅本次生效</text>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.card { position: absolute; left: 3px; top: 100px; width: 206px; height: 250px; border-radius: 26px; background-color: #262626; padding: 16px 18px; flex-direction: column; }
+.cLabel { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: #4E87FF; }
+.tip { width: 170px; margin-top: 12px; font-size: 17px; line-height: 27px; color: #FFFFFF; }
+.idx { width: 170px; position: absolute; left: 18px; bottom: 14px; text-align: right; font-size: 14px; color: rgba(255,255,255,0.3); }
+.actions { position: absolute; left: 26px; top: 374px; width: 160px; height: 48px; }
+.btn { width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.btnT { font-size: 15px; color: #FFFFFF; }
+.hint { position: absolute; left: 6px; top: 440px; width: 200px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import g from '../../utils/g'
+import historyData from '../../utils/historyData'
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    m: 1,
+    d: 1,
+    label: '',
+    tip: '',
+    index: 0,
+    total: 0,
+    pool: []
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const now = new Date()
+    this.m = now.getMonth() + 1
+    this.d = now.getDate()
+    const dt = new Date(now.getFullYear(), this.m - 1, this.d)
+    this.label = '今日 · ' + this.m + '月' + this.d + '日 ' + g.time.weekdayName(dt)
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    // 每天固定一条：稳定散列保证同一天每次进入都是同一条，跨天自动更换
+    historyData.allTips((pool) => {
+      if (!this.$valid) return
+      this.pool = pool
+      this.total = pool.length
+      if (!pool.length) {
+        this.tip = '小知识库暂时读不到，稍后再来'
+        this.index = 0
+        return
+      }
+      this.showTip(historyData.hashOf(this.m, this.d) % pool.length)
+    })
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  showTip(i) {
+    this.index = i
+    this.tip = this.pool[i]
+  },
+  next() {
+    g.haptic.short()
+    const n = this.pool.length
+    if (!n) return
+    let i = this.index
+    if (n > 1) {
+      while (i === this.index) i = Math.floor(Math.random() * n)
+    }
+    this.label = '随手一读'
+    this.showTip(i)
+  }
+}
+</script>
