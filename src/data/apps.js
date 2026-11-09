@@ -31,7 +31,8 @@ const apps = [
   { id: 'marquee', name: '跑马灯', route: '/pages/marquee', icon: '/common/icons/marquee.png', desc: '滚动字幕 · 颜色' },
   { id: 'lylist', name: '歌词本', route: '/pages/lylist', icon: '/common/icons/lylist.png', desc: '本地歌词 · 滚动' },
   { id: 'level', name: '水平仪', route: '/pages/level', icon: '/common/icons/level.png', desc: '双轴 · 圆点' },
-  { id: 'otp', name: '动态口令', route: '/pages/otp/list', icon: '/common/icons/otp.png', desc: 'TOTP · 本地生成 · 手机同步' }
+  { id: 'otp', name: '动态口令', route: '/pages/otp/list', icon: '/common/icons/otp.png', desc: 'TOTP · 本地生成 · 手机同步' },
+  { id: 'unitconvert', name: '单位换算', route: '/pages/unitconvert', icon: '/common/icons/unitconvert.png', desc: '长度 · 质量 · 温度' }
 ]
 
 export default apps

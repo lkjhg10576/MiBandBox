@@ -1,0 +1,77 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="单位换算" clock="{{ clock }}"></pagehead>
+
+    <scroll class="cats" scroll-y="true" bounces="true">
+      <div class="grid">
+        <div class="cell" for="{{ cats }}" @click="open($item)">
+          <text class="f cName">{{ $item.name }}</text>
+          <text class="f cSub">{{ $item.sub }}</text>
+        </div>
+      </div>
+    </scroll>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+.cats { position: absolute; left: 3px; top: 88px; width: 206px; height: 378px; }
+.grid { width: 206px; height: 404px; flex-direction: row; flex-wrap: wrap; }
+.cell {
+  width: 97px;
+  height: 58px;
+  margin: 3px;
+  border-radius: 26px;
+  background-color: #1A1A1A;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.cName { width: 91px; height: 24px; line-height: 24px; text-align: center; font-size: 17px; color: #FFFFFF; }
+.cSub { width: 91px; height: 18px; line-height: 18px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+</style>
+
+<script>
+import g from '../../utils/g'
+import units from '../../utils/units'
+
+/** 12 类卡片：中文名 + 该类基准单位，进入换算页时把类别 id 作为路由参数。 */
+const CATS = units.CATEGORIES.map((cat) => {
+  const b = units.baseUnit(cat)
+  return { id: cat.id, name: cat.name, sub: '基准 ' + b.symbol }
+})
+
+export default {
+  data: {
+    clock: '--:--',
+    cats: CATS
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  open(item) {
+    if (!item || !item.id) return
+    g.haptic.short()
+    g.router.push('/pages/unitconvert/convert', { type: item.id })
+  }
+}
+</script>

@@ -3,7 +3,7 @@
 
   <h1>BandBox · The Xiaomi Band Toolbox</h1>
 
-  <p><b>30 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
+  <p><b>31 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
   <p>Fully offline · No fees · No accounts · No closed-source dependencies · MIT licensed</p>
 
   <p>
@@ -19,7 +19,7 @@
   <p>Package <code>com.miband.box</code> · Version <code>0.1.0</code> (versionCode 222) · Built with Vela JS Quick Apps</p>
 </div>
 
-<img src="assets/promo/hero-en.jpg" alt="BandBox: 30 local tools for Xiaomi Band" />
+<img src="assets/promo/hero-en.jpg" alt="BandBox: 31 local tools for Xiaomi Band" />
 
 ---
 
@@ -27,20 +27,20 @@
 
 BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 11** (212 × 520 strip display).
 
-A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
+A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-one small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
 Everything stays on the band. **No network calls, no fees, no sign-up, no uploads.**
 
 | Highlights | Details |
 | --- | --- |
-| Tools | **30**, covering everyday, notes, fun and system-information use cases |
+| Tools | **31**, covering everyday, notes, fun and system-information use cases |
 | Network requests | **0** (no third-party APIs, no telemetry, no ads) |
 | Accounts / payments | **0** (no login, no subscription, no activation) |
 | Closed-source dependencies | **0** (nothing but the optional official AstroBox plugin) |
 | Bundled fonts | **0** (uses the Band 10/11 system fonts, MiSans / MiLan Pro) |
 | License | **MIT** |
 
-> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 30 tools work exactly the same.
+> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 31 tools work exactly the same.
 
 ---
 
@@ -74,6 +74,7 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 | Tool | Description |
 | --- | --- |
 | Calculator | Four operations, parentheses, percent, square root, powers |
+| Unit converter | 12 categories, 98 units, instant fully-local conversion (length / mass / temperature…) |
 | Calendar | Month view; tap a date for lunar date, weekday and ISO week number; swipe between months |
 | Daily quote | 1,000 uplifting one-liners (original + curated open-source corpus), favourites, no repeats in a row |
 | Daily tidbit | One fixed tech fact per day, refreshed automatically at midnight; a "shuffle" button for one-off rerolls |
@@ -220,7 +221,7 @@ The full conventions live in `AGENTS.md` and `beta/README.md` at the repository 
 
 ```
 src/
-├── manifest.json          54 routes, permissions and features
+├── manifest.json          57 routes, permissions and features
 ├── app.ux                 global KV / interconnect bootstrap
 ├── common/                hand-drawn icons and shared assets
 ├── components/
@@ -232,7 +233,7 @@ src/
 │                          otp / otpAccounts / otpProtocol (TOTP core and protocol, identical copies)
 │                          otpStore (secret storage) / otpBridge (always-on receiver)
 │                          marqueeState (cross-page marquee config)
-└── pages/                 60 pages (including the input page, lyrics/transfer pages and five otp/ pages)
+└── pages/                 63 pages (incl. three unit-converter pages) (including the input page, lyrics/transfer pages and five otp/ pages)
 
 plugin/
 └── bandbox-helper/        AstroBox plugin (API level 4): pick & push LRC / sync TOTP accounts

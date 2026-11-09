@@ -1,0 +1,236 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
+
+    <!-- 卡片只做背景：前景文字/按钮必须是 .page 的直接子元素，
+         否则 Vela 把 absolute 子元素按卡片定位并裁剪（页面绝对坐标会跑到卡片外）。 -->
+    <div class="card from"></div>
+    <text class="f unitName">{{ fromName }}</text>
+    <div class="chev" @click="pick('from')"><text class="f chevT">›</text></div>
+    <div class="valueBox" @click="openPad">
+      <text class="f input" if="{{ hasInput }}">{{ input }}</text>
+      <text class="f placeholder" if="{{ emptyInput }}">点击输入</text>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="card to"></div>
+    <text class="f unitName unitNameTo">{{ toName }}</text>
+    <div class="chev chevTo" @click="pick('to')"><text class="f chevT">›</text></div>
+    <div class="valueBox valueTo">
+      <text class="f result">{{ result }}</text>
+    </div>
+
+    <text class="f hint">点数值输入 · 点 › 换单位</text>
+
+    <!-- 默认隐藏，点数值区弹出、再点收起；结构与类别页一致（for + @click($item)）。 -->
+    <div class="pad" if="{{ padShow }}">
+      <div class="padGrid">
+        <div class="key" for="{{ keys }}" @click="tapKey($item)">
+          <text class="f keyT">{{ $item.t }}</text>
+        </div>
+      </div>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+
+.card { position: absolute; left: 3px; width: 206px; height: 104px; border-radius: 26px; background-color: #262626; }
+.from { top: 90px; }
+.to { top: 218px; }
+.unitName { position: absolute; left: 18px; top: 100px; width: 140px; height: 28px; line-height: 28px; font-size: 19px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.unitNameTo { top: 228px; }
+.chev { position: absolute; left: 165px; top: 98px; width: 28px; height: 28px; border-radius: 14px; background-color: rgba(255,255,255,0.1); align-items: center; justify-content: center; }
+.chevTo { top: 226px; }
+.chevT { width: 28px; height: 28px; line-height: 28px; text-align: center; font-size: 18px; color: #FFFFFF; }
+.valueBox { position: absolute; left: 18px; top: 136px; width: 174px; height: 46px; }
+.valueTo { top: 264px; }
+.input { width: 174px; height: 46px; line-height: 46px; text-align: right; font-size: 32px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.placeholder { width: 174px; height: 46px; line-height: 46px; text-align: right; font-size: 18px; color: rgba(255,255,255,0.35); }
+.result { width: 174px; height: 46px; line-height: 46px; text-align: right; font-size: 32px; color: #9FC4FF; text-overflow: ellipsis; lines: 1; }
+.sep { position: absolute; left: 16px; top: 206px; width: 180px; height: 1px; background-color: rgba(255,255,255,0.12); }
+.hint { position: absolute; left: 16px; top: 330px; width: 180px; height: 18px; line-height: 18px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+
+/* 4×4 自绘数字键盘：容器按 4×(47+2×2)=204px 宽、4×(26+2×2)=120px 高收口，
+   底边正好落在 466 的安全区边界，避免 flex-wrap 把第 4 个键挤到下一行。 */
+.pad { position: absolute; left: 3px; top: 346px; width: 206px; height: 120px; }
+.padGrid { width: 206px; height: 120px; flex-direction: row; flex-wrap: wrap; }
+.key { width: 47px; height: 26px; margin: 2px; border-radius: 13px; background-color: #262626; align-items: center; justify-content: center; }
+.keyT { width: 47px; height: 26px; line-height: 26px; text-align: center; font-size: 17px; color: #FFFFFF; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import units from '../../../utils/units'
+import unitSession from '../unitSession'
+
+const KV_KEY = 'unitConvert.last'
+
+/** 4 列 × 4 行；第 3 行第 4 键留空（noop）。系统字体缺 ⌫ 字形，键帽用「退」。 */
+const KEYS = [
+  { k: '7', t: '7' }, { k: '8', t: '8' }, { k: '9', t: '9' }, { k: 'back', t: '退' },
+  { k: '4', t: '4' }, { k: '5', t: '5' }, { k: '6', t: '6' }, { k: 'clear', t: 'C' },
+  { k: '1', t: '1' }, { k: '2', t: '2' }, { k: '3', t: '3' }, { k: 'noop', t: '' },
+  { k: '0', t: '0' }, { k: '.', t: '.' }, { k: 'neg', t: '−' }, { k: 'hide', t: '收起' }
+]
+
+export default {
+  /** 入口参数：类别 id。跨页选中结果走 globalThis 会话态，不走 KV 传值。 */
+  protected: { type: '' },
+
+  // 带 protected 的页面统一用 private（仓库 13 个既有页面的已验证组合）：
+  // protected + data 在本机 Vela 渲染器上会整页黑屏；data 与 private 也不得共存。
+  private: {
+    clock: '--:--',
+    catId: '',
+    titleText: '长度换算',
+    fromId: '',
+    toId: '',
+    fromName: '',
+    toName: '',
+    input: '',
+    hasInput: false,
+    emptyInput: true,
+    result: '—',
+    padShow: false,
+    keys: KEYS
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+
+    const cat = units.category(this.type) || units.CATEGORIES[0]
+    const pending = unitSession.take()
+    const changed = this.catId !== cat.id || !this.fromId || !this.toId
+
+    if (changed) {
+      this.catId = cat.id
+      this.fromId = cat.defaults.from
+      this.toId = cat.defaults.to
+      // KV 只用于「记住上次选择」：异步读回，不阻塞首帧，且不覆盖会话态带回的选择
+      if (!pending) {
+        const target = this
+        g.kv.init(() => {
+          if (!target.$valid || target.catId !== cat.id) return
+          if (target.fromId !== cat.defaults.from || target.toId !== cat.defaults.to) return
+          const last = g.kv.get(KV_KEY, null)
+          if (last && last.type === cat.id && units.unit(cat, last.from) && units.unit(cat, last.to)) {
+            target.fromId = last.from
+            target.toId = last.to
+            target.applyUnits()
+          }
+        })
+      }
+    }
+
+    // 单位选择页返回：立即套用新单位并重算
+    if (pending && pending.unitId && units.unit(cat, pending.unitId)) {
+      if (pending.slot === 'to') this.toId = pending.unitId
+      else this.fromId = pending.unitId
+    }
+
+    this.applyUnits()
+    this.setPad(false)
+  },
+
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    this.setPad(false)
+  },
+
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    this.setPad(false)
+  },
+
+  /** 同步单位名、结果，并把本次选择记到 KV（仅持久化，不用于跨页传值）。 */
+  applyUnits() {
+    const cat = units.category(this.catId) || units.CATEGORIES[0]
+    const f = units.unit(cat, this.fromId) || units.baseUnit(cat)
+    const t = units.unit(cat, this.toId) || cat.units[1]
+    this.catId = cat.id
+    this.titleText = cat.name + '换算'
+    this.fromId = f.id
+    this.toId = t.id
+    this.fromName = f.name + '  ' + f.symbol
+    this.toName = t.name + '  ' + t.symbol
+    this.recompute()
+    try {
+      g.kv.set(KV_KEY, { type: cat.id, from: f.id, to: t.id })
+    } catch (e) {}
+  },
+
+  /** 输入即实时换算。 */
+  recompute() {
+    const v = units.parseInput(this.input)
+    this.result = units.formatValue(units.convert(this.catId, this.fromId, this.toId, v))
+    this.hasInput = this.input !== ''
+    this.emptyInput = !this.hasInput
+  },
+
+  /** 键盘显隐（if 条件渲染）。 */
+  setPad(show) {
+    this.padShow = show
+  },
+
+  /** 点数值区：弹出 / 收起自绘键盘。 */
+  openPad() {
+    this.setPad(!this.padShow)
+    g.haptic.short()
+  },
+
+  pick(slot) {
+    g.haptic.short()
+    const current = slot === 'to' ? this.toId : this.fromId
+    g.router.push('/pages/unitconvert/picker', { type: this.catId, slot: slot, current: current })
+  },
+
+  /** 与类别页一致：事件里传整个行对象。 */
+  tapKey(item) {
+    const k = item && item.k
+    if (!k || k === 'noop') return
+    g.haptic.short()
+    if (k === 'hide') {
+      this.setPad(false)
+      return
+    }
+    if (k === 'clear') {
+      this.input = ''
+      this.recompute()
+      return
+    }
+    if (k === 'back') {
+      this.input = this.input.slice(0, -1)
+      this.recompute()
+      return
+    }
+    if (k === 'neg') {
+      this.input = this.input.charAt(0) === '-' ? this.input.slice(1) : '-' + this.input
+      this.recompute()
+      return
+    }
+    if (k === '.') {
+      if (this.input.indexOf('.') >= 0) return
+      this.input = (this.input === '' || this.input === '-') ? this.input + '0.' : this.input + '.'
+      this.recompute()
+      return
+    }
+    // 数字键：最多 12 个字符，避免 32px 数值区溢出
+    if (this.input.length >= 12) return
+    if (this.input === '0') this.input = k
+    else if (this.input === '-0' && k !== '0') this.input = '-' + k
+    else this.input += k
+    this.recompute()
+  }
+}
+</script>

@@ -1,0 +1,117 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
+
+    <scroll class="list" scroll-y="true" bounces="true">
+      <div class="rows" style="height: {{ rowsHeight }}px;">
+        <div class="row" for="{{ rows }}" @click="choose($item)">
+          <div class="rMain">
+            <div class="rTop">
+              <text class="f rName">{{ $item.name }}</text>
+              <text class="f rSym">{{ $item.symbol }}</text>
+            </div>
+            <text class="f rSub">{{ $item.sub }}</text>
+          </div>
+          <text class="f rCheck">{{ $item.check }}</text>
+        </div>
+      </div>
+    </scroll>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+
+.list { position: absolute; left: 3px; top: 90px; width: 206px; height: 360px; }
+.rows { width: 206px; flex-direction: column; }
+.row {
+  width: 206px;
+  height: 44px;
+  margin-bottom: 6px;
+  border-radius: 22px;
+  background-color: #1A1A1A;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0px 14px;
+}
+.rMain { width: 150px; height: 38px; flex-direction: column; justify-content: center; }
+.rTop { width: 150px; height: 20px; flex-direction: row; align-items: center; }
+.rName { width: 100px; height: 20px; line-height: 20px; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.rSym { width: 48px; height: 20px; line-height: 20px; text-align: right; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+.rSub { width: 150px; height: 16px; line-height: 16px; font-size: 12px; color: rgba(255,255,255,0.35); text-overflow: ellipsis; lines: 1; }
+.rCheck { width: 20px; height: 20px; line-height: 20px; text-align: center; font-size: 16px; color: #0D6EFF; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import units from '../../../utils/units'
+import unitSession from '../unitSession'
+
+export default {
+  /** 入口参数：类别、要改的槽位（from/to）、当前选中单位。 */
+  protected: { type: '', slot: '', current: '' },
+
+  // 同换算页：protected + private，避免 protected + data 黑屏
+  private: {
+    clock: '--:--',
+    titleText: '选择单位',
+    rows: [],
+    rowsHeight: 0
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    this.build()
+  },
+
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  build() {
+    const cat = units.category(this.type) || units.CATEGORIES[0]
+    const base = units.baseUnit(cat)
+    const rows = cat.units.map((u) => {
+      let sub
+      if (u.id === base.id) {
+        sub = '基准单位'
+      } else {
+        sub = '1 ' + base.symbol + ' = ' +
+          units.formatValue(units.convert(cat.id, base.id, u.id, 1)) + ' ' + u.symbol
+      }
+      if (u.note) sub = sub + ' · ' + u.note
+      return {
+        id: u.id,
+        name: u.name,
+        symbol: u.symbol,
+        sub: sub,
+        check: u.id === this.current ? '✓' : ''
+      }
+    })
+    this.rows = rows
+    this.rowsHeight = rows.length * 50 + 16
+    this.titleText = cat.name + ' · 选择单位'
+  },
+
+  choose(item) {
+    if (!item || !item.id) return
+    g.haptic.short()
+    // 选中结果走 globalThis 会话态，换算页 onShow 时同步取回并立即重算
+    unitSession.pending = { slot: this.slot === 'to' ? 'to' : 'from', unitId: item.id }
+    g.router.back()
+  }
+}
+</script>

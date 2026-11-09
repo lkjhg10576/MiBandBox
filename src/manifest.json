@@ -2,7 +2,7 @@
   "package": "com.miband.box",
   "name": "BandBox",
   "versionName": "0.4.4",
-  "versionCode": 221,
+  "versionCode": 222,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -239,6 +239,15 @@
       },
       "pages/imeTest": {
         "component": "imeTest"
+      },
+      "pages/unitconvert": {
+        "component": "unitconvert"
+      },
+      "pages/unitconvert/convert": {
+        "component": "convert"
+      },
+      "pages/unitconvert/picker": {
+        "component": "picker"
       }
     }
   }
