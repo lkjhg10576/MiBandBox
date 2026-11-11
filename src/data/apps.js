@@ -19,6 +19,7 @@ const apps = [
   { id: 'cpsTest', name: '手速测试', route: '/pages/cpsTest', icon: '/common/icons/cpsTest.png', desc: '5 秒 · 点击次数' },
   { id: 'diet', name: '今日饮食', route: '/pages/diet', icon: '/common/icons/diet.png', desc: '吃什么 · 喝什么' },
   { id: 'random', name: '随机数', route: '/pages/random', icon: '/common/icons/random.png', desc: '区间 · 抽号' },
+  { id: 'lightRandom', name: '轻量随机', route: '/pages/lightRandom', icon: '/common/icons/lightRandom.png', desc: '骰子 · 硬币 · 字母' },
   { id: 'num', name: '数字滚动', route: '/pages/num', icon: '/common/icons/num.png', desc: '自动计数 · 滚动' },
   { id: 'system', name: '系统信息', route: '/pages/system', icon: '/common/icons/system.png', desc: '型号 · 屏幕 · 版本' },
   { id: 'performance', name: '性能测试', route: '/pages/performance', icon: '/common/icons/performance.png', desc: '四项跑分 · 参考' },
@@ -33,7 +34,8 @@ const apps = [
   { id: 'level', name: '水平仪', route: '/pages/level', icon: '/common/icons/level.png', desc: '双轴 · 圆点' },
   { id: 'otp', name: '动态口令', route: '/pages/otp/list', icon: '/common/icons/otp.png', desc: 'TOTP · 本地生成 · 手机同步' },
   { id: 'unitconvert', name: '单位换算', route: '/pages/unitconvert', icon: '/common/icons/unitconvert.png', desc: '长度 · 质量 · 温度' },
-  { id: 'metronome', name: '节拍器', route: '/pages/metronome', icon: '/common/icons/metronome.png', desc: 'BPM · 振动' }
+  { id: 'metronome', name: '节拍器', route: '/pages/metronome', icon: '/common/icons/metronome.png', desc: 'BPM · 振动' },
+  { id: 'tapTempo', name: '节拍测定', route: '/pages/tapTempo', icon: '/common/icons/tapTempo.png', desc: '点屏幕 · 测 BPM' }
 ]
 
 export default apps

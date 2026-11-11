@@ -2,7 +2,7 @@
   "package": "com.miband.bandbox",
   "name": "BandBox",
   "versionName": "0.1.0",
-  "versionCode": 223,
+  "versionCode": 224,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -156,6 +156,9 @@
       "pages/random": {
         "component": "random"
       },
+      "pages/lightRandom": {
+        "component": "lightRandom"
+      },
       "pages/system": {
         "component": "system"
       },
@@ -251,6 +254,9 @@
       },
       "pages/metronome": {
         "component": "metronome"
+      },
+      "pages/tapTempo": {
+        "component": "tapTempo"
       }
     }
   }

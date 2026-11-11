@@ -45,3 +45,6 @@ bandbox-promo-bgm-*.wav
 
 # 歸藏设计社交卡任务产物（本地生成，不随仓库开源）
 local-tests/
+
+# 宣传封面矩阵工作区（本地生成，含本机绝对路径与大体积素材，不入库）
+resources/

@@ -1,0 +1,181 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ headTitle }}" clock="{{ clock }}"></pagehead>
+
+    <!-- 选择态：三模式 + 骰子单/双（仅骰子模式显示） -->
+    <text class="f pickLabel" show="{{ stage === 'choose' }}">选一个玩法</text>
+
+    <div class="modeCard c1" show="{{ stage === 'choose' }}" style="background-color: {{ mode === 'dice' ? '#0D6EFF' : '#262626' }};" @click="pickMode('dice')">
+      <text class="f mName">投骰子</text>
+      <text class="f mDesc" style="color: {{ mode === 'dice' ? '#FFFFFF' : 'rgba(255,255,255,0.5)' }};">1 - 6 点 · 可单可双</text>
+    </div>
+    <div class="modeCard c2" show="{{ stage === 'choose' }}" style="background-color: {{ mode === 'coin' ? '#0D6EFF' : '#262626' }};" @click="pickMode('coin')">
+      <text class="f mName">抛硬币</text>
+      <text class="f mDesc" style="color: {{ mode === 'coin' ? '#FFFFFF' : 'rgba(255,255,255,0.5)' }};">正面 或 反面</text>
+    </div>
+    <div class="modeCard c3" show="{{ stage === 'choose' }}" style="background-color: {{ mode === 'letter' ? '#0D6EFF' : '#262626' }};" @click="pickMode('letter')">
+      <text class="f mName">随机字母</text>
+      <text class="f mDesc" style="color: {{ mode === 'letter' ? '#FFFFFF' : 'rgba(255,255,255,0.5)' }};">A - Z 大写</text>
+    </div>
+
+    <text class="f diceLabel" show="{{ showDice }}">骰子个数</text>
+    <div class="segs" show="{{ showDice }}">
+      <div class="seg" style="background-color: {{ diceCount === 1 ? '#0D6EFF' : 'transparent' }};" @click="pickDice(1)"><text class="f segT">一个</text></div>
+      <div class="seg" style="background-color: {{ diceCount === 2 ? '#0D6EFF' : 'transparent' }};" @click="pickDice(2)"><text class="f segT">两个</text></div>
+    </div>
+
+    <div class="go enter" show="{{ stage === 'choose' }}" @click="enterDraw"><text class="f goT">进入</text></div>
+
+    <!-- 抽取态：大结果卡 + 开始抽取 + 换模式 -->
+    <div class="result" show="{{ stage === 'draw' }}">
+      <text class="f rLabel">{{ resultLabel }}</text>
+      <text class="f rVal" style="font-size: {{ fontSize }}px;">{{ display }}</text>
+      <text class="f rSub">{{ subText }}</text>
+    </div>
+    <div class="go drawGo" show="{{ stage === 'draw' }}" style="background-color: {{ rolling ? '#333333' : '#0D6EFF' }};" @click="startDraw"><text class="f goT">{{ btnText }}</text></div>
+    <text class="f change" show="{{ stage === 'draw' }}" @click="backToChoose">换模式</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.pickLabel { position: absolute; left: 12px; top: 92px; width: 180px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.modeCard { position: absolute; left: 3px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; padding: 0px 18px; flex-direction: column; justify-content: center; }
+.c1 { top: 120px; }
+.c2 { top: 190px; }
+.c3 { top: 260px; }
+.mName { width: 170px; height: 24px; line-height: 24px; font-size: 17px; color: #FFFFFF; }
+.mDesc { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.diceLabel { position: absolute; left: 12px; top: 332px; width: 180px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.segs { position: absolute; left: 6px; top: 358px; width: 200px; height: 44px; flex-direction: row; border-radius: 22px; background-color: #1A1A1A; padding: 3px; }
+.seg { flex: 1; height: 38px; border-radius: 19px; align-items: center; justify-content: center; }
+.segT { font-size: 14px; color: #FFFFFF; }
+.go { position: absolute; left: 26px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.enter { top: 412px; }
+.drawGo { top: 390px; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.result { position: absolute; left: 3px; top: 150px; width: 206px; height: 190px; border-radius: 26px; background-color: #151515; align-items: center; justify-content: center; flex-direction: column; }
+.rLabel { width: 190px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+.rVal { width: 190px; height: 100px; line-height: 100px; text-align: center; font-size: 76px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+.rSub { width: 190px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+.change { position: absolute; left: 21px; top: 444px; width: 170px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+</style>
+
+<script>
+import g from '../../utils/g'
+import lightRandom from '../../utils/lightRandom'
+
+const ROLL_MS = 60
+const ROLL_TICKS = 50  // 60 × 50 = 3000ms
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    stage: 'choose',
+    mode: 'dice',
+    diceCount: 1,
+    showDice: true,
+    headTitle: '轻量随机',
+    modeTitle: '投骰子 · 单骰',
+    rolling: false,
+    timer: null,
+    display: '—',
+    subText: '',
+    resultLabel: '',
+    fontSize: 76,
+    btnText: '开始抽取'
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+  onHide() {
+    this.clear()
+  },
+  onDestroy() {
+    this.clear()
+  },
+  clear() {
+    if (this.timer) clearInterval(this.timer)
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    this.timer = null
+    this.rolling = false
+    // 动画中途切后台/返回：把「抽取中…」恢复成可点的稳定文案
+    if (this.btnText === '抽取中…') this.btnText = '再抽一次'
+    if (this.resultLabel === '抽取中…') this.resultLabel = this.modeTitle
+  },
+  pickMode(m) {
+    if (this.rolling) return
+    g.haptic.short()
+    this.mode = m
+    this.showDice = (m === 'dice')
+  },
+  pickDice(n) {
+    if (this.rolling) return
+    g.haptic.short()
+    this.diceCount = n
+  },
+  enterDraw() {
+    if (this.rolling) return
+    g.haptic.short()
+    let title = '投骰子 · 单骰'
+    let fs = 76
+    if (this.mode === 'coin') { title = '抛硬币'; fs = 48 }
+    else if (this.mode === 'letter') { title = '随机字母'; fs = 88 }
+    else if (this.diceCount === 2) { title = '投骰子 · 双骰'; fs = 48 }
+    this.modeTitle = title
+    this.headTitle = title
+    this.fontSize = fs
+    this.display = '—'
+    this.subText = ''
+    this.resultLabel = ''
+    this.btnText = '开始抽取'
+    this.showDice = false
+    this.stage = 'draw'
+  },
+  backToChoose() {
+    if (this.rolling) return
+    this.stage = 'choose'
+    this.headTitle = '轻量随机'
+    this.showDice = (this.mode === 'dice')
+  },
+  startDraw() {
+    if (this.rolling) return
+    g.haptic.short()
+    this.rolling = true
+    this.btnText = '抽取中…'
+    this.resultLabel = '抽取中…'
+    this.subText = ''
+    let n = 0
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => {
+      if (!this.$valid) {
+        clearInterval(this.timer)
+        this.timer = null
+        return
+      }
+      n++
+      this.display = lightRandom.tickText(this.mode, this.diceCount)
+      if (n >= ROLL_TICKS) {
+        clearInterval(this.timer)
+        this.timer = null
+        const r = lightRandom.draw(this.mode, this.diceCount)
+        this.display = r.text
+        this.subText = r.sub
+        this.resultLabel = this.modeTitle
+        this.rolling = false
+        this.btnText = '再抽一次'
+        g.haptic.pattern(2, 120)
+      }
+    }, ROLL_MS)
+  }
+}
+</script>

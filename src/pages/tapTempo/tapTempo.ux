@@ -1,0 +1,145 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <!-- 打拍区：全屏，运行中点任意处都算一拍。所有显示元素都是它的子节点 -->
+    <div class="tapZone" @click="onTap">
+      <pagehead title="节拍测定" clock="{{ clock }}"></pagehead>
+      <text class="f big" style="color: {{ bigColor }};">{{ big }}</text>
+      <text class="f unit">BPM</text>
+      <text class="f status">{{ status }}</text>
+      <div class="pulse" style="background-color: {{ pulseOn ? '#0D6EFF' : '#333333' }};"></div>
+      <text class="f meta" style="color: {{ metaColor }};">{{ meta }}</text>
+      <text class="f hint">{{ hint }}</text>
+    </div>
+
+    <!-- 三个按钮与 .tapZone 是兄弟节点，互不为父节点：
+         点「结束」不会冒泡到打拍区顺带算一拍；idle/done 点屏幕也不会重开。
+         z-index 20 < 返回按钮的 99，不挡返回。 -->
+    <div class="go" if="{{ state === 'idle' }}" @click="start">
+      <text class="f goT">开始</text>
+    </div>
+    <div class="go goStop" if="{{ state === 'running' }}" @click="finish">
+      <text class="f goT">结束</text>
+    </div>
+    <div class="go" if="{{ state === 'done' }}" @click="start">
+      <text class="f goT">再测一次</text>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.tapZone { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
+.big { position: absolute; left: 0px; top: 112px; width: 212px; height: 96px; line-height: 96px; text-align: center; font-size: 76px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.unit { position: absolute; left: 0px; top: 210px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.45); }
+.status { position: absolute; left: 20px; top: 236px; width: 172px; height: 26px; line-height: 26px; text-align: center; font-size: 16px; color: rgba(255,255,255,0.7); text-overflow: ellipsis; lines: 1; }
+.pulse { position: absolute; left: 91px; top: 272px; width: 30px; height: 30px; border-radius: 15px; background-color: #333333; }
+.meta { position: absolute; left: 0px; top: 312px; width: 212px; height: 26px; line-height: 26px; text-align: center; font-size: 18px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.go { position: absolute; left: 26px; top: 358px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; z-index: 20; align-items: center; justify-content: center; }
+.goStop { background-color: #FF3B30; }
+.goT { font-size: 17px; font-weight: bold; color: #FFFFFF; }
+.hint { position: absolute; left: 16px; top: 424px; width: 180px; height: 40px; text-align: center; font-size: 13px; line-height: 20px; color: rgba(255,255,255,0.4); }
+</style>
+
+<script>
+import g from '../../utils/g'
+import tapTempo from '../../utils/tapTempo'
+
+/* 连拍快于此值时圆点保持常亮，正是想要的效果 */
+const PULSE_MS = 120
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    state: 'idle',
+    big: '--',
+    bigColor: '#FFFFFF',
+    status: '点下方按钮开始',
+    meta: '0 次 · 0.0 秒',
+    metaColor: 'rgba(255,255,255,0.6)',
+    hint: '点开始后跟着节拍敲屏幕',
+    pulseOn: false,
+    taps: tapTempo.createState(),
+    timer: null
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    this.resetView()
+  },
+  onHide() {
+    this.teardown()
+  },
+  onDestroy() {
+    this.teardown()
+  },
+  teardown() {
+    if (this.timer) { clearTimeout(this.timer); this.timer = null }
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    g.haptic.stop()
+    g.screen.leave()
+    // 回到初始态：切后台/退出后回来不会卡在 running，常亮也一定被释放
+    this.state = 'idle'
+    this.resetView()
+  },
+  resetView() {
+    this.taps = tapTempo.createState()
+    this.big = '--'
+    this.bigColor = '#FFFFFF'
+    this.status = '点下方按钮开始'
+    this.meta = '0 次 · 0.0 秒'
+    this.metaColor = 'rgba(255,255,255,0.6)'
+    this.hint = '点开始后跟着节拍敲屏幕'
+    this.pulseOn = false
+  },
+  start() {
+    // 防重入：连点按钮不会重复 enter 常亮
+    if (this.state === 'running') return
+    this.resetView()
+    this.state = 'running'
+    this.status = '点击屏幕打拍子'
+    this.hint = '敲屏幕打拍子 · 红钮结束'
+    // bright:false 时 enter 完全同步，必须留在同步路径上（与节拍器一致）
+    g.screen.enter({ bright: false, keepOn: true })
+    g.haptic.short()
+  },
+  onTap() {
+    // 只在运行中计数；idle/done 点屏幕一律无效，防止误触重开
+    if (this.state !== 'running') return
+    const st = tapTempo.tap(this.taps, Date.now())
+    this.taps = st
+    const r = tapTempo.read(st)
+    this.big = r.big
+    this.meta = r.meta
+    this.status = r.count < 2 ? '再敲一下出 BPM' : '点击屏幕打拍子'
+    this.pulseOn = true
+    // 只有一个可复用定时器：每拍先清再设，绝不堆积
+    if (this.timer) clearTimeout(this.timer)
+    this.timer = setTimeout(() => {
+      this.timer = null
+      if (this.$valid) this.pulseOn = false
+    }, PULSE_MS)
+    g.haptic.short()
+  },
+  finish() {
+    if (this.state !== 'running') return
+    if (this.timer) { clearTimeout(this.timer); this.timer = null }
+    this.pulseOn = false
+    this.state = 'done'
+    // 刻意不再调 read()：大数字与副行定格在最后一拍
+    this.bigColor = '#0D6EFF'
+    this.metaColor = '#00C853'
+    this.status = this.taps.count < 2 ? '没有测到节拍' : '测定完成'
+    this.hint = '点按钮再测一次'
+    g.screen.leave()
+    g.haptic.pattern(2, 160)
+  }
+}
+</script>
