@@ -9,7 +9,7 @@
       <img class="logo" src="/common/icon.png" />
       <text class="f name">BandBox</text>
       <text class="f ver">v0.1.0</text>
-      <text class="f desc">为小米手环窄长屏设计的小工具箱，包含 30 个本地小工具：计算、记录、查询与趣味功能。</text>
+      <text class="f desc">为小米手环窄长屏设计的小工具箱，包含 35 个本地小工具：计算、记录、查询与趣味功能。</text>
       <div class="card" @click="goImeTest">
         <text class="f cTitle">输入法诊断</text>
         <text class="f cBody">检查系统输入法是否可用，结果直接显示在屏幕上。</text>

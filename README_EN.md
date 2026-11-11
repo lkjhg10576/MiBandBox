@@ -3,7 +3,7 @@
 
   <h1>BandBox · The Xiaomi Band Toolbox</h1>
 
-  <p><b>34 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
+  <p><b>35 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
   <p>Fully offline · No fees · No accounts · No closed-source dependencies · MIT licensed</p>
 
   <p>
@@ -16,10 +16,10 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>Package <code>com.miband.bandbox</code> · Version <code>0.1.0</code> (versionCode 225) · Built with Vela JS Quick Apps</p>
+  <p>Package <code>com.miband.bandbox</code> · Version <code>0.1.0</code> (versionCode 228) · Built with Vela JS Quick Apps</p>
 </div>
 
-<img src="assets/promo/hero-en.jpg" alt="BandBox: 34 local tools for Xiaomi Band" />
+<img src="assets/promo/hero-en.jpg" alt="BandBox: 35 local tools for Xiaomi Band" />
 
 ---
 
@@ -27,20 +27,20 @@
 
 BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 11** (212 × 520 strip display).
 
-A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-three small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
+A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-five small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
 Everything stays on the band. **No network calls, no fees, no sign-up, no uploads.**
 
 | Highlights | Details |
 | --- | --- |
-| Tools | **34**, covering everyday, notes, fun and system-information use cases |
+| Tools | **35**, covering everyday, notes, fun and system-information use cases |
 | Network requests | **0** (no third-party APIs, no telemetry, no ads) |
 | Accounts / payments | **0** (no login, no subscription, no activation) |
 | Closed-source dependencies | **0** (nothing but the optional official AstroBox plugin) |
 | Bundled fonts | **0** (uses the Band 10/11 system fonts, MiSans / MiLan Pro) |
 | License | **MIT** |
 
-> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 34 tools work exactly the same.
+> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 35 tools work exactly the same.
 
 ---
 
@@ -84,6 +84,7 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 | Morse code | Text to dots-and-dashes, auto playback, manual tapping |
 | Quick QR code | Text / URL / Wi-Fi QR codes |
 | Waste sorting | 200+ item lookup, five categories |
+| Date calculator | Days between two dates; age from a birthday as years + days and a 4-decimal approximation |
 
 ### 📝 Notes & connectivity
 
@@ -106,10 +107,10 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 | Book of answers | A random answer, revealed with a fade |
 | Wooden fish | Hand-drawn wooden fish with daily and total counters, auto-strike |
 | Vibrator | Short / long / rhythmic patterns, adjustable interval |
-| Metronome | Set a BPM; a short vibration on every beat, screen stays on while running |
+| Metronome | Set a BPM; a vibration on every beat, screen stays on while running; vibration strength is selectable (weak = short / strong = long), strong by default |
 | Display test | 12 solid colours for dead pixels and colour cast |
 | CPS test | A dedicated "start" button, 5-second countdown and taps-per-second, no accidental restart after the result |
-| Tap tempo | Untimed: tap the screen along with the beat, live BPM from the last 8 intervals, freezes when you hit "stop" |
+| Tap tempo | Untimed: tap the screen along with the beat, live BPM from the last 8 intervals, freezes when you hit "stop"; tap feedback always uses weak strength (short vibration), not adjustable |
 | What to eat | Random "eat" and "drink" suggestions |
 | Random number | Adjustable range with a rolling draw |
 | Light random | Dice (one or two), coin flip or random letter, revealed with a rolling animation |
@@ -236,7 +237,7 @@ src/
 │                          otp / otpAccounts / otpProtocol (TOTP core and protocol, identical copies)
 │                          otpStore (secret storage) / otpBridge (always-on receiver)
 │                          marqueeState (cross-page marquee config)
-└── pages/                 63 pages (incl. three unit-converter pages) (including the input page, lyrics/transfer pages and five otp/ pages)
+└── pages/                 67 pages (incl. three unit-converter pages) (including the input page, lyrics/transfer pages and five otp/ pages)
 
 plugin/
 └── bandbox-helper/        AstroBox plugin (API level 4): pick & push LRC / sync TOTP accounts

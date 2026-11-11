@@ -1,0 +1,219 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ headTitle }}" clock="{{ clock }}"></pagehead>
+
+    <!-- 选择态：两个子功能 -->
+    <text class="f pickLabel" show="{{ stage === 'choose' }}">选一个功能</text>
+
+    <div class="modeCard c1" show="{{ stage === 'choose' }}" style="background-color: {{ mode === 'interval' ? '#0D6EFF' : '#262626' }};" @click="pickMode('interval')">
+      <text class="f mName">日期间隔</text>
+      <text class="f mDesc" style="color: {{ mode === 'interval' ? '#FFFFFF' : 'rgba(255,255,255,0.5)' }};">两个日期 · 相差天数</text>
+    </div>
+    <div class="modeCard c2" show="{{ stage === 'choose' }}" style="background-color: {{ mode === 'age' ? '#0D6EFF' : '#262626' }};" @click="pickMode('age')">
+      <text class="f mName">年龄计算</text>
+      <text class="f mDesc" style="color: {{ mode === 'age' ? '#FFFFFF' : 'rgba(255,255,255,0.5)' }};">生日 · 周岁与小数</text>
+    </div>
+
+    <div class="go enter" show="{{ stage === 'choose' }}" @click="enterMode"><text class="f goT">进入</text></div>
+    <text class="f chooseHint" show="{{ stage === 'choose' }}">全部在本机计算 · 不联网</text>
+
+    <!-- 间隔态：两个日期 + 结果 -->
+    <div class="dateCard r1" show="{{ stage === 'interval' }}" @click="pickStart">
+      <text class="f dLabel">开始日期</text>
+      <text class="f dValue">{{ startDate }}</text>
+    </div>
+    <div class="dateCard r2" show="{{ stage === 'interval' }}" @click="pickEnd">
+      <text class="f dLabel">结束日期</text>
+      <text class="f dValue">{{ endDate }}</text>
+    </div>
+    <div class="go calcGo" show="{{ stage === 'interval' }}" @click="doCalc"><text class="f goT">计算</text></div>
+
+    <text class="f rVal" show="{{ stage === 'interval' }}">{{ intervalVal }}</text>
+    <text class="f rUnit" show="{{ stage === 'interval' }}">天</text>
+    <text class="f rNote" show="{{ stage === 'interval' }}">{{ intervalNote }}</text>
+
+    <!-- 年龄态：生日 + 两行结果 -->
+    <div class="dateCard r1" show="{{ stage === 'age' }}" @click="pickBirth">
+      <text class="f dLabel">出生日期</text>
+      <text class="f dValue">{{ birthDate }}</text>
+    </div>
+    <div class="go calcGoAge" show="{{ stage === 'age' }}" @click="doCalc"><text class="f goT">计算</text></div>
+
+    <text class="f ageLine1" show="{{ stage === 'age' }}" style="font-size: {{ ageFont }}px;">{{ ageLine1 }}</text>
+    <text class="f ageLine2" show="{{ stage === 'age' }}">{{ ageLine2 }}</text>
+    <text class="f ageTotal" show="{{ stage === 'age' }}">{{ ageTotal }}</text>
+
+    <text class="f change" show="{{ stage !== 'choose' }}" @click="backToChoose">换功能</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.pickLabel { position: absolute; left: 12px; top: 92px; width: 180px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.modeCard { position: absolute; left: 3px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; padding: 0px 18px; flex-direction: column; justify-content: center; }
+.c1 { top: 120px; }
+.c2 { top: 190px; }
+.mName { width: 170px; height: 24px; line-height: 24px; font-size: 17px; color: #FFFFFF; }
+.mDesc { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.go { position: absolute; left: 26px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.enter { top: 280px; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.chooseHint { position: absolute; left: 0px; top: 344px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
+
+/* 日期行：整卡可点，点开滚轮选日期 */
+.dateCard { position: absolute; left: 3px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; padding: 8px 18px; flex-direction: column; justify-content: center; }
+.r1 { top: 92px; }
+.r2 { top: 164px; }
+.dLabel { width: 170px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.dValue { width: 170px; height: 28px; line-height: 28px; font-size: 20px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+
+.calcGo { top: 244px; }
+.calcGoAge { top: 172px; }
+.rVal { position: absolute; left: 3px; top: 306px; width: 206px; height: 76px; line-height: 76px; text-align: center; font-size: 64px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+.rUnit { position: absolute; left: 0px; top: 384px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 18px; color: #9FC4FF; }
+.rNote { position: absolute; left: 0px; top: 410px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
+
+.ageLine1 { position: absolute; left: 0px; top: 244px; width: 212px; height: 56px; line-height: 56px; text-align: center; font-size: 40px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.ageLine2 { position: absolute; left: 0px; top: 312px; width: 212px; height: 30px; line-height: 30px; text-align: center; font-size: 20px; color: #9FC4FF; }
+.ageTotal { position: absolute; left: 0px; top: 350px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+.change { position: absolute; left: 21px; top: 444px; width: 170px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+</style>
+
+<script>
+import g from '../../utils/g'
+import prompt from '@system.prompt'
+import dateCalc from '../../utils/dateCalc'
+import pickState from '../daysmatter/pickState'
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    stage: 'choose',
+    mode: 'interval',
+    headTitle: '日期计算',
+    startDate: '',
+    endDate: '',
+    birthDate: '2000-01-01',
+    // 本次 push 正在填哪个字段：'start' | 'end' | 'birth'，空串表示没有待回传
+    picking: '',
+    intervalVal: '—',
+    intervalNote: '',
+    ageLine1: '—',
+    ageLine2: '',
+    ageTotal: '',
+    ageFont: 40
+  },
+  onInit() {
+    const today = g.time.todayKey()
+    this.startDate = today
+    this.endDate = today
+    // 清掉上一个页面可能残留的待回传日期
+    pickState.date = ''
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    this.applyPickedDate()
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  /** 消费滚轮页回传的日期；没 confirm 直接返回时原值不变 */
+  applyPickedDate() {
+    const field = this.picking
+    if (!field) return
+    this.picking = ''
+    const picked = pickState.date
+    pickState.date = ''
+    if (!picked) return
+    if (field === 'start') this.startDate = picked
+    else if (field === 'end') this.endDate = picked
+    else if (field === 'birth') this.birthDate = picked
+    this.resetResult()
+  },
+  resetResult() {
+    this.intervalVal = '—'
+    this.intervalNote = ''
+    this.ageLine1 = '—'
+    this.ageLine2 = ''
+    this.ageTotal = ''
+    this.ageFont = 40
+  },
+  pickMode(m) {
+    g.haptic.short()
+    this.mode = m
+  },
+  enterMode() {
+    g.haptic.short()
+    this.stage = this.mode
+    this.headTitle = this.mode === 'interval' ? '日期间隔' : '年龄计算'
+    this.resetResult()
+  },
+  backToChoose() {
+    g.haptic.short()
+    this.stage = 'choose'
+    this.headTitle = '日期计算'
+  },
+  pushPicker(field, current) {
+    this.picking = field
+    pickState.date = ''
+    g.haptic.short()
+    g.router.push('/pages/daysmatter/inputdate', { date: current })
+  },
+  pickStart() {
+    this.pushPicker('start', this.startDate)
+  },
+  pickEnd() {
+    this.pushPicker('end', this.endDate)
+  },
+  pickBirth() {
+    this.pushPicker('birth', this.birthDate)
+  },
+  doCalc() {
+    if (this.stage === 'interval') this.calcInterval()
+    else this.calcAge()
+  },
+  calcInterval() {
+    const n = dateCalc.intervalDays(this.startDate, this.endDate)
+    if (n === null) {
+      prompt.showToast({ message: '日期无效', duration: 1400 })
+      g.haptic.long()
+      this.intervalVal = '—'
+      this.intervalNote = ''
+      return
+    }
+    g.haptic.short()
+    this.intervalVal = String(Math.abs(n))
+    if (n < 0) this.intervalNote = '结束早于开始 · 按绝对值显示'
+    else if (n === 0) this.intervalNote = '同一天'
+    else this.intervalNote = ''
+  },
+  calcAge() {
+    const r = dateCalc.ageAt(this.birthDate, g.time.todayKey())
+    if (!r) {
+      prompt.showToast({ message: '生日不能晚于今天', duration: 1400 })
+      g.haptic.long()
+      this.ageLine1 = '—'
+      this.ageLine2 = ''
+      this.ageTotal = ''
+      return
+    }
+    g.haptic.short()
+    this.ageLine1 = r.years + '岁' + r.days + '天'
+    this.ageLine2 = '≈' + r.approx + '岁'
+    this.ageTotal = '共 ' + r.totalDays + ' 天'
+    this.ageFont = r.years >= 100 ? 30 : 40
+  }
+}
+</script>

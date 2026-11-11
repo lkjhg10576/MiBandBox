@@ -35,7 +35,8 @@ const apps = [
   { id: 'otp', name: '动态口令', route: '/pages/otp/list', icon: '/common/icons/otp.png', desc: 'TOTP · 本地生成 · 手机同步' },
   { id: 'unitconvert', name: '单位换算', route: '/pages/unitconvert', icon: '/common/icons/unitconvert.png', desc: '长度 · 质量 · 温度' },
   { id: 'metronome', name: '节拍器', route: '/pages/metronome', icon: '/common/icons/metronome.png', desc: 'BPM · 振动' },
-  { id: 'tapTempo', name: '节拍测定', route: '/pages/tapTempo', icon: '/common/icons/tapTempo.png', desc: '点屏幕 · 测 BPM' }
+  { id: 'tapTempo', name: '节拍测定', route: '/pages/tapTempo', icon: '/common/icons/tapTempo.png', desc: '点屏幕 · 测 BPM' },
+  { id: 'datecalc', name: '日期计算', route: '/pages/datecalc', icon: '/common/icons/datecalc.png', desc: '间隔天数 · 年龄' }
 ]
 
 export default apps

@@ -2,7 +2,7 @@
   "package": "com.miband.bandbox",
   "name": "BandBox",
   "versionName": "0.1.0",
-  "versionCode": 225,
+  "versionCode": 228,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -257,6 +257,9 @@
       },
       "pages/tapTempo": {
         "component": "tapTempo"
+      },
+      "pages/datecalc": {
+        "component": "datecalc"
       }
     }
   }
