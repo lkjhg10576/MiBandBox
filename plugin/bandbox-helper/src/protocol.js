@@ -10,7 +10,7 @@ export const APP_ID = 'bandbox-lyrics'
 export const VERSION = 1
 
 /** 目标快应用包名（手环端 BandBox）。 */
-export const TARGET_PKG = 'com.miband.box'
+export const TARGET_PKG = 'com.miband.bandbox'
 
 /** 单条 JSON 超过该字节数就分片（按上线消息的 UTF-8 字节数计）。 */
 export const CHUNK_LIMIT = 12 * 1024

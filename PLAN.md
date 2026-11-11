@@ -9,7 +9,7 @@
 - 行为与交互以 `REPORT.md` 中的记录为参考。
 - 不包含激活、授权、付费或引流功能。
 - 数据本地化，零联网必需。
-- 应用名称 BandBox，包名 `com.miband.box`。
+- 应用名称 BandBox，包名 `com.miband.bandbox`。
 
 ---
 

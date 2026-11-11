@@ -1,8 +1,8 @@
 {
-  "package": "com.miband.box",
+  "package": "com.miband.bandbox",
   "name": "BandBox",
-  "versionName": "0.4.4",
-  "versionCode": 222,
+  "versionName": "0.1.0",
+  "versionCode": 223,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -248,6 +248,9 @@
       },
       "pages/unitconvert/picker": {
         "component": "picker"
+      },
+      "pages/metronome": {
+        "component": "metronome"
       }
     }
   }

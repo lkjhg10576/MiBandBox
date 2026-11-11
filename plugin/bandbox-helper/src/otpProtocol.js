@@ -16,7 +16,7 @@
 
 export const APP_ID = 'bandbox-otp'
 export const VERSION = 1
-export const TARGET_PKG = 'com.miband.box'
+export const TARGET_PKG = 'com.miband.bandbox'
 export const CHUNK_LIMIT = 12 * 1024
 export const ENVELOPE_RESERVE = 256
 

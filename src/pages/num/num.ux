@@ -11,10 +11,10 @@
 
     <text class="f label">滚动间隔</text>
     <div class="chips">
-      <div class="chip {{ interval === 100 ? 'on' : '' }}" @click="setInterval(100)"><text class="f chipT">100ms</text></div>
-      <div class="chip {{ interval === 250 ? 'on' : '' }}" @click="setInterval(250)"><text class="f chipT">250ms</text></div>
-      <div class="chip {{ interval === 500 ? 'on' : '' }}" @click="setInterval(500)"><text class="f chipT">500ms</text></div>
-      <div class="chip {{ interval === 1000 ? 'on' : '' }}" @click="setInterval(1000)"><text class="f chipT">1s</text></div>
+      <div class="chip" style="background-color: {{ interval === 100 ? '#0D6EFF' : '#262626' }};" @click="pickInterval(100)"><text class="f chipT">100ms</text></div>
+      <div class="chip" style="background-color: {{ interval === 250 ? '#0D6EFF' : '#262626' }};" @click="pickInterval(250)"><text class="f chipT">250ms</text></div>
+      <div class="chip" style="background-color: {{ interval === 500 ? '#0D6EFF' : '#262626' }};" @click="pickInterval(500)"><text class="f chipT">500ms</text></div>
+      <div class="chip" style="background-color: {{ interval === 1000 ? '#0D6EFF' : '#262626' }};" @click="pickInterval(1000)"><text class="f chipT">1s</text></div>
     </div>
 
     <div class="go" @click="toggle"><text class="f goT">{{ running ? '暂停' : '开始滚动' }}</text></div>
@@ -31,8 +31,8 @@
 .dLabel { font-size: 14px; color: rgba(255,255,255,0.35); }
 .label { position: absolute; left: 12px; top: 250px; font-size: 14px; color: rgba(255,255,255,0.45); }
 .chips { position: absolute; left: 6px; top: 276px; width: 200px; height: 64px; flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
+/* 选中态走内联 style：本渲染器不支持 .chip.on 复合类选择器，会把复合规则套到所有 .chip */
 .chip { width: 96px; height: 28px; margin-bottom: 6px; border-radius: 14px; background-color: #262626; align-items: center; justify-content: center; }
-.chip.on { background-color: rgba(13,110,255,0.35); }
 .chipT { font-size: 14px; color: #FFFFFF; }
 .go { position: absolute; left: 26px; top: 370px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goT { font-size: 14px; color: #FFFFFF; }
@@ -56,6 +56,7 @@ export default {
     value: 0,
     display: '00000',
     interval: 250,
+    dirty: false,
     running: false,
     timer: null,
     clockTimer: null
@@ -66,7 +67,10 @@ export default {
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
     g.kv.init(() => {
-      this.interval = g.kv.get('numInterval', 250)
+      // kv.js 读成功会整份替换 data，读盘窗口内的点按会被吞掉，故用 dirty 挡住旧值回写
+      if (!this.$valid || this.dirty) return
+      const v = g.kv.get('numInterval', 250)
+      if (v === 100 || v === 250 || v === 500 || v === 1000) this.interval = v
     })
   },
   onHide() {
@@ -77,7 +81,9 @@ export default {
     this.stop()
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
-  setInterval(v) {
+  // 不能叫 setInterval：模板编译器对撞上 Node 全局的标识符不加 _vm_. 前缀（TemplateUtil.js:232）
+  pickInterval(v) {
+    this.dirty = true
     this.interval = v
     g.kv.set('numInterval', v)
     if (this.running) {

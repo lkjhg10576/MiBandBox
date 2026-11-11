@@ -3,7 +3,7 @@
 
   <h1>BandBox · The Xiaomi Band Toolbox</h1>
 
-  <p><b>31 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
+  <p><b>32 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
   <p>Fully offline · No fees · No accounts · No closed-source dependencies · MIT licensed</p>
 
   <p>
@@ -16,10 +16,10 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>Package <code>com.miband.box</code> · Version <code>0.1.0</code> (versionCode 222) · Built with Vela JS Quick Apps</p>
+  <p>Package <code>com.miband.bandbox</code> · Version <code>0.1.0</code> (versionCode 223) · Built with Vela JS Quick Apps</p>
 </div>
 
-<img src="assets/promo/hero-en.jpg" alt="BandBox: 31 local tools for Xiaomi Band" />
+<img src="assets/promo/hero-en.jpg" alt="BandBox: 32 local tools for Xiaomi Band" />
 
 ---
 
@@ -27,20 +27,20 @@
 
 BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 11** (212 × 520 strip display).
 
-A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-one small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
+A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-two small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
 Everything stays on the band. **No network calls, no fees, no sign-up, no uploads.**
 
 | Highlights | Details |
 | --- | --- |
-| Tools | **31**, covering everyday, notes, fun and system-information use cases |
+| Tools | **32**, covering everyday, notes, fun and system-information use cases |
 | Network requests | **0** (no third-party APIs, no telemetry, no ads) |
 | Accounts / payments | **0** (no login, no subscription, no activation) |
 | Closed-source dependencies | **0** (nothing but the optional official AstroBox plugin) |
 | Bundled fonts | **0** (uses the Band 10/11 system fonts, MiSans / MiLan Pro) |
 | License | **MIT** |
 
-> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 31 tools work exactly the same.
+> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 32 tools work exactly the same.
 
 ---
 
@@ -102,10 +102,11 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 | Red light | Red / warm orange / white / cool light at full brightness, lights up on entry |
 | Marquee | Text, size, speed and colour; scrolls horizontally in portrait, rotates 90° in landscape |
 | Lyrics | Local lyrics with auto-scroll in portrait and landscape, plus "transfer from phone" |
-| Level | Dual-axis tilt dot with a crosshair, calibratable |
+| Level | Dual-axis tilt dot with a crosshair, calibratable; four tiers (green / blue / orange / red) follow the tilt |
 | Book of answers | A random answer, revealed with a fade |
 | Wooden fish | Hand-drawn wooden fish with daily and total counters, auto-strike |
 | Vibrator | Short / long / rhythmic patterns, adjustable interval |
+| Metronome | Set a BPM; a short vibration on every beat, screen stays on while running |
 | Display test | 12 solid colours for dead pixels and colour cast |
 | CPS test | A dedicated "start" button, 5-second countdown and taps-per-second, no accidental restart after the result |
 | What to eat | Random "eat" and "drink" suggestions |
@@ -169,9 +170,9 @@ Search for **BandBox** in the **AstroBox** app and install it there; updates wor
 Grab a `.rpk` from the `release/` or `beta/` directory and install it over the top:
 
 ```bash
-adb push BandBox.rpk /data/app/com.miband.box.rpk
-adb shell pm install /data/app/com.miband.box.rpk
-adb shell am start com.miband.box
+adb push BandBox.rpk /data/app/com.miband.bandbox.rpk
+adb shell pm install /data/app/com.miband.bandbox.rpk
+adb shell am start com.miband.bandbox
 ```
 
 > Never install with `rm -rf /data/app/<pkg>` plus `unzip`: AMS keeps a broken "file deleted, state still there" app around and `am start` then only shows a black screen. Use `pm install` to overwrite.

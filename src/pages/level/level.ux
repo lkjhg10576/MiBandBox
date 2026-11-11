@@ -36,6 +36,7 @@
 
 <script>
 import g from '../../utils/g'
+import levelUtil from '../../utils/level'
 import sensor from '@system.sensor'
 import brightness from '@system.brightness'
 
@@ -52,7 +53,10 @@ let lastRollText = null
 let lastPitchText = null
 let lastDotX = null
 let lastDotY = null
-let lastState = null
+// 上一次的档位下标。四档各有唯一的 index 与颜色，
+// 颜色与文案一起随 index 写入，不会再出现「橙红两档共用一个 state 字符串，
+// 于是红色永远刷不出来」。
+let lastLevelIndex = -1
 
 function clamp(v, min, max) {
   if (v < min) return min
@@ -87,7 +91,7 @@ export default {
     lastPitchText = null
     lastDotX = null
     lastDotY = null
-    lastState = null
+    lastLevelIndex = -1
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
@@ -140,8 +144,6 @@ export default {
   apply() {
     const roll = this.roll === null ? 0 : this.roll
     const pitch = this.pitch === null ? 0 : this.pitch
-    const absRoll = Math.abs(roll)
-    const absPitch = Math.abs(pitch)
 
     // 只在值真变化时写 viewModel（0.1° 粒度，约 1/3 的 tick 才会变）
     const rt = formatAngle(roll)
@@ -170,21 +172,15 @@ export default {
       lastDotY = dy
     }
 
-    let state = '倾斜'
-    let color = '#FF9500'
-    if (absRoll < 1.5 && absPitch < 1.5) {
-      state = '已水平'
-      color = '#00C853'
-    } else if (absRoll < 8 && absPitch < 8) {
-      state = '微倾'
-      color = '#0D6EFF'
-    } else {
-      color = absRoll > 30 || absPitch > 30 ? '#FF3B30' : '#FF9500'
-    }
-    if (state !== lastState) {
-      this.state = state
-      this.stateColor = color
-      lastState = state
+    // 四档分级（绿 / 蓝 / 橙 / 红）：取两轴里更陡的那一根。
+    // 颜色与文案都由档位决定，两者一起写入 —— 档位变了就必定重绘，
+    // 不会出现「文案变了但颜色没变」的半更新。
+    const tilt = levelUtil.maxTilt(roll, pitch)
+    const lv = levelUtil.classify(tilt, lastLevelIndex)
+    if (lv.index !== lastLevelIndex) {
+      this.state = lv.state
+      this.stateColor = lv.color
+      lastLevelIndex = lv.index
     }
   },
   calibrate() {

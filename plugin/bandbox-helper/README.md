@@ -8,7 +8,7 @@
 
 - 版本：`0.3.1`（插件由「BandBox歌词同步」更名为「BandBox辅助」；0.3.0 新增「动态口令」Tab：TOTP 账户批量导入 / 编辑 / 删除并同步到手环）
 - API Level：**4**（`wasi_version: 3`）
-- 目标快应用包名：`com.miband.box`（手环端 BandBox）
+- 目标快应用包名：`com.miband.bandbox`（手环端 BandBox）
 - 协议：本仓库自定义的 `bandbox-lyrics`，与手环端 `src/utils/lyricsTransfer.js` 一一对应
 - 语言：JavaScript（不需要 Rust 工具链）
 
@@ -209,7 +209,7 @@ if (!res.ok) { /* res.error 是宿主给的失败原因 */ }
   因此连接状态以**手机→手环心跳**为准，手环的 `ping` 只做兼容与补充。
 - 手环不再依赖 Vela 的 `getReadyState`（AstroBox 不是官方配套 App，该状态在 AstroBox 场景下不可靠）。
 - 插件在 `onUiRender` 和 `device-action` 时会刷新设备并注册
-  `registerInterconnectRecv(addr, "com.miband.box")`，因此即使还没有点过发送，也能收到手环的
+  `registerInterconnectRecv(addr, "com.miband.bandbox")`，因此即使还没有点过发送，也能收到手环的
   `ready` / `ping`。
 - 宿主会把 `interconnect-message` 包装成
   `{ "addr": "...", "pkgName": "...", "payloadText": "...", "payloadHex": "..." }`；
@@ -226,7 +226,7 @@ if (!res.ok) { /* res.error 是宿主给的失败原因 */ }
 
 ## 动态口令协议（bandbox-otp）
 
-0.3.0 起，同一个插件、同一条 `registerInterconnectRecv(addr, "com.miband.box")` 通道同时承载
+0.3.0 起，同一个插件、同一条 `registerInterconnectRecv(addr, "com.miband.bandbox")` 通道同时承载
 歌词协议与动态口令协议：`handleReply` 按 `app` 字段分流（歌词 `bandbox-lyrics`，口令
 `bandbox-otp`），`protocol.unwrapInterconnectPayload` 对两种裸消息都直接放行。
 `hello` 心跳在每次设备遍历里多发一条 `bandbox-otp` 的 hello（带手机 Unix 秒，手表用于偏差提示），

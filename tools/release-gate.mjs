@@ -11,6 +11,7 @@
  *   R4 禁止 data/private 共存  Vela 运行时直接抛错、页面黑屏（docs/perf-result.md §4.1）
  *   R5 路由与页面文件必须对齐   缺页 = 启动/跳转黑屏
  *   R6 版本号三处一致          manifest / package.json / README
+ *   R7 模板事件不得撞 Node 全局  编译器对 globalThis 上的标识符不加 _vm_. 前缀，点击静默失效
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
@@ -184,6 +185,26 @@ for (const f of walk('src', '.ux')) {
   }
   if (!Number.isInteger(m.versionCode) || m.versionCode <= 0) {
     fail('R6', 'src/manifest.json', 'versionCode 非法')
+  }
+}
+
+// ---------- R7 模板事件处理器不得撞 Node 全局 ----------
+// num.ux 的 @click="setInterval(100)" 被 TemplateUtil.js:232 的 if (globalThis[name]) return
+// 短路，编译产物不带 _vm_. 前缀 → 四个间隔芯片全是死的，且只有真机/模拟器能发现。
+// 只扫事件根标识符：morseCode.ux 的 timers 字段撞全局但仅在脚本里用，扫 data 键会误报。
+{
+  const re = /@(?:click|tap|touchstart|touchend|touchmove|change|input|scroll|longpress|appear|disappear)\s*=\s*"([^"]+)"/g
+  for (const f of walk('src', '.ux')) {
+    const tpl = code(f).split('<template>')[1]
+    if (!tpl) continue
+    const body = tpl.split('</template>')[0]
+    let m
+    while ((m = re.exec(body))) {
+      const id = m[1].match(/^([A-Za-z_$][\w$]*)/)
+      if (id && globalThis[id[1]] !== undefined) {
+        fail('R7', f, `模板事件 "${m[1]}" 的根标识符 ${id[1]} 是 Node 全局，编译器不加 _vm_. 前缀，点击无效`)
+      }
+    }
   }
 }
 

@@ -3,7 +3,7 @@
 
   <h1>BandBox · 小米手环百宝箱</h1>
 
-  <p><b>31 个本地小工具，装进你手腕上那块 212 × 520 的窄长屏。</b></p>
+  <p><b>32 个本地小工具，装进你手腕上那块 212 × 520 的窄长屏。</b></p>
   <p>离线运行 · 零收费 · 零授权 · 无第三方闭源依赖 · MIT 开源</p>
 
   <p>
@@ -16,10 +16,10 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>包名 <code>com.miband.box</code> · 版本 <code>0.1.0</code>（versionCode 222）· 平台 Vela JS 快应用</p>
+  <p>包名 <code>com.miband.bandbox</code> · 版本 <code>0.1.0</code>（versionCode 223）· 平台 Vela JS 快应用</p>
 </div>
 
-<img src="assets/promo/hero-zh.jpg" alt="BandBox：小米手环上的 31 个本地工具" />
+<img src="assets/promo/hero-zh.jpg" alt="BandBox：小米手环上的 32 个本地工具" />
 
 ---
 
@@ -27,20 +27,20 @@
 
 BandBox 是给**小米手环 10 / 11**（212 × 520 跑道屏）做的一个**纯本地**小工具箱。
 
-手环的屏幕窄、可用空间小，通常只能看时间和步数。BandBox 把三十一个小工具塞进这块屏：计算、记录、倒数日、查农历、生成二维码、转摩斯电码、敲木鱼、跑马灯、播放本地歌词、生成动态口令……
+手环的屏幕窄、可用空间小，通常只能看时间和步数。BandBox 把三十二个小工具塞进这块屏：计算、记录、倒数日、查农历、生成二维码、转摩斯电码、敲木鱼、跑马灯、播放本地歌词、生成动态口令……
 
 全部数据留在手环本地，**不联网、不收费、不注册、不上传**。
 
 | 关键点 | 说明 |
 | --- | --- |
-| 工具数量 | **31** 个，覆盖实用、记录、趣味与系统信息四类场景 |
+| 工具数量 | **32** 个，覆盖实用、记录、趣味与系统信息四类场景 |
 | 联网请求 | **0**（没有第三方接口，没有埋点，没有广告） |
 | 账号 / 付费 | **0**（无登录、无订阅、无激活） |
 | 第三方闭源依赖 | **0**（除可选的官方 AstroBox 插件外无任何依赖） |
 | 内置字体 | **0**（直接用 Band 10/11 系统字体 MiSans / MiLan Pro） |
 | 许可证 | **MIT** |
 
-> 手机侧只有一个**可选**的 AstroBox 插件「BandBox辅助」，用来把 LRC 歌词推到手表歌词本、同步动态口令账户。不装它，BandBox 的 31 个工具照常工作。
+> 手机侧只有一个**可选**的 AstroBox 插件「BandBox辅助」，用来把 LRC 歌词推到手表歌词本、同步动态口令账户。不装它，BandBox 的 32 个工具照常工作。
 
 ---
 
@@ -102,10 +102,11 @@ BandBox 是给**小米手环 10 / 11**（212 × 520 跑道屏）做的一个**�
 | 红光手电 | 红光 / 暖橙 / 白光 / 冷光，亮度拉满，进入即亮屏 |
 | 跑马灯 | 文字、字号、速度、颜色；竖屏横向滚动，横屏把内容旋转 90° 后滚动 |
 | 歌词本 | 本地歌词、自动滚动、横竖屏，支持「从手机传输」接收手机推送的歌词 |
-| 水平仪 | 双轴倾角小圆点 + 十字准星，可校准归零 |
+| 水平仪 | 双轴倾角小圆点 + 十字准星，可校准归零；绿 / 蓝 / 橙 / 红 四档随倾斜程度切换 |
 | 答案之书 | 随机答案，淡入展示 |
 | 木鱼 | 自绘木鱼，今日 / 累计功德，自动敲击，本地保存 |
 | 振动器 | 短振 / 长振 / 节奏，间隔可调 |
+| 节拍器 | 输入 BPM，按设定速度每拍短振，运行期间屏幕常亮 |
 | 显示测试 | 12 种纯色，检查坏点与色偏 |
 | 手速测试 | 独立「开始」按钮，5 秒倒计时 + CPS，结算后点屏幕不会误触重开 |
 | 今日饮食 | 吃什么 / 喝什么随机 |
@@ -187,9 +188,9 @@ chunk / ack / err / progress`，两端实现见 `src/utils/otpProtocol.js` 与
 从 `release/` 或 `beta/` 目录取 `.rpk`，覆盖安装：
 
 ```bash
-adb push BandBox.rpk /data/app/com.miband.box.rpk
-adb shell pm install /data/app/com.miband.box.rpk
-adb shell am start com.miband.box
+adb push BandBox.rpk /data/app/com.miband.bandbox.rpk
+adb shell pm install /data/app/com.miband.bandbox.rpk
+adb shell am start com.miband.bandbox
 ```
 
 > 不要用 `rm -rf /data/app/<pkg>` + `unzip` 的方式安装：那样 AMS 里会残留

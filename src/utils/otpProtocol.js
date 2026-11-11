@@ -30,7 +30,7 @@ export const APP_ID = 'bandbox-otp'
 export const VERSION = 1
 
 /** 目标快应用包名（手表端 BandBox）。手表侧不用，保留以保持两份一致。 */
-export const TARGET_PKG = 'com.miband.box'
+export const TARGET_PKG = 'com.miband.bandbox'
 
 /** 单条 JSON 消息的分片阈值（字节，按上线消息的 UTF-8 字节数计）。 */
 export const CHUNK_LIMIT = 12 * 1024

@@ -1,0 +1,195 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="节拍器" clock="{{ clock }}"></pagehead>
+
+    <div class="bpmBox" show="{{ !kbShow }}" @click="openField">
+      <text class="f bpmLabel">BPM（40–240）</text>
+      <text class="f val">{{ bpm }}</text>
+    </div>
+
+    <text class="f status" show="{{ !kbShow }}">{{ playing ? '运行中 · ' + bpm + ' BPM' : '已就绪 · ' + bpm + ' BPM' }}</text>
+    <text class="f gapTxt" show="{{ !kbShow }}">每拍 {{ gap }} 毫秒</text>
+
+    <div class="pulse" show="{{ !kbShow }}" style="background-color: {{ pulseOn ? '#0D6EFF' : '#333333' }};"></div>
+
+    <div class="go" if="{{ !kbShow && !playing }}" @click="toggle">
+      <text class="f goT">开始</text>
+    </div>
+    <div class="go goStop" if="{{ !kbShow && playing }}" @click="toggle">
+      <text class="f goT">结束</text>
+    </div>
+    <text class="f hint" show="{{ !kbShow }}">点数值改 BPM · 运行时常亮</text>
+
+    <div class="editCard" show="{{ kbShow }}">
+      <text class="f eLabel">设定 BPM · 节拍继续</text>
+      <text class="f eValue" if="{{ draft }}">{{ draft }}</text>
+      <text class="f ePlace" if="{{ !draft }}">输入 40–240</text>
+    </div>
+
+    <div class="done" show="{{ kbShow }}" @click="doneEdit"><text class="f doneT">完成</text></div>
+    <div class="kbBar" show="{{ kbShow }}" @click="doneEdit"><text class="f kbBarT">完成</text></div>
+
+    <backbtn></backbtn>
+    <input-method hide="{{ !kbShow }}" keyboardtype="number" maxlength="5" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.bpmBox { position: absolute; left: 3px; top: 96px; width: 206px; height: 112px; border-radius: 26px; background-color: #151515; flex-direction: column; align-items: center; justify-content: center; }
+.bpmLabel { width: 190px; height: 18px; line-height: 18px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.45); }
+.val { width: 190px; height: 64px; line-height: 64px; text-align: center; font-size: 52px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+.status { position: absolute; left: 0px; top: 218px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
+.gapTxt { position: absolute; left: 0px; top: 242px; width: 212px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
+.pulse { position: absolute; left: 91px; top: 278px; width: 30px; height: 30px; border-radius: 15px; }
+.go { position: absolute; left: 26px; top: 378px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.goStop { background-color: #FF3B30; }
+.goT { font-size: 14px; color: #FFFFFF; }
+.hint { position: absolute; left: 16px; top: 436px; width: 180px; text-align: center; font-size: 13px; line-height: 20px; color: rgba(255,255,255,0.35); }
+.editCard { position: absolute; left: 3px; top: 76px; width: 206px; height: 56px; border-radius: 26px; background-color: #262626; padding: 4px 16px; flex-direction: column; }
+.eLabel { width: 174px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.eValue { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 26px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+.ePlace { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.done { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
+.doneT { font-size: 14px; color: #FFFFFF; }
+</style>
+
+<script>
+import g from '../../utils/g'
+import prompt from '@system.prompt'
+import numberInput from '../../utils/numberInput'
+
+const BPM_MIN = 40
+const BPM_MAX = 240
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    bpm: 120,
+    gap: 500,
+    playing: false,
+    timer: null,
+    beatCount: 0,
+    pulseOn: false,
+    kbShow: false,
+    draft: '',
+    charWarned: false,
+    limitWarned: false
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+  onHide() {
+    this.stop()
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    this.stop()
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  beat() {
+    if (!this.playing) return
+    this.beatCount++
+    this.pulseOn = !this.pulseOn
+    g.haptic.short()
+  },
+  start() {
+    this.playing = true
+    this.beatCount = 0
+    // 常亮绑定运行时：bright:false 时 enter 完全同步，必须留在同步路径上
+    g.screen.enter({ bright: false, keepOn: true })
+    this.beat()
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => this.beat(), this.gap)
+  },
+  stop() {
+    this.playing = false
+    if (this.timer) clearInterval(this.timer)
+    this.timer = null
+    g.haptic.stop()
+    this.pulseOn = false
+    g.screen.leave()
+  },
+  toggle() {
+    if (this.playing) this.stop()
+    else this.start()
+  },
+  openField() {
+    // 编辑期间不停止节拍与常亮
+    this.draft = String(this.bpm)
+    this.charWarned = false
+    this.limitWarned = false
+    this.kbShow = true
+  },
+  onKey(e) {
+    const raw = e && e.detail && e.detail.content ? e.detail.content : ''
+    if (!raw) return
+    const r = numberInput.pushKey(this.draft, raw)
+    this.draft = r.draft
+    if (r.reason) this.warnKey(r.reason)
+  },
+  onDel() {
+    this.draft = this.draft.slice(0, -1)
+  },
+  warnKey(reason) {
+    if (reason === 'char') {
+      if (!this.charWarned) {
+        this.charWarned = true
+        prompt.showToast({ message: 'BPM 只接受数字', duration: 1600 })
+      }
+    } else if (reason === 'limit') {
+      if (!this.limitWarned) {
+        this.limitWarned = true
+        prompt.showToast({ message: '最多输入 6 位', duration: 1600 })
+      }
+    }
+    g.haptic.long()
+  },
+  cancelEdit() {
+    this.kbShow = false
+    this.draft = ''
+    this.charWarned = false
+    this.limitWarned = false
+  },
+  doneEdit() {
+    const n = numberInput.parseDraft(this.draft)
+    this.cancelEdit()
+    if (n === null) {
+      prompt.showToast({ message: '请输入 40–240 的整数', duration: 1400 })
+      g.haptic.long()
+      return
+    }
+    let v = n
+    if (n > BPM_MAX) {
+      v = BPM_MAX
+      prompt.showToast({ message: '最快 240 BPM，已设为 240', duration: 1600 })
+      g.haptic.long()
+    } else if (n < BPM_MIN) {
+      v = BPM_MIN
+      prompt.showToast({ message: '最慢 40 BPM，已设为 40', duration: 1600 })
+      g.haptic.long()
+    } else if (!this.playing) {
+      g.haptic.short()
+    }
+    this.applyBpm(v)
+  },
+  applyBpm(n) {
+    this.bpm = n
+    this.gap = Math.round(60000 / n)
+    if (this.playing) this.restartTimer()
+  },
+  // 只重建 interval，不走 stop();start()，避免 setKeepScreenOn 异步乱序关掉常亮
+  restartTimer() {
+    if (this.timer) clearInterval(this.timer)
+    this.timer = setInterval(() => this.beat(), this.gap)
+  }
+}
+</script>

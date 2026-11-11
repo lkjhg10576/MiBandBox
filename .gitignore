@@ -8,6 +8,8 @@ _re/
 __pycache__/
 *.rpk
 docs/
+.release/
+.vscode/
 
 # AstroBox 插件：AstroBox-Plugin-WIT 由 `npm run wit` 拉取，不入库
 plugin/*/wit/
@@ -20,6 +22,7 @@ plugin/*/dist/
 plugin/*/.mimosa/
 .zcode/
 .workbuddy/
+.atomcode/
 
 # tools/ 整个目录不入库（本地开发工具链，不随项目开源）
 # 用 tools/* 而不是 tools/：目录整体被排除时，下面的 ! 例外不会生效
@@ -29,3 +32,16 @@ tools/*
 
 # 本地验证截图（本地工具产出）
 .shots/
+
+#HyperFrames宣传视频
+.promo/
+# 宣传片工程目录（HyperFrames 合成 + 帧序列，体积 2.5G，不入库）
+promo/
+# 宣传片配套物料（BGM 音频、封面大图、AstroBox 图标），均由 promo/tools 生成
+bandbox-promo-bgm-*.mp3
+bandbox-promo-bgm-*.wav
+/hero-zh-3x2.jpg
+/icon_astrobox.png
+
+# 歸藏设计社交卡任务产物（本地生成，不随仓库开源）
+local-tests/

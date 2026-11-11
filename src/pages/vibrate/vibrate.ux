@@ -94,9 +94,9 @@ export default {
       this.start()
     }
   },
-  setGap(g) {
+  setGap(v) {
     g.haptic.short()
-    this.gap = g
+    this.gap = v
     if (this.playing) {
       this.stop()
       this.start()

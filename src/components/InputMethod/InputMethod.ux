@@ -64,7 +64,7 @@
                三张图同位叠放，靠 show 互斥显示，行为与原 {{lang}} 动态 src 一致。 -->
           <img src="./assets/arc/cn.png" style="position: absolute;top:0px;left:9px;width: 48px;height: 42px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag && !numFlag_jp && lang==='cn'}}" />
           <img src="./assets/arc/en.png" style="position: absolute;top:0px;left:9px;width: 48px;height: 42px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag && !numFlag_jp && lang==='en'}}" />
-          <img src="./assets/arc/back2.png" style="position: absolute;top:0px;left:9px;width: 48px;height: 42px;" @click="onBtnClick('switchCn')" show="{{numFlag && lang==='cn' ||numFlag_jp && lang==='jp' }}" />
+          <img src="./assets/arc/back2.png" style="position: absolute;top:0px;left:9px;width: 48px;height: 42px;" @click="onBtnClick('switchCn')" show="{{keyboardtype !== 'number' && (numFlag && lang==='cn' || numFlag_jp && lang==='jp') }}" />
           <img src="./assets/arc/123.png" style="position: absolute;left: 70px;top: 0px;width: 52px;height: 42px;" @click="onBtnClick('switchNum')" show="{{downFlag==='' && !numFlag && lang==='cn'}}" />
           <img src="./assets/arc/123.png" style="position: absolute;left: 70px;top: 0px;width: 52px;height: 42px;" @click="onBtnClick('switchNum_jp')" show="{{downFlag==='' && !numFlag_jp && lang==='jp'}}" />
           <img src="./assets/arc/bigA.png" style="position: absolute;top:0px;left:72px;width:48px;height:42px;" @click="onBtnClick('switchLow')" show="{{downFlag==='' && upperFlag && lang==='en' }}" />
@@ -183,6 +183,10 @@ export default {
     }
     if (this.screentype === "pill-shaped") {
       this.adjustScreenWidth();
+    }
+    // number 模式直接落数字行：复用 numFlag，按键行与控制栏的 show 条件都已按它分支
+    if (this.keyboardtype === "number") {
+      this.numFlag = true;
     }
     if (!this.hide) this.keyboardCreated = true;
     this.$watch("hide", "watchHidePropsChange");

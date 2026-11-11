@@ -1,52 +1,68 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
+<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="随机数" clock="{{ clock }}"></pagehead>
 
-    <div class="row">
+    <div class="row" show="{{ !kbShow }}">
       <text class="f label">最小值</text>
-      <div class="step" @click="dec('min')"><text class="f stepT">-</text></div>
-      <text class="f val">{{ min }}</text>
-      <div class="step" @click="inc('min')"><text class="f stepT">+</text></div>
+      <div class="valBox" @click="openField('min')"><text class="f val">{{ min }}</text></div>
     </div>
-    <div class="row" style="top: 160px;">
+    <div class="row" style="top: 160px;" show="{{ !kbShow }}">
       <text class="f label">最大值</text>
-      <div class="step" @click="dec('max')"><text class="f stepT">-</text></div>
-      <text class="f val">{{ max }}</text>
-      <div class="step" @click="inc('max')"><text class="f stepT">+</text></div>
+      <div class="valBox" @click="openField('max')"><text class="f val">{{ max }}</text></div>
     </div>
 
-    <div class="result">
+    <div class="result" show="{{ !kbShow }}">
       <text class="f rLabel">结果</text>
-      <text class="f rVal">{{ display }}</text>
+      <text class="f rVal" style="font-size: {{ display.length >= 6 ? 40 : 52 }}px;">{{ display }}</text>
     </div>
 
-    <div class="go" @click="roll"><text class="f goT">抽一个</text></div>
-    <text class="f hint">包含最小值和最大值</text>
+    <div class="go" show="{{ !kbShow }}" @click="roll"><text class="f goT">抽一个</text></div>
+    <text class="f hint" show="{{ !kbShow }}">点数值输入 · 包含两端</text>
+
+    <!-- 键盘顶边最高到 y=187、kbBar 占 155..187，草稿卡必须收在 y=152 以内才不被遮 -->
+    <div class="editCard" show="{{ kbShow }}">
+      <text class="f eLabel">{{ fieldLabel }}</text>
+      <text class="f eValue" if="{{ draft }}">{{ draft }}</text>
+      <text class="f ePlace" if="{{ !draft }}">输入整数</text>
+    </div>
+
+    <!-- 键盘顶边会盖住 theme 的 kbBar，故另设顶部完成按钮（input.ux 同做法）保证可提交 -->
+    <div class="done" show="{{ kbShow }}" @click="doneEdit"><text class="f doneT">完成</text></div>
+
     <backbtn></backbtn>
+    <div class="kbBar" show="{{ kbShow }}" @click="doneEdit"><text class="f kbBarT">完成</text></div>
+    <input-method hide="{{ !kbShow }}" keyboardtype="number" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
   </div>
 </template>
 
 <style>
 @import '../../common/styles/theme.css';
 .row { position: absolute; left: 3px; top: 84px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px; }
-.label { width: 52px; font-size: 17px; color: rgba(255,255,255,0.65); }
-.step { width: 37px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; }
-.stepT { font-size: 22px; color: #FFFFFF; }
-.val { width: 52px; text-align: center; font-size: 24px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.label { width: 60px; font-size: 17px; color: rgba(255,255,255,0.65); }
+.valBox { width: 110px; height: 48px; margin-left: 8px; border-radius: 24px; background-color: #333333; align-items: center; justify-content: center; }
+.val { width: 110px; text-align: center; font-size: 26px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .result { position: absolute; left: 3px; top: 246px; width: 206px; height: 116px; border-radius: 26px; background-color: #151515; align-items: center; justify-content: center; flex-direction: column; }
 .rLabel { font-size: 14px; color: rgba(255,255,255,0.4); }
 .rVal { width: 190px; text-align: center; font-size: 52px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
 .go { position: absolute; left: 26px; top: 390px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goT { font-size: 14px; color: #FFFFFF; }
 .hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+.editCard { position: absolute; left: 3px; top: 76px; width: 206px; height: 56px; border-radius: 26px; background-color: #262626; padding: 4px 16px; flex-direction: column; }
+.eLabel { width: 174px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.eValue { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 26px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+.ePlace { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.done { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
+.doneT { font-size: 14px; color: #FFFFFF; }
 </style>
 
 <script>
 import g from '../../utils/g'
 import prompt from '@system.prompt'
+import numberInput from '../../utils/numberInput'
 
 export default {
   data: {
@@ -58,7 +74,13 @@ export default {
     display: '—',
     rolling: false,
     timer: null,
-    clockTimer: null
+    clockTimer: null,
+    field: '',
+    fieldLabel: '最小值',
+    draft: '',
+    kbShow: false,
+    charWarned: false,
+    limitWarned: false
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -67,9 +89,11 @@ export default {
     g.clock.sub(this._ck)
   },
   onHide() {
+    this.cancelEdit()
     this.clear()
   },
   onDestroy() {
+    this.cancelEdit()
     this.clear()
   },
   clear() {
@@ -78,18 +102,61 @@ export default {
     this.timer = null
     this.clockTimer = null
   },
-  inc(which) {
-    if (which === 'min') this.min = this.min + 1
-    else this.max = this.max + 1
+  cancelEdit() {
+    this.kbShow = false
+    this.field = ''
+    this.draft = ''
+  },
+  openField(which) {
+    if (this.rolling) return
+    this.field = which
+    this.fieldLabel = which === 'min' ? '最小值' : '最大值'
+    this.draft = String(which === 'min' ? this.min : this.max)
+    this.charWarned = false
+    this.limitWarned = false
+    this.kbShow = true
     g.haptic.short()
   },
-  dec(which) {
-    if (which === 'min') this.min = this.min - 1
-    else this.max = this.max - 1
+  onKey(e) {
+    const raw = e && e.detail && e.detail.content ? e.detail.content : ''
+    if (!raw) return
+    const r = numberInput.pushKey(this.draft, raw)
+    this.draft = r.draft
+    if (r.reason) this.warnKey(r.reason)
+  },
+  onDel() {
+    this.draft = this.draft.slice(0, -1)
+  },
+  warnKey(reason) {
+    if (reason === 'char') {
+      if (!this.charWarned) {
+        this.charWarned = true
+        prompt.showToast({ message: '只能输入数字和负号', duration: 1600 })
+      }
+    } else if (reason === 'limit') {
+      if (!this.limitWarned) {
+        this.limitWarned = true
+        prompt.showToast({ message: '范围 -999999 ~ 999999', duration: 1600 })
+      }
+    }
+    g.haptic.long()
+  },
+  doneEdit() {
+    // 先取 field 再清空：清空后再读就永远写不进 min/max
+    const which = this.field
+    const n = numberInput.parseDraft(this.draft)
+    this.cancelEdit()
+    if (n === null) {
+      prompt.showToast({ message: '请输入整数', duration: 1400 })
+      g.haptic.long()
+      return
+    }
+    if (which === 'min') this.min = n
+    else if (which === 'max') this.max = n
     g.haptic.short()
   },
   roll() {
-    if (this.rolling) return
+    if (this.rolling || this.kbShow) return
     if (this.min > this.max) {
       prompt.showToast({ message: '最小值不能大于最大值', duration: 1600 })
       g.haptic.long()
