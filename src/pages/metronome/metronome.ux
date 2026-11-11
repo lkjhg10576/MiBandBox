@@ -11,10 +11,21 @@
       <text class="f val">{{ bpm }}</text>
     </div>
 
-    <text class="f status" show="{{ !kbShow }}">{{ playing ? '运行中 · ' + bpm + ' BPM' : '已就绪 · ' + bpm + ' BPM' }}</text>
+    <text class="f status" show="{{ !kbShow }}">{{ playing ? '运行中 · ' + bpm + ' BPM · ' + lvLabel : '已就绪 · ' + bpm + ' BPM · ' + lvLabel }}</text>
     <text class="f gapTxt" show="{{ !kbShow }}">每拍 {{ gap }} 毫秒</text>
 
     <div class="pulse" show="{{ !kbShow }}" style="background-color: {{ pulseOn ? '#0D6EFF' : '#333333' }};"></div>
+
+    <!-- 力度选择：弱（短振）/ 强（长振），默认强。摆在开始键正上方，点一下立刻按新档位振一记，方便直接比手感 -->
+    <div class="levels" show="{{ !kbShow }}">
+      <text class="f lvLabel">力度</text>
+      <div class="lv" style="background-color: {{ level === 'weak' ? '#0D6EFF' : 'transparent' }};" @click="setLevel('weak')">
+        <text class="f lvT">弱</text>
+      </div>
+      <div class="lv" style="background-color: {{ level === 'strong' ? '#0D6EFF' : 'transparent' }};" @click="setLevel('strong')">
+        <text class="f lvT">强</text>
+      </div>
+    </div>
 
     <div class="go" if="{{ !kbShow && !playing }}" @click="toggle">
       <text class="f goT">开始</text>
@@ -46,6 +57,10 @@
 .status { position: absolute; left: 0px; top: 218px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
 .gapTxt { position: absolute; left: 0px; top: 242px; width: 212px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
 .pulse { position: absolute; left: 91px; top: 278px; width: 30px; height: 30px; border-radius: 15px; }
+.levels { position: absolute; left: 6px; top: 318px; width: 200px; height: 38px; flex-direction: row; align-items: center; border-radius: 19px; background-color: #1A1A1A; padding: 3px; }
+.lvLabel { width: 32px; height: 32px; line-height: 32px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.45); }
+.lv { flex: 1; height: 32px; margin-right: 4px; border-radius: 16px; align-items: center; justify-content: center; }
+.lvT { font-size: 14px; color: #FFFFFF; }
 .go { position: absolute; left: 26px; top: 378px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goStop { background-color: #FF3B30; }
 .goT { font-size: 14px; color: #FFFFFF; }
@@ -79,7 +94,10 @@ export default {
     kbShow: false,
     draft: '',
     charWarned: false,
-    limitWarned: false
+    limitWarned: false,
+    // 振动力度档位：弱（短振）/ 强（长振），默认强
+    level: 'strong',
+    lvLabel: '强'
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -99,7 +117,19 @@ export default {
     if (!this.playing) return
     this.beatCount++
     this.pulseOn = !this.pulseOn
-    g.haptic.short()
+    // 按所选力度振：弱=短振，强=长振
+    g.haptic.beat(this.level)
+  },
+  setLevel(l) {
+    if (!l || l === this.level) {
+      // 重复点当前档位也振一记，方便反复对比同一力度
+      g.haptic.beat(l || this.level)
+      return
+    }
+    this.level = l
+    this.lvLabel = g.haptic.label(l)
+    // 立刻按新档位振一记，当场比手感
+    g.haptic.beat(l)
   },
   start() {
     this.playing = true

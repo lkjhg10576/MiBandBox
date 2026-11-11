@@ -108,7 +108,8 @@ export default {
     this.hint = '敲屏幕打拍子 · 红钮结束'
     // bright:false 时 enter 完全同步，必须留在同步路径上（与节拍器一致）
     g.screen.enter({ bright: false, keepOn: true })
-    g.haptic.short()
+    // 本功能不提供力度选择，固定用弱档（短振）
+    g.haptic.beat('weak')
   },
   onTap() {
     // 只在运行中计数；idle/done 点屏幕一律无效，防止误触重开
@@ -126,7 +127,8 @@ export default {
       this.timer = null
       if (this.$valid) this.pulseOn = false
     }, PULSE_MS)
-    g.haptic.short()
+    // 固定弱档（短振）：打点反馈要轻，不打断打点节奏
+    g.haptic.beat('weak')
   },
   finish() {
     if (this.state !== 'running') return
@@ -139,6 +141,7 @@ export default {
     this.status = this.taps.count < 2 ? '没有测到节拍' : '测定完成'
     this.hint = '点按钮再测一次'
     g.screen.leave()
+    // 结束双响同样走弱档（两记短振）
     g.haptic.pattern(2, 160)
   }
 }
