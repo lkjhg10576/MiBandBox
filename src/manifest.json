@@ -260,6 +260,9 @@
       },
       "pages/datecalc": {
         "component": "datecalc"
+      },
+      "pages/counter": {
+        "component": "counter"
       }
     }
   }

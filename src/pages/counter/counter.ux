@@ -1,0 +1,62 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="计数器" clock="{{ clock }}"></pagehead>
+
+    <div class="key keyUp" @click="inc"><text class="f keyT">+</text></div>
+    <text class="f num" style="font-size: {{ fontSize }}px;">{{ count }}</text>
+    <div class="key keyDown" @click="dec"><text class="f keyT">−</text></div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.key { position: absolute; left: 26px; width: 160px; height: 96px; border-radius: 26px; align-items: center; justify-content: center; }
+.keyUp { top: 100px; background-color: #0D6EFF; }
+.keyDown { top: 324px; background-color: #262626; }
+.keyT { font-size: 44px; font-weight: bold; color: #FFFFFF; }
+.num { position: absolute; left: 0px; top: 212px; width: 212px; height: 96px; line-height: 96px; text-align: center; font-size: 76px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+</style>
+
+<script>
+import g from '../../utils/g'
+import counter from '../../utils/counter'
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    count: 0,
+    fontSize: 76
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+  onHide() {
+    this.unsub()
+  },
+  onDestroy() {
+    this.unsub()
+  },
+  unsub() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  inc() {
+    this.count = counter.step(this.count, 1)
+    this.fontSize = counter.fontSizeOf(this.count)
+    g.haptic.long()
+  },
+  dec() {
+    this.count = counter.step(this.count, -1)
+    this.fontSize = counter.fontSizeOf(this.count)
+    g.haptic.long()
+  }
+}
+</script>
