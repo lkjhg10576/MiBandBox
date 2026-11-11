@@ -1,0 +1,542 @@
+{
+  "id": "pro336",
+  "label": "小米手环 9 Pro / 10 Pro（336×480 矩形屏）",
+  "tag": "pro",
+  "baseline": false,
+  "screen": { "w": 336, "h": 480 },
+  "layout": {
+    "home": { "cols": 3, "rowH": 82, "padBottom": 48 },
+    "marquee": { "minCopyW": 200 },
+    "ime": { "kbW": 192, "containerH": 305 }
+  },
+  "assets": { "shadow": [336, 84] },
+  "files": {
+    "src/common/styles/theme.css": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["width: 206px", "width: 330px"],
+      ["top: 155px", "top: 115px"]
+    ],
+    "src/components/PageHead.ux": [
+      ["width: 212px", "width: 336px"]
+    ],
+    "src/pages/home/home.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 118px", "width: 242px"],
+      ["width: 93px", "width: 100px"],
+      ["width: 97px", "width: 104px"],
+      ["height: 70px", "height: 76px"],
+      ["width: 200px", "width: 324px"],
+      ["width: 128px", "width: 256px"],
+      ["width: 212px", "width: 336px"],
+      ["height: 304px", "height: 258px"],
+      ["0px 3px 40px 3px", "0px 3px 48px 3px"]
+    ],
+    "src/pages/textShow/textShow.ux": [
+      ["top: 160px", "top: 120px"],
+      ["left: 21px", "left: 83px"],
+      ["top: 462px", "top: 424px"],
+      ["width: 212px", "width: 336px"],
+      ["height: 200px", "height: 240px"],
+      ["left: 212px", "left: 336px"],
+      ["width: 520px", "width: 480px"],
+      ["height: 212px", "height: 336px"]
+    ],
+    "src/pages/set/set.ux": [
+      ["width: 212px", "width: 336px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["height: 418px", "height: 358px"]
+    ],
+    "src/pages/hset/hset.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 100px", "width: 224px"],
+      ["width: 212px", "width: 336px"]
+    ],
+    "src/pages/about/about.ux": [
+      ["width: 212px", "width: 336px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["height: 418px", "height: 358px"]
+    ],
+    "src/pages/notebook/list/list.ux": [
+      ["width: 212px", "width: 336px"],
+      ["width: 206px", "width: 330px"],
+      ["height: 408px", "height: 358px"]
+    ],
+    "src/pages/notebook/show/show.ux": [
+      ["width: 212px", "width: 336px"],
+      ["width: 188px", "width: 312px"],
+      ["left: 18px", "left: 61px"],
+      ["width: 176px", "width: 214px"]
+    ],
+    "src/pages/notebook/edit/edit.ux": [
+      ["top: 80px", "top: 44px"],
+      ["height: 62px", "height: 44px"],
+      ["top: 150px", "top: 92px"],
+      ["height: 96px", "height: 48px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"]
+    ],
+    "src/pages/notebook/rename/rename.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"]
+    ],
+    "src/pages/notebook/more/more.ux": [
+      ["width: 206px", "width: 330px"]
+    ],
+    "src/pages/daysmatter/list/list.ux": [
+      ["width: 212px", "width: 336px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 110px", "width: 252px"],
+      ["height: 408px", "height: 358px"],
+      ["left: 132px", "left: 256px"],
+      ["top: 396px", "top: 384px"]
+    ],
+    "src/pages/otp/list/list.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["width: 206px", "width: 330px"]
+    ],
+    "src/pages/otp/detail/detail.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["width: 170px", "width: 294px"],
+      ["left: 51px", "left: 113px"]
+    ],
+    "src/pages/otp/edit/edit.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["left: 146px", "left: 270px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/otp/settings/settings.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 438px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"]
+    ],
+    "src/pages/otp/sync/sync.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["height: 408px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/calendar/calendar.ux": [
+      ["width: 212px", "width: 336px"],
+      ["left: 1px", "left: 42px"],
+      ["width: 210px", "width: 252px"],
+      ["width: 30px", "width: 36px"],
+      ["width: 26px", "width: 32px"],
+      ["height: 26px", "height: 32px"],
+      ["line-height: 26px", "line-height: 32px"],
+      ["left: 10px", "left: 60px"],
+      ["width: 192px", "width: 216px"],
+      ["left: 44px", "left: 88px"],
+      ["width: 124px", "width: 160px"],
+      ["left: 30px", "left: 56px"],
+      ["width: 152px", "width: 224px"]
+    ],
+    "src/pages/dailytip/dailytip.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"],
+      ["left: 26px", "left: 88px"],
+      ["left: 6px", "left: 68px"]
+    ],
+    "src/pages/time/time.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 438px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"]
+    ],
+    "src/pages/storage/storage.ux": [
+      ["left: 22px", "left: 84px"],
+      ["width: 212px", "width: 336px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/history/history.ux": [
+      ["width: 212px", "width: 336px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 110px", "width: 234px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/system/system.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 100px", "width: 224px"]
+    ],
+    "src/pages/performance/performance.ux": [
+      ["left: 146px", "left: 270px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 190px", "width: 314px"],
+      ["width: 182px", "width: 306px"],
+      ["left: 26px", "left: 88px"],
+      ["left: 16px", "left: 78px"]
+    ],
+    "src/pages/PFinfo/PFinfo.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 418px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 190px", "width: 308px"]
+    ],
+    "src/pages/cpsTest/cpsTest.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["width: 172px", "width: 296px"],
+      ["left: 26px", "left: 88px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/diet/diet.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"],
+      ["left: 26px", "left: 88px"]
+    ],
+    "src/pages/random/random.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 110px", "width: 234px"],
+      ["width: 190px", "width: 314px"],
+      ["left: 26px", "left: 88px"],
+      ["width: 170px", "width: 294px"],
+      ["width: 174px", "width: 298px"],
+      ["left: 146px", "left: 270px"],
+      ["top: 76px", "top: 56px"],
+      ["height: 56px", "height: 52px"]
+    ],
+    "src/pages/lightRandom/lightRandom.ux": [
+      ["left: 12px", "left: 78px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"],
+      ["left: 6px", "left: 68px"],
+      ["left: 26px", "left: 88px"],
+      ["width: 190px", "width: 314px"]
+    ],
+    "src/pages/morseCode/morseCode.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["left: 26px", "left: 88px"],
+      ["left: 12px", "left: 74px"]
+    ],
+    "src/pages/wasteSorting/wasteSorting.ux": [
+      ["top: 82px", "top: 56px"],
+      ["height: 76px", "height: 56px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["left: 6px", "left: 68px"],
+      ["width: 170px", "width: 294px"],
+      ["top: 155px", "top: 115px"],
+      ["width: 212px", "width: 336px"],
+      ["left: 66px", "left: 128px"]
+    ],
+    "src/pages/scoreboard/scoreboard.ux": [
+      ["width: 206px", "width: 330px"],
+      ["left: 41px", "left: 106px"],
+      ["width: 92px", "width: 150px"],
+      ["left: 8px", "left: 16px"],
+      ["left: 112px", "left: 170px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/num/num.ux": [
+      ["width: 206px", "width: 330px"],
+      ["left: 6px", "left: 18px"],
+      ["width: 200px", "width: 300px"],
+      ["width: 96px", "width: 146px"],
+      ["left: 26px", "left: 88px"],
+      ["left: 71px", "left: 133px"]
+    ],
+    "src/pages/vibrate/vibrate.ux": [
+      ["left: 6px", "left: 68px"],
+      ["width: 212px", "width: 336px"],
+      ["left: 16px", "left: 78px"],
+      ["left: 26px", "left: 88px"]
+    ],
+    "src/pages/fish/fish.ux": [
+      ["left: 31px", "left: 93px"],
+      ["left: 36px", "left: 98px"],
+      ["width: 212px", "width: 336px"],
+      ["width: 206px", "width: 330px"],
+      ["left: 24px", "left: 40px"],
+      ["left: 128px", "left: 232px"]
+    ],
+    "src/pages/display/display.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["left: 30px", "left: 92px"],
+      ["width: 106px", "width: 168px"],
+      ["left: 106px", "left: 168px"]
+    ],
+    "src/pages/flashlight/flashlight.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"]
+    ],
+    "src/pages/fluorescence/fluorescence.ux": [
+      ["left: 6px", "left: 68px"],
+      ["left: 26px", "left: 88px"],
+      ["left: 16px", "left: 78px"]
+    ],
+    "src/pages/fluorescence/play/play.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["left: 32px", "left: 94px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/qrcode/qrcode.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 150px", "width: 290px"],
+      ["left: 6px", "left: 68px"],
+      ["left: 26px", "left: 88px"],
+      ["left: 16px", "left: 78px"]
+    ],
+    "src/pages/qrcode/show/show.ux": [
+      ["left: 26px", "left: 58px"],
+      ["width: 160px", "width: 220px"],
+      ["height: 160px", "height: 220px"],
+      ["width: 136px", "width: 196px"],
+      ["height: 136px", "height: 196px"],
+      ["left: 20px", "left: 82px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/marquee/marquee.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 190px", "width: 314px"],
+      ["width: 160px", "width: 282px"]
+    ],
+    "src/pages/marqueeSet/marqueeSet.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 158px", "width: 290px"],
+      ["left: 6px", "left: 68px"],
+      ["left: 12px", "left: 74px"],
+      ["left: 26px", "left: 88px"],
+      ["width: 190px", "width: 314px"]
+    ],
+    "src/pages/lylist/lylist.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 408px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 140px", "width: 274px"],
+      ["left: 132px", "left: 256px"],
+      ["top: 396px", "top: 384px"]
+    ],
+    "src/pages/input/input.ux": [
+      ["left: 146px", "left: 270px"],
+      ["top: 80px", "top: 56px"],
+      ["height: 72px", "height: 56px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 138px", "width: 262px"]
+    ],
+    "src/pages/imeTest/imeTest.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["left: 26px", "left: 88px"],
+      ["top: 370px", "top: 356px"],
+      ["top: 428px", "top: 414px"],
+      ["top: 484px", "top: 452px"],
+      ["width: 212px", "width: 336px"]
+    ],
+    "src/pages/lyrics/edit/edit.ux": [
+      ["left: 146px", "left: 270px"],
+      ["top: 80px", "top: 44px"],
+      ["height: 62px", "height: 44px"],
+      ["top: 150px", "top: 92px"],
+      ["height: 100px", "height: 52px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 212px", "width: 336px"]
+    ],
+    "src/pages/lyrics/more/more.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 212px", "width: 336px"]
+    ],
+    "src/pages/lyrics/showmode/showmode.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 140px", "width: 294px"],
+      ["width: 212px", "width: 336px"]
+    ],
+    "src/pages/lyrics/transfer/transfer.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 408px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 140px", "width: 274px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/answer/answer.ux": [
+      ["width: 212px", "width: 336px"],
+      ["width: 130px", "width: 172px"],
+      ["height: 180px", "height: 236px"],
+      ["left: 28px", "left: 63px"],
+      ["top: 58px", "top: 44px"],
+      ["left: 54px", "left: 89px"],
+      ["top: 50px", "top: 36px"],
+      ["left: 40px", "left: 75px"],
+      ["top: 54px", "top: 40px"],
+      ["width: 148px", "width: 196px"],
+      ["height: 204px", "height: 264px"],
+      ["left: 32px", "left: 70px"],
+      ["top: 42px", "top: 30px"],
+      ["width: 66px", "width: 86px"],
+      ["height: 66px", "height: 86px"],
+      ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/answer/a1/a1.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"],
+      ["left: 26px", "left: 88px"],
+      ["width: 212px", "width: 336px"]
+    ],
+    "src/pages/lyrics/show/show.ux": [
+      ["height: 336px", "height: 352px"],
+      ["left: 212px; top: 0px; width: 520px; height: 212px", "left: 336px; top: 0px; width: 480px; height: 338px"],
+      ["width: 520px; height: 212px", "width: 480px; height: 338px"],
+      ["width: 188px", "width: 312px"],
+      ["width: 412px", "width: 372px"],
+      ["padding-left: 80px", "padding-left: 40px"],
+      ["left: 18px", "left: 61px"],
+      ["width: 176px", "width: 214px"]
+    ],
+    "src/pages/level/level.ux": [
+      ["left: 16px", "left: 50px"],
+      ["width: 180px", "width: 220px"],
+      ["height: 180px", "height: 220px"],
+      ["border-radius: 90px", "border-radius: 110px"],
+      ["left: 26px", "left: 58px"],
+      ["top: 181px", "top: 201px"],
+      ["width: 160px", "width: 200px"],
+      ["left: 105px", "left: 157px"],
+      ["top: 102px", "top: 112px"],
+      ["height: 160px", "height: 200px"],
+      ["left: 78px", "left: 130px"],
+      ["top: 154px", "top: 174px"],
+      ["top: 284px", "top: 324px"],
+      ["top: 312px", "top: 350px"],
+      ["top: 352px", "top: 394px"],
+      ["top: 424px", "top: 444px"],
+      ["left: 48px", "left: 110px"],
+      ["width: 212px", "width: 336px"],
+      ["width: 170px", "width: 294px"],
+      ["const MAX_OFFSET = 70", "const MAX_OFFSET = 86"],
+      ["const DOT_BASE_LEFT = 97", "const DOT_BASE_LEFT = 151"],
+      ["const DOT_BASE_TOP = 173", "const DOT_BASE_TOP = 193"]
+    ],
+    "src/pages/metronome/metronome.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 190px", "width: 314px"],
+      ["width: 212px", "width: 336px"],
+      ["left: 91px", "left: 153px"],
+      ["left: 6px", "left: 68px"],
+      ["left: 26px", "left: 88px"],
+      ["left: 16px", "left: 78px"],
+      ["width: 174px", "width: 298px"],
+      ["left: 146px", "left: 270px"],
+      ["top: 76px", "top: 56px"],
+      ["height: 56px", "height: 52px"]
+    ],
+    "src/pages/tapTempo/tapTempo.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["width: 172px", "width: 296px"],
+      ["left: 91px", "left: 153px"],
+      ["left: 26px", "left: 88px"],
+      ["left: 16px", "left: 78px"]
+    ],
+    "src/pages/datecalc/datecalc.ux": [
+      ["left: 12px", "left: 78px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"],
+      ["left: 26px", "left: 88px"],
+      ["width: 212px", "width: 336px"]
+    ],
+    "src/pages/counter/counter.ux": [
+      ["left: 26px", "left: 28px"],
+      ["width: 160px", "width: 280px"],
+      ["top: 324px", "top: 340px"],
+      ["width: 212px", "width: 336px"]
+    ],
+    "src/pages/unitconvert/unitconvert.ux": [
+      ["width: 206px", "width: 330px"],
+      ["height: 378px", "height: 352px"],
+      ["width: 97px", "width: 104px"],
+      ["width: 91px", "width: 98px"]
+    ],
+    "src/pages/unitconvert/convert/convert.ux": [
+      ["width: 206px", "width: 330px"],
+      ["left: 165px", "left: 289px"],
+      ["width: 140px", "width: 250px"],
+      ["width: 174px", "width: 294px"]
+    ],
+    "src/pages/unitconvert/picker/picker.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 150px", "width: 274px"],
+      ["width: 100px", "width: 226px"]
+    ],
+    "src/pages/calculator/calculator.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 386px", "height: 360px"],
+      ["width: 188px", "width: 312px"],
+      ["width: 192px", "width: 316px"],
+      ["width: 44px", "width: 48px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 194px", "width: 318px"],
+      ["width: 116px", "width: 240px"],
+      ["const BASE_H = 546", "const BASE_H = 408"],
+      ["const ADV_H = 294", "const ADV_H = 248"],
+      ["exprW: 188,", "exprW: 312,"],
+      ["w < 188 ? 188 : w", "w < 312 ? 312 : w"]
+    ],
+    "src/pages/daysmatter/inputdate/inputdate.ux": [
+      ["left: 46px", "left: 108px"],
+      ["width: 212px", "width: 336px"],
+      ["left: 58px", "left: 120px"]
+    ],
+    "src/pages/daysmatter/edit/edit.ux": [
+      ["left: 146px", "left: 270px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["left: 48px", "left: 110px"]
+    ],
+    "src/pages/sentence/sentence.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 438px", "height: 358px"],
+      ["height: 414px", "height: 334px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"],
+      ["width: 160px", "width: 278px"]
+    ],
+    "src/pages/sentence/fav/fav.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 438px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"]
+    ],
+    "src/pages/sentence/favdetail/favdetail.ux": [
+      ["top: 140px", "top: 115px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"],
+      ["left: 26px", "left: 88px"]
+    ],
+    "src/pages/password/password.ux": [
+      ["height: 340px", "height: 314px"],
+      ["left: 6px", "left: 20px"],
+      ["width: 200px", "width: 296px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 190px", "width: 314px"],
+      ["left: 12px", "left: 30px"],
+      ["width: 188px", "width: 276px"],
+      ["left: 18px", "left: 80px"]
+    ],
+    "src/pages/passwordDetail/passwordDetail.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 186px", "width: 314px"],
+      ["width: 170px", "width: 294px"]
+    ]
+  },
+  "manifest": {}
+}

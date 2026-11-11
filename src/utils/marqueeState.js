@@ -12,8 +12,10 @@
 /** 播放内容在内容区里重复的份数：4 份足够覆盖一个视口，滚动到底也不会露出空白 */
 export const COPY_COUNT = 4
 
-/** 一份内容块的最小宽度（px）：必须大于横屏视口 520 的三分之一，保证可滚动 */
-const MIN_COPY_W = 240
+/** 一份内容块的最小宽度（px）：必须大于横屏视口的三分之一，保证可滚动。
+ *  band10 横屏视口 520 → 240；pro336 横屏视口 480 → 200（值随 profile 物化）。 */
+import { MARQUEE } from '../common/layout.js'
+const MIN_COPY_W = MARQUEE.minCopyW
 
 /** 估算基准字号下限：<text> 的默认字号是 30px，
  *  首帧若动态 font-size 尚未生效也会是这个尺寸，按它算才不会撑破内容块 */

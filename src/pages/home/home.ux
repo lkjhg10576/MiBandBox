@@ -179,6 +179,7 @@ import g from '../../utils/g'
 import apps from '../../data/apps'
 import layoutApi from '../../utils/homeLayout'
 import homeEvents from '../../utils/homeEvents'
+import { gridHeight } from '../../common/layout.js'
 
 const SETTINGS_TILE = {
   id: '__settings__',
@@ -189,10 +190,6 @@ const SETTINGS_TILE = {
 }
 
 const CELLS = apps.concat([SETTINGS_TILE])
-
-function gridHeight(count) {
-  return Math.ceil(count / 2) * 76 + 60
-}
 
 let layoutWatcher = null
 

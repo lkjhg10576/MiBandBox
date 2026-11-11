@@ -25,7 +25,7 @@
 
 ## What is this?
 
-BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 11** (212 × 520 strip display).
+BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 11** (212 × 520 strip display) and the **Xiaomi Band 9 Pro / 10 Pro** (336 × 480 rectangular display). Each form factor ships as its own package (same app package name, pick the one for your band).
 
 A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-six small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
@@ -276,7 +276,7 @@ You can reproduce the package size yourself: run `npm run build:jsc` and check `
 - Cold start in the simulator takes about 10 seconds due to a Vela runtime debugger discovery timeout; real devices usually start faster.
 - Simulator mouse/touch coordinates are offset from the picture by roughly 40 px, so automated screenshots need calibration; real touch is fine.
 - The Vela simulator image renders text unreliably: after reinstalling, Chinese text may occasionally turn into tofu blocks or misalign. Restarting the simulator (clearing the font cache) fixes it. This is a simulator-side issue; real watches are unaffected.
-- Only the 212 × 520 strip display of Band 10 / 11 is supported — not phones or tablets.
+- Only Xiaomi bands are supported: one package for the 212 × 520 strip display (Band 10 / 11) and one for the 336 × 480 rectangular display (9 Pro / 10 Pro). Not for phones or tablets. Band 9 Pro is verified on the emulator so far; device-only items are flagged in the release notes.
 
 ---
 

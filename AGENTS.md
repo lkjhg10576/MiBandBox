@@ -11,13 +11,15 @@
 | **Beta** | 用户**没有特殊要求**时的默认动作 | 不变 | **+1** | `beta/BandBox-<版本>-<versionCode>/` |
 | **发行版** | 用户**明确要求**「打包一个新发行版」 | **升** | 不变 | `release/BandBox-<版本>/` |
 
-- 两条通道的产物内容一致：`com.miband.bandbox.debug.<版本>.rpk`（jsc 字节码）+ `BandBox辅助.abp`（插件源码现编）+ `SHA256SUMS.txt` + `说明.md`。
+- 两条通道的产物内容一致：**每个设备 profile 一个 rpk**（jsc 字节码）+ `BandBox辅助.abp`（插件源码现编，全 profile 共用一份）+ `SHA256SUMS.txt`（覆盖全部 rpk）+ `说明.md`（注明各 rpk 适用机型）。
 - **不再产出 zip 压缩包**。`release/*.zip` 是 0.4.x 时代的历史遗留，不要再生成新的。
 - 打包命令：
 
   ```bash
   # Beta（默认）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta
+  # Beta（双包：band10 + pro336 一次出齐，同一产物目录）
+  NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta --all-profiles
   # 发行版
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --release <版本> --notes notes/<版本>.md
   ```
@@ -25,6 +27,16 @@
   本机必须带 `copyfile-shim.cjs` 垫片，否则 `build:jsc` 会被沙箱的 `copy_file_range` 拦成 `EPERM`。
 - 发行版的版本提要写 `notes/<版本>.md`，脚本会自动插进产物目录的 `说明.md`。
 - `--prune` 只清 `release/` 下的旧发行版**目录**，不动历史 zip，也不影响 `beta/`。
+
+## 设备 profile（2026-11-12 起，勿破坏）
+
+源码基线是 **band10（212×520 跑道屏）**；`pro336`（小米手环 9 Pro/10 Pro，336×480）是构建期物化的第二包体，**同包名 `com.miband.bandbox`、rpk 文件名带 `.pro.` 段**：
+
+- `profiles/band10.json`（恒等基线）与 `profiles/pro336.json`（逐文件替换表）是唯一真源；布局改动先改基线，再在 pro336.json 里加对应替换对，`tools/test-profile.mjs` 会校验漂移。
+- **仓库里提交的源码永远必须是 band10 基线态**：物化只在构建瞬间发生，`make-release.sh` 退出时自动还原（trap）。手动物化后记得 `node tools/apply-profile.mjs band10` 还原，提交前用 `node tools/apply-profile.mjs --check band10` 确认。
+- 门禁 **R8**（源码树物化状态 == `BANDBOX_PROFILE`）与 **R9**（shadow.png 尺寸匹配 profile）随 R1–R7 一起跑；`npm run build:jsc` 的 prebuild 也会跑门禁，构建非 band10 包时必须带 `BANDBOX_PROFILE=<id>` 环境变量。
+- `src/common/layout.js` 是生成文件（勿手改）：JS 侧布局常量（首页网格列数/行高、跑马灯视口、IME）由 `apply-profile.mjs` 按 profile 生成。
+- 模拟器：Pro 用 `Vela_BandPro` AVD（配方见 `docs/pro-spike.md`；docs/ 不入库，仅本地）。
 
 ## 版本号同步
 
@@ -52,4 +64,5 @@
 - 页面对象**不得同时出现 `data` 与 `private`**（Vela 运行时直接抛错、页面黑屏）。
 - **不要**用 `tools/png8.mjs` 转换带抗锯齿边缘的 UI 小图（0.4.0 的图标发毛事故）。
 - `src/utils/{otp,otpAccounts}.js` 与 `plugin/bandbox-helper/src/` 下的同名文件必须逐字一致（cross 测试按 SHA-256 校验）。
+- 提交/打包前源码树必须处于 band10 基线态（`node tools/apply-profile.mjs --check band10` 通过），不得把 pro336 物化态提交进仓库。
 - 合规红线：无激活/付费/引流、无第三方闭源依赖、无内置字库、数据全部自建或公共领域改写。

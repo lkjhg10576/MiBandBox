@@ -24,6 +24,10 @@ plugin/*/.mimosa/
 .workbuddy/
 .atomcode/
 
+# profile 物化的本地状态（构建期备份与标记，不入库）
+.profile-baseline/
+.profile-state.json
+
 # tools/ 整个目录不入库（本地开发工具链，不随项目开源）
 # 用 tools/* 而不是 tools/：目录整体被排除时，下面的 ! 例外不会生效
 tools/*

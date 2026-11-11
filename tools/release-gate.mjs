@@ -12,12 +12,15 @@
  *   R5 路由与页面文件必须对齐   缺页 = 启动/跳转黑屏
  *   R6 版本号三处一致          manifest / package.json / README
  *   R7 模板事件不得撞 Node 全局  编译器对 globalThis 上的标识符不加 _vm_. 前缀，点击静默失效
+ *   R8 profile 物化一致性        源码树物化状态必须 == BANDBOX_PROFILE（防 band10 包混入 pro 令牌值）
+ *   R9 资源尺寸匹配 profile      shadow.png 等随 profile 变尺寸的资源，IHDR 必须等于 profile 要求
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
  */
 import fs from 'node:fs'
 import path from 'node:path'
+import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -203,6 +206,36 @@ for (const f of walk('src', '.ux')) {
       const id = m[1].match(/^([A-Za-z_$][\w$]*)/)
       if (id && globalThis[id[1]] !== undefined) {
         fail('R7', f, `模板事件 "${m[1]}" 的根标识符 ${id[1]} 是 Node 全局，编译器不加 _vm_. 前缀，点击无效`)
+      }
+    }
+  }
+}
+
+// ---------- R8 profile 物化一致性 ----------
+// band10 包里不得混入 pro336 令牌值（反之亦然）：源码树的物化状态必须与目标 profile 一致。
+// 实际校验逻辑在 apply-profile.mjs（替换表自校验），这里按 BANDBOX_PROFILE 调它。
+{
+  const want = process.env.BANDBOX_PROFILE || 'band10'
+  const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'apply-profile.mjs'), '--check', want], { encoding: 'utf8' })
+  if (r.status !== 0) {
+    fail('R8', 'profiles', `源码树 profile 状态 != ${want}（先执行 node tools/apply-profile.mjs ${want}）\n` + ((r.stdout || '') + (r.stderr || '')).trim())
+  }
+}
+
+// ---------- R9 资源尺寸与 profile 匹配 ----------
+// shadow.png 是唯一随 profile 变尺寸的资源：band10 212×84 / pro336 336×84。
+{
+  const want = process.env.BANDBOX_PROFILE || 'band10'
+  const profFile = path.join(ROOT, 'profiles', want + '.json')
+  if (fs.existsSync(profFile)) {
+    const prof = JSON.parse(fs.readFileSync(profFile, 'utf8'))
+    const [w, h] = (prof.assets && prof.assets.shadow) || []
+    if (w && h) {
+      const buf = fs.readFileSync(path.join(ROOT, 'src/common/shadow.png'))
+      const iw = buf.readUInt32BE(16)
+      const ih = buf.readUInt32BE(20)
+      if (iw !== w || ih !== h) {
+        fail('R9', 'src/common/shadow.png', `尺寸 ${iw}x${ih} != profile ${want} 要求的 ${w}x${h}（物化后又被手改？）`)
       }
     }
   }
