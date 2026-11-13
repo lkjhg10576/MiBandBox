@@ -2,7 +2,7 @@
   "package": "com.miband.bandbox",
   "name": "BandBox",
   "versionName": "0.1.0",
-  "versionCode": 230,
+  "versionCode": 234,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
