@@ -303,3 +303,4 @@ This project is free and open source. If you bought it anywhere, please request 
 - The source code of this project is released under the **MIT** license.
 - Fonts come from the device system fonts (MiSans / MiLan Pro on Band 10/11); no font subset is bundled.
 - The bundled input method component comes from [NEORUAA/Vela_input_method](https://github.com/NEORUAA/Vela_input_method) (MIT); see `src/components/InputMethod/LICENSE`. Thanks to that author for supporting Vela with an input method.
+- Calculator scientific functions and key semantics referenced from [Open_Modular_Boardgame_Companion](https://github.com/MinimumBubble11/Open_Modular_Boardgame_Companion) (MIT, Copyright (c) 2025 MinimumBubble11); evaluation engine is developed independently for this project. Many thanks.

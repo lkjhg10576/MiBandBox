@@ -277,6 +277,7 @@ function roots2(a, b, c) {
   if (d === 0) return { real: true, roots: [V.div(V.neg(b), twoA)], single: true, disc: disc }
   let s
   if (V.isQ(disc)) {
+    // 保持 fraction.sqrt：完全平方才开出有理数，否则降级浮点，绝不能使用带根式的开方（后者会产生根式 r，符号求解器不支持）
     const ex = fraction.sqrt(disc)
     s = ex ? V.fromQ(ex) : V.f(Math.sqrt(d))
   } else {

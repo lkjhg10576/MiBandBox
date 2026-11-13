@@ -15,4 +15,9 @@ export function fontSizeOf(value) {
   return 40
 }
 
-export default { step, fontSizeOf }
+/** 重置计数器值 */
+export function reset() {
+  return 0
+}
+
+export default { step, fontSizeOf, reset }

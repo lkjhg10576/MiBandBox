@@ -13,7 +13,9 @@
       <text class="f delta" style="color: {{ eventColor }};">{{ eventDelta }}</text>
     </div>
 
-    <scroll class="apps" show="{{ layoutReady && layout === 'grid' }}" scroll-y="true" bounces="true">
+    <!-- 网格必须用 if：本渲染器对容器型 show 的动态翻转不可靠（Pro 真机首启网格不出现，
+         逛一次目标日回来才显示）；if 在 layoutReady 翻转时全新建节点，规避该坑 -->
+    <scroll class="apps" if="{{ layoutReady && layout === 'grid' }}" scroll-y="true" bounces="true">
       <div class="grid" style="height: {{ gridHeight }}px;">
         <div class="f cell" for="{{ cells }}" @click="open($item)">
           <img class="icon" src="{{ $item.icon }}" />
@@ -58,15 +60,22 @@
   align-items: center;
 }
 .date {
-  width: 118px;
+  width: 108px;
+  height: 24px;
+  line-height: 24px;
   font-size: 14px;
   color: rgba(255,255,255,0.6);
+  lines: 1;
+  text-overflow: ellipsis;
 }
 .go {
-  width: 54px;
+  width: 66px;
+  height: 24px;
+  line-height: 24px;
   text-align: right;
   font-size: 14px;
   color: rgba(255,255,255,0.4);
+  lines: 1;
 }
 .event {
   width: 174px;
@@ -82,6 +91,7 @@
   height: 22px;
   line-height: 22px;
   font-size: 15px;
+  lines: 1;
 }
 .apps {
   position: absolute;
@@ -207,6 +217,10 @@ export default {
     timer: null,
     _ck: null
   },
+  onInit() {
+    this.refreshClock()
+    this.refreshDate()
+  },
   onShow() {
     this.watchLayout()
     this.syncLayout()
@@ -260,8 +274,7 @@ export default {
   },
   refresh() {
     this.refreshClock()
-    const now = new Date()
-    this.dateText = now.getMonth() + 1 + '月' + now.getDate() + '日 ' + g.time.weekdayName(now)
+    this.refreshDate()
     // 目标日数据带 60 秒缓存：回到首页不必每次读盘 + 解析 + 全表遍历
     homeEvents.load((r) => {
       if (!r || !r.best) return
@@ -271,8 +284,16 @@ export default {
       this.eventColor = best.d.status === 'today' ? '#00C853' : '#0D6EFF'
     })
   },
+  refreshDate() {
+    const now = new Date()
+    if (g.time && g.time.weekdayName) {
+      this.dateText = now.getMonth() + 1 + '月' + now.getDate() + '日 ' + g.time.weekdayName(now)
+    }
+  },
   refreshClock() {
-    this.clock = g.time.formatClock(new Date())
+    if (g.time && g.time.formatClock) {
+      this.clock = g.time.formatClock(new Date())
+    }
   },
   open(item) {
     if (!item || !item.route) return

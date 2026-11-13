@@ -1,3 +1,4 @@
+<!-- 功能与按键语义借鉴 Open_Modular_Boardgame_Companion（MIT, Copyright (c) 2025 MinimumBubble11）；求值引擎为本项目自研，未复制其源码。 -->
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
@@ -7,11 +8,17 @@
 
     <scroll class="body" scroll-y="true" bounces="true">
       <div class="inner" style="height: {{ innerH }}px;">
-        <!-- 表达式框随内容一起滚：横向 scroll 嵌在纵向 scroll 里 -->
-        <scroll class="exprBox" scroll-x="true" bounces="false">
-          <text class="f expr" style="width: {{ exprW }}px;">{{ expr || '0' }}</text>
-        </scroll>
-        <text class="f preview">{{ preview }}</text>
+        <!-- 表达式框随内容一起滚：横向 scroll 嵌在纵向 scroll 里；回车后显示大括号并自动拓宽 -->
+        <div class="exprArea" style="height: {{ exprBoxH }}px;">
+          <text class="f exprBrace" if="{{ isMultiLine }}" style="height: {{ exprBoxH }}px; line-height: {{ exprBoxH }}px; font-size: {{ braceFontSize }}px;">{</text>
+          <scroll id="exprScroll" class="exprBox" style="width: {{ scrollW }}px; height: {{ exprBoxH }}px;" scroll-x="true" bounces="false">
+            <div class="exprCol" if="{{ isMultiLine }}" style="width: {{ exprW }}px; height: {{ exprBoxH }}px;">
+              <text class="f exprLine" for="{{ exprLines }}" style="height: {{ rowH }}px; line-height: {{ rowH }}px; font-size: {{ rowFontSize }}px;">{{ $item }}</text>
+            </div>
+            <text class="f expr" if="{{ !isMultiLine }}" style="width: {{ exprW }}px;">{{ expr || '0' }}</text>
+          </scroll>
+        </div>
+        <text class="f preview" style="font-size: {{ eqDone ? 38 : 34 }}px; color: {{ eqDone ? '#FFFFFF' : 'rgba(255,255,255,0.55)' }};">{{ preview }}</text>
 
         <div class="pad">
           <text class="f key {{ $item.cls }}" for="{{ keys }}" @click="onKey($item)">{{ $item.t }}</text>
@@ -19,6 +26,11 @@
 
         <!-- 高级计算关掉时整块不渲染，inner 同步收缩 -->
         <div class="advWrap" if="{{ advOn }}">
+          <text class="f secLabel">科学函数 · {{ degOn ? 'DEG' : 'RAD' }}</text>
+          <div class="pad">
+            <text class="f key {{ $item.cls }}" for="{{ sciKeys }}" @click="onKey($item)">{{ $item.t }}</text>
+          </div>
+
           <text class="f secLabel">高级函数</text>
           <div class="pad">
             <text class="f key {{ $item.cls }}" for="{{ advKeys }}" @click="onKey($item)">{{ $item.t }}</text>
@@ -42,8 +54,8 @@
 
         <!-- 三个开关一行一个；选中态只用内联 style 三元，禁用复合类选择器 -->
         <div class="swRow" style="background-color: {{ fracOn ? '#0D6EFF' : '#333333' }};" @click="toggleFrac">
-          <text class="f swLabel">分数形式显示</text>
-          <text class="f swState">{{ fracOn ? '分数' : '小数' }}</text>
+          <text class="f swLabel">精确形式显示</text>
+          <text class="f swState">{{ fracOn ? '精确' : '小数' }}</text>
         </div>
         <div class="swRow" style="background-color: {{ vibOn ? '#0D6EFF' : '#333333' }};" @click="toggleVib">
           <text class="f swLabel">按键振动</text>
@@ -69,13 +81,19 @@
 .body { position: absolute; left: 0px; top: 80px; width: 212px; height: 386px; }
 .inner { width: 212px; flex-direction: column; }
 
-/* 流式排版：所有子元素靠 margin 留白，不再用 position:absolute */
-.exprBox { width: 188px; height: 42px; margin: 0px 12px; }
+/* 流式排版：所有子元素靠 margin 留白，不再用 position:absolute。
+   flex-shrink:0 必须显式写：innerH 估值偏小时缺省会压缩子元素，
+   Pro 包曾因 BASE_H 少算 42px 把第 4 行按键压没（textShow 同坑） */
+.exprArea { width: 188px; height: 42px; margin: 0px 12px; flex-shrink: 0; flex-direction: row; }
+.exprBrace { width: 14px; margin-right: 2px; text-align: center; color: #FFFFFF; font-weight: 300; }
+.exprBox { width: 188px; height: 42px; flex-shrink: 0; }
 /* 宽度必须显式给：<text> 默认被拉满到父宽，内层横向 scroll 就没有可滚内容。
    这里用内联 style 绑定 exprW，按字符数收紧滚动范围，避免滑到一片空白。 */
 .expr { width: 188px; height: 42px; line-height: 42px; font-size: 24px; color: #FFFFFF; }
-.preview { width: 188px; height: 46px; margin: 2px 12px; line-height: 46px; text-align: right; font-size: 34px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; }
-.pad { width: 192px; margin: 0px 10px; flex-direction: row; flex-wrap: wrap; }
+.exprCol { flex-direction: column; }
+.exprLine { width: 100%; color: #FFFFFF; }
+.preview { width: 188px; height: 46px; margin: 2px 12px; line-height: 46px; text-align: right; font-size: 34px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; flex-shrink: 0; }
+.pad { width: 192px; margin: 0px 10px; flex-direction: row; flex-wrap: wrap; flex-shrink: 0; }
 
 .key { width: 44px; height: 42px; line-height: 42px; margin: 2px; text-align: center; border-radius: 14px; font-size: 22px; color: #FFFFFF; background-color: #262626; }
 .num { background-color: #1E1E1E; }
@@ -86,8 +104,11 @@
 /* 变量键与关系键各写一条单类规则：本渲染器会把复合规则套到所有同基类元素 */
 .keyVar { background-color: #2A2436; color: #C7B3FF; }
 .keyRel { background-color: #33291A; color: #FFCE7A; }
+.keyConst { background-color: #2A2436; color: #C7B3FF; }
+.keyTrig { background-color: #1E2A38; color: #9FC4FF; }
+.keySm { font-size: 16px; background-color: #1E2A38; color: #9FC4FF; }
 
-.advWrap { width: 212px; flex-direction: column; }
+.advWrap { width: 212px; flex-direction: column; flex-shrink: 0; }
 .secLabel { width: 192px; height: 22px; margin: 0px 10px; line-height: 22px; font-size: 13px; color: rgba(255,255,255,0.4); }
 .solveHint { width: 192px; height: 20px; margin: 0px 10px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
 .noSol { width: 192px; height: 24px; margin: 4px 10px 0px 10px; line-height: 24px; font-size: 16px; color: #FF8A80; }
@@ -96,15 +117,15 @@
 .resultCard { width: 206px; margin: 4px 3px 0px 3px; border-radius: 16px; background-color: #262626; padding: 8px 0px; flex-direction: column; }
 .rLine { width: 194px; margin: 0px 6px; height: 22px; line-height: 22px; font-size: 14px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 
-.swRow { width: 192px; height: 46px; margin: 2px 10px; border-radius: 14px; flex-direction: row; align-items: center; }
+.swRow { width: 192px; height: 46px; margin: 2px 10px; border-radius: 14px; flex-direction: row; align-items: center; flex-shrink: 0; }
 .swLabel { width: 116px; margin-left: 14px; font-size: 15px; color: #FFFFFF; }
 .swState { width: 44px; margin-right: 14px; text-align: right; font-size: 15px; color: rgba(255,255,255,0.7); }
 
-.tail { width: 212px; height: 24px; }
+.tail { width: 212px; height: 24px; flex-shrink: 0; }
 </style>
 
 <script>
-
+/** 功能与按键语义借鉴 Open_Modular_Boardgame_Companion（MIT, Copyright (c) 2025 MinimumBubble11）；求值引擎为本项目自研，未复制其源码。 */
 import g from '../../utils/g'
 import calc from '../../utils/calc'
 import solver from '../../utils/solver'
@@ -125,30 +146,46 @@ const LAYOUT = [
   { t: '√', v: '√', cls: 'fn' }, { t: '^', v: '^', cls: 'fn' }
 ]
 
-/** 高级函数 8 键：5 个需求函数 + C / ← / 求解（免得滚上去再滚回来） */
+function makeSciLayout(degOn) {
+  return [
+    { t: 'sin', v: 'sin(', cls: 'keyTrig' }, { t: 'cos', v: 'cos(', cls: 'keyTrig' },
+    { t: 'tan', v: 'tan(', cls: 'keyTrig' }, { t: degOn ? 'DEG' : 'RAD', v: 'DEG', cls: 'fn' },
+    { t: 'asin', v: 'asin(', cls: 'keySm' }, { t: 'acos', v: 'acos(', cls: 'keySm' },
+    { t: 'atan', v: 'atan(', cls: 'keySm' }, { t: '°', v: '°', cls: 'keyTrig' },
+    { t: 'π', v: 'π', cls: 'keyConst' }, { t: 'e', v: 'e', cls: 'keyConst' },
+    { t: 'x²', v: '^2', cls: 'fn' }, { t: 'x³', v: '^3', cls: 'fn' },
+    { t: '10^', v: 'POW10', cls: 'fn' }, { t: '(', v: '(', cls: 'fn' },
+    { t: ')', v: ')', cls: 'fn' }
+  ]
+}
+
+/** 高级函数 7 键：5 个需求函数 + C / 求解 */
 const ADV_LAYOUT = [
   { t: '1/x', v: 'inv(', cls: 'fn' }, { t: '|x|', v: '|', cls: 'fn' },
   { t: 'n!', v: '!', cls: 'fn' }, { t: 'ln', v: 'ln(', cls: 'fn' },
   { t: 'log', v: 'log(', cls: 'fn' }, { t: 'C', v: 'C', cls: 'clear' },
-  { t: '←', v: 'DEL', cls: 'fn' }, { t: '求解', v: 'SOLVE', cls: 'eq' }
+  { t: '求解', v: 'SOLVE', cls: 'eq' }
 ]
 
-/** 方程 / 不等式 12 键：变量 3 + 分句符 1 + 关系 4 + 括号 2 + 退格 1 + 插入型等号 1 */
+/** 方程 / 不等式 12 键：变量 3 + 分句符 1 + 关系 4 + 括号 2 + 回车 1 + 插入型等号 1 */
 const EQ_LAYOUT = [
   { t: 'x', v: 'x', cls: 'keyVar' }, { t: 'y', v: 'y', cls: 'keyVar' },
   { t: 'z', v: 'z', cls: 'keyVar' }, { t: ';', v: ';', cls: 'fn' },
   { t: '=', v: '=', cls: 'keyRel' }, { t: '<', v: '<', cls: 'keyRel' },
   { t: '>', v: '>', cls: 'keyRel' }, { t: '≤', v: '<=', cls: 'keyRel' },
   { t: '≥', v: '>=', cls: 'keyRel' }, { t: '(', v: '(', cls: 'fn' },
-  { t: ')', v: ')', cls: 'fn' }, { t: '←', v: 'DEL', cls: 'fn' }
+  { t: ')', v: ')', cls: 'fn' }, { t: '↵', v: 'ENTER', cls: 'fn' }
 ]
 
 /** 算完一次后按这些键继续接在结果后面，其余键开始新算式 */
-const CONTINUE = ['+', '-', '*', '/', '^', '%', '=', '>', '<', '>=', '<=', ';', '!', '|', '(', ')']
+const CONTINUE = [
+  '+', '-', '*', '/', '^', '%', '=', '>', '<', '>=', '<=', ';', '!', '|', '(', ')',
+  '^2', '^3', '°', '\n'
+]
 
 /** 内容高度估值，真机验收时微调 */
 const BASE_H = 546
-const ADV_H = 294
+const ADV_H = 500
 
 export default {
   data: {
@@ -157,15 +194,26 @@ export default {
     expr: '',
     preview: '',
     keys: LAYOUT,
+    sciKeys: makeSciLayout(true),
     advKeys: ADV_LAYOUT,
     eqKeys: EQ_LAYOUT,
     evaluated: false,
+    eqDone: false,
     timer: null,
     fracOn: false,
     vibOn: true,
     advOn: false,
+    degOn: true,
     innerH: BASE_H,
     exprW: 188,
+    exprBaseW: 188,
+    scrollW: 188,
+    exprBoxH: 42,
+    isMultiLine: false,
+    exprLines: ['0'],
+    braceFontSize: 56,
+    rowH: 34,
+    rowFontSize: 20,
     resultLines: [],
     showResultCard: false,
     solveNoSolution: false,
@@ -183,6 +231,8 @@ export default {
       this.fracOn = g.kv.get('calcFrac', false) === true
       this.vibOn = g.kv.get('calcVib', true) !== false
       this.advOn = g.kv.get('calcAdv', false) === true
+      this.degOn = g.kv.get('calcDeg', true) !== false
+      this.sciKeys = makeSciLayout(this.degOn)
       this.recalcInner()
     })
   },
@@ -213,7 +263,8 @@ export default {
   },
   recalcInner() {
     const card = this.showResultCard ? this.resultLines.length * 22 + 20 : this.solveNoSolution ? 24 : 0
-    this.innerH = BASE_H + (this.advOn ? ADV_H + card : 0)
+    const extraH = this.exprBoxH - 42
+    this.innerH = BASE_H + (this.advOn ? ADV_H + card : 0) + extraH
   },
   clearResult() {
     this.resultLines = []
@@ -221,8 +272,17 @@ export default {
     this.solveNoSolution = false
     this.recalcInner()
   },
+  toggleDeg() {
+    this.applyHaptic('short')
+    const next = !this.degOn
+    this.degOn = next
+    this.sciKeys = makeSciLayout(next)
+    this.saveFlag('calcDeg', next)
+    this.refresh()
+  },
   onKey(key) {
     this.applyHaptic('short')
+    this.eqDone = false
     const v = key.v
     if (v === 'C') {
       this.expr = ''
@@ -234,6 +294,21 @@ export default {
     if (v === 'DEL') {
       this.expr = calc.backspaceToken(this.expr)
       this.evaluated = false
+      this.refresh()
+      return
+    }
+    if (v === 'ENTER') {
+      if (!this.expr) return
+      if (this.expr.slice(-1) === '\n') return
+      const lines = this.expr.split('\n')
+      if (lines.length >= 3) {
+        prompt.showToast({ message: '最多3行方程', duration: 1200 })
+        return
+      }
+      if (this.evaluated) {
+        this.evaluated = false
+      }
+      this.expr += '\n'
       this.refresh()
       return
     }
@@ -255,6 +330,23 @@ export default {
       this.refresh()
       return
     }
+    if (v === 'DEG') {
+      this.toggleDeg()
+      return
+    }
+    if (v === 'POW10') {
+      if (this.evaluated) {
+        this.expr = ''
+        this.evaluated = false
+      }
+      if (!this.expr || /[+\-*/^(|]$/.test(this.expr)) {
+        this.expr += '10^'
+      } else {
+        this.expr += '*10^'
+      }
+      this.refresh()
+      return
+    }
     if (this.evaluated) {
       if (CONTINUE.indexOf(v) < 0) this.expr = ''
       this.evaluated = false
@@ -264,18 +356,55 @@ export default {
   },
   /** 表达式框宽度按字符数收紧：太宽会让人滑到一片空白，太窄则末尾被裁 */
   syncExprWidth() {
-    const n = String(this.expr || '0').length
-    const w = n * 14 + 20
+    let maxLen = 1
+    if (this.expr) {
+      const parts = this.expr.split('\n')
+      for (let i = 0; i < parts.length; i++) {
+        if (parts[i].length > maxLen) maxLen = parts[i].length
+      }
+    }
+    const charW = this.isMultiLine ? 12 : 14
+    const w = maxLen * charW + 20
     this.exprW = w < 188 ? 188 : w
+    try {
+      const el = this.$element('exprScroll')
+      if (el) el.scrollTo({ left: this.exprW, behavior: 'instant' })
+    } catch (e) {}
+  },
+  updateExprLayout() {
+    if (!this.expr) {
+      this.isMultiLine = false
+      this.exprLines = ['0']
+      this.exprBoxH = 42
+      this.scrollW = this.exprBaseW
+      return
+    }
+    const lines = this.expr.split('\n')
+    this.isMultiLine = lines.length > 1
+    if (this.isMultiLine) {
+      this.exprLines = lines.map((line) => line || ' ')
+      const n = lines.length
+      this.rowH = n >= 3 ? 32 : 34
+      this.rowFontSize = n >= 3 ? 18 : 20
+      this.braceFontSize = n >= 3 ? 80 : 56
+      this.exprBoxH = n * this.rowH
+      this.scrollW = this.exprBaseW - 16
+    } else {
+      this.exprLines = [this.expr]
+      this.exprBoxH = 42
+      this.scrollW = this.exprBaseW
+    }
   },
   refresh() {
+    this.updateExprLayout()
+    this.recalcInner()
     this.syncExprWidth()
     if (!this.expr) {
       this.preview = ''
       return
     }
     try {
-      this.preview = calc.format(calc.evaluateVal(this.expr), { fracOn: this.fracOn })
+      this.preview = calc.format(calc.evaluateVal(this.expr, { deg: this.degOn }), { fracOn: this.fracOn })
     } catch (e) {
       // 含变量/关系符时求值必然失败，静默置空
       this.preview = ''
@@ -284,13 +413,14 @@ export default {
   doEqual() {
     if (!this.expr) return
     try {
-      const val = calc.evaluateVal(this.expr)
+      const val = calc.evaluateVal(this.expr, { deg: this.degOn })
       // 写回表达式一律用小数形式，否则 1/3 回填后会变成 1 除以 3 的连除
       const txt = calc.format(val, { fracOn: false })
       this.preview = calc.format(val, { fracOn: this.fracOn })
       this.expr = txt
       this.evaluated = true
-      this.syncExprWidth()
+      this.eqDone = true
+      this.refresh()
       this.applyHaptic('long')
     } catch (e) {
       prompt.showToast({ message: '输入无效', duration: 1400 })
@@ -299,6 +429,7 @@ export default {
   },
   doSolve() {
     if (!this.expr) return
+    this.eqDone = false
     const res = solver.solve(this.expr, { fracOn: this.fracOn })
     if (res.error) {
       prompt.showToast({ message: res.error, duration: 1600 })

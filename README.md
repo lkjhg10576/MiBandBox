@@ -331,3 +331,4 @@ assets/                    README 用的宣传图、实拍截图、收款码
 - 本项目源码以 **MIT** 协议开源。
 - 字体使用设备系统字体（Band 10/11 的 MiSans / MiLan Pro），不内置字体子集。
 - 内置输入法组件来自 [NEORUAA/Vela_input_method](https://github.com/NEORUAA/Vela_input_method)（MIT），许可证见 `src/components/InputMethod/LICENSE`，在此感谢该作者对 Vela 提供输入法的支持。
+- 计算器的科学函数与按键语义借鉴 [Open_Modular_Boardgame_Companion](https://github.com/MinimumBubble11/Open_Modular_Boardgame_Companion)（MIT, Copyright (c) 2025 MinimumBubble11）；求值引擎为本项目自研，在此致谢。

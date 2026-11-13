@@ -9,6 +9,8 @@
     <text class="f num" style="font-size: {{ fontSize }}px;">{{ count }}</text>
     <div class="key keyDown" @click="dec"><text class="f keyT">−</text></div>
 
+    <div class="reset" style="background-color: {{ armed ? '#FF3B30' : '#262626' }};" @click="reset"><text class="f resetT">{{ armed ? '再次点击' : '重置' }}</text></div>
+
     <backbtn></backbtn>
   </div>
 </template>
@@ -20,6 +22,8 @@
 .keyDown { top: 324px; background-color: #262626; }
 .keyT { font-size: 44px; font-weight: bold; color: #FFFFFF; }
 .num { position: absolute; left: 0px; top: 212px; width: 212px; height: 96px; line-height: 96px; text-align: center; font-size: 76px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.reset { position: absolute; left: 66px; top: 432px; width: 80px; height: 32px; border-radius: 16px; align-items: center; justify-content: center; }
+.resetT { font-size: 14px; color: #FFFFFF; }
 </style>
 
 <script>
@@ -31,7 +35,9 @@ export default {
     _ck: null,
     clock: '--:--',
     count: 0,
-    fontSize: 76
+    fontSize: 76,
+    armed: false,
+    _timer: null
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -40,23 +46,54 @@ export default {
     g.clock.sub(this._ck)
   },
   onHide() {
+    this.cancelReset()
     this.unsub()
   },
   onDestroy() {
+    this.cancelReset()
     this.unsub()
   },
   unsub() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   inc() {
+    this.cancelReset()
     this.count = counter.step(this.count, 1)
     this.fontSize = counter.fontSizeOf(this.count)
     g.haptic.long()
   },
   dec() {
+    this.cancelReset()
     this.count = counter.step(this.count, -1)
     this.fontSize = counter.fontSizeOf(this.count)
     g.haptic.long()
+  },
+  reset() {
+    if (!this.armed) {
+      this.armed = true
+      g.haptic.short()
+      if (this._timer) clearTimeout(this._timer)
+      const page = this
+      this._timer = setTimeout(() => {
+        if (page.$valid) page.cancelReset()
+        else {
+          page.armed = false
+          page._timer = null
+        }
+      }, 5000)
+      return
+    }
+    this.cancelReset()
+    this.count = counter.reset ? counter.reset() : 0
+    this.fontSize = counter.fontSizeOf(0)
+    g.haptic.long()
+  },
+  cancelReset() {
+    if (this._timer) {
+      clearTimeout(this._timer)
+      this._timer = null
+    }
+    this.armed = false
   }
 }
 </script>

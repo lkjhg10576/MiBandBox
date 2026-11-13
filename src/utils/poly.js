@@ -176,8 +176,7 @@ function parsePolyTokens(tokens, varsOpt) {
     return v
   }
 
-  // 与 calc.js 有意不同：符号求解按数学惯例让 ^ 高于 * /，否则 2x^2 会被读成 (2x)^2 = 4x^2。
-  // calc.js 的数值求值保持旧的左结合（2^3^2 = 64），两处语义分别由两份单测固定。
+  // 符号求解按数学惯例让 ^ 高于 * /（与 calc.js 的数值求值统一为右结合，^ 高于乘除）。
   function term() {
     let v = unary()
     while (peek() && peek().type === 'op' && (peek().value === '*' || peek().value === '/')) {
@@ -213,6 +212,7 @@ function parsePolyTokens(tokens, varsOpt) {
     while (peek() && peek().type === 'post') {
       const t = take().value
       if (t === '%') v = divByConst(v, polyConst(V.q(100, 1), vars))
+      else if (t === '°') throw new Error('不支持函数')
       else throw new Error('不支持阶乘')
     }
     return v
@@ -225,6 +225,7 @@ function parsePolyTokens(tokens, varsOpt) {
       take()
       return polyConst(t.q ? V.fromQ(t.q) : V.f(t.value), vars)
     }
+    if (t.type === 'const') throw new Error('不支持函数')
     if (t.type === 'var') {
       take()
       const idx = vars.indexOf(t.value)
