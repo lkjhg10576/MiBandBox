@@ -150,14 +150,16 @@
       ["width: 212px", "width: 336px"],
       ["height: 438px", "height: 358px"],
       ["width: 206px", "width: 330px"],
-      ["width: 174px", "width: 298px"]
+      ["width: 174px", "width: 298px"],
+      ["width: 194px", "width: 318px"]
     ],
     "src/pages/otp/sync/sync.ux": [
       ["width: 212px", "width: 336px"],
       ["height: 520px", "height: 480px"],
       ["height: 408px", "height: 358px"],
       ["width: 206px", "width: 330px"],
-      ["width: 170px", "width: 294px"]
+      ["width: 170px", "width: 294px"],
+      ["width: 140px", "width: 274px"]
     ],
     "src/pages/calendar/calendar.ux": [
       ["width: 212px", "width: 336px"],
@@ -177,8 +179,9 @@
     "src/pages/dailytip/dailytip.ux": [
       ["width: 206px", "width: 330px"],
       ["width: 170px", "width: 294px"],
+      ["width: 200px", "width: 336px"],
       ["left: 26px", "left: 88px"],
-      ["left: 6px", "left: 68px"]
+      ["left: 6px", "left: 0px"]
     ],
     "src/pages/time/time.ux": [
       ["width: 212px", "width: 336px"],
@@ -321,8 +324,7 @@
     ],
     "src/pages/fluorescence/fluorescence.ux": [
       ["left: 6px", "left: 68px"],
-      ["left: 26px", "left: 88px"],
-      ["left: 16px", "left: 78px"]
+      ["left: 26px", "left: 88px"]
     ],
     "src/pages/fluorescence/play/play.ux": [
       ["width: 212px", "width: 336px"],
@@ -388,9 +390,12 @@
     "src/pages/imeTest/imeTest.ux": [
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
+      ["height: 268px", "height: 250px"],
+      ["height: 244px", "height: 226px"],
+      ["height: 240px", "height: 222px"],
       ["left: 26px", "left: 88px"],
-      ["top: 370px", "top: 356px"],
-      ["top: 428px", "top: 414px"],
+      ["top: 370px", "top: 344px"],
+      ["top: 428px", "top: 398px"],
       ["top: 484px", "top: 452px"],
       ["width: 212px", "width: 336px"]
     ],

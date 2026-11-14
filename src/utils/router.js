@@ -16,6 +16,14 @@ function replace(uri, params) {
 }
 
 function back() {
+  // 栈深=1 时（直接落到非首页的入口场景）router.back() 静默无响应，兜底回首页；
+  // getLength 探测失败就退回普通 back，不影响原行为
+  try {
+    if (typeof router.getLength === 'function' && router.getLength() === 1) {
+      home()
+      return
+    }
+  } catch (e) {}
   try {
     router.back()
   } catch (e) {}

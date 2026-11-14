@@ -136,14 +136,14 @@ export default {
     })
     if (this.syncedCount > 0) {
       rows.push({
-        title: '已同步：' + this.syncedCount + ' 个账户',
-        sub: '共 ' + this.totalCount + ' 个账户，已保存到手环',
+        title: '已同步 ' + this.syncedCount + ' 个账户',
+        sub: '共 ' + this.totalCount + ' 个账户已保存',
         act: ''
       })
     }
     rows.push({
       title: '重新检测连接',
-      sub: '重新检测与手机插件的连接状态',
+      sub: '检测手机插件的连接',
       act: 'recheck',
       arrow: '>'
     })
@@ -219,7 +219,7 @@ export default {
     this.totalCount = otpStore.list().length
     this.syncedCount = count || this.totalCount
     this.connText = '已同步'
-    this.stateText = '共 ' + this.totalCount + ' 个账户，已保存到手环'
+    this.stateText = '共 ' + this.totalCount + ' 个账户已保存'
     this.refreshRows()
     prompt.showToast({ message: '已同步 ' + (count || this.totalCount) + ' 个账户' })
     g.haptic.short()

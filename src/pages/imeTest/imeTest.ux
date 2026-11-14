@@ -13,10 +13,10 @@
       </scroll>
     </div>
 
-    <div class="btn {{ busy ? 'off' : '' }}" @click="run">
+    <div class="btn" style="background-color: {{ busy ? '#2A2A2A' : '#0D6EFF' }};" @click="run">
       <text class="f btnT">{{ busy ? '诊断中…' : '开始诊断' }}</text>
     </div>
-    <div class="btn qrBtn {{ qr ? '' : 'off' }}" @click="showQr">
+    <div class="btn qrBtn" style="background-color: {{ qr ? '#0D6EFF' : '#2A2A2A' }};" @click="showQr">
       <text class="f btnT">二维码</text>
     </div>
     <text class="f hint">把屏幕内容或二维码发给开发者</text>
@@ -32,8 +32,7 @@
 .sc { width: 174px; height: 244px; }
 .lines { width: 174px; flex-direction: column; }
 .line { width: 174px; height: 20px; font-size: 14px; line-height: 20px; color: #FFFFFF; }
-.btn { position: absolute; left: 26px; top: 370px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
-.btn.off { background-color: #2A2A2A; }
+.btn { position: absolute; left: 26px; top: 370px; width: 160px; height: 46px; border-radius: 23px; align-items: center; justify-content: center; }
 .qrBtn { top: 428px; }
 .btnT { font-size: 15px; color: #FFFFFF; }
 .hint { position: absolute; left: 0px; top: 484px; width: 212px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
@@ -134,6 +133,9 @@ export default {
       lines.push('call: no-api')
       this.setLines(lines)
       this.busy = false
+      // no-api 恰恰是要带走的诊断结论：照 finish() 生成二维码，按钮不再哑掉
+      const short = lines.filter((l) => /^(input|open|call|out):/.test(l)).join(';')
+      this.qr = short.slice(0, 180)
       return
     }
 

@@ -12,7 +12,7 @@
     <div class="actions">
       <div class="btn" @click="next"><text class="f btnT">换一条</text></div>
     </div>
-    <text class="f hint">每天一条 · 「换一条」仅本次生效</text>
+    <text class="f hint">每天一条 · 换一条仅本次生效</text>
     <backbtn></backbtn>
   </div>
 </template>
