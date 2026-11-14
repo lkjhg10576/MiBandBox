@@ -1,0 +1,94 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="收藏详情" clock="{{ clock }}"></pagehead>
+    <scroll class="body" scroll-y="true" bounces="true">
+      <text class="f full">{{ text }}</text>
+      <div class="pad"></div>
+    </scroll>
+    <div class="genBtn" @click="onRegen"><text class="f genT">重新生成二维码</text></div>
+    <div class="delBtn" style="background-color: {{ armed ? '#FF3B30' : '#262626' }};" @click="tapDelete">
+      <text class="f delT">{{ armed ? '再次点击以取消' : '取消收藏' }}</text>
+    </div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+/* 正文区复刻收藏列表卡片底色；原文最长 512 字节，scroll 里完整展示 */
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 250px; }
+.full { width: 182px; margin: 12px 15px 0px 15px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.85); }
+.pad { width: 212px; height: 16px; }
+.genBtn { position: absolute; left: 26px; top: 350px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.genT { font-size: 14px; color: #FFFFFF; }
+.delBtn { position: absolute; left: 26px; top: 410px; width: 160px; height: 48px; border-radius: 24px; align-items: center; justify-content: center; }
+.delT { font-size: 14px; color: #FFFFFF; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import prompt from '@system.prompt'
+import qrFavStore from '../../../utils/qrFavStore'
+import favState from '../fav/favState'
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    id: '',
+    text: '',
+    armed: false,
+    timer: null
+  },
+  onInit() {
+    const item = favState.item
+    this.id = item && item.id ? item.id : ''
+    this.text = item && item.text ? item.text : ''
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    this.armed = false
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  /**
+   * 现场重新生成：show 页以 fav='0' 打开（内容已在收藏里，不再显示收藏按钮）。
+   */
+  onRegen() {
+    if (!this.text) {
+      prompt.showToast({ message: '收藏内容缺失，可能已被删除', duration: 1500 })
+      return
+    }
+    g.haptic.short()
+    g.router.push('/pages/qrcode/show', { qr: this.text, fav: '0' })
+  },
+  /**
+   * 两次点击确认取消收藏（同 sentence/favdetail 的 armed 模式）：
+   * 首次点按震动并把按钮转红提示；再次点按才删 qrFavs 并返回列表。
+   */
+  tapDelete() {
+    if (!this.armed) {
+      g.haptic.short()
+      this.armed = true
+      return
+    }
+    g.haptic.long()
+    const page = this
+    qrFavStore.remove(this.id, (found) => {
+      if (!page.$valid) return
+      prompt.showToast({ message: found ? '已取消收藏' : '收藏不存在', duration: 1200 })
+      g.router.back()
+    })
+  }
+}
+</script>

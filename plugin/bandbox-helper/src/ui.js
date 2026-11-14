@@ -4,9 +4,10 @@
  * 注意：v4 的 ui 元素方法名是 camelCase（flexDirection / scrollTop ...），
  * 枚举值是大写字符串（'DIV' / 'BUTTON' / 'SCROLL-AREA' ...）。
  *
- * 布局：顶部两个 Tab（歌词同步 / 动态口令），按 state.tab 分支渲染。
+ * 布局：顶部三个 Tab（歌词同步 / 动态口令 / 二维码），按 state.tab 分支渲染。
  * 歌词区的结构保持与 0.2.x 逐字一致（回归风险最小化）；
- * 动态口令区为 0.3.0 新增，弹窗用自绘 DIV 覆盖层。
+ * 动态口令区为 0.3.0 新增，弹窗用自绘 DIV 覆盖层；
+ * 二维码区为 0.3.2 新增（本期只支持粘贴扫码文本，PNG 解码下期支持）。
  */
 import { Element, render } from 'astrobox:psys-host-v4/ui'
 
@@ -79,8 +80,10 @@ function tabBar(tab) {
   const bar = el('DIV').flex().flexDirection('ROW').gap(8).widthFull()
   const lyricsBg = tab === 'lyrics' ? C.accent : '#33383D'
   const otpBg = tab === 'otp' ? C.accent : '#33383D'
+  const qrBg = tab === 'qr' ? C.accent : '#33383D'
   bar.child(button('歌词同步', 'tab-lyrics', lyricsBg).flexGrow(1))
   bar.child(button('动态口令', 'tab-otp', otpBg).flexGrow(1))
+  bar.child(button('二维码', 'tab-qr', qrBg).flexGrow(1))
   return bar
 }
 
@@ -268,6 +271,45 @@ function renderOtpTab(root, state) {
 }
 
 // ------------------------------------------------------------------
+// 二维码 Tab（0.3.2 新增）
+// ------------------------------------------------------------------
+
+function renderQrTab(root, state) {
+  // ---- 设备信息 ----
+  const qrLines = []
+  if (state.deviceName) {
+    qrLines.push(text('手环：' + state.deviceName + (state.watchOnline ? ' · 在线' : ''), C.text, 15))
+  } else {
+    qrLines.push(text('未检测到已连接的手环', C.dim, 15))
+    qrLines.push(text('请确认 AstroBox 已连接手环，并允许插件的设备权限', C.dim, 12))
+  }
+  root.child(card(qrLines))
+
+  // ---- 状态 ----
+  root.child(card([text(state.qrStatusText, state.qrBusy ? C.accent : C.dim, 13)]))
+
+  // ---- 粘贴扫码文本 ----
+  root.child(text('粘贴扫码文本（手机上识别二维码后复制）', C.dim, 13))
+  root.child(textarea(state.qrDraft, 'qr-field:text', 120))
+
+  // ---- 操作行 ----
+  const ops = el('DIV').flex().flexDirection('ROW').gap(8).widthFull()
+  ops.child(button('选择 PNG 图片', 'qr-pick-png', '#33383D').flexGrow(1))
+  ops.child(
+    button('发送到手环', 'qr-send', state.qrBusy ? C.dim : C.accent).flexGrow(1)
+  )
+  root.child(ops)
+
+  // ---- 提示 ----
+  root.child(text('暂支持粘贴扫码文本；PNG 图片解码下期支持', C.dim, 12))
+
+  // ---- 错误 ----
+  if (state.lastError) {
+    root.child(card([text(state.lastError, C.warn, 13)]))
+  }
+}
+
+// ------------------------------------------------------------------
 // 弹窗覆盖层（自绘 DIV，每次 repaint 整棵重建）
 // ------------------------------------------------------------------
 
@@ -356,6 +398,8 @@ export function renderUI(elementId, state) {
 
   if (state.tab === 'otp') {
     renderOtpTab(root, state)
+  } else if (state.tab === 'qr') {
+    renderQrTab(root, state)
   } else {
     renderLyricsTab(root, state)
   }

@@ -455,8 +455,8 @@ export function unwrapInterconnectPayload(raw) {
   if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
     return { addr: '', pkgName: '', data: raw }
   }
-  // 已经是协议消息本身（OTP 或歌词协议都按裸消息放行，由上层按 app 分流）
-  if (obj.app === APP_ID || obj.app === 'bandbox-lyrics') {
+  // 已经是协议消息本身（OTP、歌词、二维码导入协议都按裸消息放行，由上层按 app 分流）
+  if (obj.app === APP_ID || obj.app === 'bandbox-lyrics' || obj.app === 'bandbox-qr') {
     return { addr: '', pkgName: '', data: raw }
   }
   const addr = typeof obj.addr === 'string' ? obj.addr : ''

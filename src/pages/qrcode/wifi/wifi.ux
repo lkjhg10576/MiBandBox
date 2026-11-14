@@ -1,0 +1,154 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+<import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="WiFi 二维码" clock="{{ clock }}"></pagehead>
+
+    <scroll class="formScroll" scroll-y="true" bounces="true">
+      <div class="inner">
+        <!-- 输入密码时隐藏 SSID 卡：密码卡自动顶到表单首位（kbBar 之上），不必动态改 top -->
+        <div class="field" if="{{ !(kbShow && active === 'pass') }}" style="border-color: {{ kbShow && active === 'ssid' ? '#0D6EFF' : 'transparent' }};" @click="pickSsid">
+          <text class="f fLabel">WiFi 名称（SSID）</text>
+          <text class="f fValue" if="{{ ssid }}">{{ ssid }}</text>
+          <text class="f fPlace" if="{{ !ssid }}">点击输入 WiFi 名称</text>
+        </div>
+
+        <div class="field" style="background-color: {{ auth === 'nopass' ? '#1E1E1E' : '#262626' }}; border-color: {{ kbShow && active === 'pass' ? '#0D6EFF' : 'transparent' }};" @click="pickPass">
+          <text class="f fLabel">密码</text>
+          <text class="f fValue" if="{{ pass }}">{{ pass }}</text>
+          <text class="f fPlace" if="{{ !pass }}">{{ auth === 'nopass' ? '开放网络无需密码' : '点击输入密码' }}</text>
+        </div>
+
+        <div class="chips">
+          <div class="chip" style="background-color: {{ auth === 'WPA' ? '#0D6EFF' : '#1E1E1E' }};" @click="pickAuth('WPA')"><text class="f chipT">WPA</text></div>
+          <div class="chip" style="background-color: {{ auth === 'WEP' ? '#0D6EFF' : '#1E1E1E' }};" @click="pickAuth('WEP')"><text class="f chipT">WEP</text></div>
+          <div class="chip" style="background-color: {{ auth === 'nopass' ? '#0D6EFF' : '#1E1E1E' }};" @click="pickAuth('nopass')"><text class="f chipT">开放</text></div>
+        </div>
+
+        <div class="hidCard" @click="toggleHidden">
+          <text class="f hidLabel">隐藏网络</text>
+          <text class="f hidVal" style="color: {{ hidden ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ hidden ? '已开启' : '未开启' }}</text>
+        </div>
+
+        <div class="go" @click="onGen"><text class="f goT">生成二维码</text></div>
+      </div>
+    </scroll>
+
+    <backbtn></backbtn>
+    <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
+    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+/* 表单整体放 scroll 里：一屏放不下往下翻（参照 notebook/edit 的滚动习惯） */
+.formScroll { position: absolute; left: 0px; top: 78px; width: 212px; height: 442px; }
+.inner { width: 212px; flex-direction: column; }
+.field { width: 206px; margin: 0px 3px 8px 3px; height: 40px; border-radius: 20px; background-color: #262626; padding: 4px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
+.fLabel { width: 174px; height: 16px; line-height: 16px; font-size: 12px; color: rgba(255,255,255,0.45); }
+.fValue { width: 174px; height: 20px; line-height: 20px; font-size: 15px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.fPlace { width: 174px; height: 20px; line-height: 20px; font-size: 13px; color: rgba(255,255,255,0.3); }
+.chips { margin: 4px 6px 0px 6px; height: 32px; flex-direction: row; justify-content: space-between; }
+.chip { width: 62px; height: 32px; border-radius: 16px; background-color: #1E1E1E; align-items: center; justify-content: center; }
+.chipT { font-size: 14px; color: #FFFFFF; }
+.hidCard { width: 206px; margin: 8px 3px 0px 3px; height: 44px; border-radius: 20px; background-color: #262626; padding: 0px 16px; flex-direction: row; align-items: center; justify-content: space-between; }
+.hidLabel { font-size: 14px; color: rgba(255,255,255,0.7); }
+.hidVal { font-size: 14px; }
+.go { width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; margin: 12px 26px 0px 26px; }
+.goT { font-size: 14px; color: #FFFFFF; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import prompt from '@system.prompt'
+import wifi from '../../../utils/wifi'
+import textInput from '../../../utils/textInput'
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    ssid: '',
+    pass: '',
+    auth: 'WPA',
+    hidden: false,
+    active: 'ssid',
+    kbShow: false,
+    timer: null
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  pickSsid() {
+    this.active = 'ssid'
+    this.kbShow = true
+  },
+  pickPass() {
+    if (this.auth === 'nopass') {
+      prompt.showToast({ message: '开放网络无需密码', duration: 1200 })
+      return
+    }
+    this.active = 'pass'
+    this.kbShow = true
+  },
+  pickAuth(name) {
+    g.haptic.short()
+    this.auth = name
+    if (name === 'nopass') {
+      this.kbShow = false
+      if (this.active === 'pass') this.active = 'ssid'
+    }
+  },
+  toggleHidden() {
+    g.haptic.short()
+    this.hidden = !this.hidden
+  },
+  closeKb() {
+    this.kbShow = false
+  },
+  onKey(e) {
+    const content = e && e.detail && e.detail.content ? e.detail.content : ''
+    if (this.active === 'ssid') this.ssid = textInput.clamp(this.ssid + content, 32, false)
+    else this.pass = textInput.clamp(this.pass + content, 64, false)
+  },
+  onDel() {
+    if (this.active === 'ssid') this.ssid = this.ssid.slice(0, -1)
+    else this.pass = this.pass.slice(0, -1)
+  },
+  /**
+   * 生成：buildWifi → 校验总长（字节 <= 600 且字符 <= 200，超了 toast）
+   * → show 页现场生成（fav='1' 带收藏按钮）。
+   * 不经过 qrcode.ux 的 80 字符 clamp（不动它的计数器与替换对）。
+   */
+  onGen() {
+    this.kbShow = false
+    if (!this.ssid) {
+      prompt.showToast({ message: '请先输入 WiFi 名称', duration: 1500 })
+      return
+    }
+    if (this.auth !== 'nopass' && !this.pass) {
+      prompt.showToast({ message: '请先输入密码', duration: 1500 })
+      return
+    }
+    const str = wifi.buildWifi({ ssid: this.ssid, pass: this.pass, auth: this.auth, hidden: this.hidden })
+    if (str.length > 200 || wifi.byteLength(str) > 600) {
+      prompt.showToast({ message: 'SSID 或密码过长', duration: 1500 })
+      return
+    }
+    g.haptic.short()
+    g.router.push('/pages/qrcode/show', { qr: str, fav: '1' })
+  }
+}
+</script>

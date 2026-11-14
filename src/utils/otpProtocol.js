@@ -485,8 +485,8 @@ export function unwrapInterconnectPayload(raw) {
     return { addr: '', pkgName: '', data: raw }
   }
 
-  // 已经是协议消息本身（本协议或歌词协议都按裸消息放行，由上层按 app 分流）
-  if (obj.app === APP_ID || obj.app === 'bandbox-lyrics') {
+  // 已经是协议消息本身（本协议/歌词/二维码协议都按裸消息放行，由上层按 app 分流）
+  if (obj.app === APP_ID || obj.app === 'bandbox-lyrics' || obj.app === 'bandbox-qr') {
     return { addr: '', pkgName: '', data: raw }
   }
 

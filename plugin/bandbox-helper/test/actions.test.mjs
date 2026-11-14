@@ -74,6 +74,21 @@ test('OTP 动作文案兜底', () => {
   assert.equal(resolveAction('container-1', '解析并导入'), 'otp-paste-apply')
 })
 
+test('二维码动作识别', () => {
+  assert.equal(resolveAction('tab-qr', ''), 'tab-qr')
+  assert.equal(resolveAction('qr-send', ''), 'qr-send')
+  assert.equal(resolveAction('qr-pick-png', ''), 'qr-pick-png')
+  // 带参前缀
+  assert.equal(resolveAction('qr-field:text', ''), 'qr-field:text')
+  // 宿主前缀包裹：'qr-send' 不能被 'send' 抢走
+  assert.equal(resolveAction('container-qr-send', ''), 'qr-send')
+  assert.equal(resolveAction('container-1', '{"value":"qr-field:text"}'), 'qr-field:text')
+})
+
+test('二维码动作文案兜底', () => {
+  assert.equal(resolveAction('container-1', '二维码'), 'tab-qr')
+})
+
 test('无法识别时返回空串', () => {
   assert.equal(resolveAction('container-1', ''), '')
   assert.equal(resolveAction('container-1', '{}'), '')

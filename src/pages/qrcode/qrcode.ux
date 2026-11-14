@@ -19,6 +19,8 @@
     <div class="go {{ text ? '' : 'off' }}" @click="generate"><text class="f goT">生成二维码</text></div>
     <text class="f hint">二维码仅在本机生成</text>
 
+    <div class="favEntry" @click="openFavs"><text class="f favEntryT">我的收藏</text></div>
+
     <backbtn></backbtn>
     <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
     <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
@@ -39,6 +41,8 @@
 .go.off { background-color: #2A2A2A; }
 .goT { font-size: 14px; color: #FFFFFF; }
 .hint { position: absolute; left: 16px; top: 330px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.3); }
+.favEntry { position: absolute; left: 26px; top: 372px; width: 160px; height: 40px; border-radius: 20px; background-color: #1E1E1E; align-items: center; justify-content: center; }
+.favEntryT { font-size: 14px; color: rgba(255,255,255,0.7); }
 </style>
 
 <script>
@@ -83,8 +87,15 @@ export default {
   usePreset(name) {
     g.haptic.short()
     if (name === '网址') this.text = 'https://iot.mi.com/vela'
-    else if (name === 'WiFi') this.text = 'WIFI:T:WPA;S:BandBox;P:12345678;;'
-    else this.text = 'BandBox · 手腕上的百宝箱'
+    else if (name === 'WiFi') {
+      // WiFi 走专门表单页（SSID/密码/加密方式/隐藏网络），不再塞示例串
+      this.kbShow = false
+      g.router.push('/pages/qrcode/wifi')
+    } else this.text = 'BandBox · 手腕上的百宝箱'
+  },
+  openFavs() {
+    g.haptic.short()
+    g.router.push('/pages/qrcode/fav')
   },
   generate() {
     if (!this.text) {
@@ -93,7 +104,8 @@ export default {
     }
     this.kbShow = false
     g.haptic.short()
-    g.router.push('/pages/qrcode/show', { qr: this.text })
+    // fav='1'：本次生成的二维码在 show 页带收藏按钮；其余 4 个复用来源不带
+    g.router.push('/pages/qrcode/show', { qr: this.text, fav: '1' })
   }
 }
 </script>

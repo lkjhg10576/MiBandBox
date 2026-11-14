@@ -44,6 +44,8 @@ import otp from './otp.js'
 import otpAccounts from './otpAccounts.js'
 import otpProtocol from './otpProtocol.js'
 import otpSync from './otpSync.js'
+import qrProtocol from './qrProtocol.js'
+import qrImport from './qrImport.js'
 
 /** 等 ACK 的超时时间（毫秒） */
 const ACK_TIMEOUT = 20000
@@ -100,7 +102,13 @@ const state = {
   timeSkewSec: 0, // 手表时间 - 手机时间（秒），由 pong/ready 的 time 字段估算
   timeSkewHandled: false,
   otpDialog: null, // { kind, ... } 自绘弹窗
-  lastOtpReply: ''
+  lastOtpReply: '',
+  // ---- 二维码导入（0.3.2 新增）----
+  qrDraft: '', // 粘贴的扫码文本草稿
+  qrStatusText: '粘贴扫码文本后发送到手环',
+  qrBusy: false, // 下发中
+  qrPendingId: '', // 本次 qr_import 的 id（回执关联）
+  qrTimer: null // 二维码 ACK 超时 timer（与歌词/OTP 的 timer 互不复用）
 }
 
 /**
@@ -281,7 +289,11 @@ function viewState() {
     otpPending: otpPendingCount(),
     otpAccounts: otpViewAccounts(),
     otpDialog: state.otpDialog,
-    timeSkewSec: state.timeSkewSec
+    timeSkewSec: state.timeSkewSec,
+    // ---- 二维码导入 ----
+    qrDraft: state.qrDraft,
+    qrStatusText: state.qrStatusText,
+    qrBusy: state.qrBusy
   }
 }
 
@@ -540,6 +552,19 @@ function stopOtpTimer() {
 }
 
 /**
+ * 取消二维码导入 ACK 超时定时器（与歌词 stopTimer / OTP stopOtpTimer 互不复用）。
+ */
+function stopQrTimer() {
+  if (state.qrTimer === null || state.qrTimer === undefined) return
+  try {
+    clearTimer(state.qrTimer)
+  } catch (e) {
+    // 定时器可能已经触发，忽略
+  }
+  state.qrTimer = null
+}
+
+/**
  * 处理宿主 timer 事件。
  *
  * 宿主投递的 payload 是 JSON：{ timerId, kind, payload }。
@@ -573,6 +598,18 @@ async function handleTimer(raw) {
     if (state.tab === 'otp') repaint()
     return
   }
+  // 二维码导入 ACK 超时（payload 前缀 qr-ack:<id>，与歌词/OTP 的 pendingId 区分）
+  if (info && typeof info.payload === 'string' && info.payload.indexOf('qr-ack:') === 0) {
+    const qrId = info.payload.slice('qr-ack:'.length)
+    if (qrId !== state.qrPendingId) return
+    state.qrTimer = null
+    if (!state.qrBusy) return
+    state.qrBusy = false
+    state.qrPendingId = ''
+    state.qrStatusText = '未收到手环确认，内容已保留，可重试'
+    if (state.tab === 'qr') repaint()
+    return
+  }
   if (!info || info.payload !== state.pendingId) return
   state.timer = null
   if (state.status !== 'sending') return
@@ -583,23 +620,25 @@ async function handleTimer(raw) {
 }
 
 /**
- * 处理手环回执（信封解包后按 app 字段分流到歌词 / OTP）。
+ * 处理手环回执（信封解包后按 app 字段分流到歌词 / OTP / 二维码导入）。
  */
 async function handleReply(raw) {
   const env = protocol.unwrapInterconnectPayload(raw)
 
-  // OTP 与歌词共用一条通道：先探测 app 字段，分流到对应处理分支。
-  // 非 JSON、非 OTP 的消息一律交给歌词分支（decode 会回 bad-app 静默忽略）。
-  let isOtp = false
+  // 歌词、OTP、二维码导入共用一条通道：先探测 app 字段，分流到对应处理分支。
+  // 非 JSON、非本仓库协议的消息一律交给歌词分支（decode 会回 bad-app 静默忽略）。
+  let app = ''
   try {
     const probe = JSON.parse(env.data)
-    if (probe && typeof probe === 'object' && probe.app === otpProtocol.APP_ID) {
-      isOtp = true
+    if (probe && typeof probe === 'object' && typeof probe.app === 'string') {
+      app = probe.app
     }
   } catch (e) {}
 
-  if (isOtp) {
+  if (app === otpProtocol.APP_ID) {
     await handleOtpReply(env)
+  } else if (app === qrProtocol.APP_ID) {
+    await handleQrReply(env)
   } else {
     await handleLyricsReply(env)
   }
@@ -712,6 +751,38 @@ async function handleOtpReply(env) {
       state.otpStatusText = '已拉取 ' + state.otpSync.local.length + ' 个账户'
       if (state.tab === 'otp' && !state.otpDialog) repaint()
     }
+    return
+  }
+}
+
+/**
+ * 二维码导入协议回执（0.3.2 新增）。
+ *
+ * 只接收回执、不回复手环：手环侧不需要手机的确认消息。
+ */
+async function handleQrReply(env) {
+  const parsed = qrProtocol.parse(env.data)
+  if (!parsed.ok) return
+  const msg = parsed.msg
+
+  // 与本次发送无关的迟到回执：按 pendingId 过滤
+  if (msg.id && state.qrPendingId && msg.id !== state.qrPendingId) return
+
+  if (msg.type === 'qr_ack') {
+    stopQrTimer()
+    state.qrBusy = false
+    state.qrStatusText = qrProtocol.describeReply(msg).text
+    state.qrPendingId = ''
+    if (state.tab === 'qr') repaint()
+    return
+  }
+
+  if (msg.type === 'qr_err') {
+    stopQrTimer()
+    state.qrBusy = false
+    state.qrStatusText = qrProtocol.describeReply(msg).text
+    state.qrPendingId = ''
+    if (state.tab === 'qr') repaint()
     return
   }
 }
@@ -1206,6 +1277,72 @@ async function doOtpPasteApply() {
 }
 
 // ------------------------------------------------------------------
+// 二维码导入（0.3.2 新增）
+// ------------------------------------------------------------------
+
+/**
+ * 把粘贴的扫码文本发到手环。
+ *
+ * 本期只支持「粘贴扫码文本」：文本先经 qrImport.clean 清洗（去换行、trim、
+ * 空值与超长拦截），再按 qr_protocol 的 qr_import 消息单包直发；
+ * 下一期把文本来源换成 decodePng(bytes) 的结果即可，其余逻辑零改动。
+ */
+async function doQrSend() {
+  const cleaned = qrImport.clean(state.qrDraft)
+  if (!cleaned.ok) {
+    state.qrBusy = false
+    state.qrStatusText =
+      cleaned.reason === qrProtocol.ERRORS.TOO_LARGE
+        ? qrProtocol.ERROR_TEXT[qrProtocol.ERRORS.TOO_LARGE]
+        : '粘贴内容为空'
+    repaint()
+    return
+  }
+
+  // 复用 OTP 的设备选择器（多设备时先让用户选目标手环）
+  const dev = await otpPickDevice()
+  if (!dev) {
+    repaint()
+    return
+  }
+  const registered = await registerRecvAll()
+  if (!registered) {
+    state.qrStatusText = '注册手环消息接收失败'
+    repaint()
+    return
+  }
+
+  const id = qrProtocol.makeId('qi')
+  const json = qrProtocol.qrImportMessage(cleaned.text, id)
+  state.qrBusy = true
+  state.qrStatusText = '正在发送…'
+  state.qrPendingId = id
+  repaint()
+
+  // 逐设备发送；任一失败都回滚状态（内容保留在草稿里，可重试）
+  const targets = state.devices.length
+    ? state.devices.map((d) => d.addr)
+    : [dev.addr]
+  for (let i = 0; i < targets.length; i++) {
+    const res = await hostCall('sendQaicMessage', () =>
+      sendQaicMessage(targets[i], qrProtocol.TARGET_PKG, json)
+    )
+    if (!res.ok) {
+      state.qrBusy = false
+      state.qrPendingId = ''
+      state.qrStatusText = '发送失败：' + res.error
+      stopQrTimer()
+      repaint()
+      return
+    }
+  }
+
+  // 等 ACK：用宿主 timer（QuickJS 没有 setTimeout），到期通过 timer 事件回来
+  stopQrTimer()
+  state.qrTimer = setHostTimeout(ACK_TIMEOUT, 'qr-ack:' + id)
+}
+
+// ------------------------------------------------------------------
 // 导出给宿主的接口
 // ------------------------------------------------------------------
 
@@ -1270,6 +1407,9 @@ export const event = {
       repaint()
     } else if (action === 'tab-otp') {
       state.tab = 'otp'
+      repaint()
+    } else if (action === 'tab-qr') {
+      state.tab = 'qr'
       repaint()
     } else if (action === 'otp-pull') {
       await doOtpPull()
@@ -1391,6 +1531,18 @@ export const event = {
         } else if (field === 'secret') {
           state.otpDialog.draft.secret = value
         }
+      }
+    } else if (action === 'qr-send') {
+      await doQrSend()
+    } else if (action === 'qr-pick-png') {
+      // 本期不做图片解码（QuickJS 无 canvas/ImageData），下期再接 PNG 入口
+      state.qrStatusText = '本期暂不支持图片解码，请粘贴扫码文本'
+      repaint()
+    } else if (action && action.indexOf('qr-field:') === 0) {
+      // TEXTAREA 的 INPUT 事件：只更新草稿不 repaint（避免输入被重绘清空）
+      const field = action.slice('qr-field:'.length)
+      if (field === 'text') {
+        state.qrDraft = extractInputValue(eventPayload)
       }
     } else if (state.debug) {
       repaint()

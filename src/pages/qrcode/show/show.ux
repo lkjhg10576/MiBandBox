@@ -1,13 +1,16 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 
 <template>
-  <div class="page" @click="back">
+  <div class="page">
     <pagehead title="扫码查看" clock="{{ clock }}"></pagehead>
-    <div class="qrCard">
+    <div class="qrCard" @click="back">
       <qrcode class="qr" value="{{ qr }}"></qrcode>
     </div>
-    <text class="f text">{{ qr }}</text>
-    <text class="f hint">轻触屏幕返回</text>
+    <text class="f text" @click="back">{{ qr }}</text>
+    <text class="f hint" if="{{ fav !== '1' }}" @click="back">轻触屏幕返回</text>
+    <div class="favBtn" if="{{ fav === '1' }}" @click="onFavTap">
+      <text class="f favT">{{ faved ? '已收藏' : '收藏' }}</text>
+    </div>
   </div>
 </template>
 
@@ -17,21 +20,30 @@
 .qr { width: 136px; height: 136px; background-color: #FFFFFF; }
 .text { position: absolute; left: 20px; top: 258px; width: 172px; font-size: 15px; line-height: 21px; color: rgba(255,255,255,0.75); text-align: center; }
 .hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+.favBtn { position: absolute; left: 26px; top: 442px; width: 160px; height: 36px; border-radius: 18px; background-color: #262626; align-items: center; justify-content: center; }
+.favT { font-size: 14px; color: #4E87FF; }
 </style>
 
 <script>
 import g from '../../../utils/g'
 import brightness from '@system.brightness'
+import prompt from '@system.prompt'
+import qrFavStore from '../../../utils/qrFavStore'
 
 export default {
-  protected: { qr: '' },
-  private: { clock: '--:--', timer: null },
+  protected: { qr: '', fav: '' },
+  private: { clock: '--:--', timer: null, faved: false },
   onShow() {
     this.clock = g.time.formatClock(new Date())
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
     brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+    if (this.fav === '1') {
+      g.kv.init(() => {
+        if (page.$valid) page.faved = qrFavStore.has(page.qr)
+      })
+    }
   },
   onHide() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
@@ -39,6 +51,30 @@ export default {
   },
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  /**
+   * 收藏当前二维码（仅 fav=1 时可见）。show.ux 是 5 处复用的极简页，
+   * 其余 4 个来源（笔记/密码/OTP/诊断）行为不变：fav 为空不渲染按钮。
+   * 点击区收到 qrCard/text/hint 具体元素上，根 div 不再挂 @click，防收藏按钮冒泡误返回。
+   */
+  onFavTap() {
+    if (this.faved) {
+      prompt.showToast({ message: '已在收藏中', duration: 1200 })
+      return
+    }
+    const page = this
+    qrFavStore.add(this.qr, 'local', (r) => {
+      if (!page.$valid) return
+      if (r && r.ok) {
+        page.faved = true
+        prompt.showToast({ message: r.duplicate ? '已在收藏中' : '已收藏', duration: 1200 })
+      } else {
+        prompt.showToast({
+          message: r && r.reason === 'too-large' ? '内容过长，无法收藏' : '收藏失败，请重试',
+          duration: 1500
+        })
+      }
+    })
   },
   back() {
     g.router.back()

@@ -18,6 +18,7 @@ export const ACTIONS = [
   // Tab 切换
   'tab-lyrics',
   'tab-otp',
+  'tab-qr',
   // 动态口令
   'otp-pull',
   'otp-add',
@@ -31,11 +32,14 @@ export const ACTIONS = [
   'otp-export-close',
   'otp-dialog-close',
   'otp-offset-apply',
-  'otp-offset-dismiss'
+  'otp-offset-dismiss',
+  // 二维码导入
+  'qr-send',
+  'qr-pick-png'
 ]
 
 /** 带参数的动作前缀。 */
-const PREFIXES = ['pick-device:', 'otp-edit:', 'otp-del:', 'otp-field:', 'otp-uri:']
+const PREFIXES = ['pick-device:', 'otp-edit:', 'otp-del:', 'otp-field:', 'otp-uri:', 'qr-field:']
 
 /** 极端情况下宿主可能把按钮文案当事件数据传回来，作为最后兜底。 */
 const LABEL_ACTIONS = {
@@ -47,6 +51,7 @@ const LABEL_ACTIONS = {
   // Tab
   '歌词同步': 'tab-lyrics',
   '动态口令': 'tab-otp',
+  '二维码': 'tab-qr',
   // OTP
   '拉取数据': 'otp-pull',
   '添加账户': 'otp-add',
@@ -76,16 +81,22 @@ function actionFromString(value) {
   if (typeof value !== 'string' || !value) return ''
   const label = LABEL_ACTIONS[value.trim()]
   if (label) return label
+  // 多个动作 id 互为子串时取最长的那个：
+  // 'qr-send' 必须先于 'send' 命中，否则「container-qr-send」会被误判成歌词的 'send'。
+  let hit = ''
   for (let i = 0; i < ACTIONS.length; i++) {
-    if (value.indexOf(ACTIONS[i]) >= 0) return ACTIONS[i]
+    const id = ACTIONS[i]
+    if (value.indexOf(id) < 0) continue
+    if (!hit || id.length > hit.length) hit = id
   }
+  if (hit) return hit
   for (let i = 0; i < PREFIXES.length; i++) {
     const at = value.indexOf(PREFIXES[i])
     if (at >= 0) {
       const rest = value.slice(at)
       // 动作 id 后面可能跟着 JSON 的引号/括号，截到第一个分隔符
-      const hit = rest.match(new RegExp('^' + PREFIXES[i] + '[^\\s"\',}\\]]+'))
-      return hit ? hit[0] : rest
+      const m = rest.match(new RegExp('^' + PREFIXES[i] + '[^\\s"\',}\\]]+'))
+      return m ? m[0] : rest
     }
   }
   return ''

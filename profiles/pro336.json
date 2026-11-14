@@ -355,6 +355,26 @@
       ["left: 20px; top: 258px; width: 172px;", "left: 18px; top: 324px; width: 300px;"],
       ["width: 170px", "width: 294px"]
     ],
+    "src/pages/qrcode/wifi/wifi.ux": [
+      ["top: 78px", "top: 24px"],
+      ["height: 442px", "height: 402px"],
+      ["width: 212px", "width: 336px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["width: 62px", "width: 100px"],
+      ["margin: 12px 26px 0px 26px", "margin: 12px 88px 0px 88px"]
+    ],
+    "src/pages/qrcode/fav/fav.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 438px", "height: 398px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"]
+    ],
+    "src/pages/qrcode/favdetail/favdetail.ux": [
+      ["width: 212px", "width: 336px"],
+      ["width: 182px", "width: 306px"],
+      ["left: 26px", "left: 88px"]
+    ],
     "src/pages/marquee/marquee.ux": [
       ["width: 206px", "width: 330px"],
       ["width: 190px", "width: 314px"],

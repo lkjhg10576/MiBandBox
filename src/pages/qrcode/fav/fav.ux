@@ -1,0 +1,116 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="二维码收藏" clock="{{ clock }}"></pagehead>
+    <scroll class="body" scroll-y="true" bounces="true">
+      <div class="inner">
+        <div class="itemWrap" for="{{ items }}">
+          <div class="favCard" @click="tapItem($item)">
+            <text class="f favText">{{ $item.short }}</text>
+            <text class="f favMeta">{{ $item.meta }}</text>
+          </div>
+          <div class="favOps" @click="tapDetail($item)">
+            <text class="f favOpsT">详情 / 删除</text>
+          </div>
+        </div>
+        <div class="empty" if="{{ items.length === 0 }}">
+          <text class="f emptyT">还没有收藏</text>
+          <text class="f emptyS">生成或从手机导入后点「收藏」</text>
+        </div>
+        <div class="pad"></div>
+      </div>
+    </scroll>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
+.inner { width: 212px; flex-direction: column; }
+.itemWrap { width: 212px; flex-direction: column; }
+.favCard { width: 206px; margin: 0px 3px 6px 3px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
+.favText { width: 174px; height: 24px; line-height: 24px; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.favMeta { width: 174px; height: 18px; line-height: 18px; font-size: 12px; color: rgba(255,255,255,0.35); }
+.favOps { width: 206px; margin: 0px 3px 8px 3px; height: 30px; border-radius: 15px; background-color: #1E1E1E; align-items: center; justify-content: center; }
+.favOpsT { font-size: 13px; color: rgba(255,255,255,0.55); }
+.empty { width: 212px; height: 200px; align-items: center; justify-content: center; flex-direction: column; }
+.emptyT { font-size: 16px; color: rgba(255,255,255,0.5); }
+.emptyS { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.3); }
+.pad { width: 212px; height: 16px; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import qrFavStore from '../../../utils/qrFavStore'
+import favState from './favState'
+
+/** 收藏时间显示：YYYY-MM-DD HH:MM（照 password.ux 的 fmtTime 口径）。 */
+function fmtTime(ms) {
+  if (!ms) return ''
+  const d = new Date(ms)
+  return (
+    d.getFullYear() + '-' + g.time.pad2(d.getMonth() + 1) + '-' + g.time.pad2(d.getDate()) +
+    ' ' + g.time.formatClock(d)
+  )
+}
+
+export default {
+  data: {
+    _ck: null,
+    _unsub: null,
+    clock: '--:--',
+    items: [],
+    timer: null
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    // 插件导入落库时列表实时刷新（常驻 qrBridge 写库会 notify）
+    this._unsub = qrFavStore.subscribe(() => {
+      if (page.$valid) page.loadItems()
+    })
+    this.loadItems()
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    if (this._unsub) { this._unsub(); this._unsub = null }
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    if (this._unsub) { this._unsub(); this._unsub = null }
+  },
+  loadItems() {
+    g.kv.init(() => {
+      if (!this.$valid) return
+      const all = qrFavStore.list()
+      this.items = all.map((it) => ({
+        id: it.id,
+        text: it.text,
+        short: it.text.slice(0, 20),
+        meta: (it.source === 'plugin' ? '来自手机' : '手环生成') + ' · ' + fmtTime(it.createdAt)
+      }))
+    })
+  },
+  /**
+   * 点击条目 → show 页现场重新生成（fav='0'：已在收藏里，不再显示收藏按钮）。
+   */
+  tapItem(item) {
+    g.haptic.short()
+    g.router.push('/pages/qrcode/show', { qr: item.text, fav: '0' })
+  },
+  /**
+   * 详情/删除入口：按 id 传值（列表 unshift 会变下标，不能按 index 传）。
+   * 点击区与条目卡是 for 内的两块兄弟节点，互不冒泡。
+   */
+  tapDetail(item) {
+    g.haptic.short()
+    favState.item = { id: item.id, text: item.text }
+    g.router.push('/pages/qrcode/favdetail')
+  }
+}
+</script>

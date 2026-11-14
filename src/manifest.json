@@ -189,6 +189,15 @@
       "pages/qrcode/show": {
         "component": "show"
       },
+      "pages/qrcode/wifi": {
+        "component": "wifi"
+      },
+      "pages/qrcode/fav": {
+        "component": "fav"
+      },
+      "pages/qrcode/favdetail": {
+        "component": "favdetail"
+      },
       "pages/marquee": {
         "component": "marquee"
       },
