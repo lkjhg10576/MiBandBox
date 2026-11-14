@@ -1,3 +1,0 @@
-b7021a082c941ccb183b921f0a0c8ef28a881f7d2d6494e41fa29c94df722254  com.miband.bandbox.debug.0.1.0.rpk
-a83a384091602d5b226b2f1abf04b6811f4e1f7734680e50dd0412a1267437e0  com.miband.bandbox.pro.debug.0.1.0.rpk
-ed2f503af6e6de2dc6e3e8779bdf8117ef36804024bcf0237964073b76a4e5dc  BandBox辅助.abp
