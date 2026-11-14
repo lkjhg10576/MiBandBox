@@ -5,11 +5,10 @@
 <template>
   <div class="page">
     <pagehead title="{{ title || '输入' }}" clock="{{ clock }}"></pagehead>
-    <div class="done" @click="done"><text class="f doneT">完成</text></div>
 
-    <div class="editorCard" @click="openKb">
-      <text class="f eLabel">{{ hintText }}</text>
-      <scroll class="pvScroll {{ multi ? 'pvMulti' : '' }}" scroll-y="true">
+    <div class="editorCard {{ kbShow ? 'editorCardKb' : '' }}" @click="openKb">
+      <text class="f eLabel {{ kbShow ? 'eLabelKb' : '' }}">{{ hintText }}</text>
+      <scroll class="pvScroll {{ kbShow ? 'pvScrollKb' : '' }} {{ multi ? 'pvMulti' : '' }}" scroll-y="true">
         <text class="f pv" if="{{ value }}">{{ value }}</text>
         <text class="f pvPlace" if="{{ !value }}">点击输入</text>
       </scroll>
@@ -17,6 +16,7 @@
       <div class="nlBtn" if="{{ multi }}" @click="newline"><text class="f nlT">换行</text></div>
     </div>
 
+    <div class="done" @click="done"><text class="f doneT">完成</text></div>
     <backbtn></backbtn>
     <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
     <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
@@ -28,9 +28,12 @@
 
 .done { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
 .doneT { font-size: 14px; color: #FFFFFF; }
-.editorCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.editorCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 160px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.editorCardKb { height: 72px; }
 .eLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
-.pvScroll { width: 174px; height: 44px; }
+.eLabelKb {}
+.pvScroll { width: 174px; height: 110px; }
+.pvScrollKb { height: 44px; }
 .pvMulti { width: 138px; margin-left: 36px; }
 .pv { width: 100%; font-size: 16px; line-height: 21px; color: #FFFFFF; }
 .pvPlace { width: 100%; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); }

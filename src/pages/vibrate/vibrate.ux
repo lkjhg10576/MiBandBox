@@ -22,7 +22,7 @@
       <div class="wave" for="{{ bars }}" style="height: {{ $item }}px; background-color: {{ playing ? '#0D6EFF' : '#333333' }};"></div>
     </div>
 
-    <div class="go {{ playing ? 'stop' : '' }}" @click="toggle">
+    <div class="go" style="background-color: {{ playing ? '#FF3B30' : '#0D6EFF' }};" @click="toggle">
       <text class="f goT">{{ playing ? '停止' : '开始振动' }}</text>
     </div>
     <text class="f hint">{{ hint }}</text>
@@ -43,8 +43,7 @@
 .cur { position: absolute; left: 0px; top: 222px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
 .visual { position: absolute; left: 16px; top: 244px; width: 180px; height: 96px; flex-direction: row; align-items: center; justify-content: space-between; }
 .wave { width: 8px; border-radius: 4px; }
-.go { position: absolute; left: 26px; top: 378px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
-.go.stop { background-color: #FF3B30; }
+.go { position: absolute; left: 26px; top: 378px; width: 160px; height: 48px; border-radius: 24px; align-items: center; justify-content: center; }
 .goT { font-size: 14px; color: #FFFFFF; }
 .hint { position: absolute; left: 16px; top: 436px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.35); }
 </style>

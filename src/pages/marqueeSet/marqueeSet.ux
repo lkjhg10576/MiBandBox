@@ -5,8 +5,8 @@
 <template>
   <div class="page">
     <pagehead title="跑马灯设置" clock="{{ clock }}"></pagehead>
-    <div class="inputCard" @click="openKb">
-      <text class="f iLabel">滚动文字</text>
+    <div class="inputCard {{ kbShow ? 'inputCardKb' : '' }}" @click="openKb">
+      <text class="f iLabel {{ kbShow ? 'iLabelKb' : '' }}">滚动文字</text>
       <text class="f iText" if="{{ text }}">{{ text }}</text>
       <text class="f iPlace" if="{{ !text }}">点击输入文字</text>
       <text class="f counter">{{ text.length }}/40</text>
@@ -51,7 +51,9 @@
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 78px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.inputCardKb {}
 .iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iLabelKb {}
 .iText { width: 158px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 158px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .counter { position: absolute; right: 14px; top: 8px; font-size: 14px; color: rgba(255,255,255,0.3); }

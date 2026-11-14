@@ -5,8 +5,8 @@
 <template>
   <div class="page">
     <pagehead title="垃圾分类" clock="{{ clock }}"></pagehead>
-    <div class="inputCard" @click="openKb">
-      <text class="f iLabel">物品名称</text>
+    <div class="inputCard {{ kbShow ? 'inputCardKb' : '' }}" @click="openKb">
+      <text class="f iLabel {{ kbShow ? 'iLabelKb' : '' }}">物品名称</text>
       <text class="f iText" if="{{ query }}">{{ query }}</text>
       <text class="f iPlace" if="{{ !query }}">点击输入，例如：塑料瓶</text>
     </div>
@@ -43,7 +43,9 @@
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.inputCardKb {}
 .iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iLabelKb {}
 .iText { width: 174px; height: 36px; line-height: 36px; font-size: 20px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 174px; height: 36px; line-height: 36px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .chips { position: absolute; left: 6px; top: 170px; width: 200px; height: 32px; flex-direction: row; justify-content: space-between; }

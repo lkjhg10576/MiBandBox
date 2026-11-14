@@ -7,7 +7,7 @@
   "layout": {
     "home": { "cols": 3, "rowH": 82, "padBottom": 48 },
     "marquee": { "minCopyW": 200 },
-    "ime": { "kbW": 192, "containerH": 305 }
+    "ime": { "kbW": 336, "containerH": 305 }
   },
   "assets": { "shadow": [336, 84] },
   "files": {
@@ -21,9 +21,10 @@
       ["width: 212px", "width: 336px"]
     ],
     "src/components/InputMethod/InputMethod.ux": [
-      ["layer-color:#262626;margin-left: {{(screenWidth - 192)/2}}px;", "layer-color:#262626;margin-left: {{(screenWidth - 188)/2}}px;"],
-      ["(screenWidth - 192)/2", "(screenWidth - 336)/2"],
-      ["width: 192px", "width: 336px"],
+      ["<progress percent=\"{{30+percent66}}\" type=\"arc\" style=\"start-angle:204deg;total-angle:-48deg;width:188px;height:188px;top:82px;left:2px;position:absolute;color:#ffffff;stroke-width:6px;layer-color:#262626;margin-left: {{(screenWidth - 192)/2}}px;\"></progress>", "<!-- pro336 全宽键盘：弧形进度环是横向滚动指示器，键盘不滚动后一并移除 -->"],
+      ["<scroll id=\"keyboard66\" scroll-x=\"{{true}}\" onscroll=\"handelScroll\" style=\"padding-left: {{(screenWidth - 192)/2}}px;padding-right: {{(screenWidth - 192)/2}}px;\">", "<scroll id=\"keyboard66\" scroll-x=\"{{false}}\" style=\"padding-left: 0px;padding-right: 0px;\">"],
+      ["left: {{(screenWidth - 192)/2}}px;top: 0px;width: 192px;height: 110px;", "left: 0px;top: 0px;width: 336px;height: 110px;"],
+      ["left: {{(screenWidth - 192)/2}}px;width: 192px;height: 263px;", "left: 0px;width: 336px;height: 263px;"],
       ["left: 3px;top: 47px;width: 186px;height: 60px;", "left: 12px;top: 47px;width: 312px;height: 60px;"],
       ["left: 15px;top: 56px;width: 144px;height: 42px;", "left: 24px;top: 56px;width: 264px;height: 42px;"],
       ["left: 120px;top: 57px;width: 60px;height: 40px;", "left: 262px;top: 57px;width: 60px;height: 40px;"],
@@ -33,7 +34,11 @@
       ["left: 135px;top: 0px;width: 48px;height: 42px;", "left: 276px;top: 0px;width: 48px;height: 42px;"],
       ["width:186px;", "width:324px;"],
       ["top:196px;left:56px;width: 80px;height: 60px;", "top:196px;left:128px;width: 80px;height: 60px;"],
-      ["event.scrollX / 633", "event.scrollX / 300"]
+      ["margin-left: 0px;margin-top: 0px;height: 60px;", "margin-left: 0px;margin-top: 0px;height: 52px;"],
+      ["margin-left: 32px;margin-top: -5px;height: 60px;", "margin-left: 16px;margin-top: 6px;height: 52px;"],
+      ["margin-left: 64px;margin-top: -5px;height: 60px;", "margin-left: 26px;margin-top: 6px;height: 52px;"],
+      ["src=\"./assets/arc/space.png\" style=\"width: 60px;height: 60px;\"", "src=\"./assets/arc/space.png\" style=\"width: 48px;height: 52px;\""],
+      ["font-size:32px;\n\tfont-weight:bold;\n\tbackground-color:rgb(38,38,38);\n\tmargin-right:3px;\n\twidth:60px;\n\theight:60px;\n\tborder-radius:30px;", "font-size:20px;\n\tfont-weight:bold;\n\tbackground-color:rgb(38,38,38);\n\tmargin-right:1px;\n\twidth:32px;\n\theight:52px;\n\tborder-radius:26px;"]
     ],
     "src/pages/home/home.ux": [
       ["width: 206px", "width: 330px"],
@@ -63,23 +68,32 @@
       ["width: 212px", "width: 336px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
-      ["height: 418px", "height: 358px"]
+      ["height: 418px", "height: 358px"],
+      ["'双栏网格'", "'三栏网格'"]
     ],
     "src/pages/hset/hset.ux": [
       ["width: 206px", "width: 330px"],
       ["width: 100px", "width: 224px"],
-      ["width: 212px", "width: 336px"]
+      ["width: 212px", "width: 336px"],
+      ["双栏网格", "三栏网格"],
+      ["gridCells: [1, 2, 3, 4]", "gridCells: [1, 2, 3, 4, 5, 6]"],
+      [".miniCell { width: 16px;", ".miniCell { width: 10px;"]
     ],
     "src/pages/about/about.ux": [
       ["width: 212px", "width: 336px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
-      ["height: 418px", "height: 358px"]
+      ["height: 418px", "height: 358px"],
+      ["margin-left: 78px", "margin-left: 140px"],
+      ["width: 180px", "width: 304px"]
     ],
     "src/pages/notebook/list/list.ux": [
       ["width: 212px", "width: 336px"],
       ["width: 206px", "width: 330px"],
-      ["height: 408px", "height: 358px"]
+      ["height: 408px", "height: 358px"],
+      ["width: 140px", "width: 274px"],
+      ["left: 132px", "left: 256px"],
+      ["top: 396px", "top: 384px"]
     ],
     "src/pages/notebook/show/show.ux": [
       ["width: 212px", "width: 336px"],
@@ -88,17 +102,19 @@
       ["width: 176px", "width: 214px"]
     ],
     "src/pages/notebook/edit/edit.ux": [
-      ["top: 80px", "top: 44px"],
-      ["height: 62px", "height: 44px"],
-      ["top: 150px", "top: 92px"],
-      ["height: 96px", "height: 48px"],
+      ["left: 146px", "left: 270px"],
       ["width: 206px", "width: 330px"],
-      ["width: 174px", "width: 298px"]
+      ["width: 174px", "width: 298px"],
+      [".fieldKb {}", ".fieldKb { top: 48px; }"],
+      [".fLabelKb {}", ".fLabelKb { padding-left: 48px; width: 220px; }"]
     ],
     "src/pages/notebook/rename/rename.ux": [
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
-      ["top: 86px", "top: 28px"]
+      ["left: 74px", "left: 136px"],
+      ["width: 212px", "width: 336px"],
+      [".cardKb {}", ".cardKb { top: 28px; }"],
+      [".labelKb {}", ".labelKb { padding-left: 50px; width: 220px; }"]
     ],
     "src/pages/notebook/more/more.ux": [
       ["width: 206px", "width: 330px"]
@@ -239,18 +255,19 @@
       ["width: 174px", "width: 298px"],
       ["left: 26px", "left: 88px"],
       ["left: 12px", "left: 74px"],
-      ["top: 80px", "top: 48px"]
+      [".inputCardKb {}", ".inputCardKb { top: 48px; }"],
+      [".iLabelKb {}", ".iLabelKb { padding-left: 50px; width: 220px; }"]
     ],
     "src/pages/wasteSorting/wasteSorting.ux": [
-      ["top: 82px", "top: 56px"],
-      ["height: 76px", "height: 56px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
       ["left: 6px", "left: 68px"],
       ["width: 170px", "width: 294px"],
       ["top: 155px", "top: 115px"],
       ["width: 212px", "width: 336px"],
-      ["left: 66px", "left: 128px"]
+      ["left: 66px", "left: 128px"],
+      [".inputCardKb {}", ".inputCardKb { top: 36px; height: 76px; }"],
+      [".iLabelKb {}", ".iLabelKb { padding-left: 50px; width: 220px; }"]
     ],
     "src/pages/scoreboard/scoreboard.ux": [
       ["width: 206px", "width: 330px"],
@@ -280,14 +297,23 @@
       ["width: 212px", "width: 336px"],
       ["width: 206px", "width: 330px"],
       ["left: 24px", "left: 40px"],
-      ["left: 128px", "left: 232px"]
+      ["left: 128px", "left: 232px"],
+      ["left: 4px", "left: 18px"],
+      ["width: 35px", "width: 48px"],
+      ["chipOff { left: 60px;", "chipOff { left: 88px;"],
+      ["chipSlow { left: 97px;", "chipSlow { left: 148px;"],
+      ["chipMid { left: 134px;", "chipMid { left: 208px;"],
+      ["chipFast { left: 171px;", "chipFast { left: 268px;"],
+      ["left: 62px", "left: 124px"]
     ],
     "src/pages/display/display.ux": [
       ["width: 212px", "width: 336px"],
       ["height: 520px", "height: 480px"],
       ["left: 30px", "left: 92px"],
       ["width: 106px", "width: 168px"],
-      ["left: 106px", "left: 168px"]
+      ["left: 106px", "left: 168px"],
+      ["top: 448px", "top: 424px"],
+      ["width: 170px", "width: 294px"]
     ],
     "src/pages/flashlight/flashlight.ux": [
       ["width: 212px", "width: 336px"],
@@ -324,7 +350,7 @@
       ["height: 160px", "height: 220px"],
       ["width: 136px", "width: 196px"],
       ["height: 136px", "height: 196px"],
-      ["left: 20px", "left: 82px"],
+      ["left: 20px; top: 258px; width: 172px;", "left: 18px; top: 324px; width: 300px;"],
       ["width: 170px", "width: 294px"]
     ],
     "src/pages/marquee/marquee.ux": [
@@ -340,7 +366,8 @@
       ["left: 12px", "left: 74px"],
       ["left: 26px", "left: 88px"],
       ["width: 190px", "width: 314px"],
-      ["top: 80px", "top: 34px"]
+      [".inputCardKb {}", ".inputCardKb { top: 34px; }"],
+      [".iLabelKb {}", ".iLabelKb { padding-left: 50px; width: 220px; }"]
     ],
     "src/pages/lylist/lylist.ux": [
       ["width: 212px", "width: 336px"],
@@ -352,11 +379,11 @@
     ],
     "src/pages/input/input.ux": [
       ["left: 146px", "left: 270px"],
-      ["top: 80px", "top: 34px"],
-      ["height: 72px", "height: 78px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
-      ["width: 138px", "width: 262px"]
+      ["width: 138px", "width: 262px"],
+      [".editorCardKb { height: 72px; }", ".editorCardKb { top: 34px; height: 78px; }"],
+      [".eLabelKb {}", ".eLabelKb { padding-left: 48px; width: 220px; }"]
     ],
     "src/pages/imeTest/imeTest.ux": [
       ["width: 206px", "width: 330px"],
@@ -369,13 +396,11 @@
     ],
     "src/pages/lyrics/edit/edit.ux": [
       ["left: 146px", "left: 270px"],
-      ["top: 80px", "top: 44px"],
-      ["height: 62px", "height: 44px"],
-      ["top: 150px", "top: 92px"],
-      ["height: 100px", "height: 52px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
-      ["width: 212px", "width: 336px"]
+      ["width: 212px", "width: 336px"],
+      [".fieldKb {}", ".fieldKb { top: 48px; }"],
+      [".fLabelKb {}", ".fLabelKb { padding-left: 48px; width: 220px; }"]
     ],
     "src/pages/lyrics/more/more.ux": [
       ["width: 206px", "width: 330px"],
@@ -418,12 +443,11 @@
       ["width: 212px", "width: 336px"]
     ],
     "src/pages/lyrics/show/show.ux": [
-      ["height: 336px", "height: 352px"],
+      ["width: 212px; height: 336px", "width: 336px; height: 352px"],
       ["left: 212px; top: 0px; width: 520px; height: 212px", "left: 336px; top: 0px; width: 480px; height: 338px"],
       ["width: 520px; height: 212px", "width: 480px; height: 338px"],
       ["width: 188px", "width: 312px"],
       ["width: 412px", "width: 372px"],
-      ["padding-left: 80px", "padding-left: 40px"],
       ["left: 18px", "left: 61px"],
       ["width: 176px", "width: 214px"]
     ],
@@ -496,7 +520,11 @@
       ["left: 165px", "left: 289px"],
       ["width: 140px", "width: 250px"],
       ["width: 174px", "width: 294px"],
-      ["top: 346px", "top: 320px"]
+      ["top: 346px", "top: 322px"],
+      ["width: 47px", "width: 78px"],
+      ["height: 26px", "height: 32px"],
+      ["line-height: 26px", "line-height: 32px"],
+      ["height: 120px", "height: 144px"]
     ],
     "src/pages/unitconvert/picker/picker.ux": [
       ["width: 206px", "width: 330px"],
@@ -505,14 +533,13 @@
     ],
     "src/pages/calculator/calculator.ux": [
       ["width: 212px", "width: 336px"],
-      ["height: 386px", "height: 360px"],
       ["width: 188px", "width: 312px"],
       ["width: 192px", "width: 316px"],
+      [".key { width: 44px;", ".key { width: 75px;"],
       ["width: 44px", "width: 48px"],
       ["width: 206px", "width: 330px"],
       ["width: 194px", "width: 318px"],
       ["width: 116px", "width: 240px"],
-      ["const BASE_H = 546", "const BASE_H = 454"],
       ["const ADV_H = 500", "const ADV_H = 408"],
       ["exprW: 188,", "exprW: 312,"],
       ["exprBaseW: 188,", "exprBaseW: 312,"],
@@ -529,7 +556,8 @@
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
       ["left: 48px", "left: 110px"],
-      ["top: 82px", "top: 36px"]
+      [".cardKb {}", ".cardKb { top: 36px; }"],
+      [".labelKb {}", ".labelKb { padding-left: 50px; width: 220px; }"]
     ],
     "src/pages/sentence/sentence.ux": [
       ["width: 212px", "width: 336px"],

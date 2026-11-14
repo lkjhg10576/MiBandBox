@@ -5,15 +5,14 @@
 <template>
   <div class="page">
     <pagehead title="编辑笔记" clock="{{ clock }}"></pagehead>
-    <div class="save" @click="save"><text class="f saveT">保存</text></div>
 
-    <div class="field {{ active === 'title' ? 'on' : '' }}" @click="openKb">
-      <text class="f fLabel">标题</text>
+    <div class="field {{ active === 'title' ? 'on' : '' }} {{ kbShow ? 'fieldKb' : '' }}" @click="openKb">
+      <text class="f fLabel {{ kbShow ? 'fLabelKb' : '' }}">标题</text>
       <text class="f fTitle" if="{{ title }}">{{ title }}</text>
       <text class="f fPlace" if="{{ !title }}">给笔记起个名字</text>
     </div>
 
-    <div class="bodyCard {{ active === 'body' ? 'on' : '' }}" @click="openBody">
+    <div class="bodyCard {{ active === 'body' ? 'on' : '' }}" show="{{ !kbShow }}" @click="openBody">
       <text class="f fLabel">正文 · 点击输入</text>
       <scroll class="bodyScroll" scroll-y="true">
         <text class="f fBody" if="{{ body }}">{{ body }}</text>
@@ -21,8 +20,9 @@
       </scroll>
     </div>
 
-    <text class="f tip">内置输入法 · 支持中英文</text>
+    <text class="f tip" show="{{ !kbShow }}">内置输入法 · 支持中英文</text>
 
+    <div class="save" @click="save"><text class="f saveT">保存</text></div>
     <backbtn></backbtn>
     <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
     <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
@@ -34,10 +34,12 @@
 .save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
 .saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
 .field { position: absolute; left: 3px; top: 80px; width: 206px; height: 62px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
+.fieldKb {}
 .field.on { border-color: #0D6EFF; }
 .bodyCard { position: absolute; left: 3px; top: 150px; width: 206px; height: 96px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
 .bodyCard.on { border-color: #0D6EFF; }
 .fLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.fLabelKb {}
 .fTitle { width: 174px; height: 32px; line-height: 32px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .fPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); }
 .bodyScroll { width: 174px; height: 64px; }

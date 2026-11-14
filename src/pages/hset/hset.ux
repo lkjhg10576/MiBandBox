@@ -7,7 +7,7 @@
     <div class="opt optA" style="background-color: {{ current === 'grid' ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="pick('grid')">
       <div class="optIcon">
         <div class="miniGrid">
-          <div class="miniCell" for="{{ four }}"></div>
+          <div class="miniCell" for="{{ gridCells }}"></div>
         </div>
       </div>
       <div class="optText">
@@ -58,7 +58,7 @@ import layoutApi from '../../utils/homeLayout'
 import layoutFlag from '../../utils/layoutFlag'
 
 export default {
-  data: { clock: '--:--', current: 'grid', picking: false, four: [1, 2, 3, 4], three: [1, 2, 3] },
+  data: { clock: '--:--', current: 'grid', picking: false, gridCells: [1, 2, 3, 4], three: [1, 2, 3] },
   onShow() {
     this.picking = false
     this.clock = g.time.formatClock(new Date())

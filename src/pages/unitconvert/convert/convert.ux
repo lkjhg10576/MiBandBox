@@ -24,7 +24,7 @@
       <text class="f result">{{ result }}</text>
     </div>
 
-    <text class="f hint">点数值输入 · 点 › 换单位</text>
+    <text class="f hint" show="{{ !padShow }}">点数值输入 · 点 › 换单位</text>
 
     <!-- 默认隐藏，点数值区弹出、再点收起；结构与类别页一致（for + @click($item)）。 -->
     <div class="pad" if="{{ padShow }}">
@@ -60,7 +60,7 @@
 
 /* 4×4 自绘数字键盘：容器按 4×(47+2×2)=204px 宽、4×(26+2×2)=120px 高收口，
    底边正好落在 466 的安全区边界，避免 flex-wrap 把第 4 个键挤到下一行。 */
-.pad { position: absolute; left: 3px; top: 346px; width: 206px; height: 120px; }
+.pad { position: absolute; left: 3px; top: 346px; width: 206px; height: 120px; background-color: #000000; }
 .padGrid { width: 206px; height: 120px; flex-direction: row; flex-wrap: wrap; }
 .key { width: 47px; height: 26px; margin: 2px; border-radius: 13px; background-color: #262626; align-items: center; justify-content: center; }
 .keyT { width: 47px; height: 26px; line-height: 26px; text-align: center; font-size: 17px; color: #FFFFFF; }

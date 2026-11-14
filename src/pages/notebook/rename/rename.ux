@@ -5,14 +5,14 @@
 <template>
   <div class="page">
     <pagehead title="重命名" clock="{{ clock }}"></pagehead>
-    <div class="card" @click="openKb">
-      <text class="f label">新名称</text>
+    <div class="card {{ kbShow ? 'cardKb' : '' }}" @click="openKb">
+      <text class="f label {{ kbShow ? 'labelKb' : '' }}">新名称</text>
       <text class="f value" if="{{ value }}">{{ value }}</text>
       <text class="f iPlace" if="{{ !value }}">点击输入</text>
     </div>
 
-    <div class="check" @click="save"><img class="checkImg" src="/common/check.png" /></div>
-    <text class="f tip">名称最多 20 个字</text>
+    <div class="check" show="{{ !kbShow }}" @click="save"><img class="checkImg" src="/common/check.png" /></div>
+    <text class="f tip" show="{{ !kbShow }}">名称最多 20 个字</text>
 
     <backbtn></backbtn>
     <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
@@ -23,7 +23,9 @@
 <style>
 @import '../../../common/styles/theme.css';
 .card { position: absolute; left: 3px; top: 86px; width: 206px; height: 84px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
+.cardKb {}
 .label { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.labelKb {}
 .value { width: 174px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 174px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .check { position: absolute; left: 74px; top: 210px; width: 64px; height: 64px; align-items: center; justify-content: center; }

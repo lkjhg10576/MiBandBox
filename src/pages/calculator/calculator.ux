@@ -53,6 +53,10 @@
         </div>
 
         <!-- 三个开关一行一个；选中态只用内联 style 三元，禁用复合类选择器 -->
+        <div class="swRow" style="background-color: {{ advOn ? '#0D6EFF' : '#333333' }};" @click="toggleAdv">
+          <text class="f swLabel">高级计算</text>
+          <text class="f swState">{{ advOn ? '开' : '关' }}</text>
+        </div>
         <div class="swRow" style="background-color: {{ fracOn ? '#0D6EFF' : '#333333' }};" @click="toggleFrac">
           <text class="f swLabel">精确形式显示</text>
           <text class="f swState">{{ fracOn ? '精确' : '小数' }}</text>
@@ -60,10 +64,6 @@
         <div class="swRow" style="background-color: {{ vibOn ? '#0D6EFF' : '#333333' }};" @click="toggleVib">
           <text class="f swLabel">按键振动</text>
           <text class="f swState">{{ vibOn ? '开' : '关' }}</text>
-        </div>
-        <div class="swRow" style="background-color: {{ advOn ? '#0D6EFF' : '#333333' }};" @click="toggleAdv">
-          <text class="f swLabel">高级计算</text>
-          <text class="f swState">{{ advOn ? '开' : '关' }}</text>
         </div>
 
         <div class="tail"></div>

@@ -5,23 +5,23 @@
 <template>
   <div class="page">
     <pagehead title="目标日" clock="{{ clock }}"></pagehead>
-    <div class="save" @click="save"><text class="f saveT">保存</text></div>
 
-    <div class="card" @click="openKb">
-      <text class="f label">事件名称</text>
+    <div class="card {{ kbShow ? 'cardKb' : '' }}" @click="openKb">
+      <text class="f label {{ kbShow ? 'labelKb' : '' }}">事件名称</text>
       <text class="f value" if="{{ title }}">{{ title }}</text>
       <text class="f iPlace" if="{{ !title }}">例如：考试、生日、旅行</text>
     </div>
 
-    <div class="card card2" @click="pickDate">
+    <div class="card card2" show="{{ !kbShow }}" @click="pickDate">
       <text class="f label">日期</text>
       <text class="f value" style="color: #0D6EFF;">{{ date }}</text>
     </div>
 
-    <text class="f delta">{{ deltaText }}</text>
+    <text class="f delta" show="{{ !kbShow }}">{{ deltaText }}</text>
 
-    <div class="del" @click="del"><text class="f delT">{{ delStep === 0 ? '删除这个目标日' : '再次点击确认删除' }}</text></div>
+    <div class="del" show="{{ !kbShow }}" @click="del"><text class="f delT">{{ delStep === 0 ? '删除这个目标日' : '再次点击确认删除' }}</text></div>
 
+    <div class="save" @click="save"><text class="f saveT">保存</text></div>
     <backbtn></backbtn>
     <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
     <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
@@ -33,8 +33,10 @@
 .save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
 .saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
 .card { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
+.cardKb {}
 .card2 { top: 168px; }
 .label { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.labelKb {}
 .value { width: 174px; height: 38px; line-height: 38px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 174px; height: 38px; line-height: 38px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .delta { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.55); }

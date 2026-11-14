@@ -5,8 +5,8 @@
 <template>
   <div class="page">
     <pagehead title="摩斯密码" clock="{{ clock }}"></pagehead>
-    <div class="inputCard" @click="openKb">
-      <text class="f iLabel">文本</text>
+    <div class="inputCard {{ kbShow ? 'inputCardKb' : '' }}" @click="openKb">
+      <text class="f iLabel {{ kbShow ? 'iLabelKb' : '' }}">文本</text>
       <text class="f iText" if="{{ text }}">{{ text }}</text>
       <text class="f iPlace" if="{{ !text }}">仅支持英文/数字/符号</text>
     </div>
@@ -44,7 +44,9 @@
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
+.inputCardKb {}
 .iLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iLabelKb {}
 .iText { width: 174px; height: 32px; line-height: 32px; font-size: 18px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .morseCard { position: absolute; left: 3px; top: 152px; width: 206px; height: 116px; border-radius: 26px; background-color: #1A1A1A; padding: 8px 16px; flex-direction: column; }
