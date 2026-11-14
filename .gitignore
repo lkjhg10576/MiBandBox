@@ -40,7 +40,7 @@ tools/*
 #HyperFrames宣传视频
 .promo/
 # 宣传片工程目录（HyperFrames 合成 + 帧序列，体积 2.5G，不入库）
-promo/
+/promo/
 # 宣传片配套物料（BGM 音频、封面大图、AstroBox 图标），均由 promo/tools 生成
 bandbox-promo-bgm-*.mp3
 bandbox-promo-bgm-*.wav
