@@ -8,6 +8,7 @@
 
   <p>
     <a href="README.md"><b>简体中文</b></a> ·
+    <a href="#feature-preview">Preview</a> ·
     <a href="#real-screenshots">Screenshots</a> ·
     <a href="#feature-list">Features</a> ·
     <a href="#install">Install</a> ·
@@ -16,7 +17,7 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>Package <code>com.miband.bandbox</code> · Version <code>0.1.0</code> (versionCode 240) · Built with Vela JS Quick Apps</p>
+  <p>Package <code>com.miband.bandbox</code> · Version <code>0.1.0</code> (versionCode 242) · Built with Vela JS Quick Apps</p>
 </div>
 
 <img src="assets/promo/hero-en.jpg" alt="BandBox: 36 local tools for Xiaomi Band" />
@@ -41,6 +42,17 @@ Everything stays on the band. **No network calls, no fees, no sign-up, no upload
 | License | **MIT** |
 
 > The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 36 tools work exactly the same.
+
+---
+
+## Feature preview
+
+|  |  |
+| :---: | :---: |
+| <img src="assets/promo/preview-1.jpg" alt="01 · Tool Matrix" /> | <img src="assets/promo/preview-2.jpg" alt="02 · Everyday Efficiency" /> |
+| **01 Tool Matrix** | **02 Everyday Efficiency** |
+| <img src="assets/promo/preview-3.jpg" alt="03 · AstroBox Plugin Interconnect" /> | <img src="assets/promo/preview-4.jpg" alt="04 · Fun & Interactive" /> |
+| **03 AstroBox Plugin Interconnect** | **04 Fun & Interactive** |
 
 ---
 

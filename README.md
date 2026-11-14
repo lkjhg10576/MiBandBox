@@ -8,6 +8,7 @@
 
   <p>
     <a href="README_EN.md"><b>English</b></a> ·
+    <a href="#功能预览">预览</a> ·
     <a href="#真实界面实拍">实拍</a> ·
     <a href="#功能一览">功能</a> ·
     <a href="#安装">安装</a> ·
@@ -16,7 +17,7 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>包名 <code>com.miband.bandbox</code> · 版本 <code>0.1.0</code>（versionCode 240）· 平台 Vela JS 快应用</p>
+  <p>包名 <code>com.miband.bandbox</code> · 版本 <code>0.1.0</code>（versionCode 242）· 平台 Vela JS 快应用</p>
 </div>
 
 <img src="assets/promo/hero-zh.jpg" alt="BandBox：小米手环上的 36 个本地工具" />
@@ -41,6 +42,17 @@ BandBox 是给**小米手环 10 / 11**（212 × 520 跑道屏）和**小米手�
 | 许可证 | **MIT** |
 
 > 手机侧只有一个**可选**的 AstroBox 插件「BandBox辅助」，用来把 LRC 歌词推到手表歌词本、同步动态口令账户。不装它，BandBox 的 36 个工具照常工作。
+
+---
+
+## 功能预览
+
+|  |  |
+| :---: | :---: |
+| <img src="assets/promo/preview-1.jpg" alt="01 · 全场景工具矩阵" /> | <img src="assets/promo/preview-2.jpg" alt="02 · 实用效率" /> |
+| **01 全场景工具矩阵** | **02 实用效率** |
+| <img src="assets/promo/preview-3.jpg" alt="03 · AstroBox 插件互联" /> | <img src="assets/promo/preview-4.jpg" alt="04 · 趣味与交互" /> |
+| **03 AstroBox 插件互联** | **04 趣味与交互** |
 
 ---
 
