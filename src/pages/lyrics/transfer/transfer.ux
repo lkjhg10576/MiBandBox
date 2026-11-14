@@ -395,6 +395,7 @@ export default {
         this.reply(transfer.err(id, transfer.ERRORS.WRITE_FAILED))
         prompt.showToast({ message: '歌词保存失败' })
         g.haptic.short()
+        state.session = transfer.createSession()
         return
       }
       this.receivedName = name

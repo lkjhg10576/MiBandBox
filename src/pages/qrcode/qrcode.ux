@@ -5,7 +5,7 @@
 <template>
   <div class="page">
     <pagehead title="快捷生码" clock="{{ clock }}"></pagehead>
-    <div class="inputCard" @click="openKb">
+    <div class="inputCard {{ kbShow ? 'inputCardKb' : '' }}" @click="openKb">
       <text class="f iLabel">文本内容</text>
       <text class="f iText" if="{{ text }}">{{ text }}</text>
       <text class="f iPlace" if="{{ !text }}">点击输入文字或网址</text>
@@ -30,6 +30,7 @@
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 78px; width: 206px; height: 108px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
+.inputCardKb { top: 44px; }
 .iLabel { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
 .iText { width: 150px; height: 52px; font-size: 17px; line-height: 22px; color: #FFFFFF; text-overflow: ellipsis; lines: 2; }
 .iPlace { width: 150px; height: 52px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.35); text-overflow: ellipsis; lines: 2; }

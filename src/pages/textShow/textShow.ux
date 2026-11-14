@@ -105,9 +105,9 @@ export default {
     offset: 0,
     scrollId: 'mqScrollV',
     timer: null,
-    // 原生关键帧跑马灯开关：true = @keyframes 驱动（无 JS 定时器），
-    // false = 回退到 JS 定时器 scrollBy。真机若 translateX 语义不符，改 false 即可。
-    useNative: true,
+    // 跑马灯滚动开关：默认 false 走 JS 定时器 scrollBy（Vela 真机验证过的方案；
+    // @keyframes 关键帧在真机上因渲染器限制不跑，保留 native 路径随时可切回）。
+    useNative: false,
     // 一个内容块走完所需的秒数（原生关键帧的 animation-duration）
     dur: 3
   },

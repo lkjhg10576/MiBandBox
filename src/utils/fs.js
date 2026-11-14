@@ -48,8 +48,8 @@ export function mkdir(uri, cb) {
     success() {
       if (cb) cb(true, null)
     },
-    fail() {
-      if (cb) cb(false, null)
+    fail(res, code) {
+      if (cb) cb(false, code || 300)
     }
   })
 }
@@ -107,8 +107,18 @@ export function usage(cb) {
 }
 
 export function ensureDir(uri, cb) {
-  mkdir(uri, () => {
-    if (cb) cb()
+  mkdir(uri, (ok, code) => {
+    if (ok) {
+      if (cb) cb(true, null)
+      return
+    }
+    exists(uri, (alreadyExists) => {
+      if (alreadyExists) {
+        if (cb) cb(true, null)
+      } else {
+        if (cb) cb(false, code || 300)
+      }
+    })
   })
 }
 
