@@ -2,7 +2,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   APP_ID, VERSION, CHUNK_LIMIT, ENVELOPE_RESERVE, ERRORS, encode, decode,
-  unwrapInterconnectPayload, jsonTextCost, chunkBudget, splitChunks, checkTransferable, needsChunk,
+  unwrapInterconnectPayload, unwrapTimerPayload, jsonTextCost, chunkBudget, splitChunks,
+  checkTransferable, needsChunk,
   byteLength, makeId, planSend, chunkMessage, hello, pong, describeReply, message
 } from '../src/protocol.js'
 
@@ -265,4 +266,26 @@ test('unwrapInterconnectPayload 解析 payloadHex', () => {
 test('unwrapInterconnectPayload 对坏 JSON 回退原文', () => {
   const env = unwrapInterconnectPayload('{oops')
   assert.equal(env.data, '{oops')
+})
+
+test('unwrapTimerPayload 解析 JSON 信封（旧宿主形态）', () => {
+  assert.equal(unwrapTimerPayload('{"timerId":7,"kind":"interval","payload":"heartbeat"}'), 'heartbeat')
+  assert.equal(unwrapTimerPayload('{"payload":"otp-ack:ol-1"}'), 'otp-ack:ol-1')
+})
+
+test('unwrapTimerPayload 直投原文（WIT 语义形态）', () => {
+  assert.equal(unwrapTimerPayload('heartbeat'), 'heartbeat')
+  assert.equal(unwrapTimerPayload('otp-ack:ol-1'), 'otp-ack:ol-1')
+  assert.equal(unwrapTimerPayload('ly-abc-123'), 'ly-abc-123')
+})
+
+test('unwrapTimerPayload 解析 JSON 字符串字面量', () => {
+  assert.equal(unwrapTimerPayload('"heartbeat"'), 'heartbeat')
+})
+
+test('unwrapTimerPayload 非 string / 空值回空串', () => {
+  assert.equal(unwrapTimerPayload(42), '')
+  assert.equal(unwrapTimerPayload(null), '')
+  assert.equal(unwrapTimerPayload(undefined), '')
+  assert.equal(unwrapTimerPayload({ payload: 'heartbeat' }), '')
 })

@@ -6,7 +6,7 @@
 支持三种常见歌词格式：逐行 LRC、常规逐字 LRC（行内 `[mm:ss.xx]`）、
 增强逐字 LRC（ESLyric 的 `<mm:ss.xx>` 标签）。
 
-- 版本：`0.3.1`（插件由「BandBox歌词同步」更名为「BandBox辅助」；0.3.0 新增「动态口令」Tab：TOTP 账户批量导入 / 编辑 / 删除并同步到手环）
+- 版本：`0.3.3`（0.3.2 新增「二维码」Tab：粘贴扫码文本下发收藏；0.3.3 修复链路健壮性：timer 事件双形态兼容、心跳错误残留清理、saved 设备回退时的 catch-all 注册、手环侧 send 断连自愈）
 - API Level：**4**（`wasi_version: 3`）
 - 目标快应用包名：`com.miband.bandbox`（手环端 BandBox）
 - 协议：本仓库自定义的 `bandbox-lyrics`，与手环端 `src/utils/lyricsTransfer.js` 一一对应
@@ -214,6 +214,9 @@ if (!res.ok) { /* res.error 是宿主给的失败原因 */ }
 - 宿主会把 `interconnect-message` 包装成
   `{ "addr": "...", "pkgName": "...", "payloadText": "...", "payloadHex": "..." }`；
   `protocol.unwrapInterconnectPayload()` 会先解包，再交给 `decode()`。旧宿主直接传裸协议 JSON 时也能工作。
+- 宿主的 `timer` 事件 payload 有两种形态：JSON 信封 `{ timerId, kind, payload }`（旧宿主实测）与
+  payload 原文直投（WIT 语义）。`protocol.unwrapTimerPayload()` 两种都能解；0.3.2 及更早只认信封，
+  宿主改直投后心跳会在首发后停发、ACK 超时失效。
 
 单条 JSON 超过 **12 KB**（按 UTF-8 字节计）就按行切块（不切断一行），逐片顺序发送；
 手环端全部收齐后一次性落盘为「首行标题 + 其余正文」。
@@ -306,6 +309,8 @@ baseline；回执丢失时 local 保留可重试。单账户超预算（too-larg
 
 | 现象 | 排查 |
 |---|---|
+| 心跳/歌词/口令全都不通，但 AstroBox 已连手环、权限已给齐 | 按诊断卡逐段定位：① `插件：` 行——0.3.1 及更早的目标包是 `com.miband.box`（改名前），手环端已是 `com.miband.bandbox` 时整条链路必断，重装 0.3.2+ 的 abp；② `设备：` 行——0 个（saved）时是 `get-connected-device-list` 没返回运行中设备（权限/设备实体问题）；③ `心跳：` 行——轮数不涨 = 宿主 timer 事件没进来；④ `收到：` 行——恒为 0 = 手环→手机方向没有事件到达（注册地址/权限问题）；⑤ `宿主：` 行——`sendQaicMessage ✗ …` 的错误原文即发送失败原因。0.1.0 起包名由 `com.miband.box` 更名而来，真机换包按官方要求**先按名卸载旧包再装新包**，装完重启一次 AstroBox 让设备资源缓存刷新 |
+| 手环一直「未连接手机」且日志无发送错误 | 看诊断卡 `宿主：` 行；0.3.3 起心跳错误会在恢复后自动清除，若仍显示「心跳发送失败：…」即当前确实发不出去 |
 | 插件加载失败 | 宿主 AstroBox 版本要支持 API Level 4 |
 | 安装失败，日志含 `canopusconnect` | 用了上游完整 world，改用 `world/bandbox.wit` 构建 |
 | 手机点「选择 LRC 文件」没反应 | 0.2.5 起所有宿主调用都 `await` 了；若仍不弹，点插件页「诊断」，把 `宿主：` / `选择：` 两行发来（`宿主：pickFile → …` 能直接区分是宿主没返回还是插件没接住） |

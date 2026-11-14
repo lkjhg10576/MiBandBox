@@ -148,6 +148,32 @@ export function unwrapInterconnectPayload(raw) {
 }
 
 /**
+ * 从宿主 timer 事件里取出 payload 文本。
+ *
+ * 宿主投递形态有两种（WIT 只约定 event-payload 是 string）：
+ *   - JSON 信封：{ timerId, kind, payload }（旧宿主实测）
+ *   - payload 原文直投：'heartbeat' / 'otp-ack:<id>' 等（按 WIT 语义）
+ * 两种都要能解，否则 JSON.parse 抛错后心跳会在首发后永久停发、
+ * ACK 超时也全部失效。
+ *
+ * @param {string} raw
+ * @returns {string} payload 文本（取不到时为 ''）
+ */
+export function unwrapTimerPayload(raw) {
+  if (typeof raw !== 'string') return ''
+  try {
+    const obj = JSON.parse(raw)
+    if (typeof obj === 'string') return obj
+    if (obj && typeof obj === 'object' && typeof obj.payload === 'string') {
+      return obj.payload
+    }
+  } catch (e) {
+    // 非 JSON：就是 payload 原文
+  }
+  return raw
+}
+
+/**
  * 十六进制字符串 → UTF-8/GBK 文本。
  */
 function hexToText(hex) {
@@ -349,6 +375,7 @@ export default {
   encode,
   decode,
   unwrapInterconnectPayload,
+  unwrapTimerPayload,
   jsonTextCost,
   chunkBudget,
   splitChunks,

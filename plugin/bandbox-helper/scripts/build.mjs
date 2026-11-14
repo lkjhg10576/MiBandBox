@@ -114,6 +114,23 @@ console.log('[build] WIT      :', buildWit)
 console.log('[build] world   :', WORLD)
 console.log('[build] entry   :', SRC)
 
+// PLUGIN_VERSION 是诊断卡展示用的版本号；与 manifest 不一致时真机上会
+// 误判手机端装的 abp 版本（0.3.1 与 0.3.2+ 目标包名不同）。构建期拦下。
+{
+  const srcText = fs.readFileSync(SRC, 'utf8')
+  const m = srcText.match(/export\s+const\s+PLUGIN_VERSION\s*=\s*'([^']+)'/)
+  const manifestVer = JSON.parse(
+    fs.readFileSync(path.join(root, 'manifest.json'), 'utf8')
+  ).version
+  if (!m || m[1] !== manifestVer) {
+    fail(
+      'src/plugin.js 的 PLUGIN_VERSION（' + (m ? m[1] : '缺失') +
+        '）与 manifest.json 的 version（' + manifestVer + '）不一致，请同步后重试'
+    )
+  }
+  console.log('[build] version  :', manifestVer)
+}
+
 let res
 try {
   res = spawnSync(

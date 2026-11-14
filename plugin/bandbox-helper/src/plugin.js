@@ -50,6 +50,15 @@ import qrImport from './qrImport.js'
 /** 等 ACK 的超时时间（毫秒） */
 const ACK_TIMEOUT = 20000
 
+/**
+ * 插件版本（诊断卡展示用）。
+ *
+ * 必须与 manifest.json / package.json 的 version 一致 —— 0.3.1（改名前）与
+ * 0.3.2+（改名后）的目标包名不同，真机上肉眼确认手机端装的是哪一版
+ * 是排查链路问题的第一步。scripts/build.mjs 会在构建期校验两者一致。
+ */
+export const PLUGIN_VERSION = '0.3.3'
+
 /** 设备列表的最小刷新间隔（毫秒），避免频繁调宿主 */
 const DEVICE_REFRESH_MIN = 2000
 
@@ -78,6 +87,9 @@ const state = {
   heartbeatTimer: null,
   heartbeatSeq: 0,
   heartbeatBusy: false,
+  hbCount: 0, // 已执行的心跳轮数（诊断：区分「定时器没触发」与「触发了但发送失败」）
+  hbLastAt: 0, // 最近一轮心跳的时间戳（0 = 从未执行）
+  rxCount: 0, // 收到的 interconnect-message 事件数（含解析失败的；0 = 手环→手机方向没有任何事件到达）
   // 诊断信息：手机端文件选择器/事件桥接出问题时，用户可以直接看到
   platform: '',
   debug: false,
@@ -262,6 +274,11 @@ function viewState() {
     deviceCount: state.devices.length,
     deviceSource: state.deviceSource,
     needsDeviceChoice: state.needsDeviceChoice,
+    pluginVersion: PLUGIN_VERSION,
+    hbCount: state.hbCount,
+    hbSecondsAgo: state.hbLastAt ? Math.floor((Date.now() - state.hbLastAt) / 1000) : -1,
+    rxCount: state.rxCount,
+    targetPkg: protocol.TARGET_PKG,
     fileName: state.fileName,
     title: state.title,
     lineCount: state.lines.length,
@@ -401,6 +418,10 @@ async function registerRecvAll() {
     )
     if (res.ok) {
       ok++
+      // 注册成功时清掉自己写的注册错误，避免恢复后界面仍挂着失败提示
+      if (String(state.lastError).indexOf('注册手环消息接收失败：') === 0) {
+        state.lastError = ''
+      }
     } else {
       state.lastError = '注册手环消息接收失败：' + res.error
     }
@@ -411,6 +432,13 @@ async function registerRecvAll() {
       registerInterconnectRecv('', protocol.TARGET_PKG)
     )
     if (res.ok) ok++
+  } else if (state.deviceSource === 'saved') {
+    // 已连接列表拿不到时回退的是历史设备记录，其 addr 未必是当前实际连接的
+    // 设备；宿主按「地址+包名」精确匹配投递，注册错地址会永久收不到手环
+    // 回执。补一次空地址 catch-all 注册兜底（失败不影响已按设备注册的计数）。
+    await hostCall('registerInterconnectRecv', () =>
+      registerInterconnectRecv('', protocol.TARGET_PKG)
+    )
   }
   return ok
 }
@@ -425,6 +453,8 @@ async function registerRecvAll() {
 async function sendHeartbeat() {
   if (state.heartbeatBusy) return
   state.heartbeatBusy = true
+  state.hbCount++
+  state.hbLastAt = Date.now()
   try {
     // 设备列表可能因为权限/连接时机为空；心跳时低频重试一次
     if (!state.devices.length && Date.now() - state.lastDeviceRefresh > 10000) {
@@ -463,11 +493,18 @@ async function sendHeartbeat() {
     }
     if (sent > 0) {
       state.watchOnline = true
+      // 链路恢复时清掉自己写的心跳错误，避免「已在线但仍显示心跳失败」的假象；
+      // 其它来源的错误（解析/发送失败）不由心跳清理
+      if (String(state.lastError).indexOf('心跳发送失败：') === 0) state.lastError = ''
       if (state.debug) repaint()
     } else {
       state.watchOnline = false
-      // 不要覆盖更重要的解析/发送错误；只在没有错误时提示心跳失败
-      if (lastError && !state.lastError) state.lastError = '心跳发送失败：' + lastError
+      // 不要覆盖更重要的解析/发送错误；旧的心跳错误直接刷新成最新一次的原因
+      if (lastError) {
+        if (!state.lastError || String(state.lastError).indexOf('心跳发送失败：') === 0) {
+          state.lastError = '心跳发送失败：' + lastError
+        }
+      }
       if (state.debug) repaint()
     }
   } finally {
@@ -567,27 +604,24 @@ function stopQrTimer() {
 /**
  * 处理宿主 timer 事件。
  *
- * 宿主投递的 payload 是 JSON：{ timerId, kind, payload }。
+ * payload 经 protocol.unwrapTimerPayload 解包：兼容 JSON 信封
+ * { timerId, kind, payload } 与 payload 原文直投两种宿主形态。
  */
 async function handleTimer(raw) {
-  let info
-  try {
-    info = JSON.parse(raw)
-  } catch (e) {
-    return
-  }
-  if (info && info.payload === 'heartbeat') {
+  const payload = protocol.unwrapTimerPayload(raw)
+  if (!payload) return
+  if (payload === 'heartbeat') {
     await sendHeartbeat()
     return
   }
   // OTP 1s tick：重算验证码与倒计时；弹窗打开时跳过 repaint（防输入被清空）
-  if (info && info.payload === 'otp-tick') {
+  if (payload === 'otp-tick') {
     if (state.tab === 'otp' && !state.otpDialog) repaint()
     return
   }
   // OTP ACK 超时（payload 前缀 otp-ack:<id>，与歌词 pendingId 区分）
-  if (info && typeof info.payload === 'string' && info.payload.indexOf('otp-ack:') === 0) {
-    const id = info.payload.slice('otp-ack:'.length)
+  if (typeof payload === 'string' && payload.indexOf('otp-ack:') === 0) {
+    const id = payload.slice('otp-ack:'.length)
     if (id !== state.otpPendingId) return
     state.otpTimer = null
     if (!state.otpBusy) return
@@ -599,8 +633,8 @@ async function handleTimer(raw) {
     return
   }
   // 二维码导入 ACK 超时（payload 前缀 qr-ack:<id>，与歌词/OTP 的 pendingId 区分）
-  if (info && typeof info.payload === 'string' && info.payload.indexOf('qr-ack:') === 0) {
-    const qrId = info.payload.slice('qr-ack:'.length)
+  if (typeof payload === 'string' && payload.indexOf('qr-ack:') === 0) {
+    const qrId = payload.slice('qr-ack:'.length)
     if (qrId !== state.qrPendingId) return
     state.qrTimer = null
     if (!state.qrBusy) return
@@ -610,7 +644,7 @@ async function handleTimer(raw) {
     if (state.tab === 'qr') repaint()
     return
   }
-  if (!info || info.payload !== state.pendingId) return
+  if (payload !== state.pendingId) return
   state.timer = null
   if (state.status !== 'sending') return
   state.status = 'failed'
@@ -623,6 +657,9 @@ async function handleTimer(raw) {
  * 处理手环回执（信封解包后按 app 字段分流到歌词 / OTP / 二维码导入）。
  */
 async function handleReply(raw) {
+  // 收帧计数在解包前累加：区分「事件根本没送达」（计数不涨）与
+  // 「送达但信封/协议解析失败被丢弃」（计数涨但 lastReply 全是解析错误）
+  state.rxCount++
   const env = protocol.unwrapInterconnectPayload(raw)
 
   // 歌词、OTP、二维码导入共用一条通道：先探测 app 字段，分流到对应处理分支。

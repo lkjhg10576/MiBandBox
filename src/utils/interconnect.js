@@ -214,6 +214,9 @@ function getLinkState() {
  * 发送消息。data 可以是字符串或对象（对象会被 JSON 序列化）。
  */
 function send(data, success, fail) {
+  // 断连（1006）或实例失效后 connect 会被置 null：这里必须先尝试重建实例，
+  // 否则 reply() 这类不显式 init 的调用方会从此永远发不出消息（手环变哑巴）。
+  if (!connect) init()
   if (!connect) {
     if (fail) fail({ code: 1000, message: 'interconnect not initialized' })
     return false

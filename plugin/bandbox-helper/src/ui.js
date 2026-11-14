@@ -135,6 +135,21 @@ function renderLyricsTab(root, state) {
         12
       )
     )
+    // 插件版本：改名前（≤0.3.1）与改名后（≥0.3.2）的目标包不同，
+    // 真机排查第一步就是确认手机端装的是哪一版
+    dbg.push(text('插件：' + (state.pluginVersion || '?') + ' · 目标包：' + (state.targetPkg || '未知'), C.dim, 12))
+    // 心跳计数：轮数不涨 = 宿主 timer 事件没进来；涨但 lastError 有心跳失败 = 发送失败
+    dbg.push(
+      text(
+        '心跳：' + state.hbCount + ' 次' +
+          (state.hbSecondsAgo >= 0 ? '（' + state.hbSecondsAgo + 's 前）' : ''),
+        C.dim,
+        12
+      )
+    )
+    // 收帧计数：0 = 手环→手机方向没有事件到达（注册地址/权限问题）；
+    // 涨但「手环：」行全是解析错误 = 信封形态问题
+    dbg.push(text('收到：' + state.rxCount + ' 条', C.dim, 12))
     dbg.push(text('UI：' + (state.lastUiEvent || '无'), C.dim, 12))
     dbg.push(text('动作：' + (state.lastAction || '无'), C.dim, 12))
     dbg.push(text('手环：' + (state.lastReply || '无'), C.dim, 12))
