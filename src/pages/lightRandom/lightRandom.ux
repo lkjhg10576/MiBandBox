@@ -130,7 +130,7 @@ export default {
     let fs = 76
     if (this.mode === 'coin') { title = '抛硬币'; fs = 48 }
     else if (this.mode === 'letter') { title = '随机字母'; fs = 88 }
-    else if (this.diceCount === 2) { title = '投骰子 · 双骰'; fs = 48 }
+    else if (this.diceCount === 2) { title = '投骰子 · 双骰'; fs = 40 }
     this.modeTitle = title
     this.headTitle = title
     this.fontSize = fs
