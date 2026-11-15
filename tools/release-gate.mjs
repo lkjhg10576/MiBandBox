@@ -15,12 +15,21 @@
  *   R8 profile 物化一致性        源码树物化状态必须 == BANDBOX_PROFILE（防 band10 包混入 pro 令牌值）
  *   R9 资源尺寸匹配 profile      shadow.png 等随 profile 变尺寸的资源，IHDR 必须等于 profile 要求
  *   R10 计算器几何常量与 CSS 自洽  内容高度（BASE_H/ADV_H）由几何常量累加，常量与 CSS 对不上就拦下构建
+ *   R11 包名一致性              源码树必须是基线包名态（渠道包包名只在构建期物化）；包名要符合反向域名规范
+ *   R12 发行证书                上架渠道包必须用自签发行证书，且证书 CN 与包名对齐（CN=localhost 是 debug 证书）
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
+ *
+ * 构建期环境变量：
+ *   BANDBOX_PROFILE  目标设备 profile（R8/R9 用）
+ *   BANDBOX_PKG      本次构建的包名（渠道包构建期物化后的包名）
+ *   BANDBOX_SIGN_DIR 本次构建用的签名证书目录（sign/ 或 sign/release/）
+ *   BANDBOX_SIGN_CN  期望的证书 CN（渠道包用；给了就强制核对）
  */
 import fs from 'node:fs'
 import path from 'node:path'
+import crypto from 'node:crypto'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
@@ -176,6 +185,9 @@ for (const f of walk('src', '.ux')) {
 }
 
 // ---------- R6 版本一致 ----------
+// 分发平台只认包内 manifest.json 的版本号（控制台不改已签名包的版本），
+// 所以版本号必须处处一致：改了 manifest 忘了改关于页/设置页/README，
+// 上架后 App 里显示的版本就会和平台登记的对不上。
 {
   const m = JSON.parse(read('src/manifest.json'))
   const p = JSON.parse(read('package.json'))
@@ -189,6 +201,53 @@ for (const f of walk('src', '.ux')) {
   }
   if (!Number.isInteger(m.versionCode) || m.versionCode <= 0) {
     fail('R6', 'src/manifest.json', 'versionCode 非法')
+  }
+  // 关于页 / 设置页：AGENTS.md 要求的四处同步，少一处就 fail
+  const aboutPath = path.join(ROOT, 'src/pages/about/about.ux')
+  if (fs.existsSync(aboutPath)) {
+    const t = fs.readFileSync(aboutPath, 'utf8').match(/<text class="f ver">v([^<]*)<\/text>/)
+    if (!t) fail('R6', 'src/pages/about/about.ux', '找不到版本号文本（<text class="f ver">v…</text>）')
+    else if (t[1] !== m.versionName) {
+      fail('R6', 'src/pages/about/about.ux', `关于页显示 v${t[1]}，manifest 是 ${m.versionName}`)
+    }
+  }
+  const setPath = path.join(ROOT, 'src/pages/set/set.ux')
+  if (fs.existsSync(setPath)) {
+    const t = fs.readFileSync(setPath, 'utf8').match(/<text class="f cSub">版本 ([^<]*)<\/text>/)
+    if (!t) fail('R6', 'src/pages/set/set.ux', '找不到版本号文本（<text class="f cSub">版本 …</text>）')
+    else if (t[1] !== m.versionName) {
+      fail('R6', 'src/pages/set/set.ux', `设置页显示 版本 ${t[1]}，manifest 是 ${m.versionName}`)
+    }
+  }
+  // README 顶部的版本号与 versionCode 都要跟上
+  const rm = readme.match(/<code>([^<]*)<\/code>（versionCode (\d+)）/)
+  if (rm) {
+    if (rm[1] !== m.versionName) {
+      fail('R6', 'README.md', `README 显示版本 ${rm[1]}，manifest 是 ${m.versionName}`)
+    }
+    if (Number(rm[2]) !== m.versionCode) {
+      fail('R6', 'README.md', `README 显示 versionCode ${rm[2]}，manifest 是 ${m.versionCode}`)
+    }
+  }
+  // 手机插件与快应用共用同一条版本线（0.1.1 起）：插件侧四处也要一致
+  const pluginManifestPath = path.join(ROOT, 'plugin/bandbox-helper/manifest.json')
+  if (fs.existsSync(pluginManifestPath)) {
+    const pm = JSON.parse(fs.readFileSync(pluginManifestPath, 'utf8'))
+    const pp = path.join(ROOT, 'plugin/bandbox-helper/package.json')
+    if (fs.existsSync(pp)) {
+      const pj = JSON.parse(fs.readFileSync(pp, 'utf8'))
+      if (pm.version !== pj.version) {
+        fail('R6', 'plugin/bandbox-helper', `插件版本不一致：manifest ${pm.version} / package.json ${pj.version}`)
+      }
+    }
+    const pjs = path.join(ROOT, 'plugin/bandbox-helper/src/plugin.js')
+    if (fs.existsSync(pjs)) {
+      const pv = fs.readFileSync(pjs, 'utf8').match(/PLUGIN_VERSION\s*=\s*'([^']*)'/)
+      if (!pv) fail('R6', 'plugin/bandbox-helper/src/plugin.js', '找不到 PLUGIN_VERSION')
+      else if (pv[1] !== pm.version) {
+        fail('R6', 'plugin/bandbox-helper/src/plugin.js', `PLUGIN_VERSION 是 ${pv[1]}，manifest 是 ${pm.version}`)
+      }
+    }
   }
 }
 
@@ -300,6 +359,56 @@ for (const f of walk('src', '.ux')) {
     const count = (re) => (src.match(re) || []).length
     expect('SEC_COUNT', count(/class="f secLabel"/g), '模板里的 .secLabel 个数')
     expect('SW_COUNT', count(/class="swRow"/g), '模板里的 .swRow 个数')
+  }
+}
+
+// ---------- R11 包名规范 ----------
+// 分发平台按反向域名（Java 包命名）规范判包名：全小写、点分段、每段字母开头。
+// 包名真源是 src/manifest.json 的 package 字段。
+{
+  const m = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/manifest.json'), 'utf8'))
+  const PKG_RE = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/
+  if (!m.package) {
+    fail('R11', 'src/manifest.json', '缺少 package 字段')
+  } else if (!PKG_RE.test(m.package)) {
+    fail('R11', 'src/manifest.json', `包名不符合反向域名规范（应形如 com.example.app）：${m.package}`)
+  } else if (m.package.split('.').length < 3) {
+    fail('R11', 'src/manifest.json', `包名段数不足 3 段：${m.package}`)
+  }
+}
+
+// ---------- R12 发行证书 ----------
+// 分发平台打回过一次「用了 AIoT 的 debug 证书签名，不是 release 包」：
+// 工具链自带的默认证书 CN=localhost 就是 debug 证书（SignUtil 的 defaultDevelopment）。
+// 发行包必须用自签发行证书，且证书 CN 与包名对齐。
+{
+  const dir = process.env.BANDBOX_SIGN_DIR
+  if (!dir) {
+    warn('R12', dir || 'sign/release', '未指定签名证书目录（BANDBOX_SIGN_DIR），跳过证书核对')
+  } else {
+    const certFile = path.join(ROOT, dir, 'certificate.pem')
+    const keyFile = path.join(ROOT, dir, 'private.pem')
+    if (!fs.existsSync(certFile) || !fs.existsSync(keyFile)) {
+      fail('R12', dir, `签名证书缺失：需要 ${dir}/certificate.pem 与 ${dir}/private.pem`)
+    } else {
+      let cn = ''
+      try {
+        const cert = new crypto.X509Certificate(fs.readFileSync(certFile))
+        const mm = /(?:^|,)\s*CN=([^,]+)/.exec(cert.subject.replace(/\n/g, ', '))
+        cn = mm ? mm[1].trim() : ''
+      } catch (e) {
+        fail('R12', dir, '证书解析失败：' + e.message)
+      }
+      const manifestPkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/manifest.json'), 'utf8')).package
+      const wantCn = process.env.BANDBOX_SIGN_CN || manifestPkg
+      if (!cn) {
+        fail('R12', dir, '证书里读不出 CN，无法核对')
+      } else if (cn === 'localhost') {
+        fail('R12', dir, '证书是工具链自带的 debug 证书（CN=localhost），平台会打回；用 bash tools/gen-release-cert.sh 重新生成')
+      } else if (cn !== wantCn) {
+        fail('R12', dir, `证书 CN 是 ${cn}，期望 ${wantCn}（平台按包名核对证书）`)
+      }
+    }
   }
 }
 

@@ -53,11 +53,12 @@ const ACK_TIMEOUT = 20000
 /**
  * 插件版本（诊断卡展示用）。
  *
- * 必须与 manifest.json / package.json 的 version 一致 —— 0.3.1（改名前）与
- * 0.3.2+（改名后）的目标包名不同，真机上肉眼确认手机端装的是哪一版
- * 是排查链路问题的第一步。scripts/build.mjs 会在构建期校验两者一致。
+ * 必须与 manifest.json / package.json 的 version 一致 —— 0.1.1 起插件版本号
+ * 与手环端快应用对齐（对齐前插件自成一条 0.3.x 版本线），真机上肉眼确认
+ * 手机端装的是哪一版是排查链路问题的第一步。
+ * scripts/build.mjs 会在构建期校验两者一致。
  */
-export const PLUGIN_VERSION = '0.3.3'
+export const PLUGIN_VERSION = '0.1.1'
 
 /** 设备列表的最小刷新间隔（毫秒），避免频繁调宿主 */
 const DEVICE_REFRESH_MIN = 2000

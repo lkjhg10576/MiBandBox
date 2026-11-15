@@ -236,12 +236,12 @@ test('unwrapInterconnectPayload 解析 payloadText 信封', () => {
   const raw = encode('ready', { id: 'r-1' })
   const env = unwrapInterconnectPayload(JSON.stringify({
     addr: 'AA:BB:CC',
-    pkgName: 'com.miband.bandbox',
+    pkgName: 'com.lkjhg.bandbox',
     payloadText: raw,
     payloadHex: '00ff'
   }))
   assert.equal(env.addr, 'AA:BB:CC')
-  assert.equal(env.pkgName, 'com.miband.bandbox')
+  assert.equal(env.pkgName, 'com.lkjhg.bandbox')
   assert.equal(env.data, raw)
 })
 

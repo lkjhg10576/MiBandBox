@@ -135,8 +135,8 @@ function renderLyricsTab(root, state) {
         12
       )
     )
-    // 插件版本：改名前（≤0.3.1）与改名后（≥0.3.2）的目标包不同，
-    // 真机排查第一步就是确认手机端装的是哪一版
+    // 插件版本：用于确认手机端装的是哪一版。目标包名是手环端 BandBox 的包名
+    // （src/manifest.json 的 package）；换了包名后旧 abp 必须先卸载再装新的。
     dbg.push(text('插件：' + (state.pluginVersion || '?') + ' · 目标包：' + (state.targetPkg || '未知'), C.dim, 12))
     // 心跳计数：轮数不涨 = 宿主 timer 事件没进来；涨但 lastError 有心跳失败 = 发送失败
     dbg.push(

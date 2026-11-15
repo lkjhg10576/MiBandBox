@@ -17,7 +17,7 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>Package <code>com.miband.bandbox</code> · Version <code>0.1.0</code> (versionCode 255) · Built with Vela JS Quick Apps</p>
+  <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.1</code> (versionCode 256) · Built with Vela JS Quick Apps</p>
 </div>
 
 <img src="assets/promo/hero-en.jpg" alt="BandBox: 37 local tools for Xiaomi Band" />
@@ -187,9 +187,9 @@ Search for **BandBox** in the **AstroBox** app and install it there; updates wor
 Grab a `.rpk` from the `release/` or `beta/` directory and install it over the top:
 
 ```bash
-adb push BandBox.rpk /data/app/com.miband.bandbox.rpk
-adb shell pm install /data/app/com.miband.bandbox.rpk
-adb shell am start com.miband.bandbox
+adb push BandBox.rpk /data/app/com.lkjhg.bandbox.rpk
+adb shell pm install /data/app/com.lkjhg.bandbox.rpk
+adb shell am start com.lkjhg.bandbox
 ```
 
 > Never install with `rm -rf /data/app/<pkg>` plus `unzip`: AMS keeps a broken "file deleted, state still there" app around and `am start` then only shows a black screen. Use `pm install` to overwrite.
@@ -209,25 +209,30 @@ npm run build:jsc      # jsc bytecode, closer to a release build
 
 ## Build & packaging
 
-The project has two packaging channels. They work identically; they differ only in versioning strategy and output directory:
+The project has two packaging channels. They differ in versioning strategy, output directory **and packaging mode**:
 
-| Channel | When to use | `versionName` | `versionCode` | Output directory |
-| --- | --- | --- | --- | --- |
-| **Beta** | Default when no special requirement | unchanged | **+1** | `beta/BandBox-<version>-<versionCode>/` |
-| **Release** | When you explicitly ask for a new release | **bumped** | unchanged | `release/BandBox-<version>/` |
+| Channel | When to use | Packaging mode | `versionName` | `versionCode` | Output directory |
+| --- | --- | --- | --- | --- | --- |
+| **Beta** | Default when no special requirement | development (`aiot build`) | unchanged | **+1** | `beta/BandBox-<version>-<versionCode>/` |
+| **Release** | When you explicitly ask for a new release | production (`aiot release`) | **bumped** | **strictly increasing** | `release/BandBox-<version>/` |
 
 - Both modes produce the same contents: `.rpk` (jsc bytecode) + `BandBox辅助.abp` (plugin built from source) + `SHA256SUMS.txt` + `说明.md`.
+- The release channel uses production mode: JS is minified/mangled, `.map` files are dropped, and the package is signed with the release certificate. Beta builds are not minified.
+- **The `.debug.` / `.release.` segment in the rpk file name only marks the packaging mode — it is not the package name.** The package name is always `com.lkjhg.bandbox`.
 - **No zip archive is produced anymore** — install the `.rpk` from the directory directly.
+- **`versionCode` must strictly increase**: a release takes "highest code used by any built artifact + 1"; `--code <n>` overrides it. Distribution platforms order versions by (package name, versionCode) and reject a reused code as an older build; overwriting an installed app on the band has the same constraint.
+- **Publishing to a distribution platform**: the platform only reads the version inside `manifest.json` and refuses to edit a signed package (any changed byte breaks the on-device signature check). Check the in-package version and the signature with `node tools/verify-rpk.mjs <rpk>` before uploading; the packaging script verifies every rpk it produces and aborts on mismatch.
 - Commands:
 
   ```bash
   # Beta (default)
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta
   # Release (release notes go in notes/<version>.md and are injected into 说明.md)
-  NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --release <version> --notes notes/<version>.md
+  NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --release <version> --notes notes/<version>.md --all-profiles
   ```
 
   The local `copyfile-shim.cjs` shim is required, otherwise `build:jsc` fails with `EPERM` from the sandbox's `copy_file_range`.
+- The release certificate lives in `sign/release/` (preferred) or `sign/`; that directory is git-ignored. A release build **requires a self-signed release certificate whose CN equals the package name** — the build aborts if the certificate is missing or is the toolkit's built-in `CN=localhost` debug certificate (generate one with `bash tools/gen-release-cert.sh`).
 - The version number is synced in four places (`src/manifest.json`, `package.json`, the about page, the settings page) by the script, and gate rule R6 re-checks it.
 - `npm run gate` (`tools/release-gate.mjs`) must pass before shipping.
 

@@ -24,7 +24,7 @@ export const APP_ID = 'bandbox-qr'
 export const VERSION = 1
 
 /** 目标快应用包名（手表端 BandBox）。手表侧不用，保留以保持两份一致。 */
-export const TARGET_PKG = 'com.miband.bandbox'
+export const TARGET_PKG = 'com.lkjhg.bandbox'
 
 /** 单条二维码文本的 UTF-8 字节上限（超出由插件解析期拒绝）。 */
 export const MAX_TEXT_BYTES = 512

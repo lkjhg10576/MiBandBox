@@ -17,7 +17,7 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>包名 <code>com.miband.bandbox</code> · 版本 <code>0.1.0</code>（versionCode 255）· 平台 Vela JS 快应用</p>
+  <p>包名 <code>com.lkjhg.bandbox</code> · 版本 <code>0.1.1</code>（versionCode 256）· 平台 Vela JS 快应用</p>
 </div>
 
 <img src="assets/promo/hero-zh.jpg" alt="BandBox：小米手环上的 36 个本地工具" />
@@ -205,9 +205,9 @@ chunk / ack / err / progress`，两端实现见 `src/utils/otpProtocol.js` 与
 从 `release/` 或 `beta/` 目录取 `.rpk`，覆盖安装：
 
 ```bash
-adb push BandBox.rpk /data/app/com.miband.bandbox.rpk
-adb shell pm install /data/app/com.miband.bandbox.rpk
-adb shell am start com.miband.bandbox
+adb push BandBox.rpk /data/app/com.lkjhg.bandbox.rpk
+adb shell pm install /data/app/com.lkjhg.bandbox.rpk
+adb shell am start com.lkjhg.bandbox
 ```
 
 > 不要用 `rm -rf /data/app/<pkg>` + `unzip` 的方式安装：那样 AMS 里会残留
@@ -230,25 +230,30 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 
 ## 构建与打包
 
-本项目有两条构建通道，打包方式完全相同，区别只在版本号策略与产物目录：
+本项目有两条构建通道，版本号策略与产物目录不同，**打包模式也不同**：
 
-| 通道 | 什么时候打 | 版本号 `versionName` | `versionCode` | 产物目录 |
-| --- | --- | --- | --- | --- |
-| **Beta** | 没有特殊要求时的默认动作 | 不变 | **+1** | `beta/BandBox-<版本>-<versionCode>/` |
-| **发行版** | 明确要求「打包一个新发行版」 | **升** | 不变 | `release/BandBox-<版本>/` |
+| 通道 | 什么时候打 | 打包模式 | 版本号 `versionName` | `versionCode` | 产物目录 |
+| --- | --- | --- | --- | --- | --- |
+| **Beta** | 没有特殊要求时的默认动作 | development（`aiot build`） | 不变 | **+1** | `beta/BandBox-<版本>-<versionCode>/` |
+| **发行版** | 明确要求「打包一个新发行版」 | production（`aiot release`） | **升** | **严格递增取号** | `release/BandBox-<版本>/` |
 
 - 两种模式的产物内容一致：`.rpk`（jsc 字节码）+ `BandBox辅助.abp`（插件源码现编）+ `SHA256SUMS.txt` + `说明.md`。
+- 发行版走 production 模式：JS 压缩混淆、剔除 `.map`、用发行证书签名；Beta 不压缩不混淆。
+- **rpk 文件名里的 `.debug.` / `.release.` 段只表示打包模式，不是包名** —— 包名始终是 `com.lkjhg.bandbox`。
 - **不再产出 zip 压缩包**，直接用目录里的 `.rpk` 覆盖安装。
+- **`versionCode` 必须严格递增**：发行版取「所有已构建产物用过的最大号 + 1」，`--code <n>` 可显式指定。分发平台按「包名 + versionCode」判新旧，撞号会被当成旧包拒收；手环覆盖安装同理。
+- **上架分发平台**：平台只认包内 `manifest.json` 的版本号，控制台不改已签名包的版本。上架前用 `node tools/verify-rpk.mjs <rpk>` 确认包内版本与验签结果；打包脚本出包后会自动逐个校验，不过即中断。
 - 打包命令：
 
   ```bash
   # Beta（默认）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta
   # 发行版（版本提要写 notes/<版本>.md，会自动插进说明.md）
-  NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --release <版本> --notes notes/<版本>.md
+  NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --release <版本> --notes notes/<版本>.md --all-profiles
   ```
 
   本机必须带 `copyfile-shim.cjs` 垫片，否则 `build:jsc` 会被沙箱的 `copy_file_range` 拦成 `EPERM`。
+- 发行证书放在 `sign/release/`（优先）或 `sign/`，该目录不入库；**发行版必须有自签发行证书且证书 CN 等于包名**，缺证书或用成工具链自带的 `CN=localhost` debug 证书时脚本直接报错中断（生成：`bash tools/gen-release-cert.sh`）。
 - 版本号四处同步（`src/manifest.json`、`package.json`、关于页、设置页）由脚本自动完成，门禁 R6 复核。
 - 发行前必过 `npm run gate`（`tools/release-gate.mjs`）。
 

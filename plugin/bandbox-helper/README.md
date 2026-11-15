@@ -6,11 +6,16 @@
 支持三种常见歌词格式：逐行 LRC、常规逐字 LRC（行内 `[mm:ss.xx]`）、
 增强逐字 LRC（ESLyric 的 `<mm:ss.xx>` 标签）。
 
-- 版本：`0.3.3`（0.3.2 新增「二维码」Tab：粘贴扫码文本下发收藏；0.3.3 修复链路健壮性：timer 事件双形态兼容、心跳错误残留清理、saved 设备回退时的 catch-all 注册、手环侧 send 断连自愈）
+- 版本：`0.1.1`（与手环端快应用版本号对齐；对齐前插件自成一条 `0.3.x` 版本线，最高 `0.3.3`）
 - API Level：**4**（`wasi_version: 3`）
-- 目标快应用包名：`com.miband.bandbox`（手环端 BandBox）
+- 目标快应用包名：`com.lkjhg.bandbox`（手环端 BandBox）
 - 协议：本仓库自定义的 `bandbox-lyrics`，与手环端 `src/utils/lyricsTransfer.js` 一一对应
 - 语言：JavaScript（不需要 Rust 工具链）
+
+> **版本号对齐说明**：自 `0.1.1` 起，插件版本号与手环端快应用版本号保持一致
+> （此前插件独立版本线为 `0.3.x`，最高 `0.3.3`）。本文档里出现的 `0.3.x`
+> 都是**对齐前的历史版本号**，描述的是当时引入的行为；当前版本以
+> `manifest.json` / `package.json` / `src/plugin.js` 的 `PLUGIN_VERSION` 为准。
 
 ## 目录
 
@@ -209,13 +214,13 @@ if (!res.ok) { /* res.error 是宿主给的失败原因 */ }
   因此连接状态以**手机→手环心跳**为准，手环的 `ping` 只做兼容与补充。
 - 手环不再依赖 Vela 的 `getReadyState`（AstroBox 不是官方配套 App，该状态在 AstroBox 场景下不可靠）。
 - 插件在 `onUiRender` 和 `device-action` 时会刷新设备并注册
-  `registerInterconnectRecv(addr, "com.miband.bandbox")`，因此即使还没有点过发送，也能收到手环的
+  `registerInterconnectRecv(addr, "com.lkjhg.bandbox")`，因此即使还没有点过发送，也能收到手环的
   `ready` / `ping`。
 - 宿主会把 `interconnect-message` 包装成
   `{ "addr": "...", "pkgName": "...", "payloadText": "...", "payloadHex": "..." }`；
   `protocol.unwrapInterconnectPayload()` 会先解包，再交给 `decode()`。旧宿主直接传裸协议 JSON 时也能工作。
 - 宿主的 `timer` 事件 payload 有两种形态：JSON 信封 `{ timerId, kind, payload }`（旧宿主实测）与
-  payload 原文直投（WIT 语义）。`protocol.unwrapTimerPayload()` 两种都能解；0.3.2 及更早只认信封，
+  payload 原文直投（WIT 语义）。`protocol.unwrapTimerPayload()` 两种都能解；旧版插件（对齐前的 `0.3.x` 线，`0.3.2` 及更早）只认信封，
   宿主改直投后心跳会在首发后停发、ACK 超时失效。
 
 单条 JSON 超过 **12 KB**（按 UTF-8 字节计）就按行切块（不切断一行），逐片顺序发送；
@@ -229,7 +234,7 @@ if (!res.ok) { /* res.error 是宿主给的失败原因 */ }
 
 ## 动态口令协议（bandbox-otp）
 
-0.3.0 起，同一个插件、同一条 `registerInterconnectRecv(addr, "com.miband.bandbox")` 通道同时承载
+自动态口令功能加入起，同一个插件、同一条 `registerInterconnectRecv(addr, "com.lkjhg.bandbox")` 通道同时承载
 歌词协议与动态口令协议：`handleReply` 按 `app` 字段分流（歌词 `bandbox-lyrics`，口令
 `bandbox-otp`），`protocol.unwrapInterconnectPayload` 对两种裸消息都直接放行。
 `hello` 心跳在每次设备遍历里多发一条 `bandbox-otp` 的 hello（带手机 Unix 秒，手表用于偏差提示），
@@ -293,7 +298,7 @@ baseline；回执丢失时 local 保留可重试。单账户超预算（too-larg
       且不出现「发送到手环」按钮
 - [ ] 多设备同时连接时，插件能选择目标手环
 
-动态口令 Tab（0.3.0 新增，与歌词互不干扰）：
+动态口令 Tab（与歌词互不干扰）：
 
 - [ ] 插件顶部两个 Tab 可切换，歌词功能全回归正常（发歌词不误改 OTP 账户）
 - [ ] 「拉取数据」5 秒内回显账户数；0 / 1 / 20 条各验一次
@@ -309,8 +314,8 @@ baseline；回执丢失时 local 保留可重试。单账户超预算（too-larg
 
 | 现象 | 排查 |
 |---|---|
-| 心跳/歌词/口令全都不通，但 AstroBox 已连手环、权限已给齐 | 按诊断卡逐段定位：① `插件：` 行——0.3.1 及更早的目标包是 `com.miband.box`（改名前），手环端已是 `com.miband.bandbox` 时整条链路必断，重装 0.3.2+ 的 abp；② `设备：` 行——0 个（saved）时是 `get-connected-device-list` 没返回运行中设备（权限/设备实体问题）；③ `心跳：` 行——轮数不涨 = 宿主 timer 事件没进来；④ `收到：` 行——恒为 0 = 手环→手机方向没有事件到达（注册地址/权限问题）；⑤ `宿主：` 行——`sendQaicMessage ✗ …` 的错误原文即发送失败原因。0.1.0 起包名由 `com.miband.box` 更名而来，真机换包按官方要求**先按名卸载旧包再装新包**，装完重启一次 AstroBox 让设备资源缓存刷新 |
-| 手环一直「未连接手机」且日志无发送错误 | 看诊断卡 `宿主：` 行；0.3.3 起心跳错误会在恢复后自动清除，若仍显示「心跳发送失败：…」即当前确实发不出去 |
+| 心跳/歌词/口令全都不通，但 AstroBox 已连手环、权限已给齐 | 按诊断卡逐段定位：① `插件：` 行——目标包固定为 `com.lkjhg.bandbox`；手机端若还装着换源前的旧 abp（目标包名不同），整条链路必断，先卸载旧版再装本目录里的 `BandBox辅助.abp`；② `设备：` 行——0 个（saved）时是 `get-connected-device-list` 没返回运行中设备（权限/设备实体问题）；③ `心跳：` 行——轮数不涨 = 宿主 timer 事件没进来；④ `收到：` 行——恒为 0 = 手环→手机方向没有事件到达（注册地址/权限问题）；⑤ `宿主：` 行——`sendQaicMessage ✗ …` 的错误原文即发送失败原因。包名换过（换源前是 `com.miband.bandbox`），真机换包按官方要求**先按名卸载旧包再装新包**，装完重启一次 AstroBox 让设备资源缓存刷新 |
+| 手环一直「未连接手机」且日志无发送错误 | 看诊断卡 `宿主：` 行；本版起心跳错误会在恢复后自动清除，若仍显示「心跳发送失败：…」即当前确实发不出去 |
 | 插件加载失败 | 宿主 AstroBox 版本要支持 API Level 4 |
 | 安装失败，日志含 `canopusconnect` | 用了上游完整 world，改用 `world/bandbox.wit` 构建 |
 | 手机点「选择 LRC 文件」没反应 | 0.2.5 起所有宿主调用都 `await` 了；若仍不弹，点插件页「诊断」，把 `宿主：` / `选择：` 两行发来（`宿主：pickFile → …` 能直接区分是宿主没返回还是插件没接住） |
