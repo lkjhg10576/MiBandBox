@@ -1,8 +1,10 @@
 <template>
   <div class="ph">
     <img class="phMask" src="/common/shadow.png" />
-    <text class="f phClock">{{ clock }}</text>
-    <text class="f phTitle">{{ title }}</text>
+    <div class="phHit" @click="go">
+      <text class="f phClock">{{ clock }}</text>
+      <text class="f phTitle">{{ title }}</text>
+    </div>
   </div>
 </template>
 
@@ -21,6 +23,16 @@
   top: 0px;
   width: 212px;
   height: 84px;
+}
+/* 头部命中区：时间+标题整条（y0..74）可点 = 返回，替代只点左上角 28px 返回键。
+   下界取 74：正文卡片最早从 y76 起步（节拍器/随机数键盘态编辑卡），不截胡正文点击；
+   横屏正文（歌词 show）本就给页头让出顶部 80px，正好落在命中区内。 */
+.phHit {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 212px;
+  height: 74px;
 }
 .phClock {
   position: absolute;
@@ -48,8 +60,15 @@
 </style>
 
 <script>
+
+import g from '../utils/g'
 export default {
-  props: ['clock', 'title'],
-  data: {}
+  props: ['clock', 'title', 'noback'],
+  data: {},
+  go() {
+    // noback：首页（无上级可回）与整屏点按类页面（手速测试/节拍测定，点按即计数）退出头部返回
+    if (this.noback) return
+    g.router.back()
+  }
 }
 </script>

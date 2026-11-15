@@ -2,7 +2,7 @@
 
 <template>
   <div class="page">
-    <pagehead title="BandBox" clock="{{ clock }}"></pagehead>
+    <pagehead title="BandBox" clock="{{ clock }}" noback="{{ true }}"></pagehead>
 
     <div class="today" @click="openDays">
       <div class="todayTop">
