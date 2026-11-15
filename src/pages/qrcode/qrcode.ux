@@ -4,7 +4,7 @@
 
 <template>
   <div class="page">
-    <pagehead title="快捷生码" clock="{{ clock }}"></pagehead>
+    <pagehead if="{{ !kbShow }}" title="快捷生码" clock="{{ clock }}"></pagehead>
     <div class="inputCard {{ kbShow ? 'inputCardKb' : '' }}" @click="openKb">
       <text class="f iLabel">文本内容</text>
       <text class="f iText" if="{{ text }}">{{ text }}</text>
@@ -21,7 +21,7 @@
 
     <div class="favEntry" @click="openFavs"><text class="f favEntryT">我的收藏</text></div>
 
-    <backbtn></backbtn>
+    <backbtn if="{{ !kbShow }}"></backbtn>
     <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
     <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
   </div>
