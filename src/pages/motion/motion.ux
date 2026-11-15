@@ -24,6 +24,21 @@
 
     <text class="f hint">进游戏时手臂自然下垂，抬手稳住后长振提示就绪。两个游戏全程屏幕常亮。</text>
 
+    <!-- 灵敏度：决定准备姿势的标准程度与触发所需的动作幅度，选完即存盘 -->
+    <div class="sensRow">
+      <text class="f sensLabel">灵敏度</text>
+      <div class="sn" style="background-color: {{ sensLevel === 'low' ? '#0D6EFF' : 'transparent' }};" @click="setSens('low')">
+        <text class="f snT">低</text>
+      </div>
+      <div class="sn" style="background-color: {{ sensLevel === 'mid' ? '#0D6EFF' : 'transparent' }};" @click="setSens('mid')">
+        <text class="f snT">中</text>
+      </div>
+      <div class="sn" style="background-color: {{ sensLevel === 'high' ? '#0D6EFF' : 'transparent' }};" @click="setSens('high')">
+        <text class="f snT">高</text>
+      </div>
+    </div>
+    <text class="f sensDesc">{{ sensDesc }}</text>
+
     <backbtn></backbtn>
   </div>
 </template>
@@ -31,9 +46,9 @@
 <style>
 @import '../../common/styles/theme.css';
 /* 卡片是绝对定位 → 卡片里的绝对定位子元素以「卡片」为基准，不是页面 */
-.card { position: absolute; left: 3px; width: 206px; height: 150px; border-radius: 26px; background-color: #1A1A1A; }
-.cardGun { top: 92px; }
-.cardHoop { top: 250px; }
+.card { position: absolute; left: 3px; width: 206px; height: 108px; border-radius: 26px; background-color: #1A1A1A; }
+.cardGun { top: 90px; }
+.cardHoop { top: 206px; }
 .xh { position: absolute; left: 20px; top: 28px; width: 48px; height: 48px; border-radius: 24px; border-width: 2px; border-style: solid; border-color: #0D6EFF; }
 .xhDot { position: absolute; left: 41px; top: 49px; width: 6px; height: 6px; border-radius: 3px; background-color: #0D6EFF; }
 .board { position: absolute; left: 20px; top: 20px; width: 56px; height: 44px; border-radius: 6px; background-color: #222222; border-width: 2px; border-style: solid; border-color: #3A3A3A; }
@@ -45,15 +60,24 @@
 .cTitle2 { position: absolute; left: 84px; top: 18px; width: 114px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
 .cDesc3 { position: absolute; left: 84px; top: 48px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.6); }
 .cDesc4 { position: absolute; left: 84px; top: 70px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
-.hint { position: absolute; left: 6px; top: 404px; width: 200px; height: 60px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
+.hint { position: absolute; left: 6px; top: 322px; width: 200px; height: 60px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
+/* 灵敏度三档：低 / 中 / 高 */
+.sensRow { position: absolute; left: 6px; top: 386px; width: 200px; height: 32px; flex-direction: row; align-items: center; border-radius: 16px; background-color: #1A1A1A; padding: 3px; }
+.sensLabel { width: 44px; height: 26px; line-height: 26px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.45); }
+.sn { flex: 1; height: 26px; margin-right: 4px; border-radius: 13px; align-items: center; justify-content: center; }
+.snT { font-size: 14px; color: #FFFFFF; }
+.sensDesc { position: absolute; left: 6px; top: 418px; width: 200px; height: 16px; line-height: 16px; text-align: center; font-size: 11px; color: rgba(255,255,255,0.35); }
 </style>
 
 <script>
 import g from '../../utils/g'
+import motionSensitivity from '../../utils/motionSensitivity'
 
 export default {
   data: {
     clock: '--:--',
+    sensLevel: motionSensitivity.DEFAULT_LEVEL,
+    sensDesc: motionSensitivity.desc(motionSensitivity.DEFAULT_LEVEL),
     _ck: null
   },
   onShow() {
@@ -61,6 +85,14 @@ export default {
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
+
+    // 读回上次选的灵敏度（没存过就是默认「中」）
+    g.kv.init(() => {
+      const lv = motionSensitivity.normalize(g.kv.get(motionSensitivity.KV_KEY, motionSensitivity.DEFAULT_LEVEL))
+      if (!page.$valid) return
+      page.sensLevel = lv
+      page.sensDesc = motionSensitivity.desc(lv)
+    })
   },
   onHide() {
     this.unsub()
@@ -70,6 +102,14 @@ export default {
   },
   unsub() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  // 选灵敏度：立刻存盘，进游戏时按这档的阈值判定
+  setSens(level) {
+    const lv = motionSensitivity.normalize(level)
+    g.haptic.short()
+    this.sensLevel = lv
+    this.sensDesc = motionSensitivity.desc(lv)
+    g.kv.set(motionSensitivity.KV_KEY, lv)
   },
   openGun() {
     g.haptic.short()

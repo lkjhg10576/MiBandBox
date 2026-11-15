@@ -54,6 +54,7 @@ import sensor from '@system.sensor'
 import brightness from '@system.brightness'
 import motionCore from '../../../utils/motionCore'
 import motionHoop from '../../../utils/motionHoop'
+import motionSensitivity from '../../../utils/motionSensitivity'
 import counter from '../../../utils/counter'
 
 const BEST_KEY = 'motionHoopBest'
@@ -70,6 +71,7 @@ const BALL_STEP_MS = 55
 
 let core = null
 let hoop = null
+let sensLevel = motionSensitivity.DEFAULT_LEVEL
 let lastStatus = ''
 let lastScore = -1
 let animTimers = []
@@ -108,11 +110,19 @@ export default {
     sensorOk = true
     this.triedUi = false
 
-    core = motionCore.createMotionCore()
-    hoop = motionHoop.createHoop()
+    sensLevel = motionSensitivity.DEFAULT_LEVEL
+    core = motionCore.createMotionCore(motionSensitivity.coreOptions(sensLevel))
+    hoop = motionHoop.createHoop(motionSensitivity.hoopOptions(sensLevel))
 
     g.kv.init(() => {
       this.best = g.kv.get(BEST_KEY, 0) || 0
+      const level = motionSensitivity.normalize(g.kv.get(motionSensitivity.KV_KEY, motionSensitivity.DEFAULT_LEVEL))
+      if (level !== sensLevel) {
+        // 存档里的档位不是默认：准备姿势与触发阈值都不同，按该档重建内核与状态机
+        sensLevel = level
+        core = motionCore.createMotionCore(motionSensitivity.coreOptions(level))
+        hoop = motionHoop.createHoop(motionSensitivity.hoopOptions(level))
+      }
     })
 
     brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
@@ -248,7 +258,8 @@ export default {
         g.kv.set(BEST_KEY, s.score)
       }
     }
-    let text = '手腕自然下垂'
+    // 待命时顺带报当前灵敏度，好让玩家知道这局用的是哪一档阈值
+    let text = '手腕自然下垂 · 灵敏度' + motionSensitivity.label(sensLevel)
     let color = COLOR_IDLE
     if (!sensorOk) {
       text = '传感器不可用'

@@ -69,6 +69,7 @@ import sensor from '@system.sensor'
 import brightness from '@system.brightness'
 import motionCore from '../../../utils/motionCore'
 import motionGun from '../../../utils/motionGun'
+import motionSensitivity from '../../../utils/motionSensitivity'
 
 const RELOAD_KEY = 'motionGunReload'
 const COLOR_IDLE = '#0D6EFF'
@@ -79,6 +80,7 @@ const COLOR_FIRE = '#FFD166'
 // 页面对象不能同时有 data 与 private（Vela 运行时会抛错），所以不用 private。
 let core = null
 let gun = null
+let sensLevel = motionSensitivity.DEFAULT_LEVEL
 let lastStatus = ''
 let lastAmmo = -2
 let lastShots = -1
@@ -126,12 +128,22 @@ export default {
     sensorOk = true
     this.triedUi = false
 
-    core = motionCore.createMotionCore()
-    gun = motionGun.createGun({ reloadOn: true })
+    sensLevel = motionSensitivity.DEFAULT_LEVEL
+    core = motionCore.createMotionCore(motionSensitivity.coreOptions(sensLevel))
+    gun = motionGun.createGun(Object.assign({ reloadOn: true }, motionSensitivity.gunOptions(sensLevel)))
 
     g.kv.init(() => {
       const saved = g.kv.get(RELOAD_KEY, true)
-      gun.setReload(saved !== false)
+      const reloadOn = saved !== false
+      const level = motionSensitivity.normalize(g.kv.get(motionSensitivity.KV_KEY, motionSensitivity.DEFAULT_LEVEL))
+      if (level !== sensLevel) {
+        // 存档里的档位不是默认：准备姿势与触发阈值都不同，按该档重建内核与状态机
+        sensLevel = level
+        core = motionCore.createMotionCore(motionSensitivity.coreOptions(level))
+        gun = motionGun.createGun(Object.assign({ reloadOn: reloadOn }, motionSensitivity.gunOptions(level)))
+      } else {
+        gun.setReload(reloadOn)
+      }
       this.apply()
     })
 
@@ -250,7 +262,8 @@ export default {
       lastEmpty = empty
     }
 
-    let text = '手腕自然下垂'
+    // 待命时顺带报当前灵敏度，好让玩家知道这局用的是哪一档阈值
+    let text = '手腕自然下垂 · 灵敏度' + motionSensitivity.label(sensLevel)
     let color = 'rgba(255,255,255,0.45)'
     if (!sensorOk) {
       text = '传感器不可用'

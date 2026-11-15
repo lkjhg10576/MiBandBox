@@ -17,7 +17,7 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>Package <code>com.miband.bandbox</code> · Version <code>0.1.0</code> (versionCode 251) · Built with Vela JS Quick Apps</p>
+  <p>Package <code>com.miband.bandbox</code> · Version <code>0.1.0</code> (versionCode 252) · Built with Vela JS Quick Apps</p>
 </div>
 
 <img src="assets/promo/hero-en.jpg" alt="BandBox: 37 local tools for Xiaomi Band" />
@@ -117,7 +117,7 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 | Marquee | Text, size, speed and colour; scrolls horizontally in portrait, rotates 90° in landscape |
 | Lyrics | Local lyrics with auto-scroll in portrait and landscape, plus "transfer from phone" |
 | Level | Dual-axis tilt dot with a crosshair, calibratable; four tiers (green / blue / orange / red) follow the tilt |
-| Motion games | Accelerometer mini-games: Motion pistol (raise to aim, flick to fire, 5-round magazine with optional reload) and Air basketball (raise your hand, throw up, automatic scoring); vibration feedback for ready and score, screen stays on while playing |
+| Motion games | Accelerometer mini-games: Motion pistol (raise to aim, flick to fire, 5-round magazine with optional reload) and Air basketball (raise your hand, throw up, automatic scoring); vibration feedback for ready and score, screen stays on while playing. Sensitivity has three levels (low/mid/high), set at the bottom of the game picker and remembered; it sets how strict the ready pose must be and how big a motion is needed to trigger |
 | Book of answers | A random answer, revealed with a fade |
 | Wooden fish | Hand-drawn wooden fish with daily and total counters, auto-strike |
 | Vibrator | Short / long / rhythmic patterns, adjustable interval |
