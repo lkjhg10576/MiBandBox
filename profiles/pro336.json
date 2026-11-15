@@ -602,7 +602,6 @@
       ["width: 206px", "width: 330px"],
       ["width: 194px", "width: 318px"],
       ["width: 116px", "width: 240px"],
-      ["const ADV_H = 500", "const ADV_H = 408"],
       ["exprW: 188,", "exprW: 312,"],
       ["exprBaseW: 188,", "exprBaseW: 312,"],
       ["scrollW: 188,", "scrollW: 312,"],

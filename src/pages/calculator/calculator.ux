@@ -183,9 +183,35 @@ const CONTINUE = [
   '^2', '^3', '°', '\n'
 ]
 
-/** 内容高度估值，真机验收时微调 */
-const BASE_H = 546
-const ADV_H = 500
+/** 纵向滚动的内容高度：必须 ≥ 实际渲染高度，否则底部被裁掉、且滚不过去
+ *  （Pro 曾把 ADV_H 估成 408、实际 500，三个开关只露出第二个，第三个点不到）。
+ *  这里逐段按 CSS 排版累加，不写死总数：改 CSS 高度时下面常量跟着改即可，
+ *  两机型行数相同（KEYS_PER_ROW 一致），也就不必各估一份。
+ *  发行门禁 R10 会拿 CSS 反查这些常量，改了 CSS 忘了改这里会直接拦下构建。 */
+const EXPR_H = 42        // .exprArea 高
+const PREVIEW_H = 50     // .preview 高 46 + 上下 margin 2×2
+const KEY_ROW_H = 46     // .key 高 42 + 上下 margin 2×2
+const SEC_H = 22         // .secLabel 高
+const HINT_H = 20        // .solveHint 高
+const SW_H = 50          // .swRow 高 46 + 上下 margin 2×2
+const TAIL_H = 24        // .tail 高
+const NO_SOL_H = 28      // .noSol 高 24 + 上 margin 4
+const R_LINE_H = 22      // .rLine 高（结果卡每行）
+const CARD_H = 20        // .resultCard padding 8×2 + 上 margin 4
+const SLACK_H = 4        // 余量：实测渲染比 CSS 盒子高 1~2px，留 4px 保险
+const SEC_COUNT = 3      // .secLabel 个数（科学函数 / 高级函数 / 方程不等式）
+const SW_COUNT = 3       // .swRow 个数（高级计算 / 精确形式 / 按键振动）
+/** 一行几个键：.pad 宽 ÷ (.key 宽 + 左右 margin 2×2)
+ *  band10 192÷48=4，Pro 316÷79=4 —— 行数相同，两机型共用一套高度常量 */
+const KEYS_PER_ROW = 4
+
+/** n 个键排进 .pad 占多高 */
+function padH(n) {
+  return Math.ceil(n / KEYS_PER_ROW) * KEY_ROW_H
+}
+
+const BASE_H = EXPR_H + PREVIEW_H + padH(LAYOUT.length) + SW_COUNT * SW_H + TAIL_H + SLACK_H
+const ADV_H = SEC_COUNT * SEC_H + padH(makeSciLayout(true).length) + padH(ADV_LAYOUT.length) + padH(EQ_LAYOUT.length) + HINT_H
 
 export default {
   data: {
@@ -262,8 +288,8 @@ export default {
     } catch (e) {}
   },
   recalcInner() {
-    const card = this.showResultCard ? this.resultLines.length * 22 + 20 : this.solveNoSolution ? 24 : 0
-    const extraH = this.exprBoxH - 42
+    const card = this.showResultCard ? this.resultLines.length * R_LINE_H + CARD_H : this.solveNoSolution ? NO_SOL_H : 0
+    const extraH = this.exprBoxH - EXPR_H
     this.innerH = BASE_H + (this.advOn ? ADV_H + card : 0) + extraH
   },
   clearResult() {

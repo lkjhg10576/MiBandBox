@@ -14,6 +14,7 @@
  *   R7 模板事件不得撞 Node 全局  编译器对 globalThis 上的标识符不加 _vm_. 前缀，点击静默失效
  *   R8 profile 物化一致性        源码树物化状态必须 == BANDBOX_PROFILE（防 band10 包混入 pro 令牌值）
  *   R9 资源尺寸匹配 profile      shadow.png 等随 profile 变尺寸的资源，IHDR 必须等于 profile 要求
+ *   R10 计算器几何常量与 CSS 自洽  内容高度（BASE_H/ADV_H）由几何常量累加，常量与 CSS 对不上就拦下构建
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
@@ -238,6 +239,67 @@ for (const f of walk('src', '.ux')) {
         fail('R9', 'src/common/shadow.png', `尺寸 ${iw}x${ih} != profile ${want} 要求的 ${w}x${h}（物化后又被手改？）`)
       }
     }
+  }
+}
+
+// ---------- R10 计算器几何常量与 CSS 自洽 ----------
+// 竖向滚动的内容高度（BASE_H / ADV_H）不是写死的总数，而是按 CSS 盒子逐段累加；
+// 累加用的常量必须与 CSS 对得上。Pro 曾把 ADV_H 估成 408（实际 500），
+// 三个开关只露出第二个、第三个点不到。改了 CSS 高度/宽度忘了改常量，这里拦下构建。
+{
+  const rel = 'src/pages/calculator/calculator.ux'
+  if (fs.existsSync(path.join(ROOT, rel))) {
+    const src = read(rel)
+    /** 取某条 CSS 规则的声明体；.key 不会误命中 .keyVar（要求 class 名后紧跟空格+{） */
+    const rule = (cls) => {
+      const m = src.match(new RegExp('\\.' + cls + ' \\{([^}]*)\\}'))
+      return m ? m[1] : null
+    }
+    const px = (body, prop) => {
+      if (!body) return null
+      const m = body.match(new RegExp(prop + ': (\\d+)px'))
+      return m ? Number(m[1]) : null
+    }
+    const konst = (name) => {
+      const m = src.match(new RegExp('const ' + name + ' = (\\d+)'))
+      return m ? Number(m[1]) : null
+    }
+    const expect = (name, want, why) => {
+      if (want === null) return
+      const got = konst(name)
+      if (got === null) fail('R10', rel, `找不到常量 ${name}（${why}）`)
+      else if (got !== want) fail('R10', rel, `${name} = ${got}，应为 ${want}：${why}`)
+    }
+    const body = (cls) => {
+      const b = rule(cls)
+      if (!b) fail('R10', rel, `CSS 里找不到 .${cls} 规则`)
+      return b
+    }
+    const key = body('key'), pad = body('pad'), exprArea = body('exprArea'),
+      preview = body('preview'), secLabel = body('secLabel'), solveHint = body('solveHint'),
+      swRow = body('swRow'), tail = body('tail'), noSol = body('noSol'),
+      rLine = body('rLine'), resultCard = body('resultCard')
+
+    // 一行几个键：.pad 宽 ÷ (.key 宽 + 左右 margin 2×2)
+    const keyW = px(key, 'width'), keyH = px(key, 'height'), keyM = px(key, 'margin'), padW = px(pad, 'width')
+    if (keyW !== null && keyM !== null && padW !== null) {
+      expect('KEYS_PER_ROW', Math.floor(padW / (keyW + 2 * keyM)),
+        `.pad ${padW}px ÷ (.key ${keyW}px + margin ${keyM}px×2)`)
+    }
+    expect('EXPR_H', px(exprArea, 'height'), '.exprArea 高')
+    expect('PREVIEW_H', px(preview, 'height') === null || px(preview, 'margin') === null ? null : px(preview, 'height') + 2 * px(preview, 'margin'), '.preview 高 + 上下 margin')
+    expect('KEY_ROW_H', keyH === null || keyM === null ? null : keyH + 2 * keyM, '.key 高 + 上下 margin')
+    expect('SEC_H', px(secLabel, 'height'), '.secLabel 高')
+    expect('HINT_H', px(solveHint, 'height'), '.solveHint 高')
+    expect('SW_H', px(swRow, 'height') === null || px(swRow, 'margin') === null ? null : px(swRow, 'height') + 2 * px(swRow, 'margin'), '.swRow 高 + 上下 margin')
+    expect('TAIL_H', px(tail, 'height'), '.tail 高')
+    expect('NO_SOL_H', px(noSol, 'height') === null || px(noSol, 'margin') === null ? null : px(noSol, 'height') + px(noSol, 'margin'), '.noSol 高 + 上 margin')
+    expect('R_LINE_H', px(rLine, 'height'), '.rLine 高')
+    expect('CARD_H', px(resultCard, 'padding') === null || px(resultCard, 'margin') === null ? null : 2 * px(resultCard, 'padding') + px(resultCard, 'margin'), '.resultCard padding×2 + 上 margin')
+    // 模板里实际渲染的段数
+    const count = (re) => (src.match(re) || []).length
+    expect('SEC_COUNT', count(/class="f secLabel"/g), '模板里的 .secLabel 个数')
+    expect('SW_COUNT', count(/class="swRow"/g), '模板里的 .swRow 个数')
   }
 }
 
