@@ -54,7 +54,7 @@
       <text class="f stVal stV2">{{ hoopTotal }}</text>
     </div>
 
-    <!-- 翻页指示点：左点=游戏列表，右点=统计数据，页面横向滑动切换 -->
+    <!-- 翻页指示点：上点=游戏列表，下点=统计数据，页面上下滑动切换（横向留给系统返回手势） -->
     <div class="dots">
       <div class="dot" style="background-color: {{ showStats ? '#333333' : '#0D6EFF' }};"></div>
       <div class="dot" style="background-color: {{ showStats ? '#0D6EFF' : '#333333' }};"></div>
@@ -67,7 +67,7 @@
 <style>
 @import '../../common/styles/theme.css';
 /* 卡片是绝对定位 → 卡片里的绝对定位子元素以「卡片」为基准，不是页面 */
-.card { position: absolute; left: 3px; width: 206px; height: 108px; border-radius: 26px; background-color: #1A1A1A; }
+.card { position: absolute; left: 3px; width: 196px; height: 108px; border-radius: 26px; background-color: #1A1A1A; }
 .cardGun { top: 90px; }
 .cardHoop { top: 206px; }
 .xh { position: absolute; left: 20px; top: 28px; width: 48px; height: 48px; border-radius: 24px; border-width: 2px; border-style: solid; border-color: #0D6EFF; }
@@ -97,9 +97,9 @@
 .stVal { position: absolute; left: 120px; width: 66px; height: 20px; line-height: 20px; font-size: 16px; text-align: right; color: #FFFFFF; }
 .stV1 { top: 48px; }
 .stV2 { top: 70px; }
-/* 翻页指示点 */
-.dots { position: absolute; left: 0px; top: 434px; width: 212px; height: 8px; flex-direction: row; justify-content: center; }
-.dot { width: 8px; height: 8px; border-radius: 4px; margin-left: 5px; margin-right: 5px; }
+/* 翻页指示点：竖排在屏幕右侧（避开横向滑动，别抢系统返回手势），纵向对齐两张卡片的中线 */
+.dots { position: absolute; left: 203px; top: 190px; width: 6px; height: 24px; flex-direction: column; align-items: center; }
+.dot { width: 6px; height: 6px; border-radius: 3px; margin-top: 3px; margin-bottom: 3px; }
 </style>
 
 <script>
@@ -173,8 +173,8 @@ export default {
     const dy = t ? (typeof t.pageY === 'number' ? t.pageY : t.clientY) - this._sy : 0
     this._sx = null
     this._sy = null
-    // 横向明显位移且远大于纵向才算翻页：点卡片、点灵敏度不受影响；方向不区分，小屏好命中
-    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+    // 纵向明显位移且远大于横向才算翻页：点卡片、点灵敏度不受影响；方向不区分，小屏好命中
+    if (Math.abs(dy) < 60 || Math.abs(dy) < Math.abs(dx) * 1.5) return
     this.toggleStats()
   },
   // 翻到统计页时现读一次存档：刚在游戏里打出的数立刻反映
