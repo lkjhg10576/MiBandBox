@@ -70,6 +70,7 @@ import brightness from '@system.brightness'
 import motionCore from '../../../utils/motionCore'
 import motionGun from '../../../utils/motionGun'
 import motionSensitivity from '../../../utils/motionSensitivity'
+import motionStats from '../../../utils/motionStats'
 
 const RELOAD_KEY = 'motionGunReload'
 const COLOR_IDLE = '#0D6EFF'
@@ -80,6 +81,7 @@ const COLOR_FIRE = '#FFD166'
 // 页面对象不能同时有 data 与 private（Vela 运行时会抛错），所以不用 private。
 let core = null
 let gun = null
+let stats = null   // 体感统计存档（kv 读盘完成后才计数，见 handle）
 let sensLevel = motionSensitivity.DEFAULT_LEVEL
 let lastStatus = ''
 let lastAmmo = -2
@@ -135,6 +137,7 @@ export default {
     g.kv.init(() => {
       const saved = g.kv.get(RELOAD_KEY, true)
       const reloadOn = saved !== false
+      stats = motionStats.load(g.kv.get(motionStats.KV_KEY, null))
       const level = motionSensitivity.normalize(g.kv.get(motionSensitivity.KV_KEY, motionSensitivity.DEFAULT_LEVEL))
       if (level !== sensLevel) {
         // 存档里的档位不是默认：准备姿势与触发阈值都不同，按该档重建内核与状态机
@@ -210,11 +213,17 @@ export default {
   handle(ev) {
     if (!ev) return
     if (ev.type === 'ready') {
-      g.haptic.long()
+      // 就绪用 1s 的就绪振，跟开枪的长振明确区分
+      g.haptic.ready()
       this.aimColor = COLOR_READY
     } else if (ev.type === 'shot') {
       g.haptic.long()
       this.fireFlash()
+      // 计入持久统计（今日/总计已射击）；存档没读好前不开张，丢不了正常局
+      if (stats) {
+        stats = motionStats.bump(stats, 'gun')
+        g.kv.set(motionStats.KV_KEY, stats)
+      }
     } else if (ev.type === 'empty') {
       // 没子弹了：快速短振两次
       g.haptic.pattern(2, 120, 'short')

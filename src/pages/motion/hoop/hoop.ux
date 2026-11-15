@@ -55,6 +55,7 @@ import brightness from '@system.brightness'
 import motionCore from '../../../utils/motionCore'
 import motionHoop from '../../../utils/motionHoop'
 import motionSensitivity from '../../../utils/motionSensitivity'
+import motionStats from '../../../utils/motionStats'
 import counter from '../../../utils/counter'
 
 const BEST_KEY = 'motionHoopBest'
@@ -71,6 +72,7 @@ const BALL_STEP_MS = 55
 
 let core = null
 let hoop = null
+let stats = null   // 体感统计存档（kv 读盘完成后才计数，见 handle）
 let sensLevel = motionSensitivity.DEFAULT_LEVEL
 let lastStatus = ''
 let lastScore = -1
@@ -116,6 +118,7 @@ export default {
 
     g.kv.init(() => {
       this.best = g.kv.get(BEST_KEY, 0) || 0
+      stats = motionStats.load(g.kv.get(motionStats.KV_KEY, null))
       const level = motionSensitivity.normalize(g.kv.get(motionSensitivity.KV_KEY, motionSensitivity.DEFAULT_LEVEL))
       if (level !== sensLevel) {
         // 存档里的档位不是默认：准备姿势与触发阈值都不同，按该档重建内核与状态机
@@ -194,10 +197,16 @@ export default {
   handle(ev) {
     if (!ev) return
     if (ev.type === 'ready') {
-      g.haptic.long()
+      // 就绪用 1s 的就绪振，跟进球的长振明确区分
+      g.haptic.ready()
     } else if (ev.type === 'score') {
       g.haptic.long()
       this.hoopIn()
+      // 计入持久统计（今日/总计已投进）；存档没读好前不开张，丢不了正常局
+      if (stats) {
+        stats = motionStats.bump(stats, 'hoop')
+        g.kv.set(motionStats.KV_KEY, stats)
+      }
     }
   },
   // 进球动画：球飞向篮筐 → 筐变绿 → 浮出 +1

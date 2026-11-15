@@ -26,13 +26,6 @@ export const LEVELS = ['low', 'mid', 'high']
 /** 档位中文名 */
 export const LABELS = { low: '低', mid: '中', high: '高' }
 
-/** 每档一句话说明：动作幅度要求 · 准备姿势严格程度 */
-export const DESCS = {
-  low: '动作要大 · 姿势宽松',
-  mid: '动作适中 · 姿势标准',
-  high: '动作要小 · 姿势严格'
-}
-
 /** 默认档位 */
 export const DEFAULT_LEVEL = 'mid'
 
@@ -82,11 +75,6 @@ export function label(level) {
   return LABELS[normalize(level)]
 }
 
-/** 档位一句话说明 */
-export function desc(level) {
-  return DESCS[normalize(level)]
-}
-
 /** 体感内核（准备姿势）的参数覆盖 */
 export function coreOptions(level) {
   const p = PARAMS[normalize(level)].core
@@ -125,13 +113,11 @@ export function options(level) {
 export default {
   LEVELS,
   LABELS,
-  DESCS,
   DEFAULT_LEVEL,
   KV_KEY,
   isLevel,
   normalize,
   label,
-  desc,
   coreOptions,
   gunOptions,
   hoopOptions,

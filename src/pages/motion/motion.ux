@@ -2,10 +2,10 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
-    <pagehead title="体感游戏" clock="{{ clock }}"></pagehead>
+  <div class="page" @touchstart="onTouchStart" @touchend="onTouchEnd">
+    <pagehead title="{{ pageTitle }}" clock="{{ clock }}"></pagehead>
 
-    <div class="card cardGun" @click="openGun">
+    <div class="card cardGun" if="{{ !showStats }}" @click="openGun">
       <div class="xh"></div>
       <div class="xhDot"></div>
       <text class="f cTitle1">体感手枪</text>
@@ -13,7 +13,7 @@
       <text class="f cDesc2">5发弹匣·可关换弹</text>
     </div>
 
-    <div class="card cardHoop" @click="openHoop">
+    <div class="card cardHoop" if="{{ !showStats }}" @click="openHoop">
       <div class="board"></div>
       <div class="rim"></div>
       <div class="ball"></div>
@@ -22,10 +22,10 @@
       <text class="f cDesc4">投进一球+1分</text>
     </div>
 
-    <text class="f hint">进游戏时手臂自然下垂，抬手稳住后长振提示就绪。两个游戏全程屏幕常亮。</text>
+    <text class="f hint" if="{{ !showStats }}">进游戏时手臂自然下垂，抬手稳住后长振提示就绪。两个游戏全程屏幕常亮。</text>
 
     <!-- 灵敏度：决定准备姿势的标准程度与触发所需的动作幅度，选完即存盘 -->
-    <div class="sensRow">
+    <div class="sensRow" if="{{ !showStats }}">
       <text class="f sensLabel">灵敏度</text>
       <div class="sn" style="background-color: {{ sensLevel === 'low' ? '#0D6EFF' : 'transparent' }};" @click="setSens('low')">
         <text class="f snT">低</text>
@@ -37,7 +37,28 @@
         <text class="f snT">高</text>
       </div>
     </div>
-    <text class="f sensDesc">{{ sensDesc }}</text>
+
+    <!-- 统计页：与游戏卡片同位，翻页时卡片不跳动；今日数跨天自动清零 -->
+    <div class="card statCard1" if="{{ showStats }}">
+      <text class="f stTitle">体感手枪</text>
+      <text class="f stLabel stL1">今日已射击</text>
+      <text class="f stVal stV1">{{ gunToday }}</text>
+      <text class="f stLabel stL2">总计已射击</text>
+      <text class="f stVal stV2">{{ gunTotal }}</text>
+    </div>
+    <div class="card statCard2" if="{{ showStats }}">
+      <text class="f stTitle">空气投篮</text>
+      <text class="f stLabel stL1">今日已投进</text>
+      <text class="f stVal stV1">{{ hoopToday }}</text>
+      <text class="f stLabel stL2">总计已投进</text>
+      <text class="f stVal stV2">{{ hoopTotal }}</text>
+    </div>
+
+    <!-- 翻页指示点：左点=游戏列表，右点=统计数据，页面横向滑动切换 -->
+    <div class="dots">
+      <div class="dot" style="background-color: {{ showStats ? '#333333' : '#0D6EFF' }};"></div>
+      <div class="dot" style="background-color: {{ showStats ? '#0D6EFF' : '#333333' }};"></div>
+    </div>
 
     <backbtn></backbtn>
   </div>
@@ -66,32 +87,55 @@
 .sensLabel { width: 44px; height: 26px; line-height: 26px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.45); }
 .sn { flex: 1; height: 26px; margin-right: 4px; border-radius: 13px; align-items: center; justify-content: center; }
 .snT { font-size: 14px; color: #FFFFFF; }
-.sensDesc { position: absolute; left: 6px; top: 418px; width: 200px; height: 16px; line-height: 16px; text-align: center; font-size: 11px; color: rgba(255,255,255,0.35); }
+/* 统计卡：标题与两行数字，标签靠左、数值靠右 */
+.statCard1 { top: 90px; }
+.statCard2 { top: 206px; }
+.stTitle { position: absolute; left: 20px; top: 18px; width: 166px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
+.stLabel { position: absolute; left: 20px; width: 120px; height: 20px; line-height: 20px; font-size: 13px; color: rgba(255,255,255,0.6); }
+.stL1 { top: 48px; }
+.stL2 { top: 70px; }
+.stVal { position: absolute; left: 120px; width: 66px; height: 20px; line-height: 20px; font-size: 16px; text-align: right; color: #FFFFFF; }
+.stV1 { top: 48px; }
+.stV2 { top: 70px; }
+/* 翻页指示点 */
+.dots { position: absolute; left: 0px; top: 434px; width: 212px; height: 8px; flex-direction: row; justify-content: center; }
+.dot { width: 8px; height: 8px; border-radius: 4px; margin-left: 5px; margin-right: 5px; }
 </style>
 
 <script>
 import g from '../../utils/g'
 import motionSensitivity from '../../utils/motionSensitivity'
+import motionStats from '../../utils/motionStats'
 
 export default {
   data: {
     clock: '--:--',
+    pageTitle: '体感游戏',
+    showStats: false,
+    gunToday: 0,
+    gunTotal: 0,
+    hoopToday: 0,
+    hoopTotal: 0,
     sensLevel: motionSensitivity.DEFAULT_LEVEL,
-    sensDesc: motionSensitivity.desc(motionSensitivity.DEFAULT_LEVEL),
-    _ck: null
+    _ck: null,
+    _sx: null,
+    _sy: null
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
+    // 每次进页都从游戏列表这页开始
+    this.showStats = false
+    this.pageTitle = '体感游戏'
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
 
-    // 读回上次选的灵敏度（没存过就是默认「中」）
+    // 读回灵敏度与体感统计（没存过就是默认值/全零）
     g.kv.init(() => {
       const lv = motionSensitivity.normalize(g.kv.get(motionSensitivity.KV_KEY, motionSensitivity.DEFAULT_LEVEL))
       if (!page.$valid) return
       page.sensLevel = lv
-      page.sensDesc = motionSensitivity.desc(lv)
+      page.applyStats(motionStats.load(g.kv.get(motionStats.KV_KEY, null)))
     })
   },
   onHide() {
@@ -108,8 +152,43 @@ export default {
     const lv = motionSensitivity.normalize(level)
     g.haptic.short()
     this.sensLevel = lv
-    this.sensDesc = motionSensitivity.desc(lv)
     g.kv.set(motionSensitivity.KV_KEY, lv)
+  },
+  applyStats(s) {
+    this.gunToday = s.gunToday
+    this.gunTotal = s.gunTotal
+    this.hoopToday = s.hoopToday
+    this.hoopTotal = s.hoopTotal
+  },
+  onTouchStart(e) {
+    const t = e && e.changedTouches && e.changedTouches[0]
+    if (!t) return
+    this._sx = typeof t.pageX === 'number' ? t.pageX : t.clientX
+    this._sy = typeof t.pageY === 'number' ? t.pageY : t.clientY
+  },
+  onTouchEnd(e) {
+    if (this._sx === null || this._sx === undefined) return
+    const t = e && e.changedTouches && e.changedTouches[0]
+    const dx = t ? (typeof t.pageX === 'number' ? t.pageX : t.clientX) - this._sx : 0
+    const dy = t ? (typeof t.pageY === 'number' ? t.pageY : t.clientY) - this._sy : 0
+    this._sx = null
+    this._sy = null
+    // 横向明显位移且远大于纵向才算翻页：点卡片、点灵敏度不受影响；方向不区分，小屏好命中
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return
+    this.toggleStats()
+  },
+  // 翻到统计页时现读一次存档：刚在游戏里打出的数立刻反映
+  toggleStats() {
+    g.haptic.short()
+    this.showStats = !this.showStats
+    this.pageTitle = this.showStats ? '统计数据' : '体感游戏'
+    if (this.showStats) {
+      const page = this
+      g.kv.init(() => {
+        if (!page.$valid) return
+        page.applyStats(motionStats.load(g.kv.get(motionStats.KV_KEY, null)))
+      })
+    }
   },
   openGun() {
     g.haptic.short()

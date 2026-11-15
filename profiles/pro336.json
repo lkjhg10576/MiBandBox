@@ -535,7 +535,9 @@
     "src/pages/motion/motion.ux": [
       ["width: 206px", "width: 330px"],
       ["width: 114px", "width: 238px"],
-      ["width: 200px", "width: 324px"]
+      ["width: 200px", "width: 324px"],
+      ["left: 120px", "left: 244px"],
+      ["width: 212px", "width: 336px"]
     ],
     "src/pages/motion/gun/gun.ux": [
       ["width: 212px", "width: 336px"],

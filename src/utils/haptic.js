@@ -56,6 +56,22 @@ function long() {
   vibrateMode('long')
 }
 
+/** 「已就绪」提示振的目标时长：拉长到 1s，跟普通长振明确拉开差距 */
+const READY_MS = 1000
+
+/**
+ * 就绪提示振：约 1s 的长震动（体感游戏「已就绪」用，比普通长振更明确）。
+ * S5 等支持定长脉冲的机型一记振满 1s；其余机型波形时长固定，
+ * 用三记紧挨着的长振拼出约 1s（停顿极短，体感接近连续）。
+ */
+function ready() {
+  if (canStart()) {
+    cancelTask()
+    if (startPulse(READY_MS, 1)) return
+  }
+  pattern(3, Math.round(READY_MS / 3), 'long')
+}
+
 /** S5 专属的定长脉冲任务句柄 */
 let taskId = 0
 
@@ -141,4 +157,4 @@ function stop() {
   cancelTask()
 }
 
-export default { short, long, pattern, stop, beat, label, LEVELS, LEVEL_ORDER }
+export default { short, long, ready, pattern, stop, beat, label, LEVELS, LEVEL_ORDER }
