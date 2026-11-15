@@ -421,7 +421,9 @@
       ["width: 174px", "width: 298px"],
       ["width: 212px", "width: 336px"],
       [".fieldKb {}", ".fieldKb { top: 48px; }"],
-      [".fLabelKb {}", ".fLabelKb { padding-left: 48px; width: 220px; }"]
+      ["<pagehead title=\"编辑歌词\" clock=\"{{ clock }}\"></pagehead>", "<pagehead if=\"{{ !kbShow }}\" title=\"编辑歌词\" clock=\"{{ clock }}\"></pagehead>"],
+      ["<div class=\"save\" @click=\"save\">", "<div class=\"save\" if=\"{{ !kbShow }}\" @click=\"save\">"],
+      ["<backbtn></backbtn>", "<backbtn if=\"{{ !kbShow }}\"></backbtn>"]
     ],
     "src/pages/lyrics/more/more.ux": [
       ["width: 206px", "width: 330px"],
