@@ -532,6 +532,45 @@
       ["width: 212px", "width: 336px"],
       ["left: 66px", "left: 128px"]
     ],
+    "src/pages/motion/motion.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 114px", "width: 238px"],
+      ["width: 200px", "width: 324px"],
+      ["top: 404px", "top: 374px"]
+    ],
+    "src/pages/motion/gun/gun.ux": [
+      ["width: 212px", "width: 336px"],
+      ["left: 66px", "left: 128px"],
+      ["left: 102px", "left: 164px"],
+      ["left: 105px", "left: 167px"],
+      ["left: 74px", "left: 136px"],
+      ["left: 58px", "left: 120px"],
+      ["left: 78px", "left: 140px"],
+      ["left: 98px", "left: 160px"],
+      ["left: 118px", "left: 180px"],
+      ["left: 138px", "left: 200px"],
+      ["left: 48px", "left: 110px"],
+      ["left: 27px", "left: 89px"],
+      ["left: 147px", "left: 209px"],
+      ["top: 386px", "top: 366px"],
+      ["top: 420px", "top: 400px"]
+    ],
+    "src/pages/motion/hoop/hoop.ux": [
+      ["width: 212px", "width: 336px"],
+      ["left: 46px", "left: 108px"],
+      ["left: 56px", "left: 118px"],
+      ["left: 76px", "left: 138px"],
+      ["left: 105px", "left: 167px"],
+      ["left: 134px", "left: 196px"],
+      ["left: 66px", "left: 128px"],
+      ["left: 86", "left: 148"],
+      ["top: 240", "top: 220"],
+      ["top: 168", "top: 148"],
+      ["top: 286px", "top: 266px"],
+      ["top: 368px", "top: 348px"],
+      ["top: 396px", "top: 376px"],
+      ["top: 432px", "top: 412px"]
+    ],
     "src/pages/unitconvert/unitconvert.ux": [
       ["width: 206px", "width: 330px"],
       ["height: 378px", "height: 352px"],

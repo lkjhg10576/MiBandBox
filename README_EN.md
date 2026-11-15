@@ -3,7 +3,7 @@
 
   <h1>BandBox · The Xiaomi Band Toolbox</h1>
 
-  <p><b>36 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
+  <p><b>37 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
   <p>Fully offline · No fees · No accounts · No closed-source dependencies · MIT licensed</p>
 
   <p>
@@ -20,7 +20,7 @@
   <p>Package <code>com.miband.bandbox</code> · Version <code>0.1.0</code> (versionCode 248) · Built with Vela JS Quick Apps</p>
 </div>
 
-<img src="assets/promo/hero-en.jpg" alt="BandBox: 36 local tools for Xiaomi Band" />
+<img src="assets/promo/hero-en.jpg" alt="BandBox: 37 local tools for Xiaomi Band" />
 
 ---
 
@@ -28,7 +28,7 @@
 
 BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 11** (212 × 520 strip display) and the **Xiaomi Band 9 Pro / 10 Pro** (336 × 480 rectangular display). Each form factor ships as its own package (same app package name, pick the one for your band).
 
-A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-six small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
+A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-seven small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
 Everything stays on the band. **No network calls, no fees, no sign-up, no uploads.**
 
@@ -41,7 +41,7 @@ Everything stays on the band. **No network calls, no fees, no sign-up, no upload
 | Bundled fonts | **0** (uses the Band 10/11 system fonts, MiSans / MiLan Pro) |
 | License | **MIT** |
 
-> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 36 tools work exactly the same.
+> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 37 tools work exactly the same.
 
 ---
 
@@ -117,6 +117,7 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 | Marquee | Text, size, speed and colour; scrolls horizontally in portrait, rotates 90° in landscape |
 | Lyrics | Local lyrics with auto-scroll in portrait and landscape, plus "transfer from phone" |
 | Level | Dual-axis tilt dot with a crosshair, calibratable; four tiers (green / blue / orange / red) follow the tilt |
+| Motion games | Accelerometer mini-games: Motion pistol (raise to aim, flick to fire, 5-round magazine with optional reload) and Air basketball (raise your hand, throw up, automatic scoring); vibration feedback for ready and score, screen stays on while playing |
 | Book of answers | A random answer, revealed with a fade |
 | Wooden fish | Hand-drawn wooden fish with daily and total counters, auto-strike |
 | Vibrator | Short / long / rhythmic patterns, adjustable interval |

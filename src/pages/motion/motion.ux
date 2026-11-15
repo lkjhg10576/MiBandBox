@@ -1,0 +1,83 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="体感游戏" clock="{{ clock }}"></pagehead>
+
+    <div class="card cardGun" @click="openGun">
+      <div class="xh"></div>
+      <div class="xhDot"></div>
+      <text class="f cTitle1">体感手枪</text>
+      <text class="f cDesc1">平举稳住→抖腕开枪</text>
+      <text class="f cDesc2">5发弹匣·可关换弹</text>
+    </div>
+
+    <div class="card cardHoop" @click="openHoop">
+      <div class="board"></div>
+      <div class="rim"></div>
+      <div class="ball"></div>
+      <text class="f cTitle2">空气投篮</text>
+      <text class="f cDesc3">举手准备→向上投出</text>
+      <text class="f cDesc4">投进一球+1分</text>
+    </div>
+
+    <text class="f hint">进游戏时手臂自然下垂，抬手稳住后长振提示就绪。两个游戏全程屏幕常亮。</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+/* 卡片是绝对定位 → 卡片里的绝对定位子元素以「卡片」为基准，不是页面 */
+.card { position: absolute; left: 3px; width: 206px; height: 150px; border-radius: 26px; background-color: #1A1A1A; }
+.cardGun { top: 92px; }
+.cardHoop { top: 250px; }
+.xh { position: absolute; left: 20px; top: 28px; width: 48px; height: 48px; border-radius: 24px; border-width: 2px; border-style: solid; border-color: #0D6EFF; }
+.xhDot { position: absolute; left: 41px; top: 49px; width: 6px; height: 6px; border-radius: 3px; background-color: #0D6EFF; }
+.board { position: absolute; left: 20px; top: 20px; width: 56px; height: 44px; border-radius: 6px; background-color: #222222; border-width: 2px; border-style: solid; border-color: #3A3A3A; }
+.rim { position: absolute; left: 22px; top: 60px; width: 52px; height: 15px; border-radius: 8px; border-width: 3px; border-style: solid; border-color: #FF9500; }
+.ball { position: absolute; left: 41px; top: 84px; width: 16px; height: 16px; border-radius: 8px; background-color: #FF9500; }
+.cTitle1 { position: absolute; left: 84px; top: 18px; width: 114px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
+.cDesc1 { position: absolute; left: 84px; top: 48px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.6); }
+.cDesc2 { position: absolute; left: 84px; top: 70px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
+.cTitle2 { position: absolute; left: 84px; top: 18px; width: 114px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
+.cDesc3 { position: absolute; left: 84px; top: 48px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.6); }
+.cDesc4 { position: absolute; left: 84px; top: 70px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
+.hint { position: absolute; left: 6px; top: 404px; width: 200px; height: 60px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
+</style>
+
+<script>
+import g from '../../utils/g'
+
+export default {
+  data: {
+    clock: '--:--',
+    _ck: null
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+  onHide() {
+    this.unsub()
+  },
+  onDestroy() {
+    this.unsub()
+  },
+  unsub() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  openGun() {
+    g.haptic.short()
+    g.router.push('/pages/motion/gun')
+  },
+  openHoop() {
+    g.haptic.short()
+    g.router.push('/pages/motion/hoop')
+  }
+}
+</script>

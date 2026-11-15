@@ -272,6 +272,15 @@
       },
       "pages/counter": {
         "component": "counter"
+      },
+      "pages/motion": {
+        "component": "motion"
+      },
+      "pages/motion/gun": {
+        "component": "gun"
+      },
+      "pages/motion/hoop": {
+        "component": "hoop"
       }
     }
   }

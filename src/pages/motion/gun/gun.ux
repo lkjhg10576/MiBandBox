@@ -1,0 +1,312 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="体感手枪" clock="{{ clock }}"></pagehead>
+
+    <text class="f status" style="color: {{ statusColor }};">{{ status }}</text>
+
+    <div class="xh" style="border-color: {{ aimColor }};"></div>
+    <div class="xhDot" style="background-color: {{ aimColor }};"></div>
+    <div class="xhV" style="background-color: {{ aimColor }};"></div>
+    <div class="xhH" style="background-color: {{ aimColor }};"></div>
+
+    <div class="pip pip1" if="{{ reloadOn }}" style="background-color: {{ ammo >= 1 ? '#FFD166' : '#333333' }};"></div>
+    <div class="pip pip2" if="{{ reloadOn }}" style="background-color: {{ ammo >= 2 ? '#FFD166' : '#333333' }};"></div>
+    <div class="pip pip3" if="{{ reloadOn }}" style="background-color: {{ ammo >= 3 ? '#FFD166' : '#333333' }};"></div>
+    <div class="pip pip4" if="{{ reloadOn }}" style="background-color: {{ ammo >= 4 ? '#FFD166' : '#333333' }};"></div>
+    <div class="pip pip5" if="{{ reloadOn }}" style="background-color: {{ ammo >= 5 ? '#FFD166' : '#333333' }};"></div>
+
+    <text class="f ammoText">{{ ammoText }}</text>
+    <text class="f shotText">已射击 {{ shots }}</text>
+
+    <div class="reloadBtn" if="{{ reloadOn }}" style="background-color: {{ empty ? '#FF3B30' : '#262626' }};" @click="doReload">
+      <text class="f reloadT" style="color: {{ empty ? '#FFFFFF' : 'rgba(255,255,255,0.75)' }};">{{ empty ? '没弹了 · 换弹' : '换弹' }}</text>
+    </div>
+
+    <text class="f togLabel">需要换弹</text>
+    <div class="chip chipOn" style="background-color: {{ reloadOn ? '#0D6EFF' : '#262626' }};" @click="toggleReloadOn"><text class="f chipT">开</text></div>
+    <div class="chip chipOff" style="background-color: {{ reloadOn ? '#262626' : '#0D6EFF' }};" @click="toggleReloadOff"><text class="f chipT">关</text></div>
+
+    <text class="f hint">平直抬手稳住 → 长振就绪；抖腕一下 → 开枪</text>
+    <div class="reset" @click="resetCount"><text class="f resetT">{{ armed ? '再次点击确认' : '清零射击数' }}</text></div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.status { position: absolute; left: 0px; top: 90px; width: 212px; height: 26px; line-height: 26px; text-align: center; font-size: 16px; }
+.xh { position: absolute; left: 66px; top: 124px; width: 80px; height: 80px; border-radius: 40px; border-width: 2px; border-style: solid; }
+.xhDot { position: absolute; left: 102px; top: 160px; width: 8px; height: 8px; border-radius: 4px; }
+.xhV { position: absolute; left: 105px; top: 132px; width: 2px; height: 64px; }
+.xhH { position: absolute; left: 74px; top: 163px; width: 64px; height: 2px; }
+.pip { position: absolute; top: 216px; width: 16px; height: 8px; border-radius: 4px; }
+.pip1 { left: 58px; }
+.pip2 { left: 78px; }
+.pip3 { left: 98px; }
+.pip4 { left: 118px; }
+.pip5 { left: 138px; }
+.ammoText { position: absolute; left: 0px; top: 232px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.75); }
+.shotText { position: absolute; left: 0px; top: 256px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
+.reloadBtn { position: absolute; left: 48px; top: 286px; width: 116px; height: 44px; border-radius: 22px; align-items: center; justify-content: center; }
+.reloadT { font-size: 16px; }
+.togLabel { position: absolute; left: 27px; top: 344px; width: 74px; height: 28px; line-height: 28px; font-size: 15px; color: rgba(255,255,255,0.6); }
+.chip { position: absolute; top: 342px; width: 38px; height: 28px; border-radius: 14px; align-items: center; justify-content: center; }
+.chipOn { left: 105px; }
+.chipOff { left: 147px; }
+.chipT { font-size: 14px; color: #FFFFFF; }
+.hint { position: absolute; left: 0px; top: 386px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+.reset { position: absolute; left: 66px; top: 420px; width: 80px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
+.resetT { font-size: 13px; color: rgba(255,255,255,0.6); }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import sensor from '@system.sensor'
+import brightness from '@system.brightness'
+import motionCore from '../../../utils/motionCore'
+import motionGun from '../../../utils/motionGun'
+
+const RELOAD_KEY = 'motionGunReload'
+const COLOR_IDLE = '#0D6EFF'
+const COLOR_READY = '#00C853'
+const COLOR_FIRE = '#FFD166'
+
+// 本页同时只有一个实例，内核与「上次写入」缓存放模块作用域。
+// 页面对象不能同时有 data 与 private（Vela 运行时会抛错），所以不用 private。
+let core = null
+let gun = null
+let lastStatus = ''
+let lastAmmo = -2
+let lastShots = -1
+let lastReady = false
+let lastReloadOn = true
+let lastAmmoText = ''
+let lastEmpty = false
+let flashTimer = null
+let armedTimer = null
+let sensorOk = true
+
+function now() {
+  return Date.now()
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    status: '手腕自然下垂',
+    statusColor: 'rgba(255,255,255,0.45)',
+    aimColor: COLOR_IDLE,
+    ammo: 5,
+    ammoText: '5 / 5',
+    shots: 0,
+    reloadOn: true,
+    empty: false,
+    armed: false,
+    triedUi: false,
+    _ck: null
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+
+    // 重置缓存：每次进入页面都强制刷一次
+    lastStatus = ''
+    lastAmmo = -2
+    lastShots = -1
+    lastReady = false
+    lastReloadOn = true
+    lastAmmoText = ''
+    lastEmpty = false
+    sensorOk = true
+    this.triedUi = false
+
+    core = motionCore.createMotionCore()
+    gun = motionGun.createGun({ reloadOn: true })
+
+    g.kv.init(() => {
+      const saved = g.kv.get(RELOAD_KEY, true)
+      gun.setReload(saved !== false)
+      this.apply()
+    })
+
+    // 游戏期间常亮（只常亮，不动亮度）
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+    this.subscribe()
+  },
+  onHide() {
+    this.teardown()
+  },
+  onDestroy() {
+    this.teardown()
+  },
+  teardown() {
+    this.unsubscribe()
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+    g.haptic.stop()
+    this.clearTimers()
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  clearTimers() {
+    if (flashTimer) { clearTimeout(flashTimer); flashTimer = null }
+    if (armedTimer) { clearTimeout(armedTimer); armedTimer = null }
+  },
+  subscribe() {
+    const page = this
+    const onData = (ret) => {
+      if (!core || !gun) return
+      const snap = core.feed(ret.x || 0, ret.y || 0, ret.z || 0, now())
+      const events = gun.feed(snap, now())
+      for (let i = 0; i < events.length; i++) {
+        page.handle(events[i])
+      }
+      page.apply()
+    }
+    const onFail = () => {
+      // 'game'（20ms）个别固件不支持，退回 'ui'（60ms）
+      if (!page.triedUi) {
+        page.triedUi = true
+        try {
+          sensor.subscribeAccelerometer({ interval: 'ui', callback: onData, fail: () => page.sensorDown() })
+          return
+        } catch (e) {}
+      }
+      page.sensorDown()
+    }
+    try {
+      sensor.subscribeAccelerometer({ interval: 'game', callback: onData, fail: onFail })
+    } catch (e) {
+      onFail()
+    }
+  },
+  unsubscribe() {
+    try {
+      sensor.unsubscribeAccelerometer()
+    } catch (e) {}
+  },
+  sensorDown() {
+    sensorOk = false
+    this.status = '传感器不可用'
+    this.statusColor = '#FF9500'
+    lastStatus = '传感器不可用'
+  },
+  handle(ev) {
+    if (!ev) return
+    if (ev.type === 'ready') {
+      g.haptic.long()
+      this.aimColor = COLOR_READY
+    } else if (ev.type === 'shot') {
+      g.haptic.long()
+      this.fireFlash()
+    } else if (ev.type === 'empty') {
+      // 没子弹了：快速短振两次
+      g.haptic.pattern(2, 120, 'short')
+    }
+  },
+  fireFlash() {
+    this.aimColor = COLOR_FIRE
+    if (flashTimer) clearTimeout(flashTimer)
+    const page = this
+    flashTimer = setTimeout(() => {
+      flashTimer = null
+      if (!page.$valid) return
+      const st = gun && gun.state()
+      page.aimColor = st && st.ready ? COLOR_READY : COLOR_IDLE
+    }, 140)
+  },
+  apply() {
+    if (!gun) return
+    const s = gun.state()
+    if (s.shots !== lastShots) {
+      this.shots = s.shots
+      lastShots = s.shots
+    }
+    if (s.reloadOn !== lastReloadOn) {
+      this.reloadOn = s.reloadOn
+      lastReloadOn = s.reloadOn
+    }
+    const ammo = s.reloadOn ? s.ammo : -1
+    if (ammo !== lastAmmo) {
+      this.ammo = ammo
+      lastAmmo = ammo
+    }
+    if (s.ready !== lastReady) {
+      lastReady = s.ready
+      if (!s.ready) this.aimColor = COLOR_IDLE
+    }
+    const ammoText = s.reloadOn ? (s.ammo + ' / ' + motionGun.MAG_SIZE) : '∞ 连发'
+    if (ammoText !== lastAmmoText) {
+      this.ammoText = ammoText
+      lastAmmoText = ammoText
+    }
+    const empty = s.reloadOn && s.ammo === 0
+    if (empty !== lastEmpty) {
+      this.empty = empty
+      lastEmpty = empty
+    }
+
+    let text = '手腕自然下垂'
+    let color = 'rgba(255,255,255,0.45)'
+    if (!sensorOk) {
+      text = '传感器不可用'
+      color = '#FF9500'
+    } else if (this.empty) {
+      // 空仓比「已瞄准」更需要提示
+      text = '没子弹了 · 点换弹'
+      color = '#FF3B30'
+    } else if (s.ready) {
+      text = '已瞄准 · 抖腕开枪'
+      color = COLOR_READY
+    }
+    if (text !== lastStatus) {
+      this.status = text
+      this.statusColor = color
+      lastStatus = text
+    }
+  },
+  doReload() {
+    if (!gun) return
+    g.haptic.short()
+    gun.reload()
+    this.apply()
+  },
+  toggleReloadOn() {
+    if (!gun) return
+    g.haptic.short()
+    gun.setReload(true)
+    g.kv.set(RELOAD_KEY, true)
+    this.apply()
+  },
+  toggleReloadOff() {
+    if (!gun) return
+    g.haptic.short()
+    gun.setReload(false)
+    g.kv.set(RELOAD_KEY, false)
+    this.apply()
+  },
+  resetCount() {
+    if (!gun) return
+    if (!this.armed) {
+      this.armed = true
+      g.haptic.short()
+      if (armedTimer) clearTimeout(armedTimer)
+      const page = this
+      armedTimer = setTimeout(() => {
+        armedTimer = null
+        if (page.$valid) page.armed = false
+      }, 5000)
+      return
+    }
+    if (armedTimer) { clearTimeout(armedTimer); armedTimer = null }
+    this.armed = false
+    g.haptic.long()
+    gun.resetShots()
+    this.apply()
+  }
+}
+</script>

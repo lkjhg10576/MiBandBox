@@ -1,0 +1,286 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="空气投篮" clock="{{ clock }}"></pagehead>
+
+    <text class="f status" style="color: {{ statusColor }};">{{ status }}</text>
+
+    <div class="board"></div>
+    <div class="rim" style="border-color: {{ rimColor }};"></div>
+    <div class="net1"></div>
+    <div class="net2"></div>
+    <div class="net3"></div>
+
+    <div class="ball" if="{{ ballOn }}" style="left: {{ ballLeft }}px; top: {{ ballTop }}px;"></div>
+
+    <text class="f plus1" if="{{ plusStep === 1 }}">+1</text>
+    <text class="f plus2" if="{{ plusStep === 2 }}">+1</text>
+    <text class="f plus3" if="{{ plusStep === 3 }}">+1</text>
+
+    <text class="f score" style="font-size: {{ scoreFont }}px;">{{ score }}</text>
+    <text class="f best">最佳 {{ best }}</text>
+
+    <div class="reset" @click="resetScore"><text class="f resetT">{{ armed ? '再次点击确认' : '清零得分' }}</text></div>
+    <text class="f hint">举手稳住 → 长振就绪；向上用力投出 → 进球 +1</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.status { position: absolute; left: 0px; top: 86px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 16px; }
+.board { position: absolute; left: 46px; top: 116px; width: 120px; height: 60px; border-radius: 8px; background-color: #1F1F1F; border-width: 2px; border-style: solid; border-color: #3A3A3A; }
+.rim { position: absolute; left: 56px; top: 174px; width: 100px; height: 20px; border-radius: 10px; border-width: 3px; border-style: solid; border-color: #FF9500; }
+.net1 { position: absolute; left: 76px; top: 194px; width: 2px; height: 22px; background-color: #3A3A3A; }
+.net2 { position: absolute; left: 105px; top: 194px; width: 2px; height: 22px; background-color: #3A3A3A; }
+.net3 { position: absolute; left: 134px; top: 194px; width: 2px; height: 22px; background-color: #3A3A3A; }
+.ball { position: absolute; width: 40px; height: 40px; border-radius: 20px; background-color: #FF9500; }
+.plus1 { position: absolute; left: 0px; top: 214px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 18px; color: #FFD166; }
+.plus2 { position: absolute; left: 0px; top: 198px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 18px; color: #FF9500; }
+.plus3 { position: absolute; left: 0px; top: 186px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 18px; color: rgba(255,255,255,0.5); }
+.score { position: absolute; left: 0px; top: 286px; width: 212px; height: 80px; line-height: 80px; text-align: center; font-size: 64px; color: #FFFFFF; }
+.best { position: absolute; left: 0px; top: 368px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
+.reset { position: absolute; left: 66px; top: 396px; width: 80px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
+.resetT { font-size: 13px; color: rgba(255,255,255,0.6); }
+.hint { position: absolute; left: 0px; top: 432px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import sensor from '@system.sensor'
+import brightness from '@system.brightness'
+import motionCore from '../../../utils/motionCore'
+import motionHoop from '../../../utils/motionHoop'
+import counter from '../../../utils/counter'
+
+const BEST_KEY = 'motionHoopBest'
+const COLOR_IDLE = '#8E8E93'
+const COLOR_READY = '#00C853'
+const RIM_IDLE = '#FF9500'
+const RIM_HIT = '#00C853'
+
+// 投篮动画：球从下方抛向篮筐（6 步，left/top 逐步移动）
+const BALL_FROM = { left: 86, top: 240 }
+const BALL_TO = { left: 86, top: 168 }
+const BALL_STEPS = 6
+const BALL_STEP_MS = 55
+
+let core = null
+let hoop = null
+let lastStatus = ''
+let lastScore = -1
+let animTimers = []
+let armedTimer = null
+let sensorOk = true
+
+function now() {
+  return Date.now()
+}
+
+export default {
+  data: {
+    clock: '--:--',
+    status: '手腕自然下垂',
+    statusColor: COLOR_IDLE,
+    score: 0,
+    scoreFont: 64,
+    best: 0,
+    ballLeft: BALL_FROM.left,
+    ballTop: BALL_FROM.top,
+    ballOn: true,
+    rimColor: RIM_IDLE,
+    plusStep: 0,
+    armed: false,
+    triedUi: false,
+    _ck: null
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+
+    lastStatus = ''
+    lastScore = -1
+    sensorOk = true
+    this.triedUi = false
+
+    core = motionCore.createMotionCore()
+    hoop = motionHoop.createHoop()
+
+    g.kv.init(() => {
+      this.best = g.kv.get(BEST_KEY, 0) || 0
+    })
+
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+    this.subscribe()
+  },
+  onHide() {
+    this.teardown()
+  },
+  onDestroy() {
+    this.teardown()
+  },
+  teardown() {
+    this.unsubscribe()
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+    g.haptic.stop()
+    this.clearAnim()
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  clearAnim() {
+    animTimers.forEach((t) => clearTimeout(t))
+    animTimers = []
+  },
+  later(fn, ms) {
+    const t = setTimeout(() => {
+      const i = animTimers.indexOf(t)
+      if (i >= 0) animTimers.splice(i, 1)
+      fn()
+    }, ms)
+    animTimers.push(t)
+  },
+  subscribe() {
+    const page = this
+    const onData = (ret) => {
+      if (!core || !hoop) return
+      const snap = core.feed(ret.x || 0, ret.y || 0, ret.z || 0, now())
+      const events = hoop.feed(snap, now())
+      for (let i = 0; i < events.length; i++) {
+        page.handle(events[i])
+      }
+      page.apply()
+    }
+    const onFail = () => {
+      if (!page.triedUi) {
+        page.triedUi = true
+        try {
+          sensor.subscribeAccelerometer({ interval: 'ui', callback: onData, fail: () => page.sensorDown() })
+          return
+        } catch (e) {}
+      }
+      page.sensorDown()
+    }
+    try {
+      sensor.subscribeAccelerometer({ interval: 'game', callback: onData, fail: onFail })
+    } catch (e) {
+      onFail()
+    }
+  },
+  unsubscribe() {
+    try {
+      sensor.unsubscribeAccelerometer()
+    } catch (e) {}
+  },
+  sensorDown() {
+    sensorOk = false
+    this.status = '传感器不可用'
+    this.statusColor = '#FF9500'
+    lastStatus = '传感器不可用'
+  },
+  handle(ev) {
+    if (!ev) return
+    if (ev.type === 'ready') {
+      g.haptic.long()
+    } else if (ev.type === 'score') {
+      g.haptic.long()
+      this.hoopIn()
+    }
+  },
+  // 进球动画：球飞向篮筐 → 筐变绿 → 浮出 +1
+  hoopIn() {
+    const page = this
+    this.clearAnim()
+    this.ballOn = true
+    this.ballLeft = BALL_FROM.left
+    this.ballTop = BALL_FROM.top
+    for (let i = 1; i <= BALL_STEPS; i++) {
+      const k = i / BALL_STEPS
+      const bulge = Math.sin(Math.PI * k) * 10
+      this.later(() => {
+        if (!page.$valid) return
+        page.ballLeft = Math.round(BALL_FROM.left + (BALL_TO.left - BALL_FROM.left) * k + bulge)
+        page.ballTop = Math.round(BALL_FROM.top + (BALL_TO.top - BALL_FROM.top) * k)
+      }, i * BALL_STEP_MS)
+    }
+    this.later(() => {
+      if (!page.$valid) return
+      page.rimColor = RIM_HIT
+      page.ballOn = false
+    }, BALL_STEPS * BALL_STEP_MS + 40)
+    this.later(() => {
+      if (!page.$valid) return
+      page.rimColor = RIM_IDLE
+    }, BALL_STEPS * BALL_STEP_MS + 520)
+    // +1 浮字：三级递进
+    this.later(() => {
+      if (!page.$valid) return
+      page.plusStep = 1
+    }, BALL_STEPS * BALL_STEP_MS + 60)
+    this.later(() => {
+      if (!page.$valid) return
+      page.plusStep = 2
+    }, BALL_STEPS * BALL_STEP_MS + 260)
+    this.later(() => {
+      if (!page.$valid) return
+      page.plusStep = 3
+    }, BALL_STEPS * BALL_STEP_MS + 460)
+    this.later(() => {
+      if (!page.$valid) return
+      page.plusStep = 0
+      page.ballOn = true
+      page.ballLeft = BALL_FROM.left
+      page.ballTop = BALL_FROM.top
+    }, BALL_STEPS * BALL_STEP_MS + 760)
+  },
+  apply() {
+    if (!hoop) return
+    const s = hoop.state()
+    if (s.score !== lastScore) {
+      this.score = s.score
+      this.scoreFont = counter.fontSizeOf(s.score)
+      lastScore = s.score
+      if (s.score > this.best) {
+        this.best = s.score
+        g.kv.set(BEST_KEY, s.score)
+      }
+    }
+    let text = '手腕自然下垂'
+    let color = COLOR_IDLE
+    if (!sensorOk) {
+      text = '传感器不可用'
+      color = '#FF9500'
+    } else if (s.ready) {
+      text = '已准备 · 向上投出'
+      color = COLOR_READY
+    }
+    if (text !== lastStatus) {
+      this.status = text
+      this.statusColor = color
+      lastStatus = text
+    }
+  },
+  resetScore() {
+    if (!hoop) return
+    if (!this.armed) {
+      this.armed = true
+      g.haptic.short()
+      if (armedTimer) clearTimeout(armedTimer)
+      const page = this
+      armedTimer = setTimeout(() => {
+        armedTimer = null
+        if (page.$valid) page.armed = false
+      }, 5000)
+      return
+    }
+    if (armedTimer) { clearTimeout(armedTimer); armedTimer = null }
+    this.armed = false
+    g.haptic.long()
+    hoop.resetScore()
+    this.apply()
+  }
+}
+</script>
