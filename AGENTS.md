@@ -8,8 +8,12 @@
 
 | 通道 | 什么时候打 | 打包模式 | 版本号 `versionName` | `versionCode` | 产物目录 |
 |---|---|---|---|---|---|
-| **Beta** | 用户**没有特殊要求**时的默认动作 | development（`aiot build`） | 不变 | **+1** | `beta/BandBox-<版本>-<versionCode>/` |
+| **Beta** | 用户**没有特殊要求**时的默认动作 | development（`aiot build`） | **默认不变**（仅用户明确要求时升） | **+1** | `beta/BandBox-<版本>-<versionCode>/` |
 | **发行版** | 用户**明确要求**「打包一个新发行版」 | production（`aiot release`） | **升** | **严格递增取号** | `release/BandBox-<版本>/` |
+
+- **Beta 的定位是「下个版本的测试」（2026-11-16 用户定，照此执行）**：Beta 打的不是已发布版本的复刻，而是**下一个版本号的测试包** —— 所以 Beta 的 `versionName` **可以比当前发行版更高**（例如发行版是 0.1.1、Beta 可以是 0.1.2），这是正常的，不是版本错乱。
+- **但版本号不是每次 Beta 都升**：默认只升 `versionCode`（+1），`versionName` **保持不变**；**只有用户明确要求升版本号时**才动 `versionName`（如「打个 0.1.3 的 Beta」）。判断口径：**没明确说，就只升 versionCode**。
+- **升版本号时 `versionCode` 照旧 +1**（Beta 通道）—— 版本号与 versionCode 是两件事，别混着改。
 
 - 两条通道的产物内容一致：**每个设备 profile 一个 rpk**（jsc 字节码）+ `BandBox辅助.abp`（插件源码现编，全 profile 共用一份）+ `SHA256SUMS.txt`（覆盖全部 rpk）+ `说明.md`（注明各 rpk 适用机型）。
 - **打包模式差异（2026-11-15 起）**：发行版走 production 模式 —— JS 压缩混淆、剔除 `.map`、用发行证书签名；Beta 走 development 模式，不压缩不混淆。
@@ -52,10 +56,12 @@
 - 打包命令：
 
   ```bash
-  # Beta（默认，development 模式）
+  # Beta（默认，development 模式；版本号不动，只升 versionCode）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta
   # Beta（双包：band10 + pro336 一次出齐，同一产物目录）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta --all-profiles
+  # Beta（用户明确要求升版本号时：--ver 升版本号，versionCode 照旧 +1）
+  NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta --ver 0.1.3 --all-profiles
   # 发行版（production 模式，产物文件名带 .release. 段）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --release <版本> --notes notes/<版本>.md --all-profiles
   # 发行版临时退回 development 打包（排查用，默认不启用）
@@ -63,6 +69,7 @@
   ```
 
   本机必须带 `copyfile-shim.cjs` 垫片，否则 `build:jsc` 会被沙箱的 `copy_file_range` 拦成 `EPERM`。
+- **`--ver <版本>`**：只在用户**明确要求**升版本号时才传。传了就同步升 `versionName`（快应用 5 处 + 手机插件 4 处，见「双端版本号对齐」）；不传就只升 `versionCode`。
 - 发行版的版本提要写 `notes/<版本>.md`，脚本会自动插进产物目录的 `说明.md`。
 - `--prune` 只清 `release/` 下的旧发行版**目录**，不动历史 zip，也不影响 `beta/`。
 

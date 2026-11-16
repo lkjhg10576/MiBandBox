@@ -242,8 +242,11 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
 
 | 通道 | 什么时候打 | 打包模式 | 版本号 `versionName` | `versionCode` | 产物目录 |
 | --- | --- | --- | --- | --- | --- |
-| **Beta** | 没有特殊要求时的默认动作 | development（`aiot build`） | 不变 | **+1** | `beta/BandBox-<版本>-<versionCode>/` |
+| **Beta** | 没有特殊要求时的默认动作 | development（`aiot build`） | **默认不变**（仅明确要求时升） | **+1** | `beta/BandBox-<版本>-<versionCode>/` |
 | **发行版** | 明确要求「打包一个新发行版」 | production（`aiot release`） | **升** | **严格递增取号** | `release/BandBox-<版本>/` |
+
+- **Beta 是「下个版本的测试」**：Beta 打的不是已发布版本的复刻，而是**下一个版本号的测试包** —— 所以 Beta 的版本号可以比当前发行版更高（发行版 0.1.1、Beta 0.1.2 之类），这是正常的，不是版本错乱。
+- **但版本号不是每次 Beta 都升**：默认只升 `versionCode`（+1）、版本号保持不变；**只有明确要求升版本号时**才动 `versionName`（`--ver <版本>`）。升版本号时 `versionCode` 照旧 +1。
 
 - 两种模式的产物内容一致：`.rpk`（jsc 字节码）+ `BandBox辅助.abp`（插件源码现编）+ `SHA256SUMS.txt` + `说明.md`。
 - 发行版走 production 模式：JS 压缩混淆、剔除 `.map`、用发行证书签名；Beta 不压缩不混淆。
@@ -256,6 +259,8 @@ npm run build:jsc      # 生成 jsc 字节码，更接近发布包
   ```bash
   # Beta（默认）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta
+  # Beta（明确要求升版本号时：--ver 升版本号，versionCode 照旧 +1）
+  NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta --ver 0.1.3
   # 发行版（版本提要写 notes/<版本>.md，会自动插进说明.md）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --release <版本> --notes notes/<版本>.md --all-profiles
   ```

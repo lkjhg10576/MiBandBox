@@ -221,8 +221,11 @@ The project has two packaging channels. They differ in versioning strategy, outp
 
 | Channel | When to use | Packaging mode | `versionName` | `versionCode` | Output directory |
 | --- | --- | --- | --- | --- | --- |
-| **Beta** | Default when no special requirement | development (`aiot build`) | unchanged | **+1** | `beta/BandBox-<version>-<versionCode>/` |
+| **Beta** | Default when no special requirement | development (`aiot build`) | **unchanged by default** (bumped only on explicit request) | **+1** | `beta/BandBox-<version>-<versionCode>/` |
 | **Release** | When you explicitly ask for a new release | production (`aiot release`) | **bumped** | **strictly increasing** | `release/BandBox-<version>/` |
+
+- **A Beta is "the test build of the next version"**: a Beta is not a re-issue of the released version but a test package carrying the **next** version number — so a Beta's `versionName` may be higher than the current release (release 0.1.1, Beta 0.1.2, …). That is normal, not a versioning mistake.
+- **But the version number is not bumped on every Beta**: by default only `versionCode` moves (+1) and `versionName` stays; `versionName` changes **only when a bump is explicitly requested** (`--ver <version>`). When it is bumped, `versionCode` still moves +1.
 
 - Both modes produce the same contents: `.rpk` (jsc bytecode) + `BandBox辅助.abp` (plugin built from source) + `SHA256SUMS.txt` + `说明.md`.
 - The release channel uses production mode: JS is minified/mangled, `.map` files are dropped, and the package is signed with the release certificate. Beta builds are not minified.
@@ -235,6 +238,8 @@ The project has two packaging channels. They differ in versioning strategy, outp
   ```bash
   # Beta (default)
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta
+  # Beta with an explicit version bump (--ver bumps the version; versionCode still +1)
+  NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta --ver 0.1.3
   # Release (release notes go in notes/<version>.md and are injected into 说明.md)
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --release <version> --notes notes/<version>.md --all-profiles
   ```
