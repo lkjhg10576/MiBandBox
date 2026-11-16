@@ -23,13 +23,14 @@
  */
 
 /**
- * 就绪姿态：投篮 = 翻腕手心朝上，重力落在 +x 轴（只认正 Roll）。
+ * 就绪姿态：投篮 = 翻腕手心朝上，重力落在 −x 轴（只认负 Roll）。
  *
  * 轴 / 符号的对应关系以真机水平仪实测为准（docs/tough-spring-raven.md 步骤 0）：
- * 预期「投篮准备」Roll ≈ +90（重力进 x 轴）、「手平放屏幕朝上」Roll ≈ 0 且 Pitch ≈ 0。
+ * 真机实测（2026-11-16）：投篮手朝上时 Roll ≈ −70~−90（重力进 −x 轴，方向与当初
+ * 预期的 +90 相反）；「手平放屏幕朝上」Roll ≈ 0 且 Pitch ≈ 0。
  * 实测与预期不符时只改这里的两个常量，判定数学不动。
  */
-export const POSE = { poseAxis: 'x', poseSign: 1 }
+export const POSE = { poseAxis: 'x', poseSign: -1 }
 
 export const DEFAULTS = {
   upMag: 8,            // 向上爆发阈值（m/s²）
