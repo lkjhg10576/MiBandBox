@@ -1,34 +1,40 @@
 /**
- * 体感内核（一）：重力估计 + 动态加速度 + 举手 / 平稳判定。
+ * 体感内核（一）：重力估计 + 动态加速度 + 就绪姿态判定。
  *
  * 纯 JS、零 @system.* 依赖，Node 可直接 import 单测（tools/test-motion-core.mjs）。
  *
  * 三块能力：
  *   1) 低通重力：g = EMA(raw)，时间常数按 dt 计算，20ms（game）/ 60ms（ui）采样都准。
  *   2) 动态加速度：dyn = raw − g，扣掉重力后的「动作」分量。
- *   3) 举手判定：以进入页面时的垂手姿态为基线，当前重力方向相对基线转过的夹角
- *      （raiseAngle）超过阈值并保持一段时间 → 举手（raised）。
+ *   3) 就绪姿态判定：重力方向落在目标轴附近（绝对姿态）并保持一段时间 → 就绪（raised）。
  *
- * 为什么用「相对基线的夹角」而不是绝对姿态：
- *   同一块手环戴左手还是右手、屏幕朝内还是朝外，垂手时重力在设备坐标系里的方向
- *   都不一样，写死角度阈值必然有一半人用不了。基线在进入页面时自动采集，
- *   佩戴朝向自适应；进游戏前手臂自然下垂即可（页面有提示）。
+ * 为什么用「绝对姿态」而不是「相对垂手基线的夹角」：
+ *   相对基线只算夹角、不算转轴 —— 从垂手出发，「举枪」与「手平放屏幕朝上」都是转 90°，
+ *   两个都能过阈值（平放误就绪）。而且基线在未就绪时以 1.5s 时间常数跟着当前姿态跑：
+ *   投完一球手臂放下 → 基线被拖到「持球/收手」姿态 → 参考系整个变了，原本的就绪姿态
+ *   不再越限，反倒是「平放」离新基线 90° 才就绪。
+ *   改成绝对姿态后：姿态由「重力落在哪个轴」唯一确定 —— 平放（重力沿屏幕法线 z）
+ *   一律不就绪；也没有会漂移的参考系，进页面不用先垂手。
+ *
+ * 绝对判定的唯一前提是「轴 ↔ 姿态」的映射要对。映射定义在 motionGun / motionHoop 的
+ * POSE 常量里（枪 = y 轴、投篮 = +x 轴），真机实测不符时只改那两处，判定数学不动。
  *
  * 所有时间窗口都按时间戳算（不是采样点数），所以订阅 interval 换成 ui 也一样准。
  */
 
 const RAD2DEG = 180 / Math.PI
+const DEG2RAD = Math.PI / 180
 
 /** 默认参数：阈值初值，真机上手感不对时只改这里（页面不改） */
 export const DEFAULTS = {
   gravityTauMs: 120,   // 重力低通时间常数：越大越稳、越迟钝
-  baselineMs: 500,     // 垂手基线采集窗口
-  raiseEnterDeg: 45,   // 举手判定进入角（相对垂手基线）
-  raiseExitDeg: 30,    // 举手判定退出角（迟滞，防抖）
-  dwellMs: 250,        // 角度越界后需保持的时长
+  poseAxis: 'y',       // 就绪姿态判定轴：'x' 或 'y'（z 是屏幕法线 —— 平放时重力在这轴上）
+  poseSign: 0,         // 0 = 正负都认；1 = 只认正；-1 = 只认负
+  poseEnterDeg: 45,    // 进入角：重力与目标轴夹角 ≤ (90 − enterDeg)° 才算进入就绪
+  poseExitDeg: 30,     // 退出角（迟滞，防抖）：夹角 ≥ (90 − exitDeg)° 才退出
+  dwellMs: 250,        // 姿态越界后需保持的时长
   steadyTauMs: 160,    // 平稳度 EMA 时间常数
   steadyMag: 2.0,      // 动态幅值低于此值算「稳」
-  baselineTauMs: 1500, // 未举手时基线跟随当前姿态的时间常数
   gMinMag: 4.0         // 重力估算低于此值时方向不可信，保持上一次可靠方向
 }
 
@@ -49,56 +55,55 @@ function normalize(v) {
   return { x: v.x / len, y: v.y / len, z: v.z / len }
 }
 
+/** 角度夹到 0~90：sin 在这区间单调递增，判定阈值才有意义 */
+function clampDeg(d) {
+  const v = Number(d)
+  if (!isFinite(v)) return 45
+  return Math.max(0, Math.min(90, v))
+}
+
 /**
  * 创建一个体感内核实例。
  *
  * @param {object} [opts] 覆盖 DEFAULTS 的参数
  * @returns {{
  *   feed: function(number, number, number, number=): object,
- *   resetBaseline: function(): void,
  *   state: function(): object
  * }}
  */
 export function createMotionCore(opts) {
   const o = Object.assign({}, DEFAULTS, opts || {})
 
+  // 姿态轴与符号：非法值一律回落默认（y 轴、正负都认）
+  const poseAxis = o.poseAxis === 'x' ? 'x' : 'y'
+  const poseSign = o.poseSign === 1 ? 1 : o.poseSign === -1 ? -1 : 0
+  // comp ≥ sin(enterDeg) ⟺ 重力与目标轴夹角 ≤ (90 − enterDeg)°
+  // comp ≤ sin(exitDeg)  ⟺ 重力与目标轴夹角 ≥ (90 − exitDeg)°
+  const enterComp = Math.sin(clampDeg(o.poseEnterDeg) * DEG2RAD)
+  const exitComp = Math.sin(clampDeg(o.poseExitDeg) * DEG2RAD)
+
   let inited = false
   let gx = 0, gy = 0, gz = 0        // 重力低通结果
   let lastT = null
   let autoT = 0                     // 无时间戳时的自增时钟
 
-  let baseSumX = 0, baseSumY = 0, baseSumZ = 0
-  let baseCount = 0
-  let baseStartT = null
-  let base = null                   // 垂手基线单位向量
-
   let raised = false
   let raiseSince = null
   let lowerSince = null
   let dynEma = 0
+  let steady = true
 
   // 重力方向：只在 |g| 足够大时更新。急加速（扣扳机 / 起跳）会把滞后的重力估算
   // 拖到接近 0，此时方向不可信，保持上一次可靠方向 —— 否则向上分量会翻符号。
   let gDirX = 0, gDirY = 1, gDirZ = 0
-
-  /** 重新采集垂手基线（手臂回到自然下垂后再调一次即可） */
-  function resetBaseline() {
-    baseSumX = 0; baseSumY = 0; baseSumZ = 0
-    baseCount = 0
-    baseStartT = null
-    base = null
-    raised = false
-    raiseSince = null
-    lowerSince = null
-  }
 
   /**
    * 喂入一个加速度采样（单位 m/s²，含重力）。
    *
    * @param {number} x @param {number} y @param {number} z
    * @param {number} [t] 毫秒时间戳（同一单调时钟）
-   * @returns {{raiseAngle:number, dynMag:number, upMag:number, rawMag:number,
-   *            steady:boolean, raised:boolean, baselineReady:boolean, gravity:number}}
+   * @returns {{dynMag:number, upMag:number, rawMag:number, steady:boolean,
+   *            raised:boolean, pitch:number, roll:number, gravity:number}}
    */
   function feed(x, y, z, t) {
     let now
@@ -163,42 +168,15 @@ export function createMotionCore(opts) {
 
     const sa = 1 - Math.exp(-dt / o.steadyTauMs)
     dynEma += (dynMag - dynEma) * sa
-    const steady = dynEma < o.steadyMag
+    steady = dynEma < o.steadyMag
 
-    // ---- 3) 垂手基线 ----
-    if (!base) {
-      if (baseStartT === null) baseStartT = now
-      baseSumX += rawX; baseSumY += rawY; baseSumZ += rawZ
-      baseCount++
-      if (now - baseStartT >= o.baselineMs) {
-        base = normalize({ x: baseSumX / baseCount, y: baseSumY / baseCount, z: baseSumZ / baseCount })
-      }
-    }
-
-    let raiseAngle = 0
-    if (base) {
-      raiseAngle = angleBetween({ x: gDirX, y: gDirY, z: gDirZ }, base)
-    }
-
-    // ---- 3.5) 基线自适应 ----
-    // 还没举手、且设备安静时，基线缓慢跟着当前姿态走：
-    // 用户进游戏时手举着也没关系 —— 放下手、稳住，基线就落回垂手姿态，之后抬手能认出来。
-    // 抬手动作本身是「大幅运动」，dynEma 远大于阈值，所以抬手期间基线不会跟着跑。
-    if (base && !raised && dynEma < o.steadyMag) {
-      const ba = 1 - Math.exp(-dt / o.baselineTauMs)
-      const nx = base.x + (gDirX - base.x) * ba
-      const ny = base.y + (gDirY - base.y) * ba
-      const nz = base.z + (gDirZ - base.z) * ba
-      const nb = normalize({ x: nx, y: ny, z: nz })
-      if (nb) base = nb
-    }
-
-    // ---- 4) 举手判定（带迟滞与驻留） ----
-    if (!base) {
-      // 基线还没采完，不做判定
-      raised = false
-    } else if (!raised) {
-      if (raiseAngle >= o.raiseEnterDeg) {
+    // ---- 3) 就绪姿态判定（绝对姿态，带迟滞与驻留） ----
+    // comp = 重力在目标轴上的分量。poseSign=0 取绝对值 → 左右手都认同一个姿态。
+    // 用分量而不是直接比 atan2 角度：屏幕朝下时 atan2 会绕到 ±180°，会假越限。
+    const axisComp = poseAxis === 'x' ? gDirX : gDirY
+    const comp = poseSign === 0 ? Math.abs(axisComp) : poseSign * axisComp
+    if (!raised) {
+      if (comp >= enterComp) {
         if (raiseSince === null) raiseSince = now
         else if (now - raiseSince >= o.dwellMs) {
           raised = true
@@ -209,7 +187,7 @@ export function createMotionCore(opts) {
         raiseSince = null
       }
     } else {
-      if (raiseAngle <= o.raiseExitDeg) {
+      if (comp <= exitComp) {
         if (lowerSince === null) lowerSince = now
         else if (now - lowerSince >= o.dwellMs) {
           raised = false
@@ -222,13 +200,14 @@ export function createMotionCore(opts) {
     }
 
     return {
-      raiseAngle: raiseAngle,
       dynMag: dynMag,
       upMag: upMag,
       rawMag: rawMag,
       steady: steady,
       raised: raised,
-      baselineReady: !!base,
+      // 姿态角（与 level.ux 同一公式），真机排查时对着水平仪看
+      pitch: Math.atan2(gDirY, gDirZ) * RAD2DEG,
+      roll: Math.atan2(gDirX, gDirZ) * RAD2DEG,
       gravity: gLen
     }
   }
@@ -237,14 +216,13 @@ export function createMotionCore(opts) {
     return {
       raised: raised,
       steady: steady,
-      baselineReady: !!base,
       dynEma: dynEma,
       gravity: Math.sqrt(gx * gx + gy * gy + gz * gz),
       clock: autoT
     }
   }
 
-  return { feed: feed, resetBaseline: resetBaseline, state: state }
+  return { feed: feed, state: state }
 }
 
 export default { createMotionCore, angleBetween, DEFAULTS }

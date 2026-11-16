@@ -33,6 +33,7 @@ const apps = [
   { id: 'lylist', name: '歌词本', route: '/pages/lylist', icon: '/common/icons/lylist.png', desc: '本地歌词 · 滚动' },
   { id: 'level', name: '水平仪', route: '/pages/level', icon: '/common/icons/level.png', desc: '双轴 · 圆点' },
   { id: 'motion', name: '体感游戏', route: '/pages/motion', icon: '/common/icons/motion.png', desc: '手枪 · 投篮 · 加速度' },
+  { id: 'cubeTimer', name: '魔方计时', route: '/pages/cubeTimer', icon: '/common/icons/cubeTimer.png', desc: '体感触发 · 毫秒计时' },
   { id: 'otp', name: '动态口令', route: '/pages/otp/list', icon: '/common/icons/otp.png', desc: 'TOTP · 本地生成 · 手机同步' },
   { id: 'unitconvert', name: '单位换算', route: '/pages/unitconvert', icon: '/common/icons/unitconvert.png', desc: '长度 · 质量 · 温度' },
   { id: 'metronome', name: '节拍器', route: '/pages/metronome', icon: '/common/icons/metronome.png', desc: 'BPM · 振动' },

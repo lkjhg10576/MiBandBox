@@ -3,7 +3,7 @@
 
   <h1>BandBox · The Xiaomi Band Toolbox</h1>
 
-  <p><b>37 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
+  <p><b>38 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
   <p>Fully offline · No fees · No accounts · No closed-source dependencies · MIT licensed</p>
 
   <p>
@@ -17,10 +17,10 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.1</code> (versionCode 256) · Built with Vela JS Quick Apps</p>
+  <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.1</code> (versionCode 260) · Built with Vela JS Quick Apps</p>
 </div>
 
-<img src="assets/promo/hero-en.jpg" alt="BandBox: 37 local tools for Xiaomi Band" />
+<img src="assets/promo/hero-en.jpg" alt="BandBox: 38 local tools for Xiaomi Band" />
 
 ---
 
@@ -34,25 +34,32 @@ Everything stays on the band. **No network calls, no fees, no sign-up, no upload
 
 | Highlights | Details |
 | --- | --- |
-| Tools | **36**, covering everyday, notes, fun and system-information use cases |
+| Tools | **38**, covering everyday, notes, fun and system-information use cases |
 | Network requests | **0** (no third-party APIs, no telemetry, no ads) |
 | Accounts / payments | **0** (no login, no subscription, no activation) |
 | Closed-source dependencies | **0** (nothing but the optional official AstroBox plugin) |
 | Bundled fonts | **0** (uses the Band 10/11 system fonts, MiSans / MiLan Pro) |
 | License | **MIT** |
 
-> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 37 tools work exactly the same.
+> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 38 tools work exactly the same.
 
 ---
 
 ## Feature preview
 
-|  |  |
-| :---: | :---: |
-| <img src="assets/promo/preview-1.jpg" alt="01 · Tool Matrix" /> | <img src="assets/promo/preview-2.jpg" alt="02 · Everyday Efficiency" /> |
-| **01 Tool Matrix** | **02 Everyday Efficiency** |
-| <img src="assets/promo/preview-3.jpg" alt="03 · AstroBox Plugin Interconnect" /> | <img src="assets/promo/preview-4.jpg" alt="04 · Fun & Interactive" /> |
-| **03 AstroBox Plugin Interconnect** | **04 Fun & Interactive** |
+The eight store previews are raw device screenshots — no layout mock-ups.
+
+**Oval display · Xiaomi Smart Band 10 / 10 NFC (212 × 520)**
+
+| Home | Calculator | Daily quote | Calendar |
+| :---: | :---: | :---: | :---: |
+| <img src="assets/promo/preview-1.png" width="150" alt="Home" /> | <img src="assets/promo/preview-2.png" width="150" alt="Calculator" /> | <img src="assets/promo/preview-3.png" width="150" alt="Daily quote" /> | <img src="assets/promo/preview-4.png" width="150" alt="Calendar" /> |
+
+**Rectangular display · Xiaomi Smart Band 9 Pro / 10 Pro (336 × 480)**
+
+| Home | Motion games | Dice | Flashlight |
+| :---: | :---: | :---: | :---: |
+| <img src="assets/promo/preview-5.png" width="220" alt="Home" /> | <img src="assets/promo/preview-6.png" width="220" alt="Motion games" /> | <img src="assets/promo/preview-7.png" width="220" alt="Dice" /> | <img src="assets/promo/preview-8.png" width="220" alt="Flashlight" /> |
 
 ---
 
@@ -117,7 +124,8 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 | Marquee | Text, size, speed and colour; scrolls horizontally in portrait, rotates 90° in landscape |
 | Lyrics | Local lyrics with auto-scroll in portrait and landscape, plus "transfer from phone" |
 | Level | Dual-axis tilt dot with a crosshair, calibratable; four tiers (green / blue / orange / red) follow the tilt |
-| Motion games | Accelerometer mini-games: Motion pistol (raise to aim, flick to fire, 5-round magazine with optional reload) and Air basketball (raise your hand, throw up, automatic scoring); vibration feedback for ready and score, screen stays on while playing. Sensitivity has three levels (low/mid/high), set at the bottom of the game picker and remembered; it sets how strict the ready pose must be and how big a motion is needed to trigger |
+| Motion games | Accelerometer mini-games: Motion pistol (hold the screen sideways and steady to aim, flick to fire, 5-round magazine with optional reload) and Air basketball (flip your wrist palm-up and steady to prepare, throw up, automatic scoring); vibration feedback for ready and score, screen stays on while playing. Sensitivity has three levels (low/mid/high), set at the bottom of the game picker and remembered; it sets how strict the ready pose must be and how big a motion is needed to trigger |
+| Cube timer | Motion-triggered timer: tap Ready with your hand flat, flip your wrist to start, lay it flat again to stop; millisecond precision, short vibration on Ready and long vibrations on start/stop; swipe up for the last 5 times and the average of the last 30 |
 | Book of answers | A random answer, revealed with a fade |
 | Wooden fish | Hand-drawn wooden fish with daily and total counters, auto-strike |
 | Vibrator | Short / long / rhythmic patterns, adjustable interval |

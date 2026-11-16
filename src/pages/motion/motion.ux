@@ -9,7 +9,7 @@
       <div class="xh"></div>
       <div class="xhDot"></div>
       <text class="f cTitle1">体感手枪</text>
-      <text class="f cDesc1">平举稳住→抖腕开枪</text>
+      <text class="f cDesc1">举枪稳住→抖腕开枪</text>
       <text class="f cDesc2">5发弹匣·可关换弹</text>
     </div>
 
@@ -18,11 +18,11 @@
       <div class="rim"></div>
       <div class="ball"></div>
       <text class="f cTitle2">空气投篮</text>
-      <text class="f cDesc3">举手准备→向上投出</text>
+      <text class="f cDesc3">翻腕准备→向上投出</text>
       <text class="f cDesc4">投进一球+1分</text>
     </div>
 
-    <text class="f hint" if="{{ !showStats }}">进游戏时手臂自然下垂，抬手稳住后长振提示就绪。两个游戏全程屏幕常亮。</text>
+    <text class="f hint" if="{{ !showStats }}">进游戏后摆好姿势稳住，长振提示就绪。两个游戏全程屏幕常亮。</text>
 
     <!-- 灵敏度：决定准备姿势的标准程度与触发所需的动作幅度，选完即存盘 -->
     <div class="sensRow" if="{{ !showStats }}">

@@ -29,7 +29,7 @@
     <div class="chip chipOn" style="background-color: {{ reloadOn ? '#0D6EFF' : '#262626' }};" @click="toggleReloadOn"><text class="f chipT">开</text></div>
     <div class="chip chipOff" style="background-color: {{ reloadOn ? '#262626' : '#0D6EFF' }};" @click="toggleReloadOff"><text class="f chipT">关</text></div>
 
-    <text class="f hint">平直抬手稳住 → 长振就绪；抖腕一下 → 开枪</text>
+    <text class="f hint">屏幕朝侧举枪稳住→就绪；抖腕开枪</text>
     <div class="reset" @click="resetCount"><text class="f resetT">{{ armed ? '再次点击确认' : '清零射击数' }}</text></div>
 
     <backbtn></backbtn>
@@ -101,7 +101,7 @@ function now() {
 export default {
   data: {
     clock: '--:--',
-    status: '手腕自然下垂',
+    status: '举枪待命',
     statusColor: 'rgba(255,255,255,0.45)',
     aimColor: COLOR_IDLE,
     ammo: 5,
@@ -131,7 +131,7 @@ export default {
     this.triedUi = false
 
     sensLevel = motionSensitivity.DEFAULT_LEVEL
-    core = motionCore.createMotionCore(motionSensitivity.coreOptions(sensLevel))
+    core = motionCore.createMotionCore(Object.assign({}, motionGun.POSE, motionSensitivity.coreOptions(sensLevel)))
     gun = motionGun.createGun(Object.assign({ reloadOn: true }, motionSensitivity.gunOptions(sensLevel)))
 
     g.kv.init(() => {
@@ -142,7 +142,7 @@ export default {
       if (level !== sensLevel) {
         // 存档里的档位不是默认：准备姿势与触发阈值都不同，按该档重建内核与状态机
         sensLevel = level
-        core = motionCore.createMotionCore(motionSensitivity.coreOptions(level))
+        core = motionCore.createMotionCore(Object.assign({}, motionGun.POSE, motionSensitivity.coreOptions(level)))
         gun = motionGun.createGun(Object.assign({ reloadOn: reloadOn }, motionSensitivity.gunOptions(level)))
       } else {
         gun.setReload(reloadOn)
@@ -213,8 +213,10 @@ export default {
   handle(ev) {
     if (!ev) return
     if (ev.type === 'ready') {
-      // 就绪用 1s 的就绪振，跟开枪的长振明确区分
-      g.haptic.ready()
+      // 就绪用 1s 的就绪振，跟开枪的长振明确区分；
+      // 振期间马达自己在动，会被同一颗加速度计采到 → 开一段静默窗口，别把就绪振当开枪
+      const cueMs = g.haptic.ready()
+      gun.muteFor(cueMs + 300)
       this.aimColor = COLOR_READY
     } else if (ev.type === 'shot') {
       g.haptic.long()
@@ -272,7 +274,7 @@ export default {
     }
 
     // 待命时顺带报当前灵敏度，好让玩家知道这局用的是哪一档阈值
-    let text = '手腕自然下垂 · 灵敏度' + motionSensitivity.label(sensLevel)
+    let text = '举枪待命 · 灵敏度' + motionSensitivity.label(sensLevel)
     let color = 'rgba(255,255,255,0.45)'
     if (!sensorOk) {
       text = '传感器不可用'

@@ -4,17 +4,29 @@
  * 纯 JS、零 @system.* 依赖，Node 可直接 import 单测（tools/test-motion-gun.mjs）。
  *
  * 玩法：
- *   - 平直抬手（举起 + 稳住）→ 就绪，长振一次（每次举手只振一次）；
+ *   - 摆好举枪姿态并稳住 → 就绪，长振一次（每次就绪只振一次）；
  *   - 扣扳机（抖腕一下）→ 射击成功，长振一次；
  *   - 「需要换弹」开启：弹匣 5 发，第 6 次触发 → 空仓（短振两次），点「换弹」补满；
  *     关闭：无限连发。
  *
- * 就绪是「锁存」的：一旦就绪，只有手臂垂下（raised 变 false）才解除。
+ * 就绪是「锁存」的：一旦就绪，只有离开就绪姿态（raised 变 false）才解除。
  * 否则每开一枪的抖动都会把就绪打断、再抖回来 —— 用户会听到「准备、准备、准备」。
+ *
+ * 静默窗口（muteFor）：就绪提示振会驱动马达，马达自身的振动被同一颗加速度计采到 ——
+ * 不挡掉的话，就绪振期间的那记尖峰会直接开枪（弹匣凭空少一格）。
  */
 
 /** 弹匣容量：需要换弹时的发数 */
 export const MAG_SIZE = 5
+
+/**
+ * 就绪姿态：举枪 = 重力落在 y 轴（屏幕朝侧、前臂竖直），左右手都认 → poseSign = 0。
+ *
+ * 轴 / 符号的对应关系以真机水平仪实测为准（docs/tough-spring-raven.md 步骤 0）：
+ * 预期「举枪」Pitch ≈ ±90（重力进 y 轴）、「手平放屏幕朝上」Pitch ≈ 0 且 Roll ≈ 0。
+ * 实测与预期不符时只改这里的两个常量，判定数学不动。
+ */
+export const POSE = { poseAxis: 'y', poseSign: 0 }
 
 /** 默认参数（真机调手感只改这里） */
 export const DEFAULTS = {
@@ -33,6 +45,18 @@ export function createGun(opts) {
   let ready = false
   let shots = 0
   let lastTrigger = -Infinity
+  let mutedUntil = -Infinity   // 静默窗口结束时刻
+  let lastT = 0                // 最近一次 feed 的时间戳
+
+  /**
+   * 静默：从最近一帧开始 ms 毫秒内不响应触发。
+   * 页面在收到 ready 事件后调用（就绪振 + 收尾余量）。
+   */
+  function muteFor(ms) {
+    const dur = typeof ms === 'number' && isFinite(ms) ? ms : 0
+    const until = lastT + dur
+    if (until > mutedUntil) mutedUntil = until
+  }
 
   /**
    * 喂一帧快照，返回事件列表。
@@ -45,10 +69,13 @@ export function createGun(opts) {
     const events = []
     if (!snap) return events
     const now = typeof t === 'number' ? t : 0
+    lastT = now
 
-    // 就绪：举起且稳住才进；手臂垂下才出（射击抖动不清就绪）
+    // 就绪：摆好姿态且稳住才进；离开姿态才出（射击抖动不清就绪）
+    let justReadied = false
     if (snap.raised && snap.steady && !ready) {
       ready = true
+      justReadied = true
       events.push({ type: 'ready' })
     } else if (!snap.raised && ready) {
       ready = false
@@ -56,7 +83,11 @@ export function createGun(opts) {
     }
 
     // 触发：就绪态下的动态加速度尖峰
-    if (ready && snap.dynMag >= o.shotMag && now - lastTrigger >= o.refractoryMs) {
+    //   - 静默窗口内不响应（就绪振期间马达在振）
+    //   - 就绪锁存的那一帧不响应：页面是在 feed 返回后才设静默窗口，
+    //     同帧的触发判定跑在静默窗口设置之前
+    if (ready && !justReadied && now >= mutedUntil &&
+        snap.dynMag >= o.shotMag && now - lastTrigger >= o.refractoryMs) {
       lastTrigger = now
       if (!reloadOn) {
         shots++
@@ -109,6 +140,7 @@ export function createGun(opts) {
 
   return {
     feed: feed,
+    muteFor: muteFor,
     reload: reload,
     setReload: setReload,
     resetShots: resetShots,
@@ -116,4 +148,4 @@ export function createGun(opts) {
   }
 }
 
-export default { createGun, MAG_SIZE, DEFAULTS }
+export default { createGun, MAG_SIZE, POSE, DEFAULTS }

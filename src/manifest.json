@@ -2,7 +2,7 @@
   "package": "com.lkjhg.bandbox",
   "name": "BandBox",
   "versionName": "0.1.1",
-  "versionCode": 256,
+  "versionCode": 260,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -281,6 +281,9 @@
       },
       "pages/motion/hoop": {
         "component": "hoop"
+      },
+      "pages/cubeTimer": {
+        "component": "cubeTimer"
       }
     }
   }

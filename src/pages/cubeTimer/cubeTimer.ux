@@ -1,0 +1,442 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page" @touchstart="onTouchStart" @touchend="onTouchEnd">
+    <pagehead title="{{ pageTitle }}" clock="{{ clock }}"></pagehead>
+
+    <!-- 计时视图 -->
+    <div class="timerView" if="{{ !showStats }}">
+      <text class="f status" style="color: {{ statusColor }};">{{ status }}</text>
+      <text class="f bigTime">{{ bigTime }}</text>
+      <text class="f subInfo">{{ subInfo }}</text>
+
+      <div class="mainBtn" if="{{ phase !== 'running' }}" @click="onMainBtn">
+        <text class="f mainBtnT">{{ mainBtnText }}</text>
+      </div>
+      <div class="stopBtn" if="{{ phase === 'running' }}" @click="onManualStop">
+        <text class="f stopBtnT">手动结束</text>
+      </div>
+
+      <text class="f hint1">平放待命 · 翻腕起表 · 再平放收表</text>
+      <text class="f hint2">上滑查看成绩</text>
+    </div>
+
+    <!-- 统计视图：与计时视图同位，翻页时不跳动 -->
+    <div class="statsView" if="{{ showStats }}">
+      <text class="f secLabel">最近 5 次</text>
+      <div class="rowWrap">
+        <div class="row" for="{{ recentRows }}">
+          <text class="f rowIdx">{{ $item.idx }}</text>
+          <text class="f rowTime">{{ $item.text }}</text>
+        </div>
+      </div>
+
+      <div class="avgCard">
+        <text class="f avgLabel">最近 30 次平均</text>
+        <text class="f avgVal">{{ avgText }}</text>
+        <text class="f avgCount">{{ avgCount }}</text>
+      </div>
+
+      <div class="clearBtn" @click="onClearStats">
+        <text class="f clearT">{{ clearText }}</text>
+      </div>
+    </div>
+
+    <!-- 翻页指示点：竖排在屏幕右侧（横向留给系统返回手势） -->
+    <div class="dots">
+      <div class="dot" style="background-color: {{ showStats ? '#333333' : '#0D6EFF' }};"></div>
+      <div class="dot" style="background-color: {{ showStats ? '#0D6EFF' : '#333333' }};"></div>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+/* 计时视图 / 统计视图：两个包装层都要是「定位盒子」——
+   Vela 里带 if 的 div 若没有尺寸与定位，里面的绝对定位子元素不会被布局（整屏空白）。
+   高度只包住各自正文（计时 386 / 统计 454），别超过可绘制高度 466：
+   页面根节点是竖向可拖的，包装层一旦超过视口，滑动翻页就会连页面一起拖走
+   （标题被拖出屏幕顶）。motion.ux 的卡片就是按正文高度裁的。 */
+.timerView { position: absolute; left: 0px; top: 0px; width: 212px; height: 400px; }
+.statsView { position: absolute; left: 0px; top: 0px; width: 212px; height: 460px; }
+/* 计时视图 */
+.status { position: absolute; left: 0px; top: 92px; width: 212px; height: 26px; line-height: 26px; text-align: center; font-size: 16px; }
+.bigTime { position: absolute; left: 0px; top: 126px; width: 212px; height: 64px; line-height: 64px; text-align: center; font-size: 44px; color: #FFFFFF; }
+.subInfo { position: absolute; left: 0px; top: 198px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.45); }
+/* 主按钮：z-index 20 < 返回按钮的 99，不会挡住返回 */
+.mainBtn { position: absolute; left: 26px; top: 260px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; z-index: 20; align-items: center; justify-content: center; }
+.mainBtnT { font-size: 17px; font-weight: bold; color: #FFFFFF; }
+/* 手动结束：判定失灵时的兜底（小号、弱化，不抢主按钮） */
+.stopBtn { position: absolute; left: 66px; top: 265px; width: 80px; height: 30px; border-radius: 15px; background-color: #262626; z-index: 20; align-items: center; justify-content: center; }
+.stopBtnT { font-size: 13px; color: rgba(255,255,255,0.7); }
+.hint1 { position: absolute; left: 0px; top: 340px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
+.hint2 { position: absolute; left: 0px; top: 366px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.25); }
+/* 统计视图 */
+.secLabel { position: absolute; left: 6px; top: 92px; width: 200px; height: 22px; line-height: 22px; font-size: 15px; color: rgba(255,255,255,0.6); }
+.rowWrap { position: absolute; left: 3px; top: 120px; width: 206px; height: 200px; flex-direction: column; }
+.row { width: 206px; height: 36px; margin-bottom: 4px; border-radius: 18px; background-color: #1A1A1A; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 16px; }
+.rowIdx { width: 30px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.4); }
+.rowTime { width: 76px; height: 26px; line-height: 26px; text-align: right; font-size: 20px; color: #FFFFFF; }
+/* 平均卡：卡是绝对定位 → 卡里的绝对定位子元素以「卡」为基准，不是页面 */
+.avgCard { position: absolute; left: 3px; top: 320px; width: 206px; height: 86px; border-radius: 26px; background-color: #262626; }
+.avgLabel { position: absolute; left: 18px; top: 10px; width: 120px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); }
+.avgVal { position: absolute; left: 18px; top: 32px; width: 140px; height: 38px; line-height: 38px; font-size: 28px; color: #FFFFFF; }
+.avgCount { position: absolute; left: 140px; top: 42px; width: 54px; height: 20px; line-height: 20px; text-align: right; font-size: 13px; color: rgba(255,255,255,0.4); }
+.clearBtn { position: absolute; left: 66px; top: 424px; width: 80px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
+.clearT { font-size: 13px; color: rgba(255,255,255,0.6); }
+/* 翻页指示点：竖排在屏幕右侧 */
+.dots { position: absolute; left: 203px; top: 190px; width: 6px; height: 24px; flex-direction: column; align-items: center; }
+.dot { width: 6px; height: 6px; border-radius: 3px; margin-top: 3px; margin-bottom: 3px; }
+</style>
+
+<script>
+import g from '../../utils/g'
+import sensor from '@system.sensor'
+import brightness from '@system.brightness'
+import cubeMotion from '../../utils/cubeMotion'
+import cubeStats from '../../utils/cubeStats'
+
+const COLOR_IDLE = 'rgba(255,255,255,0.45)'
+const COLOR_ARM = '#0D6EFF'
+const COLOR_READY = '#00C853'
+const COLOR_RUN = '#FFD166'
+const COLOR_WARN = '#FF9500'
+
+// 本页同时只有一个实例，内核与「上次写入」缓存放模块作用域。
+// 页面对象不能同时有 data 与 private（Vela 运行时会抛错），所以不用 private。
+let core = null
+let times = null      // 成绩存档（kv 读盘完成后才有值）
+let pending = null    // 读盘前产生的成绩：读盘好了补写
+let ticker = null     // 计时中的显示刷新
+let clearTimer = null // 「清空记录」两击确认的复位定时器
+let sensorOk = true
+let lastStatus = ''
+let lastBig = ''
+let lastSub = ''
+let lastBtn = ''
+
+export default {
+  data: {
+    clock: '--:--',
+    pageTitle: '魔方计时',
+    showStats: false,
+    phase: 'idle',
+    status: '点下方按钮准备',
+    statusColor: COLOR_IDLE,
+    bigTime: '00.000',
+    subInfo: '点「准备」后把手平放',
+    mainBtnText: '准备开始',
+    recentRows: [],
+    avgText: '--',
+    avgCount: '还没有成绩',
+    clearText: '清空记录',
+    clearing: false,
+    triedUi: false,
+    _ck: null,
+    _sx: null,
+    _sy: null
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+
+    // 每次进页都从计时视图开始，状态回到空闲
+    this.showStats = false
+    this.pageTitle = '魔方计时'
+    this.triedUi = false
+    sensorOk = true
+    lastStatus = ''
+    lastBig = ''
+    lastSub = ''
+    lastBtn = ''
+    core = cubeMotion.createCubeMotion()
+    this.resetView()
+
+    // 读成绩存档
+    g.kv.init(() => {
+      times = cubeStats.load(g.kv.get(cubeStats.KV_KEY, null))
+      // 读盘前产生的成绩补写进去（正常流程读盘很快，只是兜底）
+      if (pending !== null && times) {
+        times = cubeStats.push(times, pending, Date.now())
+        g.kv.set(cubeStats.KV_KEY, times)
+        pending = null
+      }
+      if (!page.$valid) return
+      page.applyStats()
+    })
+
+    // 计时页全程常亮（只常亮，不动亮度）
+    brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+    this.subscribe()
+  },
+  onHide() {
+    this.teardown()
+  },
+  onDestroy() {
+    this.teardown()
+  },
+  teardown() {
+    this.unsubscribe()
+    brightness.setKeepScreenOn({ keepScreenOn: false, success: () => {}, fail: () => {} })
+    g.haptic.stop()
+    this.clearTimers()
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    // 中途离开：放弃本次，不保存半次成绩
+    if (core) core.abort()
+  },
+  clearTimers() {
+    if (ticker) { clearInterval(ticker); ticker = null }
+    if (clearTimer) { clearTimeout(clearTimer); clearTimer = null }
+  },
+  resetView() {
+    this.phase = 'idle'
+    this.bigTime = '00.000'
+    lastBig = '00.000'
+    this.setSub('点「准备」后把手平放')
+    this.setBtn('准备开始')
+    this.setStatus('点下方按钮准备', COLOR_IDLE)
+  },
+  setStatus(text, color) {
+    if (text === lastStatus) return
+    this.status = text
+    this.statusColor = color
+    lastStatus = text
+  },
+  // 副标题 / 按钮文案：同样只在真变了才写（传感器每 tick 都会走到这里）
+  setSub(text) {
+    if (text === lastSub) return
+    this.subInfo = text
+    lastSub = text
+  },
+  setBtn(text) {
+    if (text === lastBtn) return
+    this.mainBtnText = text
+    lastBtn = text
+  },
+  subscribe() {
+    const page = this
+    const onData = (ret) => {
+      if (!core) return
+      const snap = core.feed(ret.x || 0, ret.y || 0, ret.z || 0, Date.now())
+      for (let i = 0; i < snap.events.length; i++) {
+        page.handle(snap.events[i])
+      }
+      page.syncPhase()
+    }
+    const onFail = () => {
+      // 'game'（20ms）个别固件不支持，退回 'ui'（60ms）
+      if (!page.triedUi) {
+        page.triedUi = true
+        try {
+          sensor.subscribeAccelerometer({ interval: 'ui', callback: onData, fail: () => page.sensorDown() })
+          return
+        } catch (e) {}
+      }
+      page.sensorDown()
+    }
+    try {
+      sensor.subscribeAccelerometer({ interval: 'game', callback: onData, fail: onFail })
+    } catch (e) {
+      onFail()
+    }
+  },
+  unsubscribe() {
+    try {
+      sensor.unsubscribeAccelerometer()
+    } catch (e) {}
+  },
+  sensorDown() {
+    sensorOk = false
+    this.setStatus('传感器不可用', COLOR_WARN)
+  },
+  // 内核相位 → 界面状态
+  syncPhase() {
+    if (!core) return
+    const st = core.state()
+    if (this.phase !== st.phase) this.phase = st.phase
+    if (!sensorOk) return
+    if (st.phase === 'settling') {
+      this.setStatus('请将手平放 · 保持静止', COLOR_ARM)
+      this.setSub('正在识别平放姿态…')
+      this.setBtn('取消')
+    } else if (st.phase === 'armed') {
+      this.setStatus('已就绪 · 翻腕开始计时', COLOR_READY)
+      this.setSub('手离开桌面即可起表')
+      this.setBtn('取消')
+    } else if (st.phase === 'running') {
+      this.setStatus('计时中 · 手平放即结束', COLOR_RUN)
+      this.setSub('解拧完把手放平就停表')
+    } else if (st.phase === 'done') {
+      this.setStatus('本次用时', COLOR_READY)
+    } else {
+      this.setStatus('点下方按钮准备', COLOR_IDLE)
+      this.setSub('点「准备」后把手平放')
+      this.setBtn('准备开始')
+    }
+  },
+  // 触发事件
+  handle(ev) {
+    if (!ev) return
+    if (ev.type === 'armed') {
+      this.setStatus('已就绪 · 翻腕开始计时', COLOR_READY)
+    } else if (ev.type === 'start') {
+      // 起表：长振一次
+      g.haptic.long()
+      // 在统计页起表时切回计时页，别让用户错过起表
+      if (this.showStats) {
+        this.showStats = false
+        this.pageTitle = '魔方计时'
+      }
+      this.startTicker(ev.t)
+    } else if (ev.type === 'stop') {
+      // 收表：长振一次
+      g.haptic.long()
+      this.stopTicker()
+      this.finishRun(ev.elapsed)
+    }
+  },
+  // 计时中的走表刷新（33ms 一跳，够看毫秒）
+  startTicker(startT) {
+    this.stopTicker()
+    const page = this
+    const t0 = startT
+    const tick = () => {
+      if (!page.$valid) return
+      const txt = cubeStats.formatMs(Date.now() - t0)
+      if (txt !== lastBig) {
+        page.bigTime = txt
+        lastBig = txt
+      }
+    }
+    tick()
+    ticker = setInterval(tick, 33)
+  },
+  stopTicker() {
+    if (ticker) { clearInterval(ticker); ticker = null }
+  },
+  finishRun(elapsed) {
+    this.phase = 'done'
+    const txt = cubeStats.formatMs(elapsed)
+    this.bigTime = txt
+    lastBig = txt
+    this.setSub('点下方「再来一次」继续')
+    this.setBtn('再来一次')
+    this.setStatus('本次用时', COLOR_READY)
+    // 入库：读盘还没好就先挂着，读盘好了补写
+    if (times) {
+      times = cubeStats.push(times, elapsed, Date.now())
+      g.kv.set(cubeStats.KV_KEY, times)
+    } else {
+      pending = elapsed
+    }
+    this.applyStats()
+  },
+  // 主按钮：准备 / 再来一次 / 取消
+  onMainBtn() {
+    if (!core) return
+    const st = core.state()
+    if (st.phase === 'idle' || st.phase === 'done') {
+      // 准备：短振一次
+      g.haptic.short()
+      core.arm()
+      this.phase = 'settling'
+      this.bigTime = '00.000'
+      lastBig = '00.000'
+      this.setStatus('请将手平放 · 保持静止', COLOR_ARM)
+      this.setSub('正在识别平放姿态…')
+      this.setBtn('取消')
+    } else if (st.phase === 'settling' || st.phase === 'armed') {
+      g.haptic.short()
+      core.abort()
+      this.phase = 'idle'
+      this.setStatus('点下方按钮准备', COLOR_IDLE)
+      this.setSub('点「准备」后把手平放')
+      this.setBtn('准备开始')
+    }
+  },
+  // 手动结束（判定失灵时的兜底）
+  onManualStop() {
+    if (!core) return
+    const ev = core.manualStop(Date.now())
+    if (!ev) return
+    g.haptic.long()
+    this.stopTicker()
+    this.finishRun(ev.elapsed)
+  },
+  // 滑动翻页
+  onTouchStart(e) {
+    const t = e && e.changedTouches && e.changedTouches[0]
+    if (!t) return
+    this._sx = typeof t.pageX === 'number' ? t.pageX : t.clientX
+    this._sy = typeof t.pageY === 'number' ? t.pageY : t.clientY
+  },
+  onTouchEnd(e) {
+    if (this._sx === null || this._sx === undefined) return
+    const t = e && e.changedTouches && e.changedTouches[0]
+    const dx = t ? (typeof t.pageX === 'number' ? t.pageX : t.clientX) - this._sx : 0
+    const dy = t ? (typeof t.pageY === 'number' ? t.pageY : t.clientY) - this._sy : 0
+    this._sx = null
+    this._sy = null
+    // 纵向明显位移且远大于横向才算翻页：点按钮不受影响；方向不区分，小屏好命中
+    if (Math.abs(dy) < 60 || Math.abs(dy) < Math.abs(dx) * 1.5) return
+    this.toggleView()
+  },
+  toggleView() {
+    g.haptic.short()
+    this.showStats = !this.showStats
+    this.pageTitle = this.showStats ? '计时统计' : '魔方计时'
+    if (this.showStats) {
+      // 翻到统计页时现读一次存档：刚跑出来的成绩立刻反映
+      const page = this
+      g.kv.init(() => {
+        times = cubeStats.load(g.kv.get(cubeStats.KV_KEY, null))
+        if (!page.$valid) return
+        page.applyStats()
+      })
+    }
+  },
+  applyStats() {
+    const list = cubeStats.load(times || [])
+    const rows = []
+    for (let i = 0; i < 5; i++) {
+      const it = list[i]
+      rows.push({ idx: String(i + 1), text: it ? cubeStats.formatMs(it.ms) : '--' })
+    }
+    this.recentRows = rows
+    const avg = cubeStats.avgMs(list)
+    this.avgText = avg === null ? '--' : cubeStats.formatMs(avg)
+    this.avgCount = list.length ? ('已记 ' + list.length + ' 次') : '还没有成绩'
+  },
+  // 清空记录：两击确认
+  onClearStats() {
+    if (!this.clearing) {
+      this.clearing = true
+      this.clearText = '再点一次确认'
+      g.haptic.short()
+      if (clearTimer) clearTimeout(clearTimer)
+      const page = this
+      clearTimer = setTimeout(() => {
+        clearTimer = null
+        if (page.$valid) {
+          page.clearing = false
+          page.clearText = '清空记录'
+        }
+      }, 4000)
+      return
+    }
+    if (clearTimer) { clearTimeout(clearTimer); clearTimer = null }
+    this.clearing = false
+    this.clearText = '清空记录'
+    g.haptic.long()
+    times = cubeStats.clear()
+    pending = null
+    g.kv.set(cubeStats.KV_KEY, times)
+    this.applyStats()
+  }
+}
+</script>

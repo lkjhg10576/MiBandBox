@@ -23,7 +23,7 @@
     <text class="f best">最佳 {{ best }}</text>
 
     <div class="reset" @click="resetScore"><text class="f resetT">{{ armed ? '再次点击确认' : '清零得分' }}</text></div>
-    <text class="f hint">举手稳住 → 长振就绪；向上用力投出 → 进球 +1</text>
+    <text class="f hint">翻腕手心朝上稳住→就绪；向上投出</text>
 
     <backbtn></backbtn>
   </div>
@@ -87,7 +87,7 @@ function now() {
 export default {
   data: {
     clock: '--:--',
-    status: '手腕自然下垂',
+    status: '投篮待命',
     statusColor: COLOR_IDLE,
     score: 0,
     scoreFont: 64,
@@ -113,7 +113,7 @@ export default {
     this.triedUi = false
 
     sensLevel = motionSensitivity.DEFAULT_LEVEL
-    core = motionCore.createMotionCore(motionSensitivity.coreOptions(sensLevel))
+    core = motionCore.createMotionCore(Object.assign({}, motionHoop.POSE, motionSensitivity.coreOptions(sensLevel)))
     hoop = motionHoop.createHoop(motionSensitivity.hoopOptions(sensLevel))
 
     g.kv.init(() => {
@@ -123,7 +123,7 @@ export default {
       if (level !== sensLevel) {
         // 存档里的档位不是默认：准备姿势与触发阈值都不同，按该档重建内核与状态机
         sensLevel = level
-        core = motionCore.createMotionCore(motionSensitivity.coreOptions(level))
+        core = motionCore.createMotionCore(Object.assign({}, motionHoop.POSE, motionSensitivity.coreOptions(level)))
         hoop = motionHoop.createHoop(motionSensitivity.hoopOptions(level))
       }
     })
@@ -197,8 +197,10 @@ export default {
   handle(ev) {
     if (!ev) return
     if (ev.type === 'ready') {
-      // 就绪用 1s 的就绪振，跟进球的长振明确区分
-      g.haptic.ready()
+      // 就绪用 1s 的就绪振，跟进球的长振明确区分；
+      // 振期间马达自己在动，会被同一颗加速度计采到 → 开一段静默窗口，别把就绪振当投篮
+      const cueMs = g.haptic.ready()
+      hoop.muteFor(cueMs + 300)
     } else if (ev.type === 'score') {
       g.haptic.long()
       this.hoopIn()
@@ -268,7 +270,7 @@ export default {
       }
     }
     // 待命时顺带报当前灵敏度，好让玩家知道这局用的是哪一档阈值
-    let text = '手腕自然下垂 · 灵敏度' + motionSensitivity.label(sensLevel)
+    let text = '投篮待命 · 灵敏度' + motionSensitivity.label(sensLevel)
     let color = COLOR_IDLE
     if (!sensorOk) {
       text = '传感器不可用'

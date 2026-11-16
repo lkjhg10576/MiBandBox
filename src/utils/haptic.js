@@ -57,19 +57,27 @@ function long() {
 }
 
 /** 「已就绪」提示振的目标时长：拉长到 1s，跟普通长振明确拉开差距 */
-const READY_MS = 1000
+export const READY_MS = 1000
+/** 单次 long 波形的时长（实测 0.2~0.3s，取中值；节拍器强档一次调用就是这个） */
+export const LONG_MS = 250
+/** 重触发节奏：必须小于波形时长 —— 马达还没停就重新起振，听感才是连续的一段 */
+export const READY_TICK_MS = 200
 
 /**
  * 就绪提示振：约 1s 的长震动（体感游戏「已就绪」用，比普通长振更明确）。
  * S5 等支持定长脉冲的机型一记振满 1s；其余机型波形时长固定，
- * 用三记紧挨着的长振拼出约 1s（停顿极短，体感接近连续）。
+ * 按 200ms 的节奏重叠重触发 long（马达没停就重新起振 → 听感不间断），
+ * 5 记覆盖 0~约 1050ms。
+ *
+ * @returns {number} 提示振时长（毫秒），页面用它设静默窗口
  */
 function ready() {
   if (canStart()) {
     cancelTask()
-    if (startPulse(READY_MS, 1)) return
+    if (startPulse(READY_MS, 1)) return READY_MS
   }
-  pattern(3, Math.round(READY_MS / 3), 'long')
+  pattern(Math.ceil(READY_MS / READY_TICK_MS), READY_TICK_MS, 'long')
+  return READY_MS
 }
 
 /** S5 专属的定长脉冲任务句柄 */
@@ -157,4 +165,7 @@ function stop() {
   cancelTask()
 }
 
-export default { short, long, ready, pattern, stop, beat, label, LEVELS, LEVEL_ORDER }
+export default {
+  short, long, ready, pattern, stop, beat, label,
+  LEVELS, LEVEL_ORDER, READY_MS, LONG_MS, READY_TICK_MS
+}

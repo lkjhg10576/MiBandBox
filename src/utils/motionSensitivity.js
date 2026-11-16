@@ -2,14 +2,14 @@
  * 体感灵敏度：低 / 中 / 高三档。
  *
  * 灵敏度同时决定两件事：
- *   1) 准备姿势的标准程度 —— 举手角度门槛、驻留时长、平稳度要求；
+ *   1) 准备姿势的标准程度 —— 就绪姿态的角度门槛、驻留时长、平稳度要求；
  *   2) 触发所需的动作幅度 —— 手枪的抖腕阈值、投篮的向上爆发阈值。
  *
  * 方向（关键设计，别弄反）：
  *   高灵敏度 = 触发门槛更低（小幅度动作就能开枪/投篮），但准备姿势要求更严
- *              （手臂要抬得更高、停得更稳）。系统越灵敏越容易误触发，
+ *              （姿态要更标准、停得更稳）。系统越灵敏越容易误触发，
  *              所以就绪姿势必须更标准，游戏难度才不塌。
- *   低灵敏度 = 触发门槛更高（要大幅动作），但准备姿势宽松（抬得矮一点也行）。
+ *   低灵敏度 = 触发门槛更高（要大幅动作），但准备姿势宽松（歪一点也行）。
  *   三档的「难度」因此大致相当：灵敏度只是把手环适配到用户能动幅度上——
  *   动作幅度受限的用户选高档，用小动作也能玩；动作幅度大的用户选低档，
  *   靠大动作取胜。
@@ -35,26 +35,27 @@ export const KV_KEY = 'motionSensitivity'
 /**
  * 每档的参数覆盖（覆盖 motionCore / motionGun / motionHoop 的 DEFAULTS）。
  *
- * core.raiseEnterDeg / raiseExitDeg —— 举手判定角（相对垂手基线）与退出角（迟滞）
- * core.dwellMs                     —— 姿势越界后需保持的时长
- * core.steadyMag                   —— 动态幅值低于此值算「稳」（越小越要求稳）
- * gun.shotMag                      —— 抖腕触发开枪的动态加速度阈值
- * hoop.upMag                       —— 向上爆发（投篮）阈值
- * hoop.releaseWindowMs             —— 爆发后多久内必须收手（动作越大收得越慢，窗口放宽）
+ * core.poseEnterDeg / poseExitDeg —— 就绪姿态判定角（绝对姿态）与退出角（迟滞）
+ *                                  参考系是「重力落在哪个轴」，不是垂手基线（见 motionCore）
+ * core.dwellMs                   —— 姿态越界后需保持的时长
+ * core.steadyMag                 —— 动态幅值低于此值算「稳」（越小越要求稳）
+ * gun.shotMag                    —— 抖腕触发开枪的动态加速度阈值
+ * hoop.upMag                     —— 向上爆发（投篮）阈值
+ * hoop.releaseWindowMs           —— 爆发后多久内必须收手（动作越大收得越慢，窗口放宽）
  */
 const PARAMS = {
   low: {
-    core: { raiseEnterDeg: 30, raiseExitDeg: 18, dwellMs: 120, steadyMag: 3.0 },
+    core: { poseEnterDeg: 30, poseExitDeg: 18, dwellMs: 120, steadyMag: 3.0 },
     gun: { shotMag: 18 },
     hoop: { upMag: 12, releaseWindowMs: 900 }
   },
   mid: {
-    core: { raiseEnterDeg: 45, raiseExitDeg: 30, dwellMs: 250, steadyMag: 2.0 },
+    core: { poseEnterDeg: 45, poseExitDeg: 30, dwellMs: 250, steadyMag: 2.0 },
     gun: { shotMag: 12 },
     hoop: { upMag: 8, releaseWindowMs: 600 }
   },
   high: {
-    core: { raiseEnterDeg: 60, raiseExitDeg: 42, dwellMs: 400, steadyMag: 1.2 },
+    core: { poseEnterDeg: 60, poseExitDeg: 42, dwellMs: 400, steadyMag: 1.2 },
     gun: { shotMag: 7 },
     hoop: { upMag: 5, releaseWindowMs: 450 }
   }
@@ -79,8 +80,8 @@ export function label(level) {
 export function coreOptions(level) {
   const p = PARAMS[normalize(level)].core
   return {
-    raiseEnterDeg: p.raiseEnterDeg,
-    raiseExitDeg: p.raiseExitDeg,
+    poseEnterDeg: p.poseEnterDeg,
+    poseExitDeg: p.poseExitDeg,
     dwellMs: p.dwellMs,
     steadyMag: p.steadyMag
   }
