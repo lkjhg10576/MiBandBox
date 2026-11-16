@@ -33,6 +33,16 @@
     }
   ],
   "downloads": {
+    "xmb9": {
+      "version": "0.1.1",
+      "file_name": "downloads/com.lkjhg.bandbox.release.0.1.1.rpk",
+      "versionCode": 256
+    },
+    "xmb9p": {
+      "version": "0.1.1",
+      "file_name": "downloads/com.lkjhg.bandbox.pro.release.0.1.1.rpk",
+      "versionCode": 256
+    },
     "xmb10": {
       "version": "0.1.1",
       "file_name": "downloads/com.lkjhg.bandbox.release.0.1.1.rpk",
@@ -46,21 +56,6 @@
     "xmb10p": {
       "version": "0.1.1",
       "file_name": "downloads/com.lkjhg.bandbox.pro.release.0.1.1.rpk",
-      "versionCode": 256
-    },
-    "xmb9p": {
-      "version": "0.1.1",
-      "file_name": "downloads/com.lkjhg.bandbox.pro.release.0.1.1.rpk",
-      "versionCode": 256
-    },
-    "xmb11": {
-      "version": "0.1.1",
-      "file_name": "downloads/com.lkjhg.bandbox.release.0.1.1.rpk",
-      "versionCode": 256
-    },
-    "xmb11nfc": {
-      "version": "0.1.1",
-      "file_name": "downloads/com.lkjhg.bandbox.release.0.1.1.rpk",
       "versionCode": 256
     }
   },

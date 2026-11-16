@@ -50,6 +50,29 @@ AtomGit 每次提交都会**覆盖**镜像仓库代码。也就是说控制台�
 > 首次做这一套时，`media/`、`downloads/`、`manifest_v2.json` 已随一次提交入库，
 > 从此控制台与镜像不再互相覆盖丢失。
 
+## 机型 ↔ 包体对照
+
+平台设备代号取自 AstroBox 官方 `devices_v2.json`；真机分辨率取自米坛知识库
+（wiki.bandbbs.cn/ProductWiki/devices/Xiaomi/device.html）。
+
+| 设备 | 平台代号 | 真机分辨率 | 用哪个包 |
+|---|---|---|---|
+| 小米手环 9 | `xmb9` | 192 × 490 | `com.lkjhg.bandbox.release.*.rpk`（窄长包） |
+| 小米手环 9 Pro | `xmb9p` | 336 × 480 | `com.lkjhg.bandbox.pro.release.*.rpk` |
+| 小米手环 10 | `xmb10` | 212 × 520 | `com.lkjhg.bandbox.release.*.rpk` |
+| 小米手环 10 NFC | `xmb10nfc` | 212 × 520 | `com.lkjhg.bandbox.release.*.rpk` |
+| 小米手环 10 Pro | `xmb10p` | 336 × 480 | `com.lkjhg.bandbox.pro.release.*.rpk` |
+| 小米手环 11 / 11 NFC | `xmb11` / `xmb11nfc` | 212 × 520 | **暂不支持，不上架** |
+
+平台设备表里**没有手环 9 的 NFC 代号**（只有 `xmb10nfc`），所以「含 NFC 版」在
+索引里就落在 `xmb10nfc` 一项。
+
+> ⚠️ **手环 9 的分辨率是 192×490，比窄长包设计的 212×520 窄 20px**
+> （96dp vs 106dp）。窄长包的布局是**固定像素宽度**的（`src/pages/home/home.ux`
+> 里写着 `width: 212px` / `206px` 等），装到 192px 宽的屏上右侧会被裁。
+> 若要认真支持手环 9，需要像 `pro336` 那样再加一套 `192×490` 的 profile
+> （布局常量、影子图尺寸、R9 资源校验都要跟着改），是另一件独立的活。
+
 ## 商店图标（`media/icon_astrobox.png`）
 
 - **和包内图标是两个文件、两种形状，不要合并**：
