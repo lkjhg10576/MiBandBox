@@ -1,3 +1,3 @@
-1a94812fe427ec259013573b348953f3f201018848bc724718a7f0bc962b70f4  com.lkjhg.bandbox.pro.release.0.1.1.rpk
-b9ebbdbddfdf8af74b7239ac7abe522364d165fb71c9e436dad3a4c42cc98b03  com.lkjhg.bandbox.release.0.1.1.rpk
-73df7cb7895cd73f08af7532533b81a5637ba27e6a78239f175350037801dae9  BandBox辅助.abp
+7be3b232d912da19f716c53f0710dba67d0591d4ed9702690a93d5c84d1a7584  com.lkjhg.bandbox.pro.release.0.1.1.rpk
+26a144cb703baba5302d80f7b92108648305e547d2d05e4b1392b2bf3c6f9724  com.lkjhg.bandbox.release.0.1.1.rpk
+c5c74d90cd80d70ef048c2be216863e4aa46cdc45f044fc28cc3ca87485a3733  BandBox辅助.abp

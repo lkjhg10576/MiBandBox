@@ -26,7 +26,7 @@
 
 ## What is this?
 
-BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 11** (212 × 520 strip display) and the **Xiaomi Band 9 Pro / 10 Pro** (336 × 480 rectangular display). Each form factor ships as its own package (same app package name, pick the one for your band).
+BandBox is a **fully local** toolbox built for the **Xiaomi Band 9 / 10 / 10 NFC** (narrow strip display) and the **Xiaomi Band 9 Pro / 10 Pro** (336 × 480 rectangular display). Each form factor ships as its own package (same app package name, pick the one for your band). **Xiaomi Band 11 is not supported yet.**
 
 A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-seven small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
@@ -232,7 +232,7 @@ The project has two packaging channels. They differ in versioning strategy, outp
   ```
 
   The local `copyfile-shim.cjs` shim is required, otherwise `build:jsc` fails with `EPERM` from the sandbox's `copy_file_range`.
-- The release certificate lives in `sign/release/` (preferred) or `sign/`; that directory is git-ignored. A release build **requires a self-signed release certificate whose CN equals the package name** — the build aborts if the certificate is missing or is the toolkit's built-in `CN=localhost` debug certificate (generate one with `bash tools/gen-release-cert.sh`).
+- The release certificate lives in `sign/release/` (preferred) or `sign/`; that directory is git-ignored. A release build **requires a self-signed release certificate whose CN equals the package name and whose subject carries all 7 fields required by the official cert generator** (`C` country / `ST` province / `L` locality / `O` organization / `OU` organizational unit / `CN` common name / `emailAddress`) — the build aborts if the certificate is missing, is the toolkit's built-in `CN=localhost` debug certificate, or is missing any of those fields (generate one with `bash tools/gen-release-cert.sh`; re-sign with the same key and an updated subject via `bash tools/gen-release-cert.sh --force`, which keeps the signing identity so existing installs can still be upgraded).
 - The version number is synced in four places (`src/manifest.json`, `package.json`, the about page, the settings page) by the script, and gate rule R6 re-checks it.
 - `npm run gate` (`tools/release-gate.mjs`) must pass before shipping.
 
@@ -294,7 +294,7 @@ You can reproduce the package size yourself: run `npm run build:jsc` and check `
 - Cold start in the simulator takes about 10 seconds due to a Vela runtime debugger discovery timeout; real devices usually start faster.
 - Simulator mouse/touch coordinates are offset from the picture by roughly 40 px, so automated screenshots need calibration; real touch is fine.
 - The Vela simulator image renders text unreliably: after reinstalling, Chinese text may occasionally turn into tofu blocks or misalign. Restarting the simulator (clearing the font cache) fixes it. This is a simulator-side issue; real watches are unaffected.
-- Only Xiaomi bands are supported: one package for the 212 × 520 strip display (Band 10 / 11) and one for the 336 × 480 rectangular display (9 Pro / 10 Pro). Not for phones or tablets. Band 9 Pro is verified on the emulator so far; device-only items are flagged in the release notes.
+- Only Xiaomi bands are supported: one package for the narrow strip display (Band 9 / 10 / 10 NFC) and one for the 336 × 480 rectangular display (9 Pro / 10 Pro). Not for phones or tablets; Band 11 is not supported yet. Band 9 Pro is verified on the emulator so far; device-only items are flagged in the release notes.
 
 ---
 

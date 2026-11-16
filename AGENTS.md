@@ -15,6 +15,8 @@
 - **打包模式差异（2026-11-15 起）**：发行版走 production 模式 —— JS 压缩混淆、剔除 `.map`、用发行证书签名；Beta 走 development 模式，不压缩不混淆。
 - **rpk 文件名里的 `.debug.` / `.release.` 段只表示打包模式，不是包名**。包名始终是 `com.lkjhg.bandbox`，`manifest.json` 的 `config.debug` 为 `false`；工具链按编译模式拼文件名（`ZipUtil.js`：`mode === DEVELOPMENT ? 'debug' : 'release'`）。别再把它当成「debug 包」。
 - **发行证书（2026-11-15 换源后）**：`production` 模式按 `sign/release/{certificate.pem,private.pem}` → `sign/{certificate.pem,private.pem}` 的顺序找证书（`sign/` 已被 `.gitignore` 忽略，私钥绝不入库）。**发行版必须用自签发行证书，且证书 CN 必须等于包名** —— 工具链自带的默认证书（`CN=localhost`）是 debug 证书，缺证书时**绝不允许**再兜底复制它。生成：`bash tools/gen-release-cert.sh`（CN 自动取 `src/manifest.json` 的包名，同时镜像到 `sign/debug/` 供 development 模式用同一张证书）。历史包用的 `CN=localhost` 证书已退役（挪到 `sign/legacy-cn-localhost/`，不在查找路径上）。
+- **证书 subject 必须带齐 7 项（2026-11-15 补齐，勿删字段）**：官网「生成证书」要求签名文件含 **国家名称 `C` / 省份 `ST` / 城市 `L` / 组织名称 `O` / 组织单位名称 `OU` / 名称与姓氏 `CN` / 邮箱地址 `emailAddress`**，缺一项就不构成合格的签名文件。当前值：`C=CN`、`ST=Tianjin`、`L=Tianjin`、`O=BandBox`、`OU=lkjhg10576`、`emailAddress=17726063360@163.com`、`CN=com.lkjhg.bandbox`（CN 必须等于包名）。省份/城市用拼音（平台侧按 ASCII 解析最稳）。改这些值用 `CERT_ST=… CERT_L=… CERT_OU=… CERT_EMAIL=… bash tools/gen-release-cert.sh --force`。
+- **换证书优先「只重签 subject、不换私钥」**：`--force` 默认**沿用现有私钥**重签（公钥不变 → 签名身份不变 → 老用户可覆盖升级、平台侧指纹不冲突）；只有明确要换签名身份时才加 `--new-key`（老用户须卸载重装、本地数据会丢）。门禁 **R12** 与 `tools/verify-rpk.mjs` 都会核对 7 项齐全，缺项直接拦下。
 - **不再产出 zip 压缩包**。`release/*.zip` 是 0.4.x 时代的历史遗留，不要再生成新的。
 
 ### 换源：包名 + 签名证书（2026-11-15 起，勿回退）
@@ -23,7 +25,7 @@
 
 - **包名**：`com.miband.bandbox` → **`com.lkjhg.bandbox`**。旧名反写域名是 `bandbox.miband.com`，`miband` 是小米自家品牌域名，三方应用占用该命名空间会被判包名不正确。新名满足反向域名规范（小写、点分段、每段字母开头、≥3 段）。包名真源只有一处：`src/manifest.json` 的 `package` 字段。
 - **包名必须三处同步**：`src/manifest.json` 的 `package`、`src/utils/{otpProtocol,qrProtocol}.js` 的 `TARGET_PKG`、`plugin/bandbox-helper/src/{protocol,otpProtocol,qrProtocol}.js` 的 `TARGET_PKG`。手机插件靠包名寻址手环应用（`sendQaicMessage(addr, TARGET_PKG, …)`），不同步就收不到消息。改包名时六处一起改，并跑 `node tools/test-otp-cross.mjs`（双端常量一致性）。
-- **证书**：自签发行证书，CN = 包名（`bash tools/gen-release-cert.sh`）。门禁 **R12** 会核对：证书存在、CN 不是 `localhost`、CN == 包名；打包脚本也会再核一遍，缺证书/CN 不符直接中止构建。
+- **证书**：自签发行证书，CN = 包名，subject 带齐 7 项（`bash tools/gen-release-cert.sh`，`--force` 只重签不改私钥）。门禁 **R12** 会核对：证书存在、CN 不是 `localhost`、CN == 包名、subject 7 项齐全；打包脚本也会再核一遍，缺证书/CN 不符/字段缺失直接中止构建。
 - **老包怎么办**：`0.1.0`（`com.miband.bandbox`）已下架。换包名 = 平台上是**另一个应用**（控制台的包名不可改，需按新包名重新创建应用条目）；手环上新旧包可共存，互不覆盖，老包的数据要自己从旧应用里看。
 - **版本号**：本版沿用 `0.1.1` / `versionCode 256`（换源的是身份，不是版本）。
 
@@ -42,8 +44,8 @@
 
 分发平台只认**包内 `manifest.json` 的 `versionName`/`versionCode`**，控制台不改已签名包的版本（改任一字节都会让手环验签失败、装不上）。所以：
 
-- 上架前必须确认**控制台填的版本 == 包内版本**，用 `node tools/verify-rpk.mjs <rpk>` 查（会打印包内版本号、包名、证书 CN 与验签结果）。
-- `make-release.sh` 出包后会自动逐个跑 `tools/verify-rpk.mjs`（校验签名完整性 + 包内版本 + 包内包名 + 证书 CN），不过即中断构建。
+- 上架前必须确认**控制台填的版本 == 包内版本**，用 `node tools/verify-rpk.mjs <rpk>` 查（会打印包内版本号、包名、证书 subject 与验签结果）。
+- `make-release.sh` 出包后会自动逐个跑 `tools/verify-rpk.mjs`（校验签名完整性 + 包内版本 + 包内包名 + 证书 CN + 证书 subject 7 项齐全），不过即中断构建。
 - 平台已登记的版本号要小于新包的 versionCode；被拒时先查是不是撞号。
 - **换源后要在平台按新包名重新创建应用条目**：控制台的包名一旦确认不可更改（换包名 = 新应用），旧条目（`com.miband.bandbox`，0.1.0）已下架。
 
