@@ -7,6 +7,10 @@ dist/
 _re/
 __pycache__/
 *.rpk
+# AstroBox 资源仓库例外：downloads/ 下的包体是平台下载入口指向的文件，
+# 必须入库 —— AtomGit 每次提交都会覆盖镜像仓库（= GitHub 资源仓库），
+# 不入库的话控制台上传的包体下一次 push 就被冲掉，平台链接失效。
+!downloads/*.rpk
 docs/
 .release/
 .vscode/
@@ -37,6 +41,8 @@ sign/
 tools/*
 # 例外：发行门禁是构建链的一部分，必须跟着仓库走
 !tools/release-gate.mjs
+# 例外：AstroBox 上架同步脚本同理（控制台改完资源要把文件拉回本地）
+!tools/astrobox-sync.mjs
 
 # 本地验证截图（本地工具产出）
 .shots/

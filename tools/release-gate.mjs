@@ -17,6 +17,11 @@
  *   R10 计算器几何常量与 CSS 自洽  内容高度（BASE_H/ADV_H）由几何常量累加，常量与 CSS 对不上就拦下构建
  *   R11 包名一致性              源码树必须是基线包名态（渠道包包名只在构建期物化）；包名要符合反向域名规范
  *   R12 发行证书                上架渠道包必须用自签发行证书，且证书 CN 与包名对齐（CN=localhost 是 debug 证书）
+ *   R13 AstroBox 资源清单引用完整性  manifest_v2.json 里 item.icon / item.cover / item.preview[] /
+ *                            downloads.*.file_name 指向的文件必须在仓库里真实存在。0.1.1 被平台打回
+ *                            「icon指向文件不存在」：清单写着 media/icon_astrobox.png，实体文件却不在
+ *                            仓库里（控制台移除图标后没同步回来）。另校验图标边长 ≤ 500px
+ *                            （Creator Console 实测：864×864 被直接拒收）。
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
@@ -381,6 +386,10 @@ for (const f of walk('src', '.ux')) {
 // 分发平台打回过一次「用了 AIoT 的 debug 证书签名，不是 release 包」：
 // 工具链自带的默认证书 CN=localhost 就是 debug 证书（SignUtil 的 defaultDevelopment）。
 // 发行包必须用自签发行证书，且证书 CN 与包名对齐。
+//
+// 另外官网「生成证书」要求证书 subject 带齐 7 项，缺一项就不构成合格的签名文件：
+//   国家名称 C / 省份 ST / 城市 L / 组织名称 O / 组织单位名称 OU / 名称与姓氏 CN / 邮箱地址 emailAddress
+// （2026-11-15 换源时只写了 C/O/CN 三项，重签补齐；这道门禁防止再退化）
 {
   const dir = process.env.BANDBOX_SIGN_DIR
   if (!dir) {
@@ -392,9 +401,11 @@ for (const f of walk('src', '.ux')) {
       fail('R12', dir, `签名证书缺失：需要 ${dir}/certificate.pem 与 ${dir}/private.pem`)
     } else {
       let cn = ''
+      let subject = ''
       try {
         const cert = new crypto.X509Certificate(fs.readFileSync(certFile))
-        const mm = /(?:^|,)\s*CN=([^,]+)/.exec(cert.subject.replace(/\n/g, ', '))
+        subject = cert.subject.replace(/\n/g, ', ')
+        const mm = /(?:^|,)\s*CN=([^,]+)/.exec(subject)
         cn = mm ? mm[1].trim() : ''
       } catch (e) {
         fail('R12', dir, '证书解析失败：' + e.message)
@@ -407,6 +418,68 @@ for (const f of walk('src', '.ux')) {
         fail('R12', dir, '证书是工具链自带的 debug 证书（CN=localhost），平台会打回；用 bash tools/gen-release-cert.sh 重新生成')
       } else if (cn !== wantCn) {
         fail('R12', dir, `证书 CN 是 ${cn}，期望 ${wantCn}（平台按包名核对证书）`)
+      }
+      // subject 7 项完整性：缺一项平台侧就不认这个签名文件
+      const REQUIRED_DN = [
+        ['C', '国家名称'], ['ST', '省份'], ['L', '城市'], ['O', '组织名称'],
+        ['OU', '组织单位名称'], ['CN', '名称与姓氏'], ['emailAddress', '邮箱地址'],
+      ]
+      const missing = []
+      for (const [key, label] of REQUIRED_DN) {
+        const m = new RegExp('(?:^|,)\\s*' + key + '=([^,]+)').exec(subject)
+        if (!m || !m[1].trim()) missing.push(`${label}(${key})`)
+      }
+      if (missing.length) {
+        fail('R12', dir, `证书 subject 缺字段：${missing.join('、')} —— 官网要求 7 项齐全（国家/省份/城市/组织/组织单位/名称与姓氏/邮箱）；` +
+          `用 bash tools/gen-release-cert.sh --force 重签补齐`)
+      }
+    }
+  }
+}
+
+// ---------- R13 AstroBox 资源清单引用完整性 ----------
+{
+  const mf = path.join(ROOT, 'manifest_v2.json')
+  if (!fs.existsSync(mf)) {
+    warn('R13', 'manifest_v2.json', '仓库里没有 manifest_v2.json（AstroBox 资源清单）——若本次要提交分发平台，先跑 tools/astrobox-sync.mjs 生成')
+  } else {
+    let m = null
+    try {
+      m = JSON.parse(fs.readFileSync(mf, 'utf8'))
+    } catch (e) {
+      fail('R13', 'manifest_v2.json', 'JSON 解析失败：' + e.message)
+    }
+    if (m) {
+      const item = m.item || {}
+      const refs = []
+      if (item.icon) refs.push(['item.icon', item.icon])
+      if (item.cover) refs.push(['item.cover', item.cover])
+      for (const [i, p] of (item.preview || []).entries()) refs.push([`item.preview[${i}]`, p])
+      for (const [dev, d] of Object.entries(m.downloads || {})) {
+        if (d && d.file_name) refs.push([`downloads.${dev}.file_name`, d.file_name])
+      }
+      if (!refs.length) {
+        fail('R13', 'manifest_v2.json', '清单里没有任何资源引用（icon / cover / preview / downloads 全空）')
+      }
+      for (const [field, p] of refs) {
+        const rel = String(p).replace(/^\.\//, '').replace(/^\/+/, '')
+        const abs = path.join(ROOT, rel)
+        if (!fs.existsSync(abs)) {
+          fail('R13', 'manifest_v2.json', `${field} 指向 "${p}"，但仓库里没有这个文件 —— 平台会打回「icon指向文件不存在」；` +
+            `补齐实体文件（图标：python3 promo/tools/gen_astrobox_icon.py）或改引用`)
+          continue
+        }
+        // 图标规格：Creator Console 实测边长 ≤ 500px（曾用 864×864 被拒收）
+        if (field === 'item.icon' && rel.toLowerCase().endsWith('.png')) {
+          const buf = fs.readFileSync(abs)
+          if (buf.length > 24 && buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+            const w = buf.readUInt32BE(16)
+            const h = buf.readUInt32BE(20)
+            if (w > 500 || h > 500) {
+              fail('R13', rel, `图标 ${w}×${h} 超过 Creator Console 上限（边长需 ≤ 500px），控制台导入时会被直接拒收`)
+            }
+          }
+        }
       }
     }
   }
