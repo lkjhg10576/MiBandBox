@@ -6,7 +6,7 @@
 支持三种常见歌词格式：逐行 LRC、常规逐字 LRC（行内 `[mm:ss.xx]`）、
 增强逐字 LRC（ESLyric 的 `<mm:ss.xx>` 标签）。
 
-- 版本：`0.1.1`（与手环端快应用版本号对齐；对齐前插件自成一条 `0.3.x` 版本线，最高 `0.3.3`）
+- 版本：`0.1.2`（与手环端快应用版本号对齐；对齐前插件自成一条 `0.3.x` 版本线，最高 `0.3.3`）
 - API Level：**4**（`wasi_version: 3`）
 - 目标快应用包名：`com.lkjhg.bandbox`（手环端 BandBox）
 - 协议：本仓库自定义的 `bandbox-lyrics`，与手环端 `src/utils/lyricsTransfer.js` 一一对应
