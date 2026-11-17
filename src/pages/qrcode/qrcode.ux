@@ -19,7 +19,9 @@
     <div class="go {{ text ? '' : 'off' }}" @click="generate"><text class="f goT">生成二维码</text></div>
     <text class="f hint">二维码仅在本机生成</text>
 
-    <div class="favEntry" @click="openFavs"><text class="f favEntryT">我的收藏</text></div>
+    <!-- 键盘态输入法占住屏幕底部 305px，两个入口键会被盖住：按仓库约定 show 收起 -->
+    <div class="favEntry" show="{{ !kbShow }}" @click="openFavs"><text class="f favEntryT">我的收藏</text></div>
+    <div class="importEntry" show="{{ !kbShow }}" @click="openImport"><text class="f importEntryT">从手机导入</text></div>
 
     <backbtn if="{{ !kbShow }}"></backbtn>
     <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
@@ -44,6 +46,8 @@
 .hint { position: absolute; left: 16px; top: 330px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.3); }
 .favEntry { position: absolute; left: 26px; top: 372px; width: 160px; height: 40px; border-radius: 20px; background-color: #1E1E1E; align-items: center; justify-content: center; }
 .favEntryT { font-size: 14px; color: rgba(255,255,255,0.7); }
+.importEntry { position: absolute; left: 26px; top: 418px; width: 160px; height: 40px; border-radius: 20px; background-color: #1E1E1E; align-items: center; justify-content: center; }
+.importEntryT { font-size: 14px; color: rgba(255,255,255,0.7); }
 </style>
 
 <script>
@@ -97,6 +101,10 @@ export default {
   openFavs() {
     g.haptic.short()
     g.router.push('/pages/qrcode/fav')
+  },
+  openImport() {
+    g.haptic.short()
+    g.router.push('/pages/qrcode/import')
   },
   generate() {
     if (!this.text) {

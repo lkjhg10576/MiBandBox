@@ -198,6 +198,9 @@
       "pages/qrcode/favdetail": {
         "component": "favdetail"
       },
+      "pages/qrcode/import": {
+        "component": "import"
+      },
       "pages/marquee": {
         "component": "marquee"
       },

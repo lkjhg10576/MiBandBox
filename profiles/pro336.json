@@ -373,6 +373,14 @@
       ["width: 182px", "width: 306px"],
       ["left: 26px", "left: 88px"]
     ],
+    "src/pages/qrcode/import/import.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["height: 408px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"],
+      ["width: 140px", "width: 274px"]
+    ],
     "src/pages/marquee/marquee.ux": [
       ["width: 206px", "width: 330px"],
       ["width: 190px", "width: 314px"],
