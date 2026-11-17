@@ -264,6 +264,9 @@
       "pages/unitconvert/picker": {
         "component": "picker"
       },
+      "pages/unitconvert/radix": {
+        "component": "radix"
+      },
       "pages/metronome": {
         "component": "metronome"
       },

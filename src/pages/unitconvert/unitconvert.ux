@@ -22,7 +22,7 @@
 @import '../../common/styles/theme.css';
 
 .cats { position: absolute; left: 3px; top: 88px; width: 206px; height: 378px; }
-.grid { width: 206px; height: 404px; flex-direction: row; flex-wrap: wrap; }
+.grid { width: 206px; height: 448px; flex-direction: row; flex-wrap: wrap; }
 .cell {
   width: 97px;
   height: 58px;
@@ -41,11 +41,12 @@
 import g from '../../utils/g'
 import units from '../../utils/units'
 
-/** 12 类卡片：中文名 + 该类基准单位，进入换算页时把类别 id 作为路由参数。 */
+/** 12 类卡片：中文名 + 该类基准单位，进入换算页时把类别 id 作为路由参数。
+ * 进制不在 units.js 里（独立子页），concat 手工追加第 13 卡，不污染内核。 */
 const CATS = units.CATEGORIES.map((cat) => {
   const b = units.baseUnit(cat)
   return { id: cat.id, name: cat.name, sub: '基准 ' + b.symbol }
-})
+}).concat([{ id: 'radix', name: '进制', sub: '2 · 8 · 10 · 16' }])
 
 export default {
   data: {
@@ -71,6 +72,10 @@ export default {
   open(item) {
     if (!item || !item.id) return
     g.haptic.short()
+    if (item.id === 'radix') {
+      g.router.push('/pages/unitconvert/radix')
+      return
+    }
     g.router.push('/pages/unitconvert/convert', { type: item.id })
   }
 }

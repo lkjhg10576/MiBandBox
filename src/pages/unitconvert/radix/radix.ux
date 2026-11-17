@@ -1,0 +1,271 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+<import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="进制转换" clock="{{ clock }}"></pagehead>
+
+    <!-- 进制 chips：点按切换输入进制（数值守恒重解释）。键盘态隐藏：键面固定为 hex，切了无意义。
+         选中色预计算进 chips 数据（仿 otp/list 的 $item.color），不依赖模板三元。 -->
+    <div class="chips" show="{{ !kbShow }}">
+      <div class="chip" for="{{ chips }}" @click="pickBase($item)" style="background-color: {{ $item.bg }};">
+        <text class="f chipT" style="color: {{ $item.fg }};">{{ $item.symbol }}</text>
+      </div>
+    </div>
+
+    <!-- 卡片只做背景：前景文本必须是卡的 flex 子元素（absolute 子元素会被按卡片定位裁剪）。 -->
+    <div class="inCard" show="{{ !kbShow }}" @click="openInput">
+      <text class="f inLabel">输入 · {{ baseLabel }}</text>
+      <text class="f inVal" if="{{ !empty }}">{{ inL1 }}</text>
+      <text class="f inVal inPh" if="{{ empty }}">{{ placeText }}</text>
+      <text class="f inVal" if="{{ !empty }}">{{ inL2 }}</text>
+    </div>
+
+    <div class="resCard" show="{{ !kbShow }}">
+      <div class="rRow" for="{{ rows }}">
+        <text class="f rLabel">{{ $item.name }}</text>
+        <text class="f rVal">{{ $item.l1 }}</text>
+        <text class="f rVal">{{ $item.l2 }}</text>
+      </div>
+    </div>
+
+    <div class="actRow" show="{{ !kbShow }}" @click="clearAll"><text class="f actRowT">清空</text></div>
+
+    <!-- 键盘态草稿卡：band10 两行 y76..148，Pro 单行 y74..112（editCardKb 由 profile 填值），
+         都不压 kbBar（155/115 起）与 BackBtn（y42..70）。点草稿卡收键盘（键盘外点击收起的惯例），
+         也是模拟器上唯一能收起键盘的入口（AVD 视口压缩把 kbBar 压在输入法下面，见 Beta 248 记录）。 -->
+    <div class="editCard editCardKb" show="{{ kbShow }}" @click="doneEdit">
+      <text class="f eLabel" show="{{ showELabel }}">{{ baseLabel }}</text>
+      <text class="f eVal" if="{{ draft }}">{{ dL1 }}</text>
+      <text class="f eVal ePh" if="{{ !draft }}">{{ placeText }}</text>
+      <text class="f eVal">{{ dL2 }}</text>
+    </div>
+
+    <!-- 键盘态「完成」用输入法正上方的 kbBar，页头整条是返回命中区不能放动作键 -->
+    <div class="kbBar" show="{{ kbShow }}" @click="doneEdit"><text class="f kbBarT">完成</text></div>
+
+    <backbtn></backbtn>
+    <!-- 整页固定 hex 键面（watchKeyboardTypePropsChange 是空函数，运行时换键面无效）；
+         bin/oct/dec 下多出的键由 pushKey 过滤 + toast 提示 -->
+    <input-method hide="{{ !kbShow }}" keyboardtype="hex" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+
+.chips { position: absolute; left: 3px; top: 76px; width: 206px; height: 40px; flex-direction: row; justify-content: space-between; }
+.chip { width: 47px; height: 40px; border-radius: 20px; background-color: #262626; align-items: center; justify-content: center; }
+.chipT { font-size: 14px; }
+.inCard { position: absolute; left: 3px; top: 124px; width: 206px; height: 68px; border-radius: 26px; background-color: #262626; padding: 4px 12px; flex-direction: column; }
+.inLabel { width: 182px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.inVal { width: 182px; height: 22px; line-height: 22px; font-size: 18px; color: #FFFFFF; }
+.inPh { color: rgba(255,255,255,0.3); }
+.resCard { position: absolute; left: 3px; top: 200px; width: 206px; height: 192px; border-radius: 26px; background-color: #151515; padding: 6px 12px; flex-direction: column; }
+.rRow { width: 182px; height: 60px; flex-direction: column; }
+.rLabel { width: 182px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.rVal { width: 182px; height: 22px; line-height: 22px; font-size: 18px; color: #9FC4FF; }
+.editCard { position: absolute; left: 3px; top: 76px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; padding: 4px 12px; flex-direction: column; }
+.editCardKb {}
+.eLabel { width: 182px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.eVal { width: 182px; height: 24px; line-height: 24px; text-align: center; font-size: 20px; color: #0D6EFF; }
+.ePh { color: rgba(255,255,255,0.3); }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import prompt from '@system.prompt'
+import radix from '../../../utils/radix'
+import { SCREEN } from '../../../common/layout.js'
+
+const KV_KEY = 'unitRadix.lastBase'
+
+// Pro 卡内宽 306px：32 字符草稿一行放得下；band10 内宽 182px 必须两行
+const DRAFT_CHUNK = SCREEN.w >= 336 ? 32 : 16
+
+const CHAR_MSG = {
+  bin: '二进制只能输入 0 和 1',
+  oct: '八进制只能输入 0-7',
+  dec: '十进制只能输入 0-9',
+  hex: '只能输入 0-9 和 A-F'
+}
+
+/** chips 选中态预计算成数据字段（模板不用三元）。 */
+function chipList(selectedId) {
+  const out = []
+  for (let i = 0; i < radix.BASES.length; i++) {
+    const b = radix.BASES[i]
+    const on = b.id === selectedId
+    out.push({ id: b.id, symbol: b.symbol, bg: on ? '#0D6EFF' : '#262626', fg: on ? '#FFFFFF' : 'rgba(255,255,255,0.65)' })
+  }
+  return out
+}
+
+/** 草稿为空时的占位结果行（不包含输入进制）。 */
+function emptyRows(selectedId) {
+  const out = []
+  for (let i = 0; i < radix.BASES.length; i++) {
+    const b = radix.BASES[i]
+    if (b.id === selectedId) continue
+    out.push({ id: b.id, name: b.name, symbol: b.symbol, l1: '—', l2: '' })
+  }
+  return out
+}
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    baseId: 'dec',
+    baseLabel: '十进制',
+    placeText: '点击输入',
+    chips: chipList('dec'),
+    draft: '',
+    empty: true,
+    inL1: '',
+    inL2: '',
+    dL1: '',
+    dL2: '',
+    rows: emptyRows('dec'),
+    kbShow: false,
+    charWarned: false,
+    limitWarned: false,
+    showELabel: SCREEN.w < 336
+  },
+
+  onInit() {
+    this.refresh()
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    // KV 只记输入进制：异步读回不阻塞首帧；键盘态或已有草稿时不覆盖
+    if (!this.kbShow && !this.draft) {
+      const target = this
+      g.kv.init(() => {
+        if (!target.$valid || target.kbShow || target.draft) return
+        const b = radix.base(g.kv.get(KV_KEY, ''))
+        if (b && b.id !== target.baseId) {
+          target.baseId = b.id
+          target.baseLabel = b.name
+          target.chips = chipList(b.id)
+          target.refresh()
+        }
+      })
+    }
+  },
+
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    this.cancelEdit()
+  },
+
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    this.cancelEdit()
+  },
+
+  /** 唯一显示同步点：草稿 → 输入卡/键盘态草稿/三行结果，输入即实时换算。 */
+  refresh() {
+    const b = radix.base(this.baseId) || radix.BASES[2]
+    this.baseId = b.id
+    this.baseLabel = b.name
+    this.chips = chipList(b.id)
+    this.empty = this.draft === ''
+    // 输入卡与结果行：每 4/3 位分组后 JS 预切两行（不依赖自动折行）
+    const gl = radix.splitLines(this.draft, b.id)
+    this.inL1 = gl[0]
+    this.inL2 = gl[1]
+    // 键盘态草稿：按定宽原样切分（不分组，退格时不视觉跳动）
+    const dl = radix.draftLines(this.draft, DRAFT_CHUNK)
+    this.dL1 = dl[0]
+    this.dL2 = dl[1]
+    const v = radix.parse(this.draft, b.id)
+    const rows = []
+    for (let i = 0; i < radix.BASES.length; i++) {
+      const ob = radix.BASES[i]
+      if (ob.id === b.id) continue
+      const l = v === null ? ['—', ''] : radix.splitLines(radix.format(v, ob.id), ob.id)
+      rows.push({ id: ob.id, name: ob.name, symbol: ob.symbol, l1: l[0], l2: l[1] })
+    }
+    this.rows = rows
+  },
+
+  openInput() {
+    this.charWarned = false
+    this.limitWarned = false
+    this.kbShow = true
+    g.haptic.short()
+  },
+
+  onKey(e) {
+    const raw = e && e.detail && e.detail.content ? e.detail.content : ''
+    if (!raw) return
+    const r = radix.pushKey(this.draft, raw, this.baseId)
+    this.draft = r.draft
+    if (r.reason) this.warnKey(r.reason)
+    this.refresh()
+  },
+
+  onDel() {
+    this.draft = this.draft.slice(0, -1)
+    this.refresh()
+  },
+
+  doneEdit() {
+    // 草稿即值：输入过程已实时换算，这里只收键盘
+    this.kbShow = false
+    g.haptic.short()
+  },
+
+  cancelEdit() {
+    // 不清草稿：草稿即值，收键盘/离开页面都保留
+    this.kbShow = false
+  },
+
+  /** 切换输入进制：按旧进制 parse 成整数、再 format 成新进制写回草稿 —— 数值守恒。 */
+  pickBase(item) {
+    if (!item || !item.id || item.id === this.baseId) return
+    const nb = radix.base(item.id)
+    if (!nb) return
+    const v = radix.parse(this.draft, this.baseId)
+    this.baseId = nb.id
+    this.baseLabel = nb.name
+    this.draft = v === null ? '' : radix.format(v, nb.id)
+    this.charWarned = false
+    this.limitWarned = false
+    this.refresh()
+    g.haptic.short()
+    try { g.kv.set(KV_KEY, nb.id) } catch (err) {}
+  },
+
+  clearAll() {
+    if (this.kbShow) return
+    if (this.draft === '') return
+    this.draft = ''
+    this.refresh()
+    g.haptic.short()
+  },
+
+  /** 一次性 toast 去重（仿 random.ux）：非法字符按进制给文案，超限给上限。 */
+  warnKey(reason) {
+    if (reason === 'char') {
+      if (!this.charWarned) {
+        this.charWarned = true
+        const b = radix.base(this.baseId)
+        prompt.showToast({ message: b ? (CHAR_MSG[b.id] || '该进制不支持此字符') : '无法输入该字符', duration: 1600 })
+      }
+    } else if (reason === 'limit') {
+      if (!this.limitWarned) {
+        this.limitWarned = true
+        prompt.showToast({ message: '最大 4294967295（32 位）', duration: 1600 })
+      }
+    }
+    g.haptic.long()
+  }
+}
+</script>
