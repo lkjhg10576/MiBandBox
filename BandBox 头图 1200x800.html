@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1200, initial-scale=1.0" />
+<title>BandBox 头图 1200x800</title>
+<style>
+  @page {
+    size: 1200px 800px;
+    margin: 0;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    width: 1200px;
+    height: 800px;
+    overflow: hidden;
+    font-family: "MiSans", "Noto Sans CJK SC", "PingFang SC", sans-serif;
+    background: #F4F8FF;
+  }
+
+  .canvas {
+    position: relative;
+    width: 1200px;
+    height: 800px;
+    background: linear-gradient(135deg, #F8FAFF 0%, #EEF4FF 55%, #E3EEFF 100%);
+    overflow: hidden;
+  }
+
+  .bg-arc {
+    position: absolute;
+    right: -180px;
+    top: -110px;
+    width: 780px;
+    height: 1020px;
+    border-radius: 50%;
+    background: linear-gradient(160deg, #D5E5FF 0%, #C2D9FF 55%, #B5D0FF 100%);
+    z-index: 1;
+  }
+
+  .bg-glow {
+    position: absolute;
+    right: 120px;
+    top: 140px;
+    width: 520px;
+    height: 520px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, rgba(37, 99, 235, 0) 70%);
+    z-index: 2;
+  }
+
+  .left-panel {
+    position: absolute;
+    left: 88px;
+    top: 118px;
+    width: 520px;
+    z-index: 10;
+  }
+
+  /* 独立大应用图标 */
+  .app-icon-wrap {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin-bottom: 24px;
+    border: 3px solid #FFFFFF;
+    background: #0F62FE;
+  }
+
+  .app-icon-wrap img {
+    width: 104%;
+    height: 104%;
+    margin: -2%;
+    object-fit: cover;
+    display: block;
+    border-radius: 50%;
+  }
+
+  /* 主标题：BandBox 成为绝对视觉第一层级 */
+  .main-title {
+    font-size: 112px;
+    font-weight: 900;
+    color: #0B1736;
+    line-height: 1.02;
+    letter-spacing: -3px;
+    margin-bottom: 20px;
+  }
+
+  /* 中文定位副标题（品牌蓝高亮） */
+  .cn-title {
+    font-size: 48px;
+    font-weight: 800;
+    color: #2563EB;
+    line-height: 1.2;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+  }
+
+  /* 卖点说明 */
+  .subtitle {
+    font-size: 32px;
+    font-weight: 700;
+    color: #36527D;
+    line-height: 1.4;
+    letter-spacing: 0.5px;
+  }
+
+  .dot-grid {
+    position: absolute;
+    left: 92px;
+    bottom: 72px;
+    width: 74px;
+    z-index: 10;
+  }
+
+  .dot-row {
+    margin-bottom: 14px;
+    font-size: 0;
+  }
+
+  .dot-row span {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #9CC0FF;
+    margin-right: 14px;
+  }
+
+  .dot-row span:last-child {
+    margin-right: 0;
+  }
+
+  /* 右侧双机错落展示（212x520 ≈ 1:2.45 修长跑道屏比例） */
+  .devices-stage {
+    position: absolute;
+    right: 68px;
+    top: 54px;
+    width: 500px;
+    height: 690px;
+    z-index: 10;
+  }
+
+  .shadow-front {
+    position: absolute;
+    left: 36px;
+    top: 54px;
+    width: 255px;
+    height: 594px;
+    border-radius: 127px;
+    background: rgba(15, 29, 64, 0.16);
+    transform: rotate(-7deg);
+    z-index: 18;
+  }
+
+  .shadow-back {
+    position: absolute;
+    right: 14px;
+    top: 112px;
+    width: 230px;
+    height: 532px;
+    border-radius: 115px;
+    background: rgba(15, 29, 64, 0.12);
+    transform: rotate(8deg);
+    z-index: 13;
+  }
+
+  .band-device {
+    position: absolute;
+    background: linear-gradient(145deg, #3A4252 0%, #1B202B 45%, #0D1017 100%);
+    padding: 11px;
+    border: 2px solid rgba(255, 255, 255, 0.26);
+  }
+
+  .band-screen {
+    width: 100%;
+    height: 100%;
+    background: #000000;
+    overflow: hidden;
+    position: relative;
+    border: 1.5px solid rgba(255, 255, 255, 0.10);
+  }
+
+  .band-screen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .band-front {
+    width: 255px;
+    height: 594px;
+    border-radius: 127px;
+    left: 22px;
+    top: 36px;
+    transform: rotate(-7deg);
+    z-index: 20;
+  }
+
+  .band-front .band-screen {
+    border-radius: 116px;
+  }
+
+  .band-back {
+    width: 230px;
+    height: 532px;
+    border-radius: 115px;
+    right: 26px;
+    top: 96px;
+    transform: rotate(8deg);
+    z-index: 15;
+  }
+
+  .band-back .band-screen {
+    border-radius: 104px;
+  }
+</style>
+</head>
+<body>
+  <div class="canvas">
+    <div class="bg-arc"></div>
+    <div class="bg-glow"></div>
+
+    <div class="left-panel">
+      <div class="app-icon-wrap">
+        <img src="media/icon_astrobox.png" alt="BandBox Icon" />
+      </div>
+
+      <h1 class="main-title">BandBox</h1>
+
+      <div class="cn-title">小米手环百宝箱</div>
+
+      <p class="subtitle">三十八件小工具 · 抬手就能用</p>
+    </div>
+
+    <div class="dot-grid">
+      <div class="dot-row"><span></span><span></span><span></span></div>
+      <div class="dot-row"><span></span><span></span><span></span></div>
+      <div class="dot-row"><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="devices-stage">
+      <div class="shadow-back"></div>
+      <div class="shadow-front"></div>
+
+      <div class="band-device band-back">
+        <div class="band-screen">
+          <img src="media/preview-2.png" alt="BandBox 计算器" />
+        </div>
+      </div>
+
+      <div class="band-device band-front">
+        <div class="band-screen">
+          <img src="media/preview-1.png" alt="BandBox 主页" />
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
