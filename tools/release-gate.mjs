@@ -22,6 +22,10 @@
  *                            「icon指向文件不存在」：清单写着 media/icon_astrobox.png，实体文件却不在
  *                            仓库里（控制台移除图标后没同步回来）。另校验图标边长 ≤ 500px
  *                            （Creator Console 实测：864×864 被直接拒收）。
+ *   R14 发行产物完整性          release/ 与 beta/ 下每个产物目录里的 rpk 必须是带签名块的正式包，
+ *                            且 SHA256SUMS.txt 与磁盘文件对得上。0.1.1 的标准版包就是在签名之后
+ *                            被二次改写（包根塞进 .abp 与 Pro 版 rpk），签名块被挤没 —— 手环拒装、
+ *                            渠道判「不是 release 包」。这条规则保证下次构建前就能发现产物被动过。
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
@@ -478,6 +482,107 @@ for (const f of walk('src', '.ux')) {
             if (w > 500 || h > 500) {
               fail('R13', rel, `图标 ${w}×${h} 超过 Creator Console 上限（边长需 ≤ 500px），控制台导入时会被直接拒收`)
             }
+          }
+        }
+      }
+    }
+  }
+}
+
+// ---------- R14 发行产物完整性 ----------
+{
+  // 轻量 rpk 自检：签名块在不在、包根有没有混进别的包。
+  // （完整验签在 tools/verify-rpk.mjs —— 那个脚本不入库，门禁里只做「结构级」体检。）
+  const SIG_MAGIC = Buffer.from('RPK Sig Block 42')
+  const ROOT_FILES = new Set(['app.jsc', 'manifest.json', 'manifest-watch.json'])
+  function inspectRpk(file) {
+    const buf = fs.readFileSync(file)
+    let eocd = -1
+    for (let i = buf.length - 22; i >= 0; i--) {
+      if (buf.readUInt32LE(i) === 0x06054b50) { eocd = i; break }
+    }
+    if (eocd < 0) return { err: '不是合法的 zip/rpk（找不到 EOCD）' }
+    const cdOffset = buf.readUInt32LE(eocd + 16)
+    const cdSize = buf.readUInt32LE(eocd + 12)
+    const entries = []
+    let p = cdOffset
+    while (p + 46 <= cdOffset + cdSize && buf.readUInt32LE(p) === 0x02014b50) {
+      const nameLen = buf.readUInt16LE(p + 28)
+      const extraLen = buf.readUInt16LE(p + 30)
+      const cmtLen = buf.readUInt16LE(p + 32)
+      const localOffset = buf.readUInt32LE(p + 42)
+      entries.push({
+        name: buf.toString('utf8', p + 46, p + 46 + nameLen),
+        localOffset
+      })
+      p += 46 + nameLen + extraLen + cmtLen
+    }
+    let localEnd = 0
+    for (const e of entries) {
+      const lo = e.localOffset
+      const nameLen = buf.readUInt16LE(lo + 26)
+      const extraLen = buf.readUInt16LE(lo + 28)
+      const compSize = buf.readUInt32LE(lo + 18)
+      const end = lo + 30 + nameLen + extraLen + compSize
+      if (end > localEnd) localEnd = end
+    }
+    const signChunk = buf.subarray(localEnd, cdOffset)
+    const signed = signChunk.length > 0 && signChunk.subarray(signChunk.length - SIG_MAGIC.length).equals(SIG_MAGIC)
+    const stray = entries
+      .filter((e) => !e.name.endsWith('/'))
+      .filter((e) => /\.(rpk|abp)$/i.test(e.name) || (!e.name.includes('/') && !ROOT_FILES.has(e.name)))
+      .map((e) => e.name)
+    return { signed, stray }
+  }
+
+  for (const chan of ['release', 'beta']) {
+    const chanDir = path.join(ROOT, chan)
+    if (!fs.existsSync(chanDir)) continue
+    for (const name of fs.readdirSync(chanDir)) {
+      const dir = path.join(chanDir, name)
+      if (!fs.statSync(dir).isDirectory()) continue
+      const rpks = fs.readdirSync(dir).filter((f) => f.endsWith('.rpk'))
+      if (!rpks.length) continue
+      for (const f of rpks) {
+        const abs = path.join(dir, f)
+        let info
+        try {
+          info = inspectRpk(abs)
+        } catch (e) {
+          fail('R14', path.join(chan, name, f), `读取失败：${e.message}`)
+          continue
+        }
+        if (info.err) {
+          fail('R14', path.join(chan, name, f), info.err)
+          continue
+        }
+        if (!info.signed) {
+          fail('R14', path.join(chan, name, f),
+            '包内没有 rpk 签名块（未签名 / 签名后被改写）—— 手环会拒装，渠道会判「不是 release 包」。' +
+            '重新出包：bash tools/make-release.sh --release <版本> --all-profiles')
+        }
+        if (info.stray.length) {
+          fail('R14', path.join(chan, name, f),
+            `包里混进了不该有的文件：${info.stray.join('、')} —— 快应用包里不能嵌套 rpk/abp` +
+            '（0.1.1 标准版包就是这么被改坏的）')
+        }
+      }
+      // SHA256SUMS.txt 必须与磁盘上的文件对得上：产物被动过（哪怕只改了 1 字节）要能看出来
+      const sumFile = path.join(dir, 'SHA256SUMS.txt')
+      if (fs.existsSync(sumFile)) {
+        for (const line of fs.readFileSync(sumFile, 'utf8').split('\n')) {
+          const m = /^([0-9a-f]{64})\s+(.+)$/.exec(line.trim())
+          if (!m) continue
+          const abs = path.join(dir, m[2])
+          if (!fs.existsSync(abs)) {
+            fail('R14', path.join(chan, name, 'SHA256SUMS.txt'), `清单里的 ${m[2]} 不存在了`)
+            continue
+          }
+          const actual = crypto.createHash('sha256').update(fs.readFileSync(abs)).digest('hex')
+          if (actual !== m[1]) {
+            fail('R14', path.join(chan, name, m[2]),
+              `文件与 SHA256SUMS.txt 对不上（清单 ${m[1].slice(0, 12)}… / 实际 ${actual.slice(0, 12)}…）—— ` +
+              '产物在生成校验和之后被改动过，重新出包')
           }
         }
       }
