@@ -29,3 +29,13 @@
 /* 内置输入法顶部“完成”栏：页面可通过同名样式覆盖 top。 */
 .kbBar { position: absolute; left: 0px; top: 155px; width: 212px; height: 32px; background-color: #111111; z-index: 1000; flex-direction: row; justify-content: flex-end; align-items: center; padding-right: 14px; }
 .kbBarT { font-size: 14px; color: #0D6EFF; }
+
+/* 底部动作行：主操作按钮（保存 / 完成）独占一行、贴在安全区底部。
+   为什么动作键不放页头右上角：页头整条（PageHead.phHit，y0..74）是返回命中区，
+   命中区一旦压住动作键，真机上点「保存」会被页头吞掉（变成返回，或干脆点不到）。
+   Vela 渲染器丢弃 z-index（实测日志 "Unknown style - zIndex"），层序只按文档顺序排，
+   真机与模拟器的点按判定顺序未必一致 —— 只能靠「不重叠」保证动作键可点。
+   top 400 = 安全区底部（band10 y466）往上留 18px；Pro 屏幕矮 40px，
+   profiles/pro336.json 里 theme.css 这条把 top 改成 360。 */
+.actRow { position: absolute; left: 3px; top: 400px; width: 206px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.actRowT { font-size: 15px; color: #FFFFFF; }

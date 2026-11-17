@@ -41,7 +41,9 @@
       <text class="f ePlace" if="{{ !draft }}">输入 40–240</text>
     </div>
 
-    <div class="done" show="{{ kbShow }}" @click="doneEdit"><text class="f doneT">完成</text></div>
+    <!-- 键盘态的「完成」用输入法上方那条 kbBar（y155..187 / Pro y115..147）即可：
+         它调的也是 doneEdit，页头右上角再放一个纯属重复，而且页头整条是返回命中区，
+         动作键压在里面真机上点不到。 -->
     <div class="kbBar" show="{{ kbShow }}" @click="doneEdit"><text class="f kbBarT">完成</text></div>
 
     <backbtn></backbtn>
@@ -69,8 +71,6 @@
 .eLabel { width: 174px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
 .eValue { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 26px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
 .ePlace { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
-.done { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
-.doneT { font-size: 14px; color: #FFFFFF; }
 </style>
 
 <script>

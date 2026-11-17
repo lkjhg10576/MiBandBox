@@ -26,6 +26,9 @@
  *                            且 SHA256SUMS.txt 与磁盘文件对得上。0.1.1 的标准版包就是在签名之后
  *                            被二次改写（包根塞进 .abp 与 Pro 版 rpk），签名块被挤没 —— 手环拒装、
  *                            渠道判「不是 release 包」。这条规则保证下次构建前就能发现产物被动过。
+ *   R15 页头命中区不得压住可点元素 页头整条可点返回后，页头右侧的「保存/完成/参考」正好落在
+ *                            命中区里 —— 真机上点保存会被页头吞掉。Vela 渲染器丢弃 z-index，
+ *                            层序只按文档顺序排，真机/模拟器判定顺序未必一致，只能靠「不重叠」保证。
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
@@ -70,6 +73,172 @@ function walk(dir, ext, out = []) {
     else if (e.name.endsWith(ext)) out.push(rel)
   }
   return out
+}
+
+// ---------- R15 页头命中区不得压住可点元素（扫描逻辑，规则本体在文件下方） ----------
+// 页头整条（PageHead.phHit，y0..74）是返回命中区，命中区一旦压住动作键，
+// 真机上点「保存」会被页头吞掉。Vela 渲染器丢弃 z-index（层序只按文档顺序排），
+// 真机与模拟器的点按判定顺序未必一致 —— 只能靠「不重叠」保证。
+// 几何从 PageHead.ux 现读，基线态与 pro336 物化态都算得准。
+const PAGEHEAD_FILE = 'src/components/PageHead.ux'
+
+/** 解析 .ux 的 <style> 段 → { 类名: 声明 } */
+function parseUxStyle(css) {
+  const rules = {}
+  css = css.replace(/\/\*[\s\S]*?\*\//g, '')
+  css = css.replace(/@import[^;]*;/g, '') // @import 会把后面的选择器吞掉
+  const re = /([^{}]+)\{([^{}]*)\}/g
+  let m
+  while ((m = re.exec(css))) {
+    const props = {}
+    for (const decl of m[2].split(';')) {
+      const i = decl.indexOf(':')
+      if (i < 0) continue
+      const k = decl.slice(0, i).trim()
+      const v = decl.slice(i + 1).trim()
+      if (k) props[k] = v
+    }
+    for (const s of m[1].split(',')) {
+      const cls = s.trim().replace(/^\./, '')
+      if (!cls || cls.includes(' ') || cls.includes('@')) continue
+      rules[cls] = Object.assign(rules[cls] || {}, props)
+    }
+  }
+  return rules
+}
+
+/** 解析 .ux 的 <template> 段 → 元素树（保留父子关系，用于累加绝对坐标） */
+function parseUxTemplate(tpl) {
+  const roots = []
+  const stack = []
+  const re = /<(\/?)([a-zA-Z][\w-]*)((?:"[^"]*"|'[^']*'|[^<>])*?)(\/?)>/g
+  let m
+  while ((m = re.exec(tpl))) {
+    if (m[1] === '/') { stack.pop(); continue }
+    const el = { tag: m[2], attrs: m[3] || '', children: [], parent: stack[stack.length - 1] || null }
+    if (el.parent) el.parent.children.push(el)
+    else roots.push(el)
+    if (!m[4]) stack.push(el)
+  }
+  return roots
+}
+
+function uxAttr(attrs, name) {
+  const re = new RegExp('(?:^|\\s)' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*=\\s*"([^"]*)"')
+  const m = attrs.match(re)
+  return m ? m[1] : null
+}
+
+function uxClasses(attrs) {
+  const c = uxAttr(attrs, 'class')
+  if (!c) return []
+  return c.split(/\s+/)
+    .map((s) => s.replace(/\{\{.*$/, '').trim())
+    .filter((s) => s && !s.includes('{{') && !s.includes('}}'))
+}
+
+function uxNum(v) {
+  if (v == null) return null
+  const m = String(v).match(/-?\d+(\.\d+)?/)
+  return m ? parseFloat(m[0]) : null
+}
+
+/** 元素的定位盒（只认 absolute / fixed 的） */
+function uxBox(el, rules) {
+  let box = null
+  for (const c of uxClasses(el.attrs)) {
+    const r = rules[c]
+    if (!r) continue
+    if (r.position !== undefined || r.top !== undefined || r.left !== undefined ||
+        r.width !== undefined || r.height !== undefined) {
+      box = Object.assign(box || {}, r)
+    }
+  }
+  if (!box) return null
+  if (box.position !== 'absolute' && box.position !== 'fixed') return null
+  return { top: uxNum(box.top), left: uxNum(box.left), w: uxNum(box.width), h: uxNum(box.height) }
+}
+
+/** 沿祖先链累加出绝对坐标（祖先都是 absolute 容器） */
+function uxAbsBox(el, rules) {
+  const b = uxBox(el, rules)
+  if (!b) return null
+  let top = b.top || 0
+  let left = b.left || 0
+  for (let p = el.parent; p; p = p.parent) {
+    const pb = uxBox(p, rules)
+    if (pb) { top += pb.top || 0; left += pb.left || 0 }
+  }
+  const w = b.w == null ? 0 : b.w
+  const h = b.h == null ? 0 : b.h
+  return { top, left, right: left + w, bottom: top + h }
+}
+
+/** 扫出「被页头命中区压住的 @click 元素」；返回可读的问题清单 */
+function scanHeaderOverlaps() {
+  const problems = []
+  let hit
+  try {
+    const raw = read(PAGEHEAD_FILE)
+    const styleM = raw.match(/<style>([\s\S]*?)<\/style>/)
+    if (!styleM) return [`${PAGEHEAD_FILE} 找不到 <style> 段`]
+    const rules = parseUxStyle(styleM[1])
+    const hitRule = rules.phHit
+    const phRule = rules.ph || {}
+    if (!hitRule) return [`${PAGEHEAD_FILE} 找不到 .phHit 规则`]
+    const hLeft = (uxNum(hitRule.left) || 0) + (uxNum(phRule.left) || 0)
+    const hTop = (uxNum(hitRule.top) || 0) + (uxNum(phRule.top) || 0)
+    const hW = uxNum(hitRule.width) || 0
+    const hH = uxNum(hitRule.height) || 0
+    hit = { left: hLeft, top: hTop, right: hLeft + hW, bottom: hTop + hH }
+  } catch (e) {
+    return [`${PAGEHEAD_FILE} 读取失败：${e.message}`]
+  }
+
+  for (const rel of walk('src', '.ux')) {
+    if (rel === PAGEHEAD_FILE) continue
+    let raw
+    try {
+      raw = read(rel)
+    } catch {
+      continue
+    }
+    const tplM = raw.match(/<template>([\s\S]*?)<\/template>/)
+    const styleM = raw.match(/<style>([\s\S]*?)<\/style>/)
+    if (!tplM || !styleM) continue
+    const tpl = tplM[1]
+    if (!/<pagehead\b/.test(tpl)) continue
+    // noback：命中区不触发返回（首页 / 手速测试 / 节拍测定），压住整屏点按区是有意的
+    if (/<pagehead[^>]*\bnoback\b/.test(tpl)) continue
+    const rules = parseUxStyle(styleM[1])
+    const visit = (el) => {
+      const click = uxAttr(el.attrs, '@click') || uxAttr(el.attrs, 'onclick')
+      if (click) {
+        const b = uxAbsBox(el, rules)
+        if (b && b.top < hit.bottom && b.bottom > hit.top && b.right > hit.left && b.left < hit.right) {
+          problems.push(
+            `${rel}：<${el.tag} class="${uxClasses(el.attrs).join(' ')}" @click=${click}>` +
+            ` 落在页头命中区内（x ${b.left}..${b.right}, y ${b.top}..${b.bottom}）—— 真机上点不到`
+          )
+        }
+      }
+      for (const c of el.children) visit(c)
+    }
+    for (const r of parseUxTemplate(tpl)) visit(r)
+  }
+  return problems
+}
+
+// 单独跑 R15（开发自查用）：node tools/release-gate.mjs --only-r15
+if (process.argv.includes('--only-r15')) {
+  const bad = scanHeaderOverlaps()
+  if (bad.length) {
+    console.log('R15 不通过：页头命中区压住了可点元素')
+    for (const b of bad) console.log('  ✗ ' + b)
+    process.exit(1)
+  }
+  console.log('R15 通过：页头命中区未压住任何可点元素')
+  process.exit(0)
 }
 
 // ---------- R1 PNG 完整性 ----------
@@ -487,6 +656,16 @@ for (const f of walk('src', '.ux')) {
       }
     }
   }
+}
+
+// ---------- R15 页头命中区不得压住可点元素 ----------
+// 页头整条可点返回（PageHead.phHit）之后，页头右侧的动作键（保存/完成/参考）正好落在
+// 命中区里 —— 真机上点「保存」会被页头吞掉（变成返回，或点不到）。
+// Vela 渲染器丢弃 z-index，层序只按文档顺序排，真机/模拟器判定顺序未必一致，
+// 唯一稳的办法是「命中区不与任何可点元素重叠」。扫描逻辑见文件上方的 scanHeaderOverlaps()。
+{
+  const problems = scanHeaderOverlaps()
+  for (const p of problems) fail('R15', PAGEHEAD_FILE, p)
 }
 
 // ---------- R14 发行产物完整性 ----------

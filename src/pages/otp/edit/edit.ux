@@ -4,7 +4,6 @@
 <template>
   <div class="page">
     <pagehead title="{{ isNew ? '添加账户' : '编辑账户' }}" clock="{{ clock }}"></pagehead>
-    <div class="save" @click="save"><text class="f saveT">保存</text></div>
 
     <div class="field" @click="openName">
       <text class="f fLabel">名称</text>
@@ -26,6 +25,8 @@
 
     <text class="f tip" if="{{ !isEdit }}">名称/颁发者选填，密钥必填</text>
 
+    <div class="save" @click="save"><text class="f actRowT">保存</text></div>
+
     <div class="delBtn" if="{{ isEdit }}" @click="del">
       <text class="f delT" if="{{ !delArm }}">删除账户</text>
       <text class="f delT" if="{{ delArm }}">再点一次确认删除</text>
@@ -38,8 +39,8 @@
 <style>
 @import '../../../common/styles/theme.css';
 .page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
-.save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
-.saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
+/* 保存独占一行，放在「删除账户」上方：页头整条是返回命中区，动作键不能放那儿。 */
+.save { position: absolute; left: 3px; top: 348px; width: 206px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .field { position: absolute; left: 3px; top: 82px; width: 206px; height: 62px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
 .field2 { top: 150px; }
 .fieldBig { position: absolute; left: 3px; top: 218px; width: 206px; height: 88px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }

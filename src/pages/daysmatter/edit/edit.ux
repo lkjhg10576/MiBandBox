@@ -21,7 +21,7 @@
 
     <div class="del" show="{{ !kbShow }}" @click="del"><text class="f delT">{{ delStep === 0 ? '删除这个目标日' : '再次点击确认删除' }}</text></div>
 
-    <div class="save" @click="save"><text class="f saveT">保存</text></div>
+    <div class="save" show="{{ !kbShow }}" @click="save"><text class="f actRowT">保存</text></div>
     <backbtn></backbtn>
     <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
     <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
@@ -30,8 +30,9 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.save { position: absolute; left: 146px; top: 42px; width: 32px; height: 28px; border-radius: 14px; background-color: #0D6EFF; align-items: center; justify-content: center; z-index: 99; }
-.saveT { font-size: 14px; color: #FFFFFF; z-index: 99; }
+/* 保存独占一行（原来删除键的位置），删除键挪到最底下一行。
+   两键都不放页头 —— 页头整条是返回命中区，动作键压在里面真机上点不到。 */
+.save { position: absolute; left: 3px; top: 330px; width: 206px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .card { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
 .cardKb {}
 .card2 { top: 168px; }
@@ -40,7 +41,7 @@
 .value { width: 174px; height: 38px; line-height: 38px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 174px; height: 38px; line-height: 38px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .delta { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.55); }
-.del { position: absolute; left: 48px; top: 330px; width: 116px; height: 34px; border-radius: 17px; background-color: rgba(255,59,48,0.14); align-items: center; justify-content: center; }
+.del { position: absolute; left: 48px; top: 400px; width: 116px; height: 34px; border-radius: 17px; background-color: rgba(255,59,48,0.14); align-items: center; justify-content: center; }
 .delT { font-size: 14px; color: #FF6B6B; }
 </style>
 

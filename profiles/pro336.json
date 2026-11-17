@@ -15,7 +15,8 @@
       ["width: 212px", "width: 336px"],
       ["height: 520px", "height: 480px"],
       ["width: 206px", "width: 330px"],
-      ["top: 155px", "top: 115px"]
+      ["top: 155px", "top: 115px"],
+      ["top: 400px", "top: 360px"]
     ],
     "src/components/PageHead.ux": [
       ["width: 212px", "width: 336px"]
@@ -98,7 +99,6 @@
       ["width: 176px", "width: 214px"]
     ],
     "src/pages/notebook/edit/edit.ux": [
-      ["left: 146px", "left: 270px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
       [".fieldKb {}", ".fieldKb { top: 48px; }"],
@@ -137,10 +137,11 @@
     "src/pages/otp/edit/edit.ux": [
       ["width: 212px", "width: 336px"],
       ["height: 520px", "height: 480px"],
-      ["left: 146px", "left: 270px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
-      ["width: 170px", "width: 294px"]
+      ["width: 170px", "width: 294px"],
+      ["top: 348px", "top: 344px"],
+      ["top: 416px", "top: 396px"]
     ],
     "src/pages/otp/settings/settings.ux": [
       ["width: 212px", "width: 336px"],
@@ -205,12 +206,14 @@
       ["width: 100px", "width: 224px"]
     ],
     "src/pages/performance/performance.ux": [
-      ["left: 146px", "left: 270px"],
       ["width: 206px", "width: 330px"],
       ["width: 190px", "width: 314px"],
       ["width: 182px", "width: 306px"],
       ["left: 26px", "left: 88px"],
-      ["left: 16px", "left: 78px"]
+      ["left: 16px", "left: 78px"],
+      ["top: 350px", "top: 340px"],
+      ["top: 400px", "top: 390px"],
+      ["top: 428px", "top: 418px"]
     ],
     "src/pages/PFinfo/PFinfo.ux": [
       ["width: 212px", "width: 336px"],
@@ -237,7 +240,6 @@
       ["left: 26px", "left: 88px"],
       ["width: 170px", "width: 294px"],
       ["width: 174px", "width: 298px"],
-      ["left: 146px", "left: 270px"],
       ["top: 76px", "top: 56px"],
       ["height: 56px", "height: 52px"]
     ],
@@ -396,7 +398,6 @@
       ["top: 396px", "top: 384px"]
     ],
     "src/pages/input/input.ux": [
-      ["left: 146px", "left: 270px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
       ["width: 138px", "width: 262px"],
@@ -416,13 +417,11 @@
       ["width: 212px", "width: 336px"]
     ],
     "src/pages/lyrics/edit/edit.ux": [
-      ["left: 146px", "left: 270px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
       ["width: 212px", "width: 336px"],
       [".fieldKb {}", ".fieldKb { top: 48px; }"],
       ["<pagehead title=\"编辑歌词\" clock=\"{{ clock }}\"></pagehead>", "<pagehead if=\"{{ !kbShow }}\" title=\"编辑歌词\" clock=\"{{ clock }}\"></pagehead>"],
-      ["<div class=\"save\" @click=\"save\">", "<div class=\"save\" if=\"{{ !kbShow }}\" @click=\"save\">"],
       ["<backbtn></backbtn>", "<backbtn if=\"{{ !kbShow }}\"></backbtn>"]
     ],
     "src/pages/lyrics/more/more.ux": [
@@ -507,7 +506,6 @@
       ["left: 26px", "left: 88px"],
       ["left: 16px", "left: 78px"],
       ["width: 174px", "width: 298px"],
-      ["left: 146px", "left: 270px"],
       ["top: 76px", "top: 56px"],
       ["height: 56px", "height: 52px"]
     ],
@@ -632,7 +630,6 @@
       ["left: 58px", "left: 120px"]
     ],
     "src/pages/daysmatter/edit/edit.ux": [
-      ["left: 146px", "left: 270px"],
       ["width: 206px", "width: 330px"],
       ["width: 174px", "width: 298px"],
       ["left: 48px", "left: 110px"],
