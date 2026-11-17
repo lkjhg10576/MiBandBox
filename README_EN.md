@@ -17,7 +17,7 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.2</code> (versionCode 262) · Built with Vela JS Quick Apps</p>
+  <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.2</code> (versionCode 263) · Built with Vela JS Quick Apps</p>
 </div>
 
 <img src="assets/promo/hero-en.jpg" alt="BandBox: 38 local tools for Xiaomi Band" />

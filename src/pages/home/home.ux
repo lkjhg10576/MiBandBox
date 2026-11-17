@@ -178,8 +178,10 @@
   text-overflow: ellipsis;
   lines: 1;
 }
+/* pad 不得宽于 list 内容盒（listApps 内容盒 200px）：原生 list 会把超宽子项计入横向
+   可滚动范围（212px pad 即产生 12px 拖动空间，抢占右滑返回），同 lyrics/transfer 的 margin 坑 */
 .listPad {
-  width: 212px;
+  width: 200px;
   height: 40px;
 }
 </style>
