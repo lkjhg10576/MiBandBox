@@ -118,6 +118,19 @@ export default {
   preview() {
     g.screen.hold({ keepOn: this.keepOn, value: valueOf(this.level) }, 'companion')
   },
+  /**
+   * 档位与常亮选择落盘：改动即写，不只在「开始」时写。
+   * 原先只在 start() 里落盘，导致用户调完亮度直接返回 → 下次进来还是旧档位。
+   */
+  saveCfg() {
+    const page = this
+    const cfg = { level: this.level, keepOn: this.keepOn }
+    g.kv.init(() => {
+      if (!page.$valid) return
+      g.kv.set('companionCfg', cfg)
+      g.kv.flush()
+    })
+  },
   /** slider 的 change 只有拖动结束才触发；e.progress 防御式取值 + 回声守卫 */
   onLevel(e) {
     const raw = e && e.progress != null ? e.progress : this.level
@@ -127,6 +140,7 @@ export default {
     this.level = lv
     this.pct = lv * 10
     this.preview()
+    this.saveCfg()
   },
   step(d) {
     const lv = clampLevel(this.level + d)
@@ -136,12 +150,14 @@ export default {
     this.level = lv
     this.pct = lv * 10
     this.preview()
+    this.saveCfg()
   },
   toggleKeep() {
     g.haptic.short()
     this.dirty = true
     this.keepOn = !this.keepOn
     this.preview()
+    this.saveCfg()
   },
   start() {
     g.haptic.short()
