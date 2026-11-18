@@ -12,6 +12,13 @@
         </div>
         <text class="f cSub">{{ layoutText }}</text>
       </div>
+      <div class="card" style="background-color: {{ catOn ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="toggleCat">
+        <div class="cardTop">
+          <text class="f cTitle">工具分类</text>
+          <text class="f swState" style="color: {{ catOn ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ catOn ? '开' : '关' }}</text>
+        </div>
+        <text class="f cSub">{{ catHint }}</text>
+      </div>
       <div class="card" @click="goAbout">
         <div class="cardTop">
           <text class="f cTitle">关于 BandBox</text>
@@ -40,25 +47,48 @@
 .cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
 .cTitle { font-size: 17px; color: #FFFFFF; }
 .arrow { font-size: 20px; color: rgba(255,255,255,0.4); }
+/* 开关状态字：与 calculator 的 swRow 同一套写法（内联 style 三元 + 文字「开/关」），不用 <switch> */
+.swState { width: 40px; height: 30px; line-height: 30px; text-align: right; font-size: 16px; }
 .cSub { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
-.pad { width: 212px; height: 24px; }
+/* 四张卡 4×(76+8)=336，再留 16px：band10 352 ≤ 418，Pro 352 ≤ 358，两机型都不溢出 */
+.pad { width: 212px; height: 16px; }
 </style>
 
 <script>
 import g from '../../utils/g'
 import layoutApi from '../../utils/homeLayout'
+import layoutFlag from '../../utils/layoutFlag'
 import prompt from '@system.prompt'
 
+/** 布局名：分类单栏 / 单栏列表 / 双栏网格（Pro 的「双栏网格」由 profile 替换成「三栏网格」） */
+function layoutName(mode) {
+  return mode === 'cat' ? '分类单栏' : mode === 'list' ? '单栏列表' : '双栏网格'
+}
+
 export default {
-  data: { clock: '--:--', layoutText: '双栏网格', resetHint: '连按两次清空偏好设置', resetStep: 0, timer: null },
+  data: {
+    clock: '--:--',
+    layoutText: '双栏网格',
+    catOn: false,
+    catHint: '首页直接显示全部工具',
+    resetHint: '连按两次清空偏好设置',
+    resetStep: 0,
+    kvDirty: false,
+    catBusy: false,
+    timer: null
+  },
   onShow() {
     this.clock = g.time.formatClock(new Date())
+    this.catBusy = false
+    this.kvDirty = false
     const app = layoutApi.api(this)
     if (app && app.getHomeLayout && app.isHomeLayoutReady && app.isHomeLayoutReady()) {
-      this.layoutText = app.getHomeLayout() === 'list' ? '单栏列表' : '双栏网格'
+      this.applyMode(app.getHomeLayout())
     } else {
       g.kv.init(() => {
-        this.layoutText = g.kv.get('home', 'grid') === 'list' ? '单栏列表' : '双栏网格'
+        // kv.init 是异步读盘：读盘窗口内用户点了开关会被旧值覆盖，kvDirty 挡住回写
+        if (!this.$valid || this.kvDirty) return
+        this.applyMode(g.kv.get('home', 'grid'))
       })
     }
     const page = this
@@ -71,11 +101,51 @@ export default {
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
+  /** 布局模式 → 两张卡的显示字段（首页样式 + 工具分类开关） */
+  applyMode(mode) {
+    const m = mode === 'cat' ? 'cat' : mode === 'list' ? 'list' : 'grid'
+    this.catOn = m === 'cat'
+    this.catHint = m === 'cat' ? '首页按类别单栏显示' : '首页直接显示全部工具'
+    this.layoutText = layoutName(m)
+  },
   goStyle() {
     g.router.push('/pages/hset')
   },
   goAbout() {
     g.router.push('/pages/about')
+  },
+  /**
+   * 工具分类开关：开 = 首页单栏显示 9 个类别；关 = 回到上次记住的网格/列表样式。
+   * 「上次样式」存独立的 KV 键 'homeStyle'：关分类不动它，样式页改样式时会同步它。
+   */
+  toggleCat() {
+    if (this.catBusy) return
+    this.catBusy = true
+    this.kvDirty = true
+    const page = this
+    g.kv.init(() => {
+      if (!page.$valid) return
+      const cur = g.kv.get('home', 'grid')
+      let mode
+      if (cur !== 'cat') {
+        // 开：先把当前样式（网格/列表）记进 homeStyle
+        g.kv.set('homeStyle', cur === 'list' ? 'list' : 'grid')
+        mode = 'cat'
+      } else {
+        // 关：回到 homeStyle 记住的样式
+        const s = g.kv.get('homeStyle', 'grid')
+        mode = s === 'list' ? 'list' : 'grid'
+      }
+      // 三写范式：内存状态 + 启动快标志 + KV（与 hset.pick 同一套）
+      const app = layoutApi.api(page)
+      if (app && app.setHomeLayout) app.setHomeLayout(mode)
+      layoutFlag.write(mode)
+      g.kv.set('home', mode)
+      g.kv.flush()
+      page.applyMode(mode)
+      page.catBusy = false
+      g.haptic.short()
+    })
   },
   reset() {
     if (this.resetStep === 0) {
@@ -85,13 +155,15 @@ export default {
     }
     g.kv.reset()
     g.kv.flush()
+    // 快标志也要重写：否则「恢复默认后重启」会先按旧标志闪一帧旧布局、再被 KV 纠正
+    layoutFlag.write('grid')
     const app = layoutApi.api(this)
     if (app && app.setHomeLayout) {
       app.setHomeLayout('grid')
     }
     this.resetStep = 0
     this.resetHint = '连按两次清空偏好设置'
-    this.layoutText = '双栏网格'
+    this.applyMode('grid')
     prompt.showToast({ message: '已恢复默认设置', duration: 1600 })
   }
 }

@@ -76,6 +76,12 @@
       ["gridCells: [1, 2, 3, 4]", "gridCells: [1, 2, 3, 4, 5, 6]"],
       [".miniCell { width: 16px;", ".miniCell { width: 10px;"]
     ],
+    "src/pages/toolcat/toolcat.ux": [
+      ["width: 212px", "width: 336px"],
+      ["width: 200px", "width: 324px"],
+      ["width: 128px", "width: 256px"],
+      ["height: 408px", "height: 358px"]
+    ],
     "src/pages/about/about.ux": [
       ["width: 212px", "width: 336px"],
       ["width: 206px", "width: 330px"],

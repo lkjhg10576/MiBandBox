@@ -12,7 +12,7 @@ import qrBridge from './utils/qrBridge'
 import layoutFlag from './utils/layoutFlag'
 
 function normalizeLayout(mode) {
-  return mode === 'list' ? 'list' : 'grid'
+  return mode === 'list' ? 'list' : mode === 'cat' ? 'cat' : 'grid'
 }
 
 /**

@@ -35,6 +35,19 @@
       <list-item type="pad" class="listPad"></list-item>
     </list>
 
+    <!-- 分类单栏：与上面 list 分支逐字同构，只把 for 的数据源换成 catCells。
+         用 if 不用 show（同上：Pro 真机容器型 show 翻转不可靠）；listPad 必须保留。 -->
+    <list class="apps listApps" if="{{ layoutReady && layout === 'cat' }}" bounces="true">
+      <list-item type="cat" class="rowCell" for="{{ catCells }}" @click="open($item)">
+        <img class="rowIcon" src="{{ $item.icon }}" />
+        <div class="rowMeta">
+          <text class="f rowName">{{ $item.name }}</text>
+          <text class="f rowDesc">{{ $item.desc }}</text>
+        </div>
+      </list-item>
+      <list-item type="pad" class="listPad"></list-item>
+    </list>
+
   </div>
 </template>
 
@@ -189,6 +202,7 @@
 <script>
 import g from '../../utils/g'
 import apps from '../../data/apps'
+import catData from '../../data/cats'
 import layoutApi from '../../utils/homeLayout'
 import homeEvents from '../../utils/homeEvents'
 import { gridHeight } from '../../common/layout.js'
@@ -203,6 +217,9 @@ const SETTINGS_TILE = {
 
 const CELLS = apps.concat([SETTINGS_TILE])
 
+// 分类模式的行：9 个类别 + 末尾设置行（设置行走 route 分支，不进类别页）
+const CAT_CELLS = catData.rows.concat([SETTINGS_TILE])
+
 let layoutWatcher = null
 
 export default {
@@ -215,6 +232,7 @@ export default {
     layout: 'grid',
     layoutReady: false,
     cells: CELLS,
+    catCells: CAT_CELLS,
     gridHeight: gridHeight(CELLS.length),
     timer: null,
     _ck: null
@@ -270,7 +288,7 @@ export default {
     })
   },
   applyLayout(mode) {
-    const next = mode === 'list' ? 'list' : 'grid'
+    const next = mode === 'list' ? 'list' : mode === 'cat' ? 'cat' : 'grid'
     if (this.layout !== next) this.layout = next
     if (!this.layoutReady) this.layoutReady = true
   },
@@ -298,7 +316,14 @@ export default {
     }
   },
   open(item) {
-    if (!item || !item.route) return
+    if (!item) return
+    // 分类行带 cat（无 route）：进类别页；普通工具行与设置行带 route：直接进工具
+    if (item.cat) {
+      g.haptic.short()
+      g.router.push('/pages/toolcat', { cat: item.cat })
+      return
+    }
+    if (!item.route) return
     g.router.push(item.route)
   },
   openDays() {

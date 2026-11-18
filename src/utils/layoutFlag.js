@@ -12,13 +12,13 @@ const PATH = 'internal://files/bandbox/layout.txt'
 
 /**
  * 读布局标志
- * @param {Function} cb 回调参数为 'grid' / 'list' / ''（读不到时为空串）
+ * @param {Function} cb 回调参数为 'grid' / 'list' / 'cat' / ''（读不到时为空串）
  */
 export function read(cb) {
   try {
     g.fs.readText(PATH, (text) => {
       const v = text ? String(text).trim() : ''
-      cb(v === 'list' ? 'list' : v === 'grid' ? 'grid' : '')
+      cb(v === 'list' ? 'list' : v === 'cat' ? 'cat' : v === 'grid' ? 'grid' : '')
     })
   } catch (e) {
     cb('')
@@ -27,11 +27,11 @@ export function read(cb) {
 
 /**
  * 写布局标志
- * @param {String} mode 'grid' / 'list'
+ * @param {String} mode 'grid' / 'list' / 'cat'
  */
 export function write(mode) {
   try {
-    g.fs.writeText(PATH, mode === 'list' ? 'list' : 'grid')
+    g.fs.writeText(PATH, mode === 'list' ? 'list' : mode === 'cat' ? 'cat' : 'grid')
   } catch (e) {}
 }
 

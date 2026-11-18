@@ -80,9 +80,9 @@ BandBox 是给**小米手环 10 / 10 NFC**（212 × 520 窄长跑道屏）和**�
 | <img src="assets/screenshots/page_29_otp.png" width="180" alt="动态口令" /> | <img src="assets/screenshots/page_14_cps.png" width="180" alt="手速测试" /> | <img src="assets/screenshots/page_28_level.png" width="180" alt="水平仪" /> |
 | **动态口令**（TOTP 本地生成） | **手速测试**（5 秒 CPS） | **水平仪**（双轴倾角） |
 | <img src="assets/screenshots/page_31_about.png" width="180" alt="关于页" /> | <img src="assets/screenshots/page_30_settings.png" width="180" alt="设置页" /> | <img src="assets/screenshots/page_18_system.png" width="180" alt="系统信息" /> |
-| **关于页**（应用图标 / 版本） | **设置页**（首页样式切换） | **系统信息**（型号 / 屏幕 / 存储） |
+| **关于页**（应用图标 / 版本） | **设置页**（首页样式 / 工具分类切换） | **系统信息**（型号 / 屏幕 / 存储） |
 
-首页支持**双栏网格 / 单栏列表**两种样式切换（入口：应用列表最后的「设置」→「首页样式」），顶部常驻显示最近的目标日倒计时。
+首页支持**双栏网格 / 单栏列表 / 分类单栏**三种样式切换（网格与列表的入口：应用列表最后的「设置」→「首页样式」；分类模式的入口：「设置」→「工具分类」开关，打开后首页直接列出 9 个工具类别，点进类别再单栏显示该类工具），顶部常驻显示最近的目标日倒计时。
 
 ---
 

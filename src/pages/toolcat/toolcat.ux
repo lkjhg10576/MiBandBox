@@ -1,0 +1,66 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
+    <list class="tools" bounces="true">
+      <list-item type="tool" class="rowCell" for="{{ items }}" @click="open($item)">
+        <img class="rowIcon" src="{{ $item.icon }}" />
+        <div class="rowMeta">
+          <text class="f rowName">{{ $item.name }}</text>
+          <text class="f rowDesc">{{ $item.desc }}</text>
+        </div>
+      </list-item>
+      <list-item type="pad" class="listPad"></list-item>
+    </list>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+/* 与 home 列表模式同规：list 自身 padding 提供内缩，子项宽 == 内容盒宽（212-12=200），
+   子项不留横向 margin，避免原生 list 横向拖动空间抢占右滑返回。 */
+.tools { position: absolute; left: 0px; top: 82px; width: 212px; height: 408px; padding: 0px 6px 0px 6px; background-color: #000000; }
+.rowCell { width: 200px; height: 68px; margin: 0px 0px 8px 0px; border-radius: 26px; background-color: #1A1A1A; flex-direction: row; align-items: center; justify-content: flex-start; padding: 0px 12px; }
+.rowIcon { width: 34px; height: 34px; margin-right: 10px; }
+.rowMeta { width: 128px; height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; }
+.rowName { width: 128px; height: 26px; line-height: 26px; text-align: left; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.rowDesc { width: 128px; height: 20px; line-height: 20px; text-align: left; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+.listPad { width: 200px; height: 40px; }
+</style>
+
+<script>
+import g from '../../utils/g'
+import cats from '../../data/cats'
+
+export default {
+  // 路由参数：首页分类行带 cat=<类别 id>
+  protected: { cat: '' },
+  private: { clock: '--:--', catId: '', titleText: '工具', items: [], _ck: null },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    // 非法/缺失 cat 兜底到第一类：正常路径永远非空，不做空态页
+    const c = cats.category(this.cat) || cats.CATS[0]
+    // 只在类别变化时重渲染整表
+    if (this.catId !== c.id) {
+      this.catId = c.id
+      this.titleText = c.name
+      this.items = cats.toolsOf(c.id)
+    }
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  open(item) {
+    if (item && item.route) g.router.push(item.route)
+  }
+}
+</script>

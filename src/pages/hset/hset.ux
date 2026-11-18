@@ -28,7 +28,7 @@
       </div>
       <text class="f check" if="{{ current === 'list' }}">✓</text>
     </div>
-    <text class="f hint">选择后立即生效</text>
+    <text class="f hint">{{ catOn ? '选样式将关闭分类模式' : '选择后立即生效' }}</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -58,18 +58,39 @@ import layoutApi from '../../utils/homeLayout'
 import layoutFlag from '../../utils/layoutFlag'
 
 export default {
-  data: { clock: '--:--', current: 'grid', picking: false, gridCells: [1, 2, 3, 4], three: [1, 2, 3] },
+  data: { clock: '--:--', current: 'grid', catOn: false, picking: false, gridCells: [1, 2, 3, 4], three: [1, 2, 3] },
   onShow() {
     this.picking = false
     this.clock = g.time.formatClock(new Date())
     const app = layoutApi.api(this)
     if (app && app.getHomeLayout && app.isHomeLayoutReady && app.isHomeLayoutReady()) {
-      this.current = app.getHomeLayout()
+      this.applyCurrent(app.getHomeLayout())
       return
     }
     g.kv.init(() => {
-      this.current = g.kv.get('home', 'grid') === 'list' ? 'list' : 'grid'
+      if (!this.$valid) return
+      this.applyCurrent(g.kv.get('home', 'grid'))
     })
+  },
+  /**
+   * 分类模式开着时，本页勾选的是「记住的样式」（KV 键 homeStyle），不是当前生效的模式：
+   * 两个选项都不能被勾上会让用户以为设置没生效，所以给个明确指向 + 提示文案。
+   */
+  applyCurrent(mode) {
+    if (mode === 'cat') {
+      this.catOn = true
+      this.current = 'grid'
+      const page = this
+      // app 的快标志可能先于 KV 读完，这里必须走 kv.init 读 homeStyle
+      g.kv.init(() => {
+        if (!page.$valid) return
+        const s = g.kv.get('homeStyle', 'grid')
+        page.current = s === 'list' ? 'list' : 'grid'
+      })
+    } else {
+      this.catOn = false
+      this.current = mode === 'list' ? 'list' : 'grid'
+    }
   },
   pick(mode) {
     if (this.picking) return
@@ -83,6 +104,8 @@ export default {
     layoutFlag.write(mode)
     g.kv.init(() => {
       g.kv.set('home', mode)
+      // 选网格/列表即等于关掉分类模式：记住的样式同步更新，设置页的开关随之变关
+      g.kv.set('homeStyle', mode)
       g.kv.flush()
       g.router.back()
     })

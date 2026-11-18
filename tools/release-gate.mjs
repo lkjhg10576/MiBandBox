@@ -29,6 +29,10 @@
  *   R15 页头命中区不得压住可点元素 页头整条可点返回后，页头右侧的「保存/完成/参考」正好落在
  *                            命中区里 —— 真机上点保存会被页头吞掉。Vela 渲染器丢弃 z-index，
  *                            层序只按文档顺序排，真机/模拟器判定顺序未必一致，只能靠「不重叠」保证。
+ *   R16 工具分类表完备性      分类模式（首页「工具分类」开关）的成员真源是 src/data/cats.js。
+ *                            新增工具漏挂分类 → 该工具在分类模式里没有入口，且分类模式默认关着，
+ *                            运行期毫无症状。所以「成员并集 == 全部工具」必须是构建期硬约束。
+ *                            （更详细的诊断脚本是本地工具 tools/test-cats.mjs）
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
@@ -666,6 +670,68 @@ for (const f of walk('src', '.ux')) {
 {
   const problems = scanHeaderOverlaps()
   for (const p of problems) fail('R15', PAGEHEAD_FILE, p)
+}
+
+// ---------- R16 工具分类表完备性 ----------
+// 分类模式（首页「工具分类」开关）的成员关系真源是 src/data/cats.js。
+// 新增工具若漏挂分类，它在分类模式里就完全没有入口 —— 而分类模式默认是关的，
+// 运行期没有任何症状（首页网格照常列全部工具），只有用户打开分类模式才发现工具消失。
+// 所以把「成员并集 == 全部工具」做成构建期硬约束。
+// 另有一份更详细的诊断脚本 tools/test-cats.mjs（本地工具，tools/ 整目录不入库）。
+{
+  const appsRel = 'src/data/apps.js'
+  const catsRel = 'src/data/cats.js'
+  if (!fs.existsSync(path.join(ROOT, appsRel)) || !fs.existsSync(path.join(ROOT, catsRel))) {
+    fail('R16', catsRel, '缺少 src/data/apps.js 或 src/data/cats.js')
+  } else {
+    const appsSrc = read(appsRel)
+    const catsSrc = read(catsRel)
+
+    // 全部工具 id（apps.js 每个条目一个 id）
+    const appIds = []
+    const idRe = /\bid:\s*'([^']+)'/g
+    let m
+    while ((m = idRe.exec(appsSrc))) appIds.push(m[1])
+
+    // 分类成员表：CATS 里每个 tools: [...] 数组
+    const groups = []
+    const toolRe = /tools:\s*\[([^\]]*)\]/g
+    while ((m = toolRe.exec(catsSrc))) {
+      const ids = []
+      const qRe = /'([^']+)'/g
+      let q
+      while ((q = qRe.exec(m[1]))) ids.push(q[1])
+      groups.push(ids)
+    }
+
+    if (!groups.length) {
+      fail('R16', catsRel, '解析不到任何分类成员表（tools: [...]）—— 分类表结构变了？')
+    } else {
+      const seen = {}
+      const dup = []
+      const unknown = []
+      groups.forEach((ids) => {
+        if (!ids.length) fail('R16', catsRel, '有分类没有成员')
+        ids.forEach((tid) => {
+          if (seen[tid]) dup.push(tid)
+          else seen[tid] = true
+          if (appIds.indexOf(tid) < 0) unknown.push(tid)
+        })
+      })
+      const missing = appIds.filter((id) => !seen[id])
+      if (dup.length) fail('R16', catsRel, `工具挂在多个分类里：${dup.join('、')}`)
+      if (unknown.length) fail('R16', catsRel, `分类里挂着不存在的工具：${unknown.join('、')}`)
+      if (missing.length) fail('R16', catsRel, `有工具没挂进任何分类（分类模式里会消失）：${missing.join('、')}`)
+      // 分类图标必须真实存在（画错的路径在设备上是一张空白图）
+      const iconRe = /\bicon:\s*'([^']+)'/g
+      while ((m = iconRe.exec(catsSrc))) {
+        const rel = m[1].replace(/^\/+/, '')
+        if (!fs.existsSync(path.join(ROOT, 'src', rel))) {
+          fail('R16', catsRel, `分类图标不存在：${m[1]}`)
+        }
+      }
+    }
+  }
 }
 
 // ---------- R14 发行产物完整性 ----------

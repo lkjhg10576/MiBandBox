@@ -87,6 +87,17 @@
 - **校验和就是防篡改的凭据**：`SHA256SUMS.txt` 与产物必须成对生成、成对使用。产物被动过 → 摘要对不上 → 上架前就能发现。改完产物一定要重新生成 `SHA256SUMS.txt` 与 `说明.md`（`node tools/make-notes.mjs <目录> …`）。
 - **手机插件 `.abp` 是独立产物**，只放在产物目录里给用户单独安装，**绝不塞进 rpk 内部**。
 
+## 首页工具分类模式（2026-11-18 起，勿破坏）
+
+工具已增到 38 个，首页双栏网格要滚 19 行。「设置」页有独立一张**「工具分类」开关卡**：打开后首页改为单栏显示 9 个工具类别，点进类别再单栏显示该类工具（两次点击直达），关闭则回到上次记住的网格/列表样式。
+
+- **分类成员关系的唯一真源是 `src/data/cats.js`**（9 类 / 38 工具）。`src/data/apps.js` **一律不加 `cat` 字段** —— 它的数组顺序是模拟器脚本（`tools/shoot-routes.py` / `motion-sim.py` / `cube-sim.py`）的 index 导航依据，也是 `tools/perf-audit.mjs` 的节点计数依据；两处各写一份成员必然漂移。类别详情页 `src/pages/toolcat/toolcat.ux` 的路由是 `pages/toolcat`，用 `protected: { cat }` 收类别 id。
+- **布局状态机是三态**：`app.ux` 的 `normalizeLayout` / `src/utils/layoutFlag.js` 的 read+write / `home.ux` 的 `applyLayout` 都认 `'grid' | 'list' | 'cat'`。分类模式复用既有的 grid/list 状态机（模块闭包 `layoutState` + KV `'home'` 键 + `layout.txt` 启动快标志 + watcher），**不另建一套**。另加一个 KV 键 **`'homeStyle'`** 记住上次的非分类样式（开关关闭时还原用）。
+- **三写范式**：任何布局变更都要 `app.setHomeLayout(mode)` → `layoutFlag.write(mode)` → `g.kv.set('home', mode)` + `g.kv.flush()` 三处同写。`set.ux` 的「恢复默认设置」**必须补 `layoutFlag.write('grid')`**，否则恢复默认后重启会先按旧标志闪一帧旧布局再被 KV 纠正。
+- **设置页的开关卡不能换成 `<switch>`**，沿用项目既有开关语言（内联 style 三元 + 文字「开/关」，见 `calculator.ux` 的 `.swRow`）。设置页四张卡的高度是 `4×(76+8)=336` + `.pad` 16px = 352 ≤ Pro 的 body 358，**别把 `.pad` 加回 24px**，Pro 会溢出 2px。
+- **`src/pages/set/set.ux` 里的 `'双栏网格'` 字面量带单引号**（pro336 的替换对 `["'双栏网格'","'三栏网格'"]` 靠它命中）；**全文件严禁出现 `'三栏网格'`**（否则 test-profile「replace 不得在基线出现」直接 fail）。字面量只允许出现在 `layoutName()` 与 `data` 默认值两处。
+- **门禁 R16**（工具分类表完备性）：`tools/release-gate.mjs` 每次构建前核对 `cats.js` 的成员并集 == `apps.js` 的全部工具 id，且无重复 / 无未知 id / 图标文件真实存在。新增工具**漏挂分类**在该工具从分类模式里彻底消失，而分类模式默认是关的 —— 运行期毫无症状，只有用户打开分类模式才发现。所以这是构建期硬约束，不是可选检查。（更详细的诊断脚本是本地工具 `tools/test-cats.mjs`；`tools/` 整目录不入库，所以门禁里的实现必须自包含。）
+
 ## 设备 profile（2026-11-12 起，勿破坏）
 
 源码基线是 **band10（212×520 跑道屏）**；`pro336`（小米手环 9 Pro/10 Pro，336×480）是构建期物化的第二包体，**同包名 `com.lkjhg.bandbox`、rpk 文件名带 `.pro.` 段**：
