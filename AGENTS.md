@@ -94,9 +94,19 @@
 - **分类成员关系的唯一真源是 `src/data/cats.js`**（9 类 / 38 工具）。`src/data/apps.js` **一律不加 `cat` 字段** —— 它的数组顺序是模拟器脚本（`tools/shoot-routes.py` / `motion-sim.py` / `cube-sim.py`）的 index 导航依据，也是 `tools/perf-audit.mjs` 的节点计数依据；两处各写一份成员必然漂移。类别详情页 `src/pages/toolcat/toolcat.ux` 的路由是 `pages/toolcat`，用 `protected: { cat }` 收类别 id。
 - **布局状态机是三态**：`app.ux` 的 `normalizeLayout` / `src/utils/layoutFlag.js` 的 read+write / `home.ux` 的 `applyLayout` 都认 `'grid' | 'list' | 'cat'`。分类模式复用既有的 grid/list 状态机（模块闭包 `layoutState` + KV `'home'` 键 + `layout.txt` 启动快标志 + watcher），**不另建一套**。另加一个 KV 键 **`'homeStyle'`** 记住上次的非分类样式（开关关闭时还原用）。
 - **三写范式**：任何布局变更都要 `app.setHomeLayout(mode)` → `layoutFlag.write(mode)` → `g.kv.set('home', mode)` + `g.kv.flush()` 三处同写。`set.ux` 的「恢复默认设置」**必须补 `layoutFlag.write('grid')`**，否则恢复默认后重启会先按旧标志闪一帧旧布局再被 KV 纠正。
-- **设置页的开关卡不能换成 `<switch>`**，沿用项目既有开关语言（内联 style 三元 + 文字「开/关」，见 `calculator.ux` 的 `.swRow`）。设置页四张卡的高度是 `4×(76+8)=336` + `.pad` 16px = 352 ≤ Pro 的 body 358，**别把 `.pad` 加回 24px**，Pro 会溢出 2px。
+- **设置页的开关卡不能换成 `<switch>`**，沿用项目既有开关语言（内联 style 三元 + 文字「开/关」，见 `calculator.ux` 的 `.swRow`）。设置页现在五张卡（首页样式 / 工具分类 / 目标日不常驻 / 关于 / 恢复默认），`5×(76+8)+16=436` 超出两机型的 body（band10 418 / Pro 358），所以 `.body` 已改成 `<scroll>` + `.inner`（照 `about.ux` 的结构）—— **别再改回普通 `<div>`**，否则 Pro 上后两张卡会被裁掉。
 - **`src/pages/set/set.ux` 里的 `'双栏网格'` 字面量带单引号**（pro336 的替换对 `["'双栏网格'","'三栏网格'"]` 靠它命中）；**全文件严禁出现 `'三栏网格'`**（否则 test-profile「replace 不得在基线出现」直接 fail）。字面量只允许出现在 `layoutName()` 与 `data` 默认值两处。
 - **门禁 R16**（工具分类表完备性）：`tools/release-gate.mjs` 每次构建前核对 `cats.js` 的成员并集 == `apps.js` 的全部工具 id，且无重复 / 无未知 id / 图标文件真实存在。新增工具**漏挂分类**在该工具从分类模式里彻底消失，而分类模式默认是关的 —— 运行期毫无症状，只有用户打开分类模式才发现。所以这是构建期硬约束，不是可选检查。（更详细的诊断脚本是本地工具 `tools/test-cats.mjs`；`tools/` 整目录不入库，所以门禁里的实现必须自包含。）
+
+## 首页目标日不常驻模式（2026-11-18 起）
+
+「设置」页的**「目标日不常驻」开关卡**存在 KV 键 **`'todayAuto'`**（默认关 = 现状）：
+
+- **关（常驻）**：首页顶部始终显示目标日卡；没有目标日时显示「记录一个目标日」占位文案（同历史行为）。
+- **开（不常驻）**：只有设定了目标日才显示卡片；没有目标日时卡片不渲染，空出的空间全部给下方工具列表（网格 / 列表 / 分类三种布局都顶到 y92 并加高）。
+- 读写统一走 `src/utils/homeToday.js`（`read(cb)` / `toggle(cb)`），首页 `onShow` 读、设置页开关写，**别在页面里另写 `'todayAuto'` 字面量**。「恢复默认设置」要把它一起复位（`applyTodayMode(false)`）。
+- **没有目标日**的口径 = `homeEvents.load` 返回的 `best` 为空（空列表、日期全部非法都算）。
+- 卡片隐藏用 `if="{{ showToday }}"`（容器型 `show` 动态翻转不可靠，见首页网格的既有坑）；列表换 `.appsUp` 类：band10 `top 92 / height 394`，Pro 由 `profiles/pro336.json` 的 `["height: 394px","height: 348px"]` 换成 348。394 = 常驻态 304 + 卡片 88 + 2px 间距；两态**底部对齐**（band10 486 / Pro 440）。改目标日卡高度时同步改这两个数。
 
 ## 设备 profile（2026-11-12 起，勿破坏）
 

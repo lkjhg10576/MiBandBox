@@ -49,6 +49,7 @@
       ["width: 128px", "width: 256px"],
       ["width: 212px", "width: 336px"],
       ["height: 304px", "height: 258px"],
+      ["height: 394px", "height: 348px"],
       ["0px 3px 40px 3px", "0px 3px 48px 3px"]
     ],
     "src/pages/textShow/textShow.ux": [

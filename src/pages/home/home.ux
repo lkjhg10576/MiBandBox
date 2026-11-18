@@ -4,7 +4,9 @@
   <div class="page">
     <pagehead title="BandBox" clock="{{ clock }}" noback="{{ true }}"></pagehead>
 
-    <div class="today" @click="openDays">
+    <!-- 不常驻模式（设置页开关）下没有目标日时整张卡不渲染，让出空间给工具列表：
+         同「容器型 show 的动态翻转不可靠」的坑，这里用 if 而不是 show -->
+    <div class="today" if="{{ showToday }}" @click="openDays">
       <div class="todayTop">
         <text class="f date">{{ dateText }}</text>
         <text class="f go">目标日 ></text>
@@ -15,7 +17,7 @@
 
     <!-- 网格必须用 if：本渲染器对容器型 show 的动态翻转不可靠（Pro 真机首启网格不出现，
          逛一次目标日回来才显示）；if 在 layoutReady 翻转时全新建节点，规避该坑 -->
-    <scroll class="apps" if="{{ layoutReady && layout === 'grid' }}" scroll-y="true" bounces="true">
+    <scroll class="apps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'grid' }}" scroll-y="true" bounces="true">
       <div class="grid" style="height: {{ gridHeight }}px;">
         <div class="f cell" for="{{ cells }}" @click="open($item)">
           <img class="icon" src="{{ $item.icon }}" />
@@ -24,7 +26,7 @@
       </div>
     </scroll>
 
-    <list class="apps listApps" if="{{ layoutReady && layout === 'list' }}" bounces="true">
+    <list class="apps listApps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'list' }}" bounces="true">
       <list-item type="app" class="rowCell" for="{{ cells }}" @click="open($item)">
         <img class="rowIcon" src="{{ $item.icon }}" />
         <div class="rowMeta">
@@ -37,7 +39,7 @@
 
     <!-- 分类单栏：与上面 list 分支逐字同构，只把 for 的数据源换成 catCells。
          用 if 不用 show（同上：Pro 真机容器型 show 翻转不可靠）；listPad 必须保留。 -->
-    <list class="apps listApps" if="{{ layoutReady && layout === 'cat' }}" bounces="true">
+    <list class="apps listApps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'cat' }}" bounces="true">
       <list-item type="cat" class="rowCell" for="{{ catCells }}" @click="open($item)">
         <img class="rowIcon" src="{{ $item.icon }}" />
         <div class="rowMeta">
@@ -112,6 +114,13 @@
   top: 182px;
   width: 212px;
   height: 304px;
+}
+/* 不常驻模式且没有目标日：目标日卡不渲染，列表顶到卡片原位（top 92），高度补上卡片
+   占用的 90px（88 高 + 2px 间距），底部与常驻态相同（band10 486 / Pro 440）。
+   Pro 的 348 由 profiles/pro336.json 的替换对给出，勿在 JS 里另写一份。 */
+.appsUp {
+  top: 92px;
+  height: 394px;
 }
 .listApps {
   background-color: #000000;
@@ -205,6 +214,7 @@ import apps from '../../data/apps'
 import catData from '../../data/cats'
 import layoutApi from '../../utils/homeLayout'
 import homeEvents from '../../utils/homeEvents'
+import homeToday from '../../utils/homeToday'
 import { gridHeight } from '../../common/layout.js'
 
 const SETTINGS_TILE = {
@@ -229,6 +239,11 @@ export default {
     eventTitle: '记录一个目标日',
     eventDelta: '把重要的日子放在心上',
     eventColor: 'rgba(255,255,255,0.4)',
+    // 目标日卡片：showToday 是渲染开关；todayAuto = 设置页「目标日不常驻」，
+    // hasToday 由目标日数据刷新。常驻模式恒显示，不常驻模式仅在有目标日时显示。
+    showToday: true,
+    todayAuto: false,
+    hasToday: true,
     layout: 'grid',
     layoutReady: false,
     cells: CELLS,
@@ -244,6 +259,7 @@ export default {
   onShow() {
     this.watchLayout()
     this.syncLayout()
+    this.readTodayMode()
     this.refresh()
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
@@ -292,13 +308,36 @@ export default {
     if (this.layout !== next) this.layout = next
     if (!this.layoutReady) this.layoutReady = true
   },
+  /** 读「目标日不常驻」开关（设置页写，回到首页时生效） */
+  readTodayMode() {
+    const page = this
+    homeToday.read((on) => {
+      if (!page.$valid || page.todayAuto === on) return
+      page.todayAuto = on
+      page.applyToday()
+    })
+  },
+  /** 目标日卡是否显示：常驻模式恒显示；不常驻模式仅在有目标日时显示 */
+  applyToday() {
+    const show = !this.todayAuto || this.hasToday
+    if (this.showToday !== show) this.showToday = show
+  },
   refresh() {
     this.refreshClock()
     this.refreshDate()
     // 目标日数据带 60 秒缓存：回到首页不必每次读盘 + 解析 + 全表遍历
     homeEvents.load((r) => {
-      if (!r || !r.best) return
-      const best = r.best
+      const best = r && r.best
+      // 空列表 / 日期全部非法都算「没有目标日」：不常驻模式下据此收起顶部卡片
+      this.hasToday = !!best
+      this.applyToday()
+      if (!best) {
+        // 没有目标日时回到占位文案（常驻模式下卡片仍显示「记录一个目标日」）
+        this.eventTitle = '记录一个目标日'
+        this.eventDelta = '把重要的日子放在心上'
+        this.eventColor = 'rgba(255,255,255,0.4)'
+        return
+      }
       this.eventTitle = best.item.title || best.item.display_name || '目标日'
       this.eventDelta = best.d.text
       this.eventColor = best.d.status === 'today' ? '#00C853' : '#0D6EFF'

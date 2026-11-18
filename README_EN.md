@@ -80,9 +80,9 @@ Every image below is the **actual running app inside the Vela simulator** (Xiaom
 | <img src="assets/screenshots/page_29_otp.png" width="180" alt="TOTP" /> | <img src="assets/screenshots/page_14_cps.png" width="180" alt="CPS test" /> | <img src="assets/screenshots/page_28_level.png" width="180" alt="Level" /> |
 | **TOTP** (generated on the band) | **CPS test** (5-second taps) | **Level** (dual-axis tilt) |
 | <img src="assets/screenshots/page_31_about.png" width="180" alt="About page" /> | <img src="assets/screenshots/page_30_settings.png" width="180" alt="Settings" /> | <img src="assets/screenshots/page_18_system.png" width="180" alt="System info" /> |
-| **About** (icon / version) | **Settings** (home layout switch) | **System info** (model / screen / storage) |
+| **About** (icon / version) | **Settings** (home layout / categories / date card) | **System info** (model / screen / storage) |
 
-The home screen offers a **two-column grid / single-column list** toggle (*Settings → Home layout*) and always shows the countdown of your nearest saved date on top.
+The home screen offers a **two-column grid / single-column list** toggle (*Settings → Home layout*) and shows the countdown of your nearest saved date on top by default (*Settings → Non-persistent date card* hides the card and gives the freed space to the tool list when no date is saved).
 
 ---
 
