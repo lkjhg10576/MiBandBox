@@ -27,6 +27,7 @@ plugin/*/.mimosa/
 .zcode/
 .workbuddy/
 .atomcode/
+.arts/
 
 # profile 物化的本地状态（构建期备份与标记，不入库）
 .profile-baseline/

@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=1200, initial-scale=1.0" />
 <title>BandBox 头图 1200x800</title>
 <style>
+  /* 得意黑 Smiley Sans v2.0.1 · SIL OFL 1.1 · github.com/atelier-anchor/smiley-sans
+     只有 Oblique 一个字重，天生倾斜、窄长；正文层级靠字号和颜色，不靠字重 */
+  @font-face {
+    font-family: "Smiley Sans";
+    src: url("assets/fonts/SmileySans-Oblique.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+  }
+
   @page {
     size: 1200px 800px;
     margin: 0;
@@ -20,7 +30,9 @@
     width: 1200px;
     height: 800px;
     overflow: hidden;
-    font-family: "MiSans", "Noto Sans CJK SC", "PingFang SC", sans-serif;
+    font-family: "Smiley Sans", "MiSans", "Noto Sans CJK SC", "PingFang SC", sans-serif;
+    /* 单字重字体：禁掉合成加粗/合成斜体，避免 900 被算法加粗成糊边 */
+    font-synthesis: none;
     background: #F4F8FF;
   }
 
@@ -84,31 +96,31 @@
 
   /* 主标题：BandBox 成为绝对视觉第一层级 */
   .main-title {
-    font-size: 112px;
-    font-weight: 900;
+    font-size: 130px;
+    font-weight: 400;
     color: #0B1736;
     line-height: 1.02;
-    letter-spacing: -3px;
-    margin-bottom: 20px;
+    letter-spacing: -1px;
+    margin-bottom: 30px;
   }
 
   /* 中文定位副标题（品牌蓝高亮） */
   .cn-title {
-    font-size: 48px;
-    font-weight: 800;
+    font-size: 52px;
+    font-weight: 400;
     color: #2563EB;
     line-height: 1.2;
     letter-spacing: 0.5px;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
   }
 
   /* 卖点说明 */
   .subtitle {
-    font-size: 32px;
-    font-weight: 700;
+    font-size: 34px;
+    font-weight: 400;
     color: #36527D;
     line-height: 1.4;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
   }
 
   .dot-grid {
@@ -137,89 +149,46 @@
     margin-right: 0;
   }
 
-  /* 右侧双机错落展示（212x520 ≈ 1:2.45 修长跑道屏比例） */
-  .devices-stage {
+  /* 右侧界面墙：多块界面同时展示，中间那块是单栏主页
+     212×520 → 160×392 等比缩放；上下出血，读作「还有更多」 */
+  .screen-wall {
     position: absolute;
-    right: 68px;
-    top: 54px;
-    width: 500px;
-    height: 690px;
+    left: 606px;
+    top: 0;
+    width: 524px;
+    height: 800px;
     z-index: 10;
   }
 
-  .shadow-front {
+  /* 每块都带一圈窄机身：金属渐变 + 白色高光边，跟屏幕的黑分开 */
+  .screen-wall .cell {
     position: absolute;
-    left: 36px;
-    top: 54px;
-    width: 255px;
-    height: 594px;
-    border-radius: 127px;
-    background: rgba(15, 29, 64, 0.16);
-    transform: rotate(-7deg);
-    z-index: 18;
+    width: 160px;
+    height: 392px;
+    padding: 5px;
+    border-radius: 80px;
+    background: linear-gradient(150deg, #4A5262 0%, #1A1F29 55%, #0B0E14 100%);
+    box-shadow:
+      0 0 0 1.5px rgba(255, 255, 255, 0.72),
+      0 16px 34px rgba(15, 29, 64, 0.26);
   }
 
-  .shadow-back {
-    position: absolute;
-    right: 14px;
-    top: 112px;
-    width: 230px;
-    height: 532px;
-    border-radius: 115px;
-    background: rgba(15, 29, 64, 0.12);
-    transform: rotate(8deg);
-    z-index: 13;
-  }
-
-  .band-device {
-    position: absolute;
-    background: linear-gradient(145deg, #3A4252 0%, #1B202B 45%, #0D1017 100%);
-    padding: 11px;
-    border: 2px solid rgba(255, 255, 255, 0.26);
-  }
-
-  .band-screen {
-    width: 100%;
-    height: 100%;
-    background: #000000;
-    overflow: hidden;
-    position: relative;
-    border: 1.5px solid rgba(255, 255, 255, 0.10);
-  }
-
-  .band-screen img {
+  .screen-wall .cell img {
+    display: block;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
+    border-radius: 75px;
   }
 
-  .band-front {
-    width: 255px;
-    height: 594px;
-    border-radius: 127px;
-    left: 22px;
-    top: 36px;
-    transform: rotate(-7deg);
-    z-index: 20;
-  }
-
-  .band-front .band-screen {
-    border-radius: 116px;
-  }
-
-  .band-back {
-    width: 230px;
-    height: 532px;
-    border-radius: 115px;
-    right: 26px;
-    top: 96px;
-    transform: rotate(8deg);
-    z-index: 15;
-  }
-
-  .band-back .band-screen {
-    border-radius: 104px;
+  /* 居中那块：白圈更实、外带一层蓝晕，把视线收回来 */
+  .screen-wall .cell-hero {
+    z-index: 5;
+    transform: scale(1.06);
+    box-shadow:
+      0 0 0 2.5px #FFFFFF,
+      0 26px 60px rgba(15, 29, 64, 0.34),
+      0 0 90px rgba(44, 91, 255, 0.32);
   }
 </style>
 </head>
@@ -246,20 +215,32 @@
       <div class="dot-row"><span></span><span></span><span></span></div>
     </div>
 
-    <div class="devices-stage">
-      <div class="shadow-back"></div>
-      <div class="shadow-front"></div>
-
-      <div class="band-device band-back">
-        <div class="band-screen">
-          <img src="media/preview-2.png" alt="BandBox 计算器" />
-        </div>
+    <div class="screen-wall">
+      <!-- 左列 -->
+      <div class="cell" style="left: -5px; top: -40px;">
+        <img src="media/preview-2.png" alt="BandBox 计算器" />
+      </div>
+      <div class="cell" style="left: -5px; top: 374px;">
+        <img src="media/preview-3.png" alt="BandBox 每日一言" />
       </div>
 
-      <div class="band-device band-front">
-        <div class="band-screen">
-          <img src="media/preview-1.png" alt="BandBox 主页" />
-        </div>
+      <!-- 中列：上下两块出血，正中间是主界面（单栏列表，缩到这么小也读得清） -->
+      <div class="cell" style="left: 180px; top: -222px;">
+        <img src="media/preview-4.png" alt="BandBox 日历" />
+      </div>
+      <div class="cell cell-hero" style="left: 180px; top: 204px;">
+        <img src="assets/screenshots/page_home_list.png" alt="BandBox 主界面" />
+      </div>
+      <div class="cell" style="left: 180px; top: 630px;">
+        <img src="assets/screenshots/page_storage.png" alt="BandBox 存储空间" />
+      </div>
+
+      <!-- 右列 -->
+      <div class="cell" style="left: 365px; top: -30px;">
+        <img src="assets/screenshots/page_password.png" alt="BandBox 密码生成" />
+      </div>
+      <div class="cell" style="left: 365px; top: 384px;">
+        <img src="assets/screenshots/page_history.png" alt="BandBox 史载今日" />
       </div>
     </div>
   </div>
