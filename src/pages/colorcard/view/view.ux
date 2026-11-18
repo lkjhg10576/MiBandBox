@@ -1,0 +1,50 @@
+<template>
+  <div class="page" style="background-color: {{ bg }};" @click="exit">
+    <text class="f topHint" style="color: {{ fg }};">轻触退出 · 也可右滑</text>
+    <text class="f hexT" style="color: {{ fg }};">#{{ hex }}</text>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.topHint { position: absolute; left: 0px; top: 44px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; opacity: 0.75; }
+.hexT { position: absolute; left: 0px; top: 448px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 15px; opacity: 0.85; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import color from '../../../utils/color'
+
+export default {
+  protected: { color: '', bright: '1', keepOn: '1' },
+  private: {
+    bg: '#000000',
+    fg: '#FFFFFF',
+    hex: ''
+  },
+  onShow() {
+    const v = color.parseHex(this.color || '')
+    if (!v.ok) {
+      // 防御：绕过配置页直接进入且参数非法时退回（正常流程不会发生）
+      g.router.back()
+      return
+    }
+    this.hex = v.hex
+    this.bg = '#' + v.hex
+    this.fg = color.fgFor(v.hex)
+    // 亮度/常亮必须在 onShow 同步路径上立即执行，不能塞进异步回调（会被时序吞掉，见 fluoro 踩坑记录）。
+    // 两开关都关时 enter 是安全空操作，leave 对称调用也无害。
+    g.screen.enter({ bright: this.bright !== '0', keepOn: this.keepOn !== '0' })
+  },
+  exit() {
+    g.haptic.short()
+    g.router.back()
+  },
+  onHide() {
+    g.screen.leave()
+  },
+  onDestroy() {
+    g.screen.leave()
+  }
+}
+</script>

@@ -27,7 +27,7 @@
                 <img static src="./assets/arc/space.png" style="width: 60px;height: 60px;" @click="onBtnClick('space')" />
               </div>
             </div>
-            <div if="{{numFlag && !numFlag_jp && !hexFlag}}" style="left: 3px; flex-direction: column;">
+            <div if="{{numFlag && !numFlag_jp && !hexFlag && !rgbFlag}}" style="left: 3px; flex-direction: column;">
               <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
                 <text class="calbtn66" for="{{item in keys['sign'][0]}}" @click="onSelect(item)">{{item}}</text>
               </div>
@@ -44,6 +44,17 @@
               </div>
               <div static style="margin-left: 32px;margin-top: -5px;height: 60px;">
                 <text class="calbtn66" for="{{item in keys['hex'][1]}}" @click="onSelect(item)">{{item}}</text>
+              </div>
+            </div>
+            <!-- rgb 键面（色卡页专用）：数字行 + 逗号行；逗号放行首，无需横滚即可达
+                 （number 键面的全角逗号在横滚区末尾，band10 上够不着，见 Beta 245 记录）。
+                 键面进页即固定（watchKeyboardTypePropsChange 是空函数），与 hex 面同一套路。 -->
+            <div if="{{rgbFlag}}" style="left: 3px; flex-direction: column;">
+              <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
+                <text class="calbtn66" for="{{item in keys['rgb'][0]}}" @click="onSelect(item)">{{item}}</text>
+              </div>
+              <div static style="margin-left: 0px;margin-top: -5px;height: 60px;">
+                <text class="calbtn66" for="{{item in keys['rgb'][1]}}" @click="onSelect(item)">{{item}}</text>
               </div>
             </div>
             <div if="{{numFlag_jp}}" style="left: 3px; flex-direction: column;">
@@ -151,6 +162,8 @@ export default {
     numFlag: false,
     // hex 键面标记（进制转换页专用）：键盘上同时有数字与 A-F，走 numFlag 直出，本标记只负责换键面行
     hexFlag: false,
+    // rgb 键面标记（色卡页专用）：数字 + 逗号键面，走 numFlag 直出，本标记只负责换键面行
+    rgbFlag: false,
     numFlag_jp: false,
     upperFlag: false,
     // 键盘子树是否已建入 DOM：首次弹出置 true 保活（之后 hide 只走 show 显隐，不重建）
@@ -180,6 +193,10 @@ export default {
         ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
         ["A", "B", "C", "D", "E", "F"],
       ],
+      rgb: [
+        ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+        [","],
+      ],
     },
   },
   onInit() {
@@ -206,6 +223,11 @@ export default {
     if (this.keyboardtype === "hex") {
       this.numFlag = true;
       this.hexFlag = true;
+    }
+    // rgb 模式（色卡页专用）：数字 + 逗号键面，同样走 numFlag 直出
+    if (this.keyboardtype === "rgb") {
+      this.numFlag = true;
+      this.rgbFlag = true;
     }
     if (!this.hide) this.keyboardCreated = true;
     this.$watch("hide", "watchHidePropsChange");

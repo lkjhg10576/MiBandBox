@@ -3,7 +3,7 @@
 
   <h1>BandBox · The Xiaomi Band Toolbox</h1>
 
-  <p><b>39 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
+  <p><b>40 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
   <p>Fully offline · No fees · No accounts · No closed-source dependencies · MIT licensed</p>
 
   <p>
@@ -20,7 +20,7 @@
   <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.2</code> (versionCode 266) · Built with Vela JS Quick Apps</p>
 </div>
 
-<img src="assets/promo/BandBox 头图 1200x800.png" alt="BandBox: 39 local tools for Xiaomi Band" />
+<img src="assets/promo/BandBox 头图 1200x800.png" alt="BandBox: 40 local tools for Xiaomi Band" />
 
 ---
 
@@ -28,20 +28,20 @@
 
 BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 10 NFC** (212 × 520 narrow strip display) and the **Xiaomi Band 9 Pro / 10 Pro** (336 × 480 rectangular display). Each form factor ships as its own package (same app package name, pick the one for your band). **Xiaomi Band 9 / 11 are not supported yet.**
 
-A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes thirty-nine small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
+A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes forty small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
 Everything stays on the band. **No network calls, no fees, no sign-up, no uploads.**
 
 | Highlights | Details |
 | --- | --- |
-| Tools | **39**, covering everyday, notes, fun and system-information use cases |
+| Tools | **40**, covering everyday, notes, fun and system-information use cases |
 | Network requests | **0** (no third-party APIs, no telemetry, no ads) |
 | Accounts / payments | **0** (no login, no subscription, no activation) |
 | Closed-source dependencies | **0** (nothing but the optional official AstroBox plugin) |
 | Bundled fonts | **0** (uses the Band 10/11 system fonts, MiSans / MiLan Pro) |
 | License | **MIT** |
 
-> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 39 tools work exactly the same.
+> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 40 tools work exactly the same.
 
 ---
 
@@ -121,6 +121,7 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 | --- | --- |
 | Fluorescent stick | Full-screen single-colour loop, pausable, stays at max brightness |
 | Red light | Red / warm orange / white / cool light at full brightness, lights up on entry |
+| Color card | Enter a colour as HEX or RGB with a live preview in both formats; tap "View" for a full-screen look, tap the screen or swipe back to exit; max brightness and keep-screen-on can be enabled while viewing (remembered) |
 | Desktop companion | Use the band as a desk clock: day of the month and weekday (in red) on the left, big HH:MM with seconds on the right; the setup page offers ten brightness levels and keep-screen-on, and the screen stays bright while it runs |
 | Marquee | Text, size, speed and colour; scrolls horizontally in portrait, rotates 90° in landscape |
 | Lyrics | Local lyrics with auto-scroll in portrait and landscape, plus "transfer from phone" |

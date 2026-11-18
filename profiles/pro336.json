@@ -706,6 +706,15 @@
       ["width: 186px", "width: 314px"],
       ["width: 170px", "width: 294px"]
     ],
+    "src/pages/colorcard/colorcard.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 182px", "width: 306px"],
+      [".editCardKb {}", ".editCardKb { top: 74px; height: 38px; }"]
+    ],
+    "src/pages/colorcard/view/view.ux": [
+      ["width: 212px", "width: 336px"],
+      ["top: 448px", "top: 424px"]
+    ],
     "src/pages/companion/companion.ux": [
       ["width: 200px", "width: 324px"],
       ["width: 110px", "width: 180px"],

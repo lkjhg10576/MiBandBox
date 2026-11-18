@@ -294,6 +294,12 @@
       "pages/cubeTimer": {
         "component": "cubeTimer"
       },
+      "pages/colorcard": {
+        "component": "colorcard"
+      },
+      "pages/colorcard/view": {
+        "component": "view"
+      },
       "pages/companion": {
         "component": "companion"
       },

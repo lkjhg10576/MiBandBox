@@ -40,6 +40,7 @@ const apps = [
   { id: 'tapTempo', name: '节拍测定', route: '/pages/tapTempo', icon: '/common/icons/tapTempo.png', desc: '点屏幕 · 测 BPM' },
   { id: 'datecalc', name: '日期计算', route: '/pages/datecalc', icon: '/common/icons/datecalc.png', desc: '间隔天数 · 年龄' },
   { id: 'counter', name: '计数器', route: '/pages/counter', icon: '/common/icons/counter.png', desc: '加减计数 · 长振' },
+  { id: 'colorcard', name: '快捷色卡', route: '/pages/colorcard', icon: '/common/icons/colorcard.png', desc: 'HEX/RGB · 全屏查看' },
   { id: 'companion', name: '桌面伴侣', route: '/pages/companion', icon: '/common/icons/companion.png', desc: '横屏时钟 · 常亮' }
 ]
 
