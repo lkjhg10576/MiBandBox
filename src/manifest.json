@@ -293,6 +293,12 @@
       },
       "pages/cubeTimer": {
         "component": "cubeTimer"
+      },
+      "pages/companion": {
+        "component": "companion"
+      },
+      "pages/companion/clock": {
+        "component": "clock"
       }
     }
   }

@@ -705,6 +705,18 @@
       ["width: 206px", "width: 330px"],
       ["width: 186px", "width: 314px"],
       ["width: 170px", "width: 294px"]
+    ],
+    "src/pages/companion/companion.ux": [
+      ["width: 200px", "width: 324px"],
+      ["width: 110px", "width: 180px"],
+      ["left: 122px", "left: 202px"],
+      ["width: 78px", "width: 128px"],
+      ["width: 56px", "width: 80px"],
+      ["width: 84px", "width: 148px"],
+      ["width: 206px", "width: 330px"]
+    ],
+    "src/pages/companion/clock/clock.ux": [
+      ["left: 212px; top: 0px; width: 520px; height: 212px", "left: 336px; top: 0px; width: 480px; height: 336px"]
     ]
   },
   "manifest": {}

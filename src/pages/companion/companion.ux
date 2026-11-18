@@ -1,0 +1,162 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="桌面伴侣" clock="{{ clock }}"></pagehead>
+
+    <text class="f label">屏幕亮度</text>
+    <text class="f pct">{{ pct }}%</text>
+    <!-- 原生 slider：change 只在拖动结束时触发（官方文档），所以百分比与亮度预览都在松手时更新。
+         默认左右 padding 是 32px，200px 宽的轨道只剩 136px 行程 —— 必须覆盖成 10px。 -->
+    <slider class="level" min="1" max="10" step="1" value="{{ level }}" onchange="onLevel"></slider>
+
+    <!-- −/+ 步进：提供逐档微调与每次点按的即时反馈，也是原生滑杆异常时的兜底调节路径。
+         这三个都是 flex 子元素，绝不能声明 position（R15 会把它们算成 (0,0) 盒压住页头命中区）。 -->
+    <div class="stepRow">
+      <div class="stepBtn" @click="step(-1)"><text class="f stepT">−</text></div>
+      <text class="f stepVal">{{ level }} / 10</text>
+      <div class="stepBtn" @click="step(1)"><text class="f stepT">+</text></div>
+    </div>
+
+    <div class="card" style="background-color: {{ keepOn ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="toggleKeep">
+      <div class="cardTop">
+        <text class="f cTitle">保持常亮</text>
+        <text class="f swState" style="color: {{ keepOn ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ keepOn ? '开' : '关' }}</text>
+      </div>
+      <text class="f cSub">激活期间不自动熄屏</text>
+    </div>
+
+    <text class="f hint">开始后横放手环，长亮显示时间</text>
+
+    <div class="actRow" @click="start"><text class="f actRowT">开始</text></div>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+/* 版式（band10 基线；Pro 走 profiles/pro336.json 的替换对，数值只在这里写一份）：
+   PageHead 0..84 → 标签/百分比 92..114 → slider 124..168 → 步进行 180..228
+   → 常亮卡 240..316 → 提示 330..352 → 底部「开始」400..448（Pro 由 theme 替换对变 360..408）。 */
+.label { position: absolute; left: 12px; top: 92px; width: 110px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.pct { position: absolute; left: 122px; top: 92px; width: 78px; height: 22px; line-height: 22px; text-align: right; font-size: 14px; color: #FFFFFF; }
+.level { position: absolute; left: 6px; top: 124px; width: 200px; height: 44px; color: #2A2A2A; selected-color: #0D6EFF; block-color: #FFFFFF; padding-left: 10px; padding-right: 10px; }
+.stepRow { position: absolute; left: 6px; top: 180px; width: 200px; height: 48px; flex-direction: row; align-items: center; justify-content: space-between; }
+.stepBtn { width: 56px; height: 48px; border-radius: 24px; background-color: #1A1A1A; align-items: center; justify-content: center; }
+.stepT { font-size: 22px; color: #FFFFFF; }
+.stepVal { width: 84px; height: 48px; line-height: 48px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.75); }
+/* .card 必须在本页写 position/top：它是可点元素，R15 靠绝对盒判断它是否压住页头命中区 */
+.card { position: absolute; left: 3px; top: 240px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; }
+.cardTop { width: 100%; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
+.cTitle { font-size: 17px; color: #FFFFFF; }
+/* 开关状态字：与 set.ux / calculator 的 swRow 同一套写法（内联 style 三元 + 「开/关」），不用 <switch> */
+.swState { width: 40px; height: 30px; line-height: 30px; text-align: right; font-size: 16px; }
+.cSub { width: 100%; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+/* 提示用 206 宽（与卡片同宽，复用 206→330 的替换对），两机型都居中 */
+.hint { position: absolute; left: 3px; top: 330px; width: 206px; height: 22px; line-height: 22px; font-size: 13px; color: rgba(255,255,255,0.35); }
+</style>
+
+<script>
+import g from '../../utils/g'
+
+// 十档亮度（0..255）。档 1 不取 0：桌面伴侣是「长亮显示」，全黑没有意义。
+const LEVELS = [40, 64, 88, 112, 136, 160, 183, 207, 231, 255]
+const DEFAULT_LEVEL = 7
+
+function clampLevel(v) {
+  let lv = Math.round(Number(v))
+  if (!(lv >= 1)) lv = 1
+  if (lv > 10) lv = 10
+  return lv
+}
+
+function valueOf(level) {
+  return LEVELS[clampLevel(level) - 1]
+}
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    level: DEFAULT_LEVEL,
+    pct: DEFAULT_LEVEL * 10,
+    keepOn: true,
+    dirty: false
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    this.dirty = false
+    // 进入设置页就按当前档位预览亮度（同步路径；hold 的归属令牌保证转页两种时序都正确）
+    this.preview()
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    // 记住上次的档位与常亮选择。dirty：读盘窗口内用户已手动改过时，别用旧值覆盖 UI
+    g.kv.init(() => {
+      if (!this.$valid || this.dirty) return
+      const cfg = g.kv.get('companionCfg', null)
+      if (!cfg || typeof cfg !== 'object') return
+      const lv = Number(cfg.level)
+      if (lv >= 1 && lv <= 10) this.level = Math.round(lv)
+      if (typeof cfg.keepOn === 'boolean') this.keepOn = cfg.keepOn
+      this.pct = this.level * 10
+      this.preview()
+    })
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    // 只释放自己持有的会话：去时钟页时归属已转给 'clock'，这里的延迟释放会被令牌挡掉
+    g.screen.releaseSoon('companion')
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    g.screen.releaseSoon('companion')
+  },
+  /** 把当前档位应用到屏幕（设置页内即时预览） */
+  preview() {
+    g.screen.hold({ keepOn: this.keepOn, value: valueOf(this.level) }, 'companion')
+  },
+  /** slider 的 change 只有拖动结束才触发；e.progress 防御式取值 + 回声守卫 */
+  onLevel(e) {
+    const raw = e && e.progress != null ? e.progress : this.level
+    const lv = clampLevel(raw)
+    if (lv === this.level) return
+    this.dirty = true
+    this.level = lv
+    this.pct = lv * 10
+    this.preview()
+  },
+  step(d) {
+    const lv = clampLevel(this.level + d)
+    if (lv === this.level) return
+    g.haptic.short()
+    this.dirty = true
+    this.level = lv
+    this.pct = lv * 10
+    this.preview()
+  },
+  toggleKeep() {
+    g.haptic.short()
+    this.dirty = true
+    this.keepOn = !this.keepOn
+    this.preview()
+  },
+  start() {
+    g.haptic.short()
+    const cfg = { level: this.level, keepOn: this.keepOn }
+    const value = valueOf(cfg.level)
+    // 先把亮度会话归属转给时钟页（同步）：设置页随即 onHide，它的延迟释放会被归属检查取消。
+    g.screen.hold({ keepOn: cfg.keepOn, value }, 'clock')
+    g.kv.init(() => {
+      g.kv.set('companionCfg', cfg)
+      g.kv.flush()
+      g.router.push('/pages/companion/clock', {
+        value: String(value),
+        keepOn: cfg.keepOn ? '1' : '0'
+      })
+    })
+  }
+}
+</script>

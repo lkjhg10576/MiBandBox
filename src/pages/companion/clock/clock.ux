@@ -1,0 +1,154 @@
+<template>
+  <!-- 桌面显示页：整页点按退出（textShow 的范式），没有 PageHead。
+       结构全部是流式子元素 —— 旋转容器里只放流式内容（绝对定位子元素在真机上未验证）。 -->
+  <div class="page" @click="back">
+    <div class="landWrap">
+      <div class="clockCol" style="width: {{ geo.stripW }}px; height: {{ geo.stripH }}px;">
+        <div class="clockRow" style="width: {{ geo.stripW }}px; height: {{ geo.rowH }}px; padding: 0px {{ geo.pad }}px;">
+          <div class="dateCol" style="width: {{ geo.dateColW }}px; height: {{ geo.dateH }}px;">
+            <text class="f dayNum" style="width: {{ geo.dateColW }}px; height: {{ geo.dayH }}px; line-height: {{ geo.dayH }}px; font-size: {{ geo.dayFont }}px;">{{ day }}</text>
+            <text class="f weekTxt" style="width: {{ geo.dateColW }}px; height: {{ geo.weekH }}px; line-height: {{ geo.weekLineH }}px; font-size: {{ geo.weekFont }}px;">{{ week }}</text>
+          </div>
+          <div class="gap" style="width: {{ geo.gap }}px; height: 1px;"></div>
+          <div class="timeCol" style="width: {{ geo.timeColW }}px; height: {{ geo.timeContentH }}px;">
+            <div class="timeRow" style="width: {{ geo.timeRowW }}px; height: {{ geo.timeRowH }}px;">
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">{{ h1 }}</text>
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">{{ h2 }}</text>
+              <text class="f tCol" style="width: {{ geo.colonW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">:</text>
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">{{ m1 }}</text>
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">{{ m2 }}</text>
+            </div>
+            <text class="f secTxt" style="width: {{ geo.timeColW }}px; height: {{ geo.secH }}px; line-height: {{ geo.secLineH }}px; font-size: {{ geo.secFont }}px;">{{ sec }}</text>
+          </div>
+        </div>
+        <text class="f exitHint" style="width: {{ geo.stripW }}px; height: {{ geo.hintH }}px; line-height: {{ geo.hintH }}px; font-size: {{ geo.hintFont }}px;">轻触退出</text>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+
+/* 假横屏容器：照抄 textShow / lyrics/show 已在真机验证过的写法 ——
+   transform-origin 必须是 0 0，left 必须是屏宽；绕中心旋转会溢出被整块裁剪（全黑）。
+   这一行里的 left/width/height 是 pro336 唯一的替换对（其余几何由 companionGeo 从 SCREEN 算出）。
+   动态 transform 会被运行时忽略，所以 rotate 只能写在静态 CSS 里。 */
+.landWrap { position: absolute; left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); }
+
+/* 旋转坐标里的布局：local x = 物理屏纵向（上→下），local y = 物理屏横向（右→左）。
+   数值几何全部内联；这里只留方向、对齐、颜色与字重。 */
+.clockCol { flex-direction: column; align-items: center; }
+.clockRow { flex-direction: row; align-items: center; flex-shrink: 0; }
+.dateCol { flex-direction: column; align-items: center; flex-shrink: 0; }
+.gap { flex-shrink: 0; }
+.timeCol { flex-direction: column; align-items: center; flex-shrink: 0; }
+.timeRow { flex-direction: row; align-items: center; flex-shrink: 0; }
+/* 合成粗体在某些汉字上会出豆腐块：加粗只给数字与冒号，周几/提示保持正常字重 */
+.dayNum { text-align: center; color: #FFFFFF; font-weight: bold; }
+.weekTxt { text-align: center; color: #FF3B30; }
+.tDig { text-align: center; color: #FFFFFF; font-weight: bold; }
+.tCol { text-align: center; color: #FFFFFF; font-weight: bold; }
+.secTxt { text-align: center; color: rgba(255,255,255,0.45); font-weight: bold; }
+.exitHint { text-align: center; color: rgba(255,255,255,0.22); }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import companionGeo from '../../../utils/companionGeo'
+
+// 几何在模块求值时算好（首帧即正确，不会先按默认布局闪一帧）
+const G = companionGeo.build()
+
+// 走时定时器与分级刷新缓存放模块作用域（本页同时只有一个实例）：onHide / onDestroy 都清。
+let alignTimer = null
+let tickTimer = null
+let lastHM = null
+let lastSec = null
+let lastDay = null
+
+function stopTimers() {
+  if (alignTimer) {
+    clearTimeout(alignTimer)
+    alignTimer = null
+  }
+  if (tickTimer) {
+    clearInterval(tickTimer)
+    tickTimer = null
+  }
+}
+
+export default {
+  protected: {
+    value: '183',
+    keepOn: '1'
+  },
+  private: {
+    geo: G,
+    day: '',
+    week: '',
+    h1: '0',
+    h2: '0',
+    m1: '0',
+    m2: '0',
+    sec: '00'
+  },
+  onShow() {
+    // 亮度/常亮必须在同步路径上（塞进异步回调会被时序吞掉，同 flashlight / 色卡查看页）。
+    // hold 的归属令牌保证「旧页 onHide 晚于新页 onShow」的两种时序都不会中途退出会话。
+    g.screen.hold({ value: Number(this.value), keepOn: this.keepOn === '1' }, 'clock')
+    // 缓存是模块作用域的，可能留着上一次实例的分钟/秒：先重置再刷新，
+    // 否则同一分钟内重进页面会因「值没变」不写字段，首帧停在默认值上。
+    lastHM = null
+    lastSec = null
+    lastDay = null
+    this.refresh()
+    stopTimers()
+    const page = this
+    // 先对齐秒边界再起 1s 心跳：直接 setInterval 会带着进入时的毫秒相位，秒数跳变肉眼可见地不均
+    alignTimer = setTimeout(() => {
+      alignTimer = null
+      page.refresh()
+      tickTimer = setInterval(() => page.refresh(), 1000)
+    }, 1000 - (Date.now() % 1000))
+  },
+  onHide() {
+    stopTimers()
+    g.screen.releaseSoon('clock')
+  },
+  onDestroy() {
+    stopTimers()
+    g.screen.releaseSoon('clock')
+  },
+  /**
+   * 分级写值（同 time.ux）：秒每秒写一次，HH:MM 只在分钟变化时写，日期/周几只在跨天时写。
+   * 长亮页面里少一次大字号重绘就少一分发热；定宽格也保证数字变化不引起横向位移。
+   */
+  refresh() {
+    const now = new Date()
+    const hm = g.time.pad2(now.getHours()) + ':' + g.time.pad2(now.getMinutes())
+    if (hm !== lastHM) {
+      lastHM = hm
+      this.h1 = hm.charAt(0)
+      this.h2 = hm.charAt(1)
+      this.m1 = hm.charAt(3)
+      this.m2 = hm.charAt(4)
+    }
+    const ss = g.time.pad2(now.getSeconds())
+    if (ss !== lastSec) {
+      lastSec = ss
+      this.sec = ss
+    }
+    const dayKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate()
+    if (dayKey !== lastDay) {
+      lastDay = dayKey
+      // 几号只显示纯数字（不带「日」）；周几取「周二」这种两字形式
+      this.day = '' + now.getDate()
+      this.week = g.time.weekdayName(now)
+    }
+  },
+  back() {
+    g.router.back()
+  }
+}
+</script>
