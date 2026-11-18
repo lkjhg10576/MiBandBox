@@ -84,6 +84,13 @@ const KV_KEY = 'unitRadix.lastBase'
 // Pro 卡内宽 306px：32 字符草稿一行放得下；band10 内宽 182px 必须两行
 const DRAFT_CHUNK = SCREEN.w >= 336 ? 32 : 16
 
+/** 草稿权威副本（模块闭包，不进 data）：
+ *  草稿若只存在 data 里，页面重渲染/重建时 data 会回到初值，下一次按键就会从空草稿起算 ——
+ *  症状正是「新键覆盖旧键、只能输入一位」。模块闭包在同一次进程内跨页面重建存活，
+ *  与 home.ux 的 layoutState 是同一套做法。data.draft 只做显示镜像，永远由这里回写。
+ */
+let draftStore = ''
+
 const CHAR_MSG = {
   bin: '二进制只能输入 0 和 1',
   oct: '八进制只能输入 0-7',
@@ -135,6 +142,9 @@ export default {
   },
 
   onInit() {
+    // 只有新页面实例才清草稿；重渲染不会走 onInit，输入中的草稿不会被清掉
+    draftStore = ''
+    this.draft = ''
     this.refresh()
   },
 
@@ -144,10 +154,10 @@ export default {
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
     // KV 只记输入进制：异步读回不阻塞首帧；键盘态或已有草稿时不覆盖
-    if (!this.kbShow && !this.draft) {
+    if (!this.kbShow && !draftStore) {
       const target = this
       g.kv.init(() => {
-        if (!target.$valid || target.kbShow || target.draft) return
+        if (!target.$valid || target.kbShow || draftStore) return
         const b = radix.base(g.kv.get(KV_KEY, ''))
         if (b && b.id !== target.baseId) {
           target.baseId = b.id
@@ -175,16 +185,18 @@ export default {
     this.baseId = b.id
     this.baseLabel = b.name
     this.chips = chipList(b.id)
-    this.empty = this.draft === ''
+    // 显示镜像永远由闭包草稿回写：data.draft 被重置也不会让界面/换算读到空草稿
+    this.draft = draftStore
+    this.empty = draftStore === ''
     // 输入卡与结果行：每 4/3 位分组后 JS 预切两行（不依赖自动折行）
-    const gl = radix.splitLines(this.draft, b.id)
+    const gl = radix.splitLines(draftStore, b.id)
     this.inL1 = gl[0]
     this.inL2 = gl[1]
     // 键盘态草稿：按定宽原样切分（不分组，退格时不视觉跳动）
-    const dl = radix.draftLines(this.draft, DRAFT_CHUNK)
+    const dl = radix.draftLines(draftStore, DRAFT_CHUNK)
     this.dL1 = dl[0]
     this.dL2 = dl[1]
-    const v = radix.parse(this.draft, b.id)
+    const v = radix.parse(draftStore, b.id)
     const rows = []
     for (let i = 0; i < radix.BASES.length; i++) {
       const ob = radix.BASES[i]
@@ -205,14 +217,15 @@ export default {
   onKey(e) {
     const raw = e && e.detail && e.detail.content ? e.detail.content : ''
     if (!raw) return
-    const r = radix.pushKey(this.draft, raw, this.baseId)
-    this.draft = r.draft
+    // 从闭包草稿起算，不读 data.draft：data 即使被重置也不会丢掉已输入的位
+    const r = radix.pushKey(draftStore, raw, this.baseId)
+    draftStore = r.draft
     if (r.reason) this.warnKey(r.reason)
     this.refresh()
   },
 
   onDel() {
-    this.draft = this.draft.slice(0, -1)
+    draftStore = draftStore.slice(0, -1)
     this.refresh()
   },
 
@@ -232,10 +245,10 @@ export default {
     if (!item || !item.id || item.id === this.baseId) return
     const nb = radix.base(item.id)
     if (!nb) return
-    const v = radix.parse(this.draft, this.baseId)
+    const v = radix.parse(draftStore, this.baseId)
     this.baseId = nb.id
     this.baseLabel = nb.name
-    this.draft = v === null ? '' : radix.format(v, nb.id)
+    draftStore = v === null ? '' : radix.format(v, nb.id)
     this.charWarned = false
     this.limitWarned = false
     this.refresh()
@@ -245,8 +258,8 @@ export default {
 
   clearAll() {
     if (this.kbShow) return
-    if (this.draft === '') return
-    this.draft = ''
+    if (draftStore === '') return
+    draftStore = ''
     this.refresh()
     g.haptic.short()
   },
