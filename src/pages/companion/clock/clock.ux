@@ -1,24 +1,35 @@
 <template>
   <!-- 桌面显示页：整页点按退出（textShow 的范式），没有 PageHead。
-       结构全部是流式子元素 —— 旋转容器里只放流式内容（绝对定位子元素在真机上未验证）。 -->
+       结构全部是流式子元素 —— 旋转容器里只放流式内容（绝对定位子元素在真机上未验证）。
+       版式：左列几号 + 周几，右列 HH:MM:SS + 电量；两列上排/下排行高相同 → 字顶对齐。 -->
   <div class="page" @click="back">
     <div class="landWrap">
       <div class="clockCol" style="width: {{ geo.stripW }}px; height: {{ geo.stripH }}px;">
-        <div class="clockRow" style="width: {{ geo.stripW }}px; height: {{ geo.rowH }}px; padding: 0px {{ geo.pad }}px;">
-          <div class="dateCol" style="width: {{ geo.dateColW }}px; height: {{ geo.dateH }}px;">
-            <text class="f dayNum" style="width: {{ geo.dateColW }}px; height: {{ geo.dayH }}px; line-height: {{ geo.dayH }}px; font-size: {{ geo.dayFont }}px;">{{ day }}</text>
-            <text class="f weekTxt" style="width: {{ geo.dateColW }}px; height: {{ geo.weekH }}px; line-height: {{ geo.weekLineH }}px; font-size: {{ geo.weekFont }}px;">{{ week }}</text>
+        <div class="clockRow" style="width: {{ geo.rowW }}px; height: {{ geo.rowH }}px;">
+          <div class="dateCol" style="width: {{ geo.dateColW }}px; height: {{ geo.contentH }}px;">
+            <text class="f dayNum" style="width: {{ geo.dateColW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.dayFont }}px;">{{ day }}</text>
+            <text class="f weekTxt" style="width: {{ geo.dateColW }}px; height: {{ geo.bottomH }}px; line-height: {{ geo.bottomH }}px; font-size: {{ geo.weekFont }}px;">{{ week }}</text>
           </div>
           <div class="gap" style="width: {{ geo.gap }}px; height: 1px;"></div>
-          <div class="timeCol" style="width: {{ geo.timeColW }}px; height: {{ geo.timeContentH }}px;">
-            <div class="timeRow" style="width: {{ geo.timeRowW }}px; height: {{ geo.timeRowH }}px;">
-              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">{{ h1 }}</text>
-              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">{{ h2 }}</text>
-              <text class="f tCol" style="width: {{ geo.colonW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">:</text>
-              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">{{ m1 }}</text>
-              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.timeRowH }}px; line-height: {{ geo.timeRowH }}px; font-size: {{ geo.timeFont }}px;">{{ m2 }}</text>
+          <div class="timeCol" style="width: {{ geo.timeColW }}px; height: {{ geo.contentH }}px;">
+            <!-- 秒不再单独一行：6 个数字格 + 2 个冒号格同字号，和时分一起排成 HH:MM:SS -->
+            <div class="timeRow" style="width: {{ geo.timeRowW }}px; height: {{ geo.topH }}px;">
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ h1 }}</text>
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ h2 }}</text>
+              <text class="f tCol" style="width: {{ geo.colonW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">:</text>
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ m1 }}</text>
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ m2 }}</text>
+              <text class="f tCol" style="width: {{ geo.colonW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">:</text>
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s1 }}</text>
+              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s2 }}</text>
             </div>
-            <text class="f secTxt" style="width: {{ geo.timeColW }}px; height: {{ geo.secH }}px; line-height: {{ geo.secLineH }}px; font-size: {{ geo.secFont }}px;">{{ sec }}</text>
+            <!-- 电量与周几同处下排：系统不支持电量接口时整组不渲染，行高保留，不影响左侧对齐 -->
+            <div class="batRow" style="width: {{ geo.timeColW }}px; height: {{ geo.bottomH }}px;">
+              <div class="batInner" if="{{ batShow }}" style="width: {{ geo.batGroupW }}px; height: {{ geo.bottomH }}px;">
+                <img class="batBolt" src="/common/images/bolt.png" style="width: {{ geo.boltW }}px; height: {{ geo.boltH }}px; margin-right: {{ geo.batGap }}px;" />
+                <text class="f batTxt" style="width: {{ geo.pctW }}px; height: {{ geo.batLineH }}px; line-height: {{ geo.batLineH }}px; font-size: {{ geo.batFont }}px;">{{ batText }}</text>
+              </div>
+            </div>
           </div>
         </div>
         <text class="f exitHint" style="width: {{ geo.stripW }}px; height: {{ geo.hintH }}px; line-height: {{ geo.hintH }}px; font-size: {{ geo.hintFont }}px;">轻触退出</text>
@@ -36,7 +47,7 @@
    动态 transform 会被运行时忽略，所以 rotate 只能写在静态 CSS 里。 */
 .landWrap { position: absolute; left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); }
 
-/* 旋转坐标里的布局：local x = 物理屏纵向（上→下），local y = 物理屏横向（右→左）。
+/* 旋转坐标里的布局：local x = 观看者横向（左→右），local y = 纵向（上→下）。
    数值几何全部内联；这里只留方向、对齐、颜色与字重。 */
 .clockCol { flex-direction: column; align-items: center; }
 .clockRow { flex-direction: row; align-items: center; flex-shrink: 0; }
@@ -44,18 +55,22 @@
 .gap { flex-shrink: 0; }
 .timeCol { flex-direction: column; align-items: center; flex-shrink: 0; }
 .timeRow { flex-direction: row; align-items: center; flex-shrink: 0; }
-/* 合成粗体在某些汉字上会出豆腐块：加粗只给数字与冒号，周几/提示保持正常字重 */
+.batRow { flex-direction: row; align-items: center; justify-content: center; flex-shrink: 0; }
+.batInner { flex-direction: row; align-items: center; justify-content: center; flex-shrink: 0; }
+/* 合成粗体在部分汉字上会出豆腐块：本次按用户要求周几也红色加粗，
+   已在模拟器（miwear 真机字体）截图确认「周四」正常；换周几字表或字体时需复核。 */
 .dayNum { text-align: center; color: #FFFFFF; font-weight: bold; }
-.weekTxt { text-align: center; color: #FF3B30; }
+.weekTxt { text-align: center; color: #FF3B30; font-weight: bold; }
 .tDig { text-align: center; color: #FFFFFF; font-weight: bold; }
 .tCol { text-align: center; color: #FFFFFF; font-weight: bold; }
-.secTxt { text-align: center; color: rgba(255,255,255,0.45); font-weight: bold; }
+.batTxt { text-align: center; color: #FFFFFF; font-weight: bold; }
 .exitHint { text-align: center; color: rgba(255,255,255,0.22); }
 </style>
 
 <script>
 import g from '../../../utils/g'
 import companionGeo from '../../../utils/companionGeo'
+import battery from '@system.battery'
 
 // 几何在模块求值时算好（首帧即正确，不会先按默认布局闪一帧）
 const G = companionGeo.build()
@@ -91,7 +106,10 @@ export default {
     h2: '0',
     m1: '0',
     m2: '0',
-    sec: '00'
+    s1: '0',
+    s2: '0',
+    batText: '',
+    batShow: false
   },
   onShow() {
     // 亮度/常亮必须在同步路径上（塞进异步回调会被时序吞掉，同 flashlight / 色卡查看页）。
@@ -123,6 +141,7 @@ export default {
   /**
    * 分级写值（同 time.ux）：秒每秒写一次，HH:MM 只在分钟变化时写，日期/周几只在跨天时写。
    * 长亮页面里少一次大字号重绘就少一分发热；定宽格也保证数字变化不引起横向位移。
+   * 电量变化慢，跟分钟一起刷新（每秒调一次系统接口没有意义）。
    */
   refresh() {
     const now = new Date()
@@ -133,11 +152,13 @@ export default {
       this.h2 = hm.charAt(1)
       this.m1 = hm.charAt(3)
       this.m2 = hm.charAt(4)
+      this.refreshBattery()
     }
     const ss = g.time.pad2(now.getSeconds())
     if (ss !== lastSec) {
       lastSec = ss
-      this.sec = ss
+      this.s1 = ss.charAt(0)
+      this.s2 = ss.charAt(1)
     }
     const dayKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate()
     if (dayKey !== lastDay) {
@@ -146,6 +167,27 @@ export default {
       this.day = '' + now.getDate()
       this.week = g.time.weekdayName(now)
     }
+  },
+  /**
+   * 电量：官方文档 level 是 0.0-1.0，样例却按百分数打印 —— 两种实现都兼容。
+   * 失败（部分机型不支持 @system.battery）时保留上一次成功值；从未成功过就整组不渲染。
+   */
+  refreshBattery() {
+    const page = this
+    try {
+      battery.getStatus({
+        success: (data) => {
+          const raw = Number(data && data.level)
+          if (!(raw >= 0)) return
+          let lv = raw <= 1 ? Math.round(raw * 100) : Math.round(raw)
+          if (lv < 0) lv = 0
+          if (lv > 100) lv = 100
+          page.batText = lv + '%'
+          page.batShow = true
+        },
+        fail: () => {}
+      })
+    } catch (e) {}
   },
   back() {
     g.router.back()
