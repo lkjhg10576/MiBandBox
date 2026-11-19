@@ -1,37 +1,68 @@
 <template>
   <!-- 桌面显示页：整页点按退出（textShow 的范式），没有 PageHead。
        结构全部是流式子元素 —— 旋转容器里只放流式内容（绝对定位子元素在真机上未验证）。
-       版式：左列几号 + 周几，右列 HH:MM:SS + 电量；两列上排/下排行高相同 → 字顶对齐。 -->
+       两种版式由 companionGeo 按机型选（geo.rows）：
+         · 矮横条（band10）：左列几号 + 周几，右列 HH:MM:SS + 电量；两列上排/下排行高相同 → 字顶对齐。
+         · 高横条（Pro）：上排「几号 + 周几（左）/ 电量（右）」，下排整行大号 HH:MM:SS。
+       秒钟开关由设置页传入（showSec='0' 时只显示时分）：去掉秒的 3 个格后行宽变窄、
+       仍由时间列居中 → 时分整体向右平移。 -->
   <div class="page" @click="back">
     <div class="landWrap">
       <div class="clockCol" style="width: {{ geo.stripW }}px; height: {{ geo.stripH }}px;">
-        <div class="clockRow" style="width: {{ geo.rowW }}px; height: {{ geo.rowH }}px;">
+        <!-- ===== 矮横条：左日期列 / 右时间列 ===== -->
+        <div class="body bodyCols" if="{{ !geo.rows }}" style="width: {{ geo.rowW }}px; height: {{ geo.rowH }}px;">
           <div class="dateCol" style="width: {{ geo.dateColW }}px; height: {{ geo.contentH }}px;">
             <text class="f dayNum" style="width: {{ geo.dateColW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.dayFont }}px;">{{ day }}</text>
             <text class="f weekTxt" style="width: {{ geo.dateColW }}px; height: {{ geo.bottomH }}px; line-height: {{ geo.bottomH }}px; font-size: {{ geo.weekFont }}px;">{{ week }}</text>
           </div>
           <div class="gap" style="width: {{ geo.gap }}px; height: 1px;"></div>
           <div class="timeCol" style="width: {{ geo.timeColW }}px; height: {{ geo.contentH }}px;">
-            <!-- 秒不再单独一行：6 个数字格 + 2 个冒号格同字号，和时分一起排成 HH:MM:SS -->
-            <div class="timeRow" style="width: {{ geo.timeRowW }}px; height: {{ geo.topH }}px;">
+            <div class="timeRow" style="width: {{ showSec === '1' ? geo.timeRowW : geo.timeRowWNoSec }}px; height: {{ geo.topH }}px;">
               <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ h1 }}</text>
               <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ h2 }}</text>
               <text class="f tCol" style="width: {{ geo.colonW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">:</text>
               <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ m1 }}</text>
               <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ m2 }}</text>
-              <text class="f tCol" style="width: {{ geo.colonW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">:</text>
-              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s1 }}</text>
-              <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s2 }}</text>
+              <text class="f tCol" if="{{ showSec === '1' }}" style="width: {{ geo.colonW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">:</text>
+              <text class="f tDig" if="{{ showSec === '1' }}" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s1 }}</text>
+              <text class="f tDig" if="{{ showSec === '1' }}" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s2 }}</text>
             </div>
             <!-- 电量与周几同处下排：系统不支持电量接口时整组不渲染，行高保留，不影响左侧对齐 -->
             <div class="batRow" style="width: {{ geo.timeColW }}px; height: {{ geo.bottomH }}px;">
-              <div class="batInner" if="{{ batShow }}" style="width: {{ geo.batGroupW }}px; height: {{ geo.bottomH }}px;">
+              <div class="batInner" if="{{ batShow }}" style="width: {{ geo.batGroupW }}px; height: {{ geo.batLineH }}px;">
                 <img class="batBolt" src="/common/images/bolt.png" style="width: {{ geo.boltW }}px; height: {{ geo.boltH }}px; margin-right: {{ geo.batGap }}px;" />
                 <text class="f batTxt" style="width: {{ geo.pctW }}px; height: {{ geo.batLineH }}px; line-height: {{ geo.batLineH }}px; font-size: {{ geo.batFont }}px;">{{ batText }}</text>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- ===== 高横条：上排日期行 / 下排大时间 ===== -->
+        <div class="body bodyRows" if="{{ geo.rows }}" style="width: {{ geo.rowW }}px; height: {{ geo.rowH }}px;">
+          <div class="dateRow" style="width: {{ geo.dateRowW }}px; height: {{ geo.dateRowH }}px;">
+            <div class="dateGroup">
+              <text class="f dayNum" style="width: {{ geo.dayW }}px; height: {{ geo.dateRowH }}px; line-height: {{ geo.dateRowH }}px; font-size: {{ geo.dayFont }}px;">{{ day }}</text>
+              <div class="gap" style="width: {{ geo.dayWeekGap }}px; height: 1px;"></div>
+              <text class="f weekTxt" style="width: {{ geo.weekW }}px; height: {{ geo.dateRowH }}px; line-height: {{ geo.dateRowH }}px; font-size: {{ geo.weekFont }}px;">{{ week }}</text>
+            </div>
+            <div class="batInner" if="{{ batShow }}" style="width: {{ geo.batGroupW }}px; height: {{ geo.batLineH }}px;">
+              <img class="batBolt" src="/common/images/bolt.png" style="width: {{ geo.boltW }}px; height: {{ geo.boltH }}px; margin-right: {{ geo.batGap }}px;" />
+              <text class="f batTxt" style="width: {{ geo.pctW }}px; height: {{ geo.batLineH }}px; line-height: {{ geo.batLineH }}px; font-size: {{ geo.batFont }}px;">{{ batText }}</text>
+            </div>
+          </div>
+          <div class="gapH" style="width: 1px; height: {{ geo.rowGap }}px;"></div>
+          <div class="timeRow" style="width: {{ showSec === '1' ? geo.timeRowW : geo.timeRowWNoSec }}px; height: {{ geo.topH }}px;">
+            <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ h1 }}</text>
+            <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ h2 }}</text>
+            <text class="f tCol" style="width: {{ geo.colonW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">:</text>
+            <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ m1 }}</text>
+            <text class="f tDig" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ m2 }}</text>
+            <text class="f tCol" if="{{ showSec === '1' }}" style="width: {{ geo.colonW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">:</text>
+            <text class="f tDig" if="{{ showSec === '1' }}" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s1 }}</text>
+            <text class="f tDig" if="{{ showSec === '1' }}" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s2 }}</text>
+          </div>
+        </div>
+
         <text class="f exitHint" style="width: {{ geo.stripW }}px; height: {{ geo.hintH }}px; line-height: {{ geo.hintH }}px; font-size: {{ geo.hintFont }}px;">轻触退出</text>
       </div>
     </div>
@@ -50,13 +81,20 @@
 /* 旋转坐标里的布局：local x = 观看者横向（左→右），local y = 纵向（上→下）。
    数值几何全部内联；这里只留方向、对齐、颜色与字重。 */
 .clockCol { flex-direction: column; align-items: center; }
-.clockRow { flex-direction: row; align-items: center; flex-shrink: 0; }
+.body { flex-shrink: 0; }
+/* 矮横条：日期列 + 时间列并排，整块在行高内上下居中 */
+.bodyCols { flex-direction: row; align-items: center; justify-content: center; }
+/* 高横条：日期行在上、时间行在下，两行在行高内上下居中 */
+.bodyRows { flex-direction: column; align-items: center; justify-content: center; }
 .dateCol { flex-direction: column; align-items: center; flex-shrink: 0; }
+.dateRow { flex-direction: row; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.dateGroup { flex-direction: row; align-items: center; flex-shrink: 0; }
 .gap { flex-shrink: 0; }
+.gapH { flex-shrink: 0; }
 .timeCol { flex-direction: column; align-items: center; flex-shrink: 0; }
 .timeRow { flex-direction: row; align-items: center; flex-shrink: 0; }
 .batRow { flex-direction: row; align-items: center; justify-content: center; flex-shrink: 0; }
-.batInner { flex-direction: row; align-items: center; justify-content: center; flex-shrink: 0; }
+.batInner { flex-direction: row; align-items: center; flex-shrink: 0; }
 /* 合成粗体在部分汉字上会出豆腐块：本次按用户要求周几也红色加粗，
    已在模拟器（miwear 真机字体）截图确认「周四」正常；换周几字表或字体时需复核。 */
 .dayNum { text-align: center; color: #FFFFFF; font-weight: bold; }
@@ -94,9 +132,11 @@ function stopTimers() {
 }
 
 export default {
+  // showSec 由设置页传入：'1' = 显示秒钟（默认），'0' = 只显示时分
   protected: {
     value: '183',
-    keepOn: '1'
+    keepOn: '1',
+    showSec: '1'
   },
   private: {
     geo: G,
@@ -154,11 +194,14 @@ export default {
       this.m2 = hm.charAt(4)
       this.refreshBattery()
     }
-    const ss = g.time.pad2(now.getSeconds())
-    if (ss !== lastSec) {
-      lastSec = ss
-      this.s1 = ss.charAt(0)
-      this.s2 = ss.charAt(1)
+    // 关闭秒钟时不写秒字段：省一次重绘，也避免误触秒格（模板里秒格整体不渲染）
+    if (this.showSec === '1') {
+      const ss = g.time.pad2(now.getSeconds())
+      if (ss !== lastSec) {
+        lastSec = ss
+        this.s1 = ss.charAt(0)
+        this.s2 = ss.charAt(1)
+      }
     }
     const dayKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate()
     if (dayKey !== lastDay) {
