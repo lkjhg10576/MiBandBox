@@ -1,0 +1,724 @@
+{
+  "id": "band9",
+  "label": "小米手环 9（192×490 胶囊屏，Vela 4）",
+  "tag": "band9",
+  "baseline": false,
+  "screen": { "w": 192, "h": 490 },
+  "layout": {
+    "home": { "cols": 2, "rowH": 76, "padBottom": 60 },
+    "marquee": { "minCopyW": 200 },
+    "ime": { "kbW": 192, "containerH": 305 },
+    "companion": { "drawableH": 436 }
+  },
+  "assets": { "shadow": [192, 84] },
+  "files": {
+    "src/common/styles/theme.css": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["width: 206px", "width: 186px"],
+      ["top: 155px", "top: 125px"],
+      ["top: 400px", "top: 370px"]
+    ],
+    "src/components/PageHead.ux": [
+      ["width: 212px", "width: 192px"]
+    ],
+    "src/pages/home/home.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 304px", "height: 274px"],
+      ["height: 394px", "height: 364px"],
+      ["width: 206px", "width: 186px"],
+      ["padding: 8px 16px;", "padding: 8px 10px;"],
+      ["width: 174px", "width: 166px"],
+      ["width: 66px", "width: 58px"],
+      ["width: 97px", "width: 87px"],
+      ["width: 93px", "width: 83px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 128px", "width: 112px"]
+    ],
+    "src/pages/set/set.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 418px", "height: 388px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"]
+    ],
+    "src/pages/hset/hset.ux": [
+      ["width: 212px", "width: 192px"],
+      ["width: 206px", "width: 186px"],
+      ["top: 420px", "top: 390px"]
+    ],
+    "src/pages/toolcat/toolcat.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 128px", "width: 112px"]
+    ],
+    "src/pages/about/about.ux": [
+      ["height: 880px;", "height: 990px;"],
+      ["width: 212px", "width: 192px"],
+      ["margin-left: 78px", "margin-left: 68px"],
+      ["width: 180px", "width: 160px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"]
+    ],
+    "src/pages/PFinfo/PFinfo.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 418px", "height: 388px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 190px", "width: 170px"]
+    ],
+    "src/pages/calculator/calculator.ux": [
+      [".pad { width: 192px;", ".pad { width: 176px;"],
+      [".secLabel { width: 192px;", ".secLabel { width: 176px;"],
+      [".solveHint { width: 192px;", ".solveHint { width: 176px;"],
+      [".noSol { width: 192px;", ".noSol { width: 176px;"],
+      [".swRow { width: 192px;", ".swRow { width: 176px;"],
+      [".key { width: 44px;", ".key { width: 40px;"],
+      ["width: 116px", "width: 100px"],
+      ["width: 188px", "width: 168px"],
+      ["exprW: 188,", "exprW: 168,"],
+      ["exprBaseW: 188,", "exprBaseW: 168,"],
+      ["scrollW: 188,", "scrollW: 168,"],
+      ["w < 188 ? 188 : w", "w < 168 ? 168 : w"],
+      ["width: 206px", "width: 186px"],
+      ["width: 194px", "width: 174px"],
+      [".body { position: absolute; left: 0px; top: 80px; width: 212px; height: 386px; }", ".body { position: absolute; left: 0px; top: 80px; width: 192px; height: 356px; }"],
+      [".inner { width: 212px;", ".inner { width: 192px;"],
+      [".advWrap { width: 212px;", ".advWrap { width: 192px;"],
+      [".tail { width: 212px;", ".tail { width: 192px;"]
+    ],
+    "src/pages/calendar/calendar.ux": [
+      [".line { position: absolute; left: 10px; top: 122px; width: 192px;", ".line { position: absolute; left: 10px; top: 122px; width: 172px;"],
+      ["width: 210px", "width: 190px"],
+      ["width: 30px", "width: 27px"],
+      [".dnum { width: 26px; height: 26px; line-height: 26px; margin: 3px 2px;", ".dnum { width: 25px; height: 24px; line-height: 24px; margin: 2px 1px;"],
+      ["height: 192px", "height: 168px"],
+      ["left: 30px", "left: 20px"],
+      ["left: 44px", "left: 34px"],
+      ["top: 322px", "top: 296px"],
+      ["top: 370px", "top: 344px"],
+      [".month { position: absolute; left: 0px; top: 74px; width: 212px;", ".month { position: absolute; left: 0px; top: 74px; width: 192px;"],
+      [".detailDate { position: absolute; left: 0px; top: 378px; width: 212px;", ".detailDate { position: absolute; left: 0px; top: 352px; width: 192px;"],
+      [".detailLunar { position: absolute; left: 0px; top: 412px; width: 212px;", ".detailLunar { position: absolute; left: 0px; top: 386px; width: 192px;"],
+      [".detailWeek { position: absolute; left: 0px; top: 442px; width: 212px;", ".detailWeek { position: absolute; left: 0px; top: 416px; width: 192px;"]
+    ],
+    "src/pages/textShow/textShow.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["left: 212px", "left: 192px"],
+      ["width: 520px", "width: 490px"],
+      ["height: 212px", "height: 192px"],
+      ["line-height: 212px", "line-height: 192px"],
+      ["top: 462px", "top: 432px"],
+      ["width: 170px", "width: 150px"]
+    ],
+    "src/pages/lyrics/show/show.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 336px", "height: 306px"],
+      ["width: 188px", "width: 168px"],
+      ["left: 212px", "left: 192px"],
+      ["width: 520px", "width: 490px"],
+      ["height: 212px", "height: 192px"],
+      ["width: 412px", "width: 382px"],
+      ["width: 176px", "width: 156px"],
+      ["top: 420px", "top: 390px"]
+    ],
+    "src/pages/companion/clock/clock.ux": [
+      ["left: 212px", "left: 192px"],
+      ["width: 520px", "width: 490px"],
+      ["height: 212px", "height: 192px"]
+    ],
+    "src/pages/companion/companion.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 78px", "width: 55px"],
+      ["width: 84px", "width: 64px"]
+    ],
+    "src/pages/answer/answer.ux": [
+      ["width: 212px", "width: 192px"],
+      ["left: 28px", "left: 18px"],
+      ["left: 54px", "left: 44px"],
+      ["left: 40px", "left: 30px"],
+      ["left: 32px", "left: 22px"],
+      ["top: 448px", "top: 418px"],
+      ["width: 170px", "width: 150px"]
+    ],
+    "src/pages/answer/a1/a1.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 170px", "width: 150px"],
+      ["left: 26px", "left: 16px"],
+      ["top: 356px", "top: 336px"],
+      ["width: 212px", "width: 192px"],
+      ["top: 420px", "top: 390px"]
+    ],
+    "src/pages/dailytip/dailytip.ux": [
+      ["width: 206px", "width: 186px"],
+      ["height: 250px", "height: 220px"],
+      ["width: 170px", "width: 150px"],
+      ["left: 26px", "left: 16px"],
+      ["top: 374px", "top: 344px"],
+      ["top: 440px", "top: 410px"],
+      ["width: 200px", "width: 180px"]
+    ],
+    "src/pages/datecalc/datecalc.ux": [
+      ["width: 212px", "width: 192px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 180px", "width: 168px"],
+      ["width: 170px", "width: 150px"],
+      ["left: 26px", "left: 16px"],
+      ["top: 280px", "top: 260px"],
+      ["top: 344px", "top: 314px"],
+      ["top: 306px", "top: 276px"],
+      ["top: 384px", "top: 354px"],
+      ["top: 410px", "top: 380px"],
+      ["top: 444px", "top: 414px"]
+    ],
+    "src/pages/daysmatter/edit/edit.ux": [
+      ["top: 330px", "top: 300px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 212px", "width: 192px"],
+      ["left: 48px", "left: 38px"],
+      ["top: 400px", "top: 370px"]
+    ],
+    "src/pages/daysmatter/inputdate/inputdate.ux": [
+      ["width: 212px", "width: 192px"],
+      ["left: 46px", "left: 36px"],
+      ["left: 58px", "left: 48px"],
+      ["top: 404px", "top: 374px"]
+    ],
+    "src/pages/daysmatter/list/list.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 206px", "width: 186px"],
+      [".cMain { width: 90px;", ".cMain { width: 80px;"],
+      [".cTitle { width: 90px;", ".cTitle { width: 80px;"],
+      [".cSub { width: 90px;", ".cSub { width: 80px;"],
+      ["width: 86px", "width: 76px"],
+      ["height: 320px", "height: 240px"],
+      ["left: 132px", "left: 112px"],
+      ["top: 396px", "top: 366px"]
+    ],
+    "src/pages/diet/diet.ux": [
+      ["top: 448px", "top: 412px"],
+      ["top: 232px", "top: 218px"],
+      ["top: 392px", "top: 362px"],
+      ["width: 170px", "width: 150px"],
+      ["width: 206px", "width: 186px"],
+      ["left: 26px", "left: 16px"]
+    ],
+    "src/pages/display/display.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["left: 30px", "left: 20px"],
+      ["width: 106px", "width: 96px"],
+      ["left: 106px", "left: 96px"],
+      ["top: 448px", "top: 418px"],
+      ["width: 170px", "width: 150px"]
+    ],
+    "src/pages/flashlight/flashlight.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"]
+    ],
+    "src/pages/fluorescence/fluorescence.ux": [
+      ["width: 200px", "width: 180px"],
+      ["left: 26px", "left: 16px"],
+      ["top: 368px", "top: 352px"],
+      ["top: 436px", "top: 406px"]
+    ],
+    "src/pages/fluorescence/play/play.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["left: 32px", "left: 22px"],
+      ["top: 448px", "top: 418px"],
+      ["width: 170px", "width: 150px"]
+    ],
+    "src/pages/fish/fish.ux": [
+      ["left: 31px", "left: 21px"],
+      ["left: 36px", "left: 26px"],
+      ["width: 212px", "width: 192px"],
+      ["width: 206px", "width: 186px"],
+      ["left: 128px", "left: 108px"],
+      ["width: 35px", "width: 30px"],
+      ["left: 97px", "left: 92px"],
+      ["left: 134px", "left: 124px"],
+      ["left: 171px", "left: 156px"],
+      ["left: 62px", "left: 52px"],
+      ["top: 424px", "top: 394px"]
+    ],
+    "src/pages/history/history.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 110px", "width: 90px"],
+      ["width: 212px", "width: 192px"],
+      ["height: 300px", "height: 270px"],
+      ["width: 174px", "width: 154px"],
+      ["top: 448px", "top: 418px"],
+      ["width: 170px", "width: 150px"]
+    ],
+    "src/pages/imeTest/imeTest.ux": [
+      ["height: 268px", "height: 238px"],
+      ["height: 244px", "height: 214px"],
+      ["height: 240px;", "height: 210px;"],
+      ["top: 370px", "top: 340px"],
+      ["top: 428px", "top: 398px"],
+      ["top: 484px", "top: 454px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 212px", "width: 192px"],
+      ["left: 26px", "left: 16px"]
+    ],
+    "src/pages/input/input.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 138px", "width: 118px"]
+    ],
+    "src/pages/level/level.ux": [
+      [".dial { position: absolute; left: 16px; top: 92px; width: 180px; height: 180px; border-radius: 90px;", ".dial { position: absolute; left: 16px; top: 92px; width: 160px; height: 160px; border-radius: 80px;"],
+      [".crossH { position: absolute; left: 26px; top: 181px; width: 160px;", ".crossH { position: absolute; left: 16px; top: 171px; width: 160px;"],
+      [".crossV { position: absolute; left: 105px; top: 102px; width: 2px; height: 160px;", ".crossV { position: absolute; left: 95px; top: 92px; width: 2px; height: 160px;"],
+      [".target { position: absolute; left: 78px; top: 154px;", ".target { position: absolute; left: 68px; top: 144px;"],
+      [".angles { position: absolute; left: 0px; top: 284px; width: 212px;", ".angles { position: absolute; left: 0px; top: 254px; width: 192px;"],
+      [".state { position: absolute; left: 0px; top: 312px; width: 212px;", ".state { position: absolute; left: 0px; top: 282px; width: 192px;"],
+      [".btn { position: absolute; left: 48px; top: 352px; width: 116px;", ".btn { position: absolute; left: 38px; top: 322px; width: 116px;"],
+      [".foot { position: absolute; left: 21px; top: 424px; width: 170px;", ".foot { position: absolute; left: 21px; top: 394px; width: 150px;"],
+      ["const MAX_OFFSET = 70", "const MAX_OFFSET = 60"],
+      ["const DOT_BASE_LEFT = 97", "const DOT_BASE_LEFT = 87"],
+      ["const DOT_BASE_TOP = 173", "const DOT_BASE_TOP = 163"]
+    ],
+    "src/pages/lightRandom/lightRandom.ux": [
+      ["top: 444px", "top: 414px"],
+      ["top: 390px", "top: 354px"],
+      ["width: 170px", "width: 150px"],
+      ["width: 206px", "width: 186px"],
+      [".pickLabel { position: absolute; left: 12px; top: 92px; width: 180px;", ".pickLabel { position: absolute; left: 12px; top: 92px; width: 168px;"],
+      [".diceLabel { position: absolute; left: 12px; top: 332px; width: 180px;", ".diceLabel { position: absolute; left: 12px; top: 332px; width: 168px;"],
+      [".segs { position: absolute; left: 6px; top: 358px; width: 200px;", ".segs { position: absolute; left: 6px; top: 358px; width: 180px;"],
+      [".go { position: absolute; left: 26px; width: 160px;", ".go { position: absolute; left: 16px; width: 160px;"]
+    ],
+    "src/pages/lylist/lylist.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 140px", "width: 130px"],
+      ["height: 320px", "height: 240px"],
+      ["left: 132px", "left: 112px"],
+      ["top: 396px", "top: 366px"]
+    ],
+    "src/pages/lyrics/edit/edit.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 212px", "width: 192px"]
+    ],
+    "src/pages/lyrics/more/more.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 212px", "width: 192px"],
+      ["top: 340px", "top: 310px"]
+    ],
+    "src/pages/lyrics/showmode/showmode.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 140px", "width: 130px"],
+      ["width: 212px", "width: 192px"],
+      ["top: 320px", "top: 290px"]
+    ],
+    "src/pages/lyrics/transfer/transfer.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 140px", "width: 130px"],
+      ["width: 170px", "width: 150px"],
+      ["top: 410px", "top: 380px"]
+    ],
+    "src/pages/marquee/marquee.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 190px", "width: 170px"],
+      ["width: 160px", "width: 138px"]
+    ],
+    "src/pages/marqueeSet/marqueeSet.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 158px", "width: 138px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 62px", "width: 56px"],
+      ["width: 188px", "width: 168px"],
+      ["width: 190px", "width: 170px"],
+      ["left: 26px", "left: 16px"]
+    ],
+    "src/pages/metronome/metronome.ux": [
+      [".bpmBox { position: absolute; left: 3px; top: 96px; width: 206px;", ".bpmBox { position: absolute; left: 3px; top: 96px; width: 186px;"],
+      [".editCard { position: absolute; left: 3px; top: 76px; width: 206px;", ".editCard { position: absolute; left: 3px; top: 76px; width: 186px;"],
+      [".bpmLabel { width: 190px;", ".bpmLabel { width: 170px;"],
+      [".val { width: 190px;", ".val { width: 170px;"],
+      [".status { position: absolute; left: 0px; top: 218px; width: 212px;", ".status { position: absolute; left: 0px; top: 214px; width: 192px;"],
+      [".gapTxt { position: absolute; left: 0px; top: 242px; width: 212px;", ".gapTxt { position: absolute; left: 0px; top: 234px; width: 192px;"],
+      [".pulse { position: absolute; left: 91px; top: 278px; width: 30px;", ".pulse { position: absolute; left: 81px; top: 262px; width: 30px;"],
+      [".levels { position: absolute; left: 6px; top: 318px; width: 200px;", ".levels { position: absolute; left: 6px; top: 300px; width: 180px;"],
+      [".go { position: absolute; left: 26px; top: 378px;", ".go { position: absolute; left: 16px; top: 344px;"],
+      [".hint { position: absolute; left: 16px; top: 436px; width: 180px;", ".hint { position: absolute; left: 16px; top: 398px; width: 168px;"]
+    ],
+    "src/pages/morseCode/morseCode.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 188px", "width: 168px"],
+      ["left: 26px", "left: 16px"],
+      ["top: 276px", "top: 268px"],
+      ["top: 322px", "top: 312px"],
+      ["top: 420px", "top: 408px"]
+    ],
+    "src/pages/motion/motion.ux": [
+      ["width: 196px", "width: 176px"],
+      ["left: 20px", "left: 14px"],
+      ["left: 84px", "left: 74px"],
+      ["width: 114px", "width: 104px"],
+      ["width: 166px", "width: 146px"],
+      ["left: 120px", "left: 100px"],
+      ["width: 200px", "width: 180px"],
+      ["left: 203px", "left: 183px"]
+    ],
+    "src/pages/motion/gun/gun.ux": [
+      [".reloadBtn { position: absolute; left: 48px; top: 286px;", ".reloadBtn { position: absolute; left: 38px; top: 256px;"],
+      ["width: 212px", "width: 192px"],
+      ["left: 27px", "left: 17px"],
+      ["left: 105px", "left: 95px"],
+      ["left: 147px", "left: 137px"],
+      ["left: 66px", "left: 56px"],
+      ["left: 74px", "left: 64px"],
+      ["left: 102px", "left: 92px"],
+      [".pip1 { left: 58px; }", ".pip1 { left: 48px; }"],
+      [".pip2 { left: 78px; }", ".pip2 { left: 68px; }"],
+      [".pip3 { left: 98px; }", ".pip3 { left: 88px; }"],
+      [".pip4 { left: 118px; }", ".pip4 { left: 108px; }"],
+      [".pip5 { left: 138px; }", ".pip5 { left: 128px; }"],
+      ["top: 344px", "top: 314px"],
+      ["top: 342px", "top: 312px"],
+      ["top: 386px", "top: 356px"],
+      ["top: 420px", "top: 390px"]
+    ],
+    "src/pages/motion/hoop/hoop.ux": [
+      ["width: 212px", "width: 192px"],
+      [".board { position: absolute; left: 46px; top: 116px;", ".board { position: absolute; left: 36px; top: 116px;"],
+      [".rim { position: absolute; left: 56px; top: 174px;", ".rim { position: absolute; left: 46px; top: 174px;"],
+      [".net1 { position: absolute; left: 76px; top: 194px;", ".net1 { position: absolute; left: 66px; top: 194px;"],
+      [".net2 { position: absolute; left: 105px; top: 194px;", ".net2 { position: absolute; left: 95px; top: 194px;"],
+      [".net3 { position: absolute; left: 134px; top: 194px;", ".net3 { position: absolute; left: 124px; top: 194px;"],
+      [".reset { position: absolute; left: 66px; top: 396px;", ".reset { position: absolute; left: 56px; top: 366px;"],
+      ["top: 286px", "top: 256px"],
+      ["top: 368px", "top: 338px"],
+      ["top: 432px", "top: 402px"]
+    ],
+    "src/pages/notebook/list/list.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 140px", "width: 130px"],
+      ["height: 320px", "height: 240px"],
+      ["left: 132px", "left: 112px"],
+      ["top: 396px", "top: 366px"]
+    ],
+    "src/pages/notebook/more/more.ux": [
+      ["width: 206px", "width: 186px"],
+      ["top: 156px", "top: 152px"],
+      ["top: 232px", "top: 224px"],
+      ["top: 308px", "top: 296px"],
+      ["top: 384px", "top: 368px"]
+    ],
+    "src/pages/notebook/rename/rename.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["left: 74px", "left: 64px"],
+      ["width: 212px", "width: 192px"]
+    ],
+    "src/pages/notebook/show/show.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 334px", "height: 304px"],
+      ["width: 188px", "width: 168px"],
+      ["width: 176px", "width: 156px"],
+      ["top: 420px", "top: 390px"]
+    ],
+    "src/pages/notebook/edit/edit.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 212px", "width: 192px"]
+    ],
+    "src/pages/num/num.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 96px", "width: 86px"],
+      ["top: 276px", "top: 270px"],
+      ["top: 370px", "top: 342px"],
+      ["top: 430px", "top: 394px"],
+      ["left: 26px", "left: 16px"],
+      ["left: 71px", "left: 61px"]
+    ],
+    "src/pages/otp/list/list.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["height: 330px", "height: 300px"],
+      ["height: 334px", "height: 304px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 130px", "width: 110px"],
+      ["top: 416px", "top: 386px"]
+    ],
+    "src/pages/otp/detail/detail.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["width: 170px", "width: 150px"],
+      ["left: 51px", "left: 41px"],
+      ["top: 306px", "top: 276px"],
+      ["top: 416px", "top: 386px"]
+    ],
+    "src/pages/otp/edit/edit.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 170px", "width: 150px"],
+      ["top: 348px", "top: 318px"],
+      ["top: 416px", "top: 386px"],
+      ["top: 314px", "top: 284px"]
+    ],
+    "src/pages/otp/settings/settings.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["height: 438px", "height: 408px"],
+      ["width: 206px", "width: 186px"],
+      [".cTitle { width: 174px;", ".cTitle { width: 154px;"],
+      [".stepper { flex-direction: row; align-items: center; justify-content: center; width: 174px;", ".stepper { flex-direction: row; align-items: center; justify-content: center; width: 154px;"],
+      [".cHint { width: 174px;", ".cHint { width: 154px;"],
+      [".cWarn { width: 174px;", ".cWarn { width: 154px;"],
+      ["width: 86px", "width: 66px"],
+      [".note { width: 194px;", ".note { width: 174px;"]
+    ],
+    "src/pages/otp/sync/sync.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 140px", "width: 130px"],
+      ["width: 170px", "width: 150px"],
+      ["top: 410px", "top: 380px"]
+    ],
+    "src/pages/password/password.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 340px", "height: 310px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 190px", "width: 170px"],
+      ["width: 188px", "width: 168px"],
+      ["width: 174px", "width: 154px"],
+      ["left: 18px", "left: 8px"]
+    ],
+    "src/pages/passwordDetail/passwordDetail.ux": [
+      [".pwd { width: 186px;", ".pwd { width: 166px;"],
+      [".meta { width: 186px;", ".meta { width: 166px;"],
+      [".pwdCard { position: absolute; left: 3px; top: 84px; width: 206px;", ".pwdCard { position: absolute; left: 3px; top: 84px; width: 186px;"],
+      [".card { position: absolute; left: 3px; top: 236px; width: 206px;", ".card { position: absolute; left: 3px; top: 236px; width: 186px;"],
+      ["width: 170px", "width: 150px"],
+      ["top: 448px", "top: 418px"]
+    ],
+    "src/pages/performance/performance.ux": [
+      ["top: 198px", "top: 190px"],
+      [".go { position: absolute; left: 26px; top: 350px;", ".go { position: absolute; left: 16px; top: 330px;"],
+      [".ref { position: absolute; left: 0px; top: 400px; width: 212px;", ".ref { position: absolute; left: 0px; top: 378px; width: 192px;"],
+      [".hint { position: absolute; left: 16px; top: 428px; width: 180px;", ".hint { position: absolute; left: 16px; top: 406px; width: 160px;"],
+      ["width: 206px", "width: 186px"],
+      ["width: 190px", "width: 170px"],
+      ["width: 182px", "width: 162px"]
+    ],
+    "src/pages/qrcode/qrcode.ux": [
+      [".hint { position: absolute; left: 16px; top: 330px; width: 180px;", ".hint { position: absolute; left: 16px; top: 330px; width: 160px;"],
+      [".quick { position: absolute; left: 6px; top: 200px; width: 200px;", ".quick { position: absolute; left: 6px; top: 200px; width: 180px;"],
+      [".go { position: absolute; left: 26px; top: 264px;", ".go { position: absolute; left: 16px; top: 264px;"],
+      [".favEntry { position: absolute; left: 26px; top: 372px;", ".favEntry { position: absolute; left: 16px; top: 372px;"],
+      [".importEntry { position: absolute; left: 26px; top: 418px;", ".importEntry { position: absolute; left: 16px; top: 418px;"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 150px", "width: 130px"],
+      ["width: 62px", "width: 56px"]
+    ],
+    "src/pages/qrcode/show/show.ux": [
+      ["left: 26px", "left: 16px"],
+      ["left: 20px; top: 258px; width: 172px;", "left: 10px; top: 258px; width: 172px;"],
+      ["top: 442px", "top: 412px"],
+      ["top: 448px", "top: 418px"],
+      ["width: 170px", "width: 150px"]
+    ],
+    "src/pages/qrcode/wifi/wifi.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 442px", "height: 412px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 62px", "width: 56px"],
+      ["margin: 12px 26px 0px 26px", "margin: 12px 16px 0px 16px"]
+    ],
+    "src/pages/qrcode/fav/fav.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 438px", "height: 408px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"]
+    ],
+    "src/pages/qrcode/favdetail/favdetail.ux": [
+      ["width: 212px", "width: 192px"],
+      ["width: 182px", "width: 162px"],
+      ["left: 26px", "left: 16px"],
+      ["top: 350px", "top: 320px"],
+      ["top: 410px", "top: 380px"]
+    ],
+    "src/pages/qrcode/import/import.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 140px", "width: 130px"],
+      ["width: 170px", "width: 150px"],
+      ["top: 410px", "top: 380px"]
+    ],
+    "src/pages/random/random.ux": [
+      [".hint { position: absolute; left: 21px; top: 448px; width: 170px;", ".hint { position: absolute; left: 21px; top: 424px; width: 150px;"],
+      ["top: 390px", "top: 366px"],
+      ["width: 110px", "width: 90px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      [".rVal { width: 190px;", ".rVal { width: 170px;"],
+      ["left: 26px", "left: 16px"]
+    ],
+    "src/pages/scoreboard/scoreboard.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 92px", "width: 82px"],
+      ["width: 124px", "width: 104px"],
+      ["left: 112px", "left: 102px"],
+      ["height: 264px", "height: 234px"],
+      ["top: 448px", "top: 418px"],
+      ["width: 170px", "width: 150px"]
+    ],
+    "src/pages/sentence/sentence.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 438px", "height: 408px"],
+      ["height: 414px", "height: 384px"],
+      ["height: 250px", "height: 220px"],
+      ["height: 150px", "height: 120px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 170px", "width: 150px"],
+      ["font-size: 23px", "font-size: 21px"],
+      ["line-height: 34px", "line-height: 30px"],
+      ["margin: 14px 26px 0px 26px", "margin: 14px 16px 0px 16px"]
+    ],
+    "src/pages/sentence/fav/fav.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 438px", "height: 408px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"]
+    ],
+    "src/pages/sentence/favdetail/favdetail.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 170px", "width: 150px"],
+      ["top: 410px", "top: 380px"],
+      ["left: 26px", "left: 16px"]
+    ],
+    "src/pages/storage/storage.ux": [
+      ["width: 212px", "width: 192px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["left: 22px", "left: 12px"],
+      ["top: 448px", "top: 442px"],
+      ["width: 170px", "width: 150px"]
+    ],
+    "src/pages/system/system.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 100px", "width: 80px"]
+    ],
+    "src/pages/tapTempo/tapTempo.ux": [
+      ["width: 212px", "width: 192px"],
+      ["left: 20px", "left: 10px"],
+      ["left: 91px", "left: 81px"],
+      [".go { position: absolute; left: 26px; top: 358px;", ".go { position: absolute; left: 16px; top: 336px;"],
+      [".hint { position: absolute; left: 16px; top: 424px; width: 180px;", ".hint { position: absolute; left: 16px; top: 390px; width: 160px;"],
+      ["top: 272px", "top: 266px"],
+      ["top: 312px", "top: 306px"]
+    ],
+    "src/pages/time/time.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 438px", "height: 408px"],
+      ["height: 636px", "height: 606px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"]
+    ],
+    "src/pages/unitconvert/unitconvert.ux": [
+      ["width: 206px", "width: 186px"],
+      ["height: 378px", "height: 348px"],
+      ["width: 97px", "width: 87px"],
+      ["width: 91px", "width: 81px"]
+    ],
+    "src/pages/unitconvert/convert/convert.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 150px"],
+      [".sep { position: absolute; left: 16px; top: 206px; width: 180px;", ".sep { position: absolute; left: 16px; top: 206px; width: 154px;"],
+      [".hint { position: absolute; left: 16px; top: 330px; width: 180px;", ".hint { position: absolute; left: 16px; top: 330px; width: 160px;"],
+      ["left: 165px", "left: 145px"],
+      [".to { top: 218px; }", ".to { top: 208px; }"],
+      [".unitNameTo { top: 228px; }", ".unitNameTo { top: 218px; }"],
+      [".chevTo { top: 226px; }", ".chevTo { top: 216px; }"],
+      [".valueTo { top: 264px; }", ".valueTo { top: 254px; }"],
+      ["top: 346px", "top: 316px"],
+      ["width: 47px", "width: 41px"]
+    ],
+    "src/pages/unitconvert/picker/picker.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 150px", "width: 130px"]
+    ],
+    "src/pages/unitconvert/radix/radix.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 182px", "width: 162px"],
+      ["width: 47px", "width: 44px"]
+    ],
+    "src/pages/vibrate/vibrate.ux": [
+      [".modes { position: absolute; left: 6px; top: 84px; width: 200px;", ".modes { position: absolute; left: 6px; top: 84px; width: 180px;"],
+      [".gaps { position: absolute; left: 6px; top: 170px; width: 200px;", ".gaps { position: absolute; left: 6px; top: 170px; width: 180px;"],
+      [".visual { position: absolute; left: 16px; top: 244px; width: 180px;", ".visual { position: absolute; left: 16px; top: 244px; width: 160px;"],
+      ["width: 212px", "width: 192px"],
+      ["top: 378px", "top: 348px"],
+      ["top: 436px", "top: 406px"]
+    ],
+    "src/pages/wasteSorting/wasteSorting.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 46px", "width: 42px"],
+      [".rCat { width: 170px;", ".rCat { width: 150px;"],
+      [".rItem { width: 170px;", ".rItem { width: 150px;"],
+      [".rTip { width: 170px;", ".rTip { width: 150px;"],
+      [".foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px;", ".foot { position: absolute; left: 13px; top: 442px; width: 166px; text-align: center; font-size: 12px;"],
+      ["width: 212px", "width: 192px"],
+      ["top: 155px", "top: 125px"]
+    ],
+    "src/pages/cpsTest/cpsTest.ux": [
+      ["width: 212px", "width: 192px"],
+      ["left: 20px", "left: 10px"],
+      ["left: 26px", "left: 16px"],
+      ["top: 448px", "top: 418px"],
+      ["width: 170px", "width: 150px"]
+    ],
+    "src/pages/cubeTimer/cubeTimer.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 400px", "height: 370px"],
+      ["height: 460px", "height: 430px"],
+      ["width: 200px", "width: 180px"],
+      ["left: 3px; top: 120px; width: 206px; height: 200px;", "left: 3px; top: 120px; width: 186px; height: 180px;"],
+      [".row { width: 206px; height: 36px;", ".row { width: 186px; height: 32px;"],
+      ["left: 3px; top: 320px; width: 206px; height: 86px;", "left: 3px; top: 306px; width: 186px; height: 86px;"],
+      ["left: 140px", "left: 120px"],
+      ["left: 26px; top: 260px;", "left: 16px; top: 260px;"],
+      ["left: 66px", "left: 56px"],
+      ["top: 424px", "top: 394px"],
+      ["top: 340px", "top: 310px"],
+      ["top: 366px", "top: 336px"],
+      ["left: 203px", "left: 183px"]
+    ],
+    "src/pages/counter/counter.ux": [
+      ["left: 26px", "left: 16px"],
+      ["width: 212px", "width: 192px"],
+      ["top: 324px", "top: 294px"],
+      ["top: 432px", "top: 394px"]
+    ]
+  },
+  "manifest": {}
+}

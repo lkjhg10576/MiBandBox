@@ -6,7 +6,8 @@
   "layout": {
     "home": { "cols": 2, "rowH": 76, "padBottom": 60 },
     "marquee": { "minCopyW": 240 },
-    "ime": { "kbW": 192, "containerH": 305 }
+    "ime": { "kbW": 192, "containerH": 305 },
+    "companion": { "drawableH": 466 }
   },
   "assets": { "shadow": [212, 84] },
   "files": {},

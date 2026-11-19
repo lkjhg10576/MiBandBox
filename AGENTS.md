@@ -58,7 +58,7 @@
   ```bash
   # Beta（默认，development 模式；版本号不动，只升 versionCode）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta
-  # Beta（双包：band10 + pro336 一次出齐，同一产物目录）
+  # Beta（三包：band10 + band9 + pro336 一次出齐，同一产物目录）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta --all-profiles
   # Beta（用户明确要求升版本号时：--ver 升版本号，versionCode 照旧 +1）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta --ver 0.1.3 --all-profiles
@@ -108,23 +108,31 @@
 - **没有目标日**的口径 = `homeEvents.load` 返回的 `best` 为空（空列表、日期全部非法都算）。
 - 卡片隐藏用 `if="{{ showToday }}"`（容器型 `show` 动态翻转不可靠，见首页网格的既有坑）；列表换 `.appsUp` 类：band10 `top 92 / height 394`，Pro 由 `profiles/pro336.json` 的 `["height: 394px","height: 348px"]` 换成 348。394 = 常驻态 304 + 卡片 88 + 2px 间距；两态**底部对齐**（band10 486 / Pro 440）。改目标日卡高度时同步改这两个数。
 
-## 设备 profile（2026-11-12 起，勿破坏）
+## 设备 profile（2026-11-12 起；2026-11-20 增 band9，勿破坏）
 
-源码基线是 **band10（212×520 跑道屏）**；`pro336`（小米手环 9 Pro/10 Pro，336×480）是构建期物化的第二包体，**同包名 `com.lkjhg.bandbox`、rpk 文件名带 `.pro.` 段**：
+源码基线是 **band10（212×520 跑道屏）**；`pro336`（小米手环 9 Pro/10 Pro，336×480）与 `band9`（小米手环 9，192×490 胶囊屏，Vela 4）是构建期物化的另外两个包体，**同包名 `com.lkjhg.bandbox`、rpk 文件名分别带 `.pro.` / `.band9.` 段**：
 
-- `profiles/band10.json`（恒等基线）与 `profiles/pro336.json`（逐文件替换表）是唯一真源；布局改动先改基线，再在 pro336.json 里加对应替换对，`tools/test-profile.mjs` 会校验漂移。
+- `profiles/band10.json`（恒等基线）、`profiles/pro336.json` 与 `profiles/band9.json`（逐文件替换表）是唯一真源；布局改动先改基线，再在两个非基线 profile 里各加对应替换对，`tools/test-profile.mjs` 会校验漂移（band9 适配后为 4706 项）。
+- **band9 特有令牌**：`layout.companion.drawableH=436`（band10/Pro 为 466）、`assets.shadow=[192,84]`；键盘态「完成」栏在 InputMethod 组件内部（见下），几何随视口自动适配，**不要再往页面模板里加 kbBar**。
 - **仓库里提交的源码永远必须是 band10 基线态**：物化只在构建瞬间发生，`make-release.sh` 退出时自动还原（trap）。手动物化后记得 `node tools/apply-profile.mjs band10` 还原，提交前用 `node tools/apply-profile.mjs --check band10` 确认。
 - 门禁 **R8**（源码树物化状态 == `BANDBOX_PROFILE`）与 **R9**（shadow.png 尺寸匹配 profile）随 R1–R7 一起跑；`npm run build:jsc` 的 prebuild 也会跑门禁，构建非 band10 包时必须带 `BANDBOX_PROFILE=<id>` 环境变量。
 - 门禁 **R10**（计算器几何常量与 CSS 自洽）：`src/pages/calculator/calculator.ux` 的滚动内容高度由 `EXPR_H`/`KEY_ROW_H`/`KEYS_PER_ROW` 等常量累加得出，改了 CSS 盒子（高度/宽度/每行键数）却没改常量，构建直接失败。**页面内容高度不要在 `profiles/*.json` 里按机型分别估**——那种覆盖对会随排版变化变陈旧（Pro 曾把 `ADV_H` 估成 408、实际 500，第三个开关被裁在视口外）。两机型排版一致就共用一套常量。
-- `src/common/layout.js` 是生成文件（勿手改）：JS 侧布局常量（首页网格列数/行高、跑马灯视口、IME）由 `apply-profile.mjs` 按 profile 生成。
-- 模拟器：Pro 用 `Vela_BandPro` AVD（配方见 `docs/pro-spike.md`；docs/ 不入库，仅本地）。
+- `src/common/layout.js` 是生成文件（勿手改）：JS 侧布局常量（首页网格列数/行高、跑马灯视口、IME、COMPANION.drawableH）由 `apply-profile.mjs` 按 profile 生成。
+- 模拟器：Pro 用 `Vela_BandPro` AVD，band9 用 `Vela_Band9V4`（Vela 4 引擎 + 192×490 皮肤；配方与实测坑见 `docs/band9-vela4-spike.md` 与 notes/0.1.2-band9.md；docs/ 不入库，仅本地）。**V4 AVD 两个已知假象**：① 触摸输入 x<40 一律不注册（README「触摸坐标 ≈40px 偏移」的具体化），自动化点按 x 必须 ≥40；② 布局视口高 466（y≥466 不绘制）。
+
+## 键盘态「完成」栏在 InputMethod 组件内（2026-11-20 起，勿破坏）
+
+Vela 4 有两个渲染层坑（V5 无此问题）：① 同一父容器里动态插入/`show` 翻转显示的节点会**沉到静态兄弟之下**（组件边界是合成边界，组件子树整体盖在页面内容之上）；② `justify-content: flex-end` 分支里自适应宽度的 `<text>` 测宽为 0、不渲染。因此：
+
+- 键盘态「完成」栏在 `InputMethod.ux` **组件内部**（`.kbdone`，根内容 = bar 32 + 拼音行 28 + 键盘 305 = 365，bar 顶 = 视口高 − 365，各机型恰好等于旧 theme `.kbBar` 的 top），文本用显式宽度 + `text-align: right`；点击经 **`close` 事件**交回页面，各页面用 `@close="closeKb"`（或 `doneEdit`）接线。
+- **页面模板里禁止再加 kbBar**（theme.css 的 `.kbBar` 样式保留但已无使用者）；键盘态草稿卡（`editCardKb` 等）若用 `show="{{ kbShow }}"` 翻转显示，只要不被静态内容压住就可以，稳妥写法是 `if`。
 
 ## 页头与底部动作键（2026-11-17 起，勿破坏）
 
 页头（`src/components/PageHead.ux`）整条是**返回命中区**（`.phHit`，y0..74，点了就 `router.back()`），所以**页头里不许放任何别的可点元素**：
 
 - **动作键（保存 / 完成 / 参考）一律放页面底部**。通用样式用 theme.css 的 `.actRow`（与卡片同宽：band10 206px / Pro 330px，band10 top 400 / Pro top 360，Pro 的 top 由 `profiles/pro336.json` 里 theme.css 那条替换对改）。页面底部已有别的键时，**主操作在上、次要/危险操作在最底**（目标日设定的「保存」在「删除这个目标日」上面；动态口令的「保存」在「删除账户」上面；性能测试的「开始测试」在「参考」上面）。
-- **页头右上角的「完成」是多余的**：输入法正上方本来就有 theme 的 `kbBar`（band10 y155..187 / Pro y115..147），上面就是「完成」。节拍器 / 随机数页头那个「完成」调的也是同一个 `doneEdit`，已删除。
+- **页头右上角的「完成」是多余的**：键盘态的「完成」在输入法组件顶部的 `.kbdone` 条上（band10 y155..187 / Pro y115..147 / band9 y125..157，见「键盘态『完成』栏」一节），点它就是收键盘。节拍器 / 随机数页头那个「完成」调的也是同一个 `doneEdit`，已删除。
 - **不能靠 z-index 摆平**：Vela 渲染器直接丢弃 `z-index`（band10 / Pro 模拟器日志都有 `Unknown style - zIndex`），层序只按文档顺序排，真机与模拟器的点按判定顺序未必一致 —— 唯一稳的办法是**命中区与可点元素不重叠**。
 - 门禁 **R15**（页头命中区不得压住可点元素）：`tools/release-gate.mjs` 里的 `scanHeaderOverlaps()` 扫全部页面的模板 + 样式，算出每个 `@click` 元素的绝对盒，与 `PageHead.ux` 里 `.phHit` 的矩形求交；重叠即拦下构建。几何直接从 `PageHead.ux` 现读，基线态与 pro336 物化态都准。改页头命中区或新增页面动作键后，跑 `node tools/release-gate.mjs --only-r15` 自查（只跑这一条）。
 - 键盘态（`kbShow`）时输入法占住屏幕底部 305px，底部动作键会被盖住 —— 所以**带输入法的页面要 `show="{{ !kbShow }}"`**，键盘态用 `kbBar` 的「完成」收键盘后再点底部动作键（与 `notebook/rename` 的既有做法一致）。

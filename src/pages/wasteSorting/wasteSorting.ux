@@ -25,9 +25,6 @@
     <text class="f foot">分类口径以所在地规定为准</text>
 
     <backbtn></backbtn>
-    <div class="kbBar" show="{{ kbShow }}" @click="closeKb">
-      <text class="f kbBarT">完成</text>
-    </div>
     <input-method
       hide="{{ !kbShow }}"
       keyboardtype="QWERTY"
@@ -36,6 +33,7 @@
       screentype="pill-shaped"
       @complete="onKey"
       @delete="onDel"
+      @close="closeKb"
     ></input-method>
   </div>
 </template>

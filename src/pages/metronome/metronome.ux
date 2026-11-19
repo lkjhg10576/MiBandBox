@@ -35,19 +35,14 @@
     </div>
     <text class="f hint" show="{{ !kbShow }}">点数值改 BPM · 运行时常亮</text>
 
-    <div class="editCard" show="{{ kbShow }}">
+    <div class="editCard" if="{{ kbShow }}">
       <text class="f eLabel">设定 BPM · 节拍继续</text>
       <text class="f eValue" if="{{ draft }}">{{ draft }}</text>
       <text class="f ePlace" if="{{ !draft }}">输入 40–240</text>
     </div>
 
-    <!-- 键盘态的「完成」用输入法上方那条 kbBar（y155..187 / Pro y115..147）即可：
-         它调的也是 doneEdit，页头右上角再放一个纯属重复，而且页头整条是返回命中区，
-         动作键压在里面真机上点不到。 -->
-    <div class="kbBar" show="{{ kbShow }}" @click="doneEdit"><text class="f kbBarT">完成</text></div>
-
     <backbtn></backbtn>
-    <input-method hide="{{ !kbShow }}" keyboardtype="number" maxlength="5" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
+    <input-method hide="{{ !kbShow }}" keyboardtype="number" maxlength="5" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="doneEdit"></input-method>
   </div>
 </template>
 

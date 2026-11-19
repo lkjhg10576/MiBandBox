@@ -28,7 +28,7 @@
  *
  * 所有数值都是整数；改版式时优先调对应机型常量，再跑 tools/test-companion-geo.mjs。
  */
-import { SCREEN } from '../common/layout.js'
+import { SCREEN, COMPANION } from '../common/layout.js'
 
 /** 数字格 / 冒号格的字宽（单位 em，含粗体度量余量） */
 const DIGIT_EM = 0.6
@@ -53,8 +53,9 @@ const ROWS = {
   hintFont: 10
 }
 
-/** 应用可绘制高度（主题安全区）：两种机型实测都是 466 */
-const DRAWABLE_H = 466
+/** 应用可绘制高度（主题安全区）：band10 / pro336 实测 466；band9（192×490）竖屏收窄带同比例，436。
+ *  真源在各 profile 的 layout.companion.drawableH（apply-profile 生成进 layout.js）。 */
+const DRAWABLE_H = COMPANION.drawableH || 466
 
 /** 横条高度 ≥ 280 视为「高横条」：band10 横条 212 / pro336 横条 336 分列两侧 */
 const TALL_STRIP_MIN = 280
@@ -227,11 +228,13 @@ function layoutRows(stripW, stripH) {
 }
 
 /**
- * 按给定屏幕算几何（导出给单测：两机型都算一遍，不必物化 profile）。
+ * 按给定屏幕算几何（导出给单测：各机型都算一遍，不必物化 profile）。
  * @param {{w:number,h:number}} screen 竖屏尺寸
+ * @param {number} [drawableH] 可绘制高度（缺省取当前 profile 的 COMPANION.drawableH）
  */
-export function layoutFor(screen) {
-  const stripW = Math.min(screen.h, DRAWABLE_H)
+export function layoutFor(screen, drawableH) {
+  const dh = drawableH || DRAWABLE_H
+  const stripW = Math.min(screen.h, dh)
   const stripH = screen.w
   return stripH >= TALL_STRIP_MIN ? layoutRows(stripW, stripH) : layoutCols(stripW, stripH)
 }

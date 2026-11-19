@@ -24,8 +24,7 @@
     <div class="importEntry" show="{{ !kbShow }}" @click="openImport"><text class="f importEntryT">从手机导入</text></div>
 
     <backbtn if="{{ !kbShow }}"></backbtn>
-    <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
-    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
+    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
   </div>
 </template>
 

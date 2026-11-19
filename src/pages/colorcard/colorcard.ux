@@ -23,7 +23,7 @@
     <!-- 键盘态草稿卡：band10 y76..128 / Pro y74..112（editCardKb 由 profile 填值），
          都不压 kbBar（155/115 起）。点草稿卡收键盘（键盘外点击收起的惯例，
          也是模拟器上唯一能收起键盘的入口，见 radix / Beta 248 记录）。 -->
-    <div class="editCard editCardKb" show="{{ kbShow }}" @click="closeKb">
+    <div class="editCard editCardKb" if="{{ kbShow }}" @click="closeKb">
       <text class="f eLabel" show="{{ showELabel }}">色值 · {{ modeLabel }}</text>
       <text class="f eVal" if="{{ !empty }}">{{ valText }}</text>
       <text class="f eVal ePh" if="{{ empty }}">{{ placeText }}</text>
@@ -48,14 +48,11 @@
       <text class="f swState">{{ keepOn ? '开' : '关' }}</text>
     </div>
 
-    <!-- 键盘态「完成」用输入法正上方的 kbBar，页头整条是返回命中区不能放动作键 -->
-    <div class="kbBar" show="{{ kbShow }}" @click="closeKb"><text class="f kbBarT">完成</text></div>
-
     <backbtn></backbtn>
     <!-- 双实例：键面进页即固定，按模式互斥显隐；共享 complete/delete，页面按模式路由。
          hex 面打不出逗号、rgb 面打不出字母，越权键由页面 onKey 过滤 + toast（radix 同款）。 -->
-    <input-method hide="{{ !kbShow || mode !== 'hex' }}" keyboardtype="hex" maxlength="6" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
-    <input-method hide="{{ !kbShow || mode !== 'rgb' }}" keyboardtype="rgb" maxlength="11" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
+    <input-method hide="{{ !kbShow || mode !== 'hex' }}" keyboardtype="hex" maxlength="6" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
+    <input-method hide="{{ !kbShow || mode !== 'rgb' }}" keyboardtype="rgb" maxlength="11" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
   </div>
 </template>
 

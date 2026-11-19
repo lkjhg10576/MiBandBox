@@ -5,6 +5,13 @@
          之后 keyboardCreated 保活、hide 切换只走内层 show 显隐，不重复重建。 -->
     <div if="{{!hide || keyboardCreated}}">
       <div show="{{!hide}}" style="background-color:black;flex-direction: column;" >
+      <!-- 「完成」栏：键盘态收起键盘的唯一入口。放在组件内部而不是页面模板里，是 Vela 4 的
+           渲染层顺序坑：同一父容器里动态插入/show 翻转的节点会沉到静态兄弟之下（V5 无此问题），
+           页面侧的 kbBar 在 band9 键盘态会被输入卡等静态内容盖住（2026-11-20 band9 验收实测，
+           探针 probe-v2 定位）。组件整体在页面内容之上合成，栏随键盘一起显隐；
+           高度 32 进根高 → 根顶 = 屏高 − 365，与旧 theme .kbBar 各机型 top 完全一致
+           （band10 155 / pro336 115 / band9 125）。点击经 close 事件交给页面收键盘。 -->
+      <div class="kbdone" @click="onDoneBar"><text class="kbdoneT">完成</text></div>
       <!-- 拼音小字行：键盘框外上方单独一行，黑底覆盖，仅中/日模式且有 cval 时显示，只展示不可点。
            if 而非 show：show 隐藏时节点仍在 VDOM，键盘顶部会残留一条黑条 -->
       <div if="{{screentype === 'pill-shaped'}}" class="cvalrow-wrap" show="{{(lang==='cn' || lang==='jp') && downFlag==='' && !numFlag && cval}}">
@@ -239,6 +246,9 @@ export default {
   },
   addAllTxt(txt) {
     this.$emit("complete", { content: txt });
+  },
+  onDoneBar() {
+    this.$emit("close", {});
   },
   onRsSelect(txt) {
     this.onVibrate();
@@ -577,6 +587,24 @@ export default {
 	width:100%;
 	height:28px;
 	background-color:transparent;
+}
+/* 「完成」栏（组件内）：宽度通栏、右对齐，样式与旧 theme .kbBar 一致 */
+.kbdone {
+	width:100%;
+	height:32px;
+	background-color:#111111;
+	flex-direction:row;
+	align-items:center;
+	justify-content:flex-start;
+}
+.kbdoneT {
+	width:178px;
+	height:32px;
+	line-height:32px;
+	text-align:right;
+	padding-right:14px;
+	font-size:14px;
+	color:#0D6EFF;
 }
 .cvalrow {
 	color:#0d84ff;

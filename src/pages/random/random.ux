@@ -24,19 +24,14 @@
     <text class="f hint" show="{{ !kbShow }}">点数值输入 · 包含两端</text>
 
     <!-- 键盘顶边最高到 y=187、kbBar 占 155..187，草稿卡必须收在 y=152 以内才不被遮 -->
-    <div class="editCard" show="{{ kbShow }}">
+    <div class="editCard" if="{{ kbShow }}">
       <text class="f eLabel">{{ fieldLabel }}</text>
       <text class="f eValue" if="{{ draft }}">{{ draft }}</text>
       <text class="f ePlace" if="{{ !draft }}">输入整数</text>
     </div>
 
-    <!-- 键盘态的「完成」用输入法上方那条 kbBar（y155..187 / Pro y115..147）即可：
-         它调的也是 doneEdit，页头右上角再放一个纯属重复，而且页头整条是返回命中区，
-         动作键压在里面真机上点不到。 -->
-    <div class="kbBar" show="{{ kbShow }}" @click="doneEdit"><text class="f kbBarT">完成</text></div>
-
     <backbtn></backbtn>
-    <input-method hide="{{ !kbShow }}" keyboardtype="number" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
+    <input-method hide="{{ !kbShow }}" keyboardtype="number" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="doneEdit"></input-method>
   </div>
 </template>
 

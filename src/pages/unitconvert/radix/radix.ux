@@ -35,20 +35,17 @@
     <!-- 键盘态草稿卡：band10 两行 y76..148，Pro 单行 y74..112（editCardKb 由 profile 填值），
          都不压 kbBar（155/115 起）与 BackBtn（y42..70）。点草稿卡收键盘（键盘外点击收起的惯例），
          也是模拟器上唯一能收起键盘的入口（AVD 视口压缩把 kbBar 压在输入法下面，见 Beta 248 记录）。 -->
-    <div class="editCard editCardKb" show="{{ kbShow }}" @click="doneEdit">
+    <div class="editCard editCardKb" if="{{ kbShow }}" @click="doneEdit">
       <text class="f eLabel" show="{{ showELabel }}">{{ baseLabel }}</text>
       <text class="f eVal" if="{{ draft }}">{{ dL1 }}</text>
       <text class="f eVal ePh" if="{{ !draft }}">{{ placeText }}</text>
       <text class="f eVal">{{ dL2 }}</text>
     </div>
 
-    <!-- 键盘态「完成」用输入法正上方的 kbBar，页头整条是返回命中区不能放动作键 -->
-    <div class="kbBar" show="{{ kbShow }}" @click="doneEdit"><text class="f kbBarT">完成</text></div>
-
     <backbtn></backbtn>
     <!-- 整页固定 hex 键面（watchKeyboardTypePropsChange 是空函数，运行时换键面无效）；
          bin/oct/dec 下多出的键由 pushKey 过滤 + toast 提示 -->
-    <input-method hide="{{ !kbShow }}" keyboardtype="hex" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel"></input-method>
+    <input-method hide="{{ !kbShow }}" keyboardtype="hex" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="doneEdit"></input-method>
   </div>
 </template>
 
