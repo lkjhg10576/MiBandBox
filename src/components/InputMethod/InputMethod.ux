@@ -1,16 +1,26 @@
 <template>
-  <div class="page" style="flex-direction: column; height: {{hide ? '0px' : 'auto'}}; overflow: {{hide ? 'hidden' : 'visible'}};">
+  <!-- 根容器高度固定 365px（= 完成栏 32 + 拼音行 28 + 键盘体 305，三机型不变量），
+       不用 auto：Band 11 真机固件对 absolute 根节点的 auto 高度测量不可靠，且下层包装
+       全 absolute 后根流内高度会塌成 0。overflow 恒 hidden：内容最大 y471，超出根底
+       466 的部分本就在画布外，hidden 不裁掉任何可见像素。 -->
+  <div class="page" style="flex-direction: column; height: {{hide ? '0px' : '365px'}}; overflow: hidden;">
     <!-- 键盘内容懒建：外 if 保证键盘隐藏时整个子树不进 VDOM（chat/search 首进 1s 卡顿根因：
          旧实现 show 只是不可见，200+ 节点/图片在进页瞬间全部创建），首次弹出才创建，
-         之后 keyboardCreated 保活、hide 切换只走内层 show 显隐，不重复重建。 -->
-    <div if="{{!hide || keyboardCreated}}">
-      <div show="{{!hide}}" style="background-color:black;flex-direction: column;" >
+         之后 keyboardCreated 保活、hide 切换只走内层 show 显隐，不重复重建。
+         kbOuter/kbInner/kbBody/kbDown 四个包装层都必须带完整几何的 CSS 类
+         （position + left/top + width/height）：Band 11 真机固件严格执行「带 if 的 div
+         必须有 CSS 规则，否则其绝对定位子元素不被布局」这条 Vela 规则
+         （docs/emulator-fix.md），缺类时按键区/控制栏/候选面板整棵不布局，
+         只剩流内的完成栏 —— 手环 11 的键盘不弹就是这个原因。 -->
+    <div if="{{!hide || keyboardCreated}}" class="kbOuter">
+      <div show="{{!hide}}" class="kbInner">
       <!-- 「完成」栏：键盘态收起键盘的唯一入口。放在组件内部而不是页面模板里，是 Vela 4 的
            渲染层顺序坑：同一父容器里动态插入/show 翻转的节点会沉到静态兄弟之下（V5 无此问题），
            页面侧的 kbBar 在 band9 键盘态会被输入卡等静态内容盖住（2026-11-20 band9 验收实测，
            探针 probe-v2 定位）。组件整体在页面内容之上合成，栏随键盘一起显隐；
-           高度 32 进根高 → 根顶 = 屏高 − 365，与旧 theme .kbBar 各机型 top 完全一致
-           （band10 155 / pro336 115 / band9 125）。点击经 close 事件交给页面收键盘。 -->
+           高度 32 进根高 → 根顶 = 画布高 − 365（2026-11-20 三机型实测修正：
+           band10/Pro/band9 的快应用画布高都是 466，根顶恒 101；
+           旧文档记的 155/115/125 是按「屏高 − 365」算的，偏低）。点击经 close 事件交给页面收键盘。 -->
       <div class="kbdone" @click="onDoneBar"><text class="kbdoneT">完成</text></div>
       <!-- 拼音小字行：键盘框外上方单独一行，黑底覆盖，仅中/日模式且有 cval 时显示，只展示不可点。
            if 而非 show：show 隐藏时节点仍在 VDOM，键盘顶部会残留一条黑条 -->
@@ -18,7 +28,12 @@
         <text class="cvalrow">{{cvalDisplay}}</text>
       </div>
       <!-- 胶囊屏66 -->
-      <div if="{{screentype==='pill-shaped'}}" style="width: 100%;height: 305px">
+      <!-- kbBody：键盘体容器。top:60px = 完成栏 32 + 拼音行 28，把键盘体的布局原点钉在
+           根顶 +60（= 画布高 466 − 365 + 60 = 161），与改造前「流内排在完成栏/拼音行之后」
+           的原点完全一致 —— 其绝对定位子节点（按键区 top34 / 控制栏 top0 / 下展面板 top47）
+           的绝对坐标逐一不变。切勿改成 top:0：那会把整棵按键子树上移 60px，
+           控制栏盖住完成栏，所有机型回归。 -->
+      <div if="{{screentype==='pill-shaped'}}" class="kbBody">
         <div static style="position:absolute;left:0px;top:34px;width:100%;height:276px;">
           <progress percent="{{30+percent66}}" type="arc" style="start-angle:204deg;total-angle:-48deg;width:188px;height:188px;top:82px;left:2px;position:absolute;color:#ffffff;stroke-width:6px;layer-color:#262626;margin-left: {{(screenWidth - 192)/2}}px;"></progress>
           <scroll id="keyboard66" scroll-x="{{true}}" onscroll="handelScroll" style="padding-left: {{(screenWidth - 192)/2}}px;padding-right: {{(screenWidth - 192)/2}}px;">
@@ -98,7 +113,7 @@
           <img src="./assets/arc/del.png" style="position: absolute;left: 135px;top: 0px;width: 48px;height: 42px;" @click="onBtnClick('D')" />
         </div>
         <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
-        <div style="position: absolute;top: 47px;width: 100%;height: 263px;background-color: black;" if="{{downFlag==='down'}}">
+        <div class="kbDown" if="{{downFlag==='down'}}">
           <div style="position: absolute;left: {{(screenWidth - 192)/2}}px;width: 192px;height: 263px;"> 
             <scroll scroll-y="{{true}}" class="list66 expanded-scroll">
               <div class="expanded-candidates expanded-candidates66">
@@ -116,8 +131,8 @@
 
 <script>
 import vibrator from "@system.vibrator";
-import device from '@system.device'
 import { createDictionaryLoader } from "./assets/dictionaryLoader.js";
+import { SCREEN } from "../../common/layout.js";
 
 function deleteLast(t) {
   if (t) {
@@ -177,9 +192,14 @@ export default {
     keyboardCreated: false,
     cvalList: [0, 1, 2, 3, 4],
     percent66: 0,
-    // 胶囊屏(pill-shaped)设备自动获取screenWidth并绑定到根div
-    // 这样便能同时适配n66/o65甚至是后续设备，但实际效果可能受designWidth影响
-    screenWidth: 336,
+    // 胶囊屏(pill-shaped)设备的屏宽，用于把 192 宽键盘居中。
+    // 取构建期常量 SCREEN.w（src/common/layout.js，由 apply-profile 按 profile 生成：
+    // band10=212 / band9=192 / pro336=336），不再用 device.getInfo 异步取：
+    // 那条路有三个坑 —— 无 fail 回调、data 默认值 336 会让首帧偏移 72px、
+    // 而偏移又绑定在 static 节点上（异步更新可能不重绘）。
+    // 模板里的 {{(screenWidth - 192)/2}} 表达式字面量保持不动：
+    // profiles/pro336.json 的 14 条替换对精确命中这些子串，改表达式会造成 profile 漂移。
+    screenWidth: SCREEN.w,
     keys: {
       full: [
         ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
@@ -218,9 +238,6 @@ export default {
         tempCvalList.push(i);
       }
       this.cvalList = tempCvalList;
-    }
-    if (this.screentype === "pill-shaped") {
-      this.adjustScreenWidth();
     }
     // number 模式直接落数字行：复用 numFlag，按键行与控制栏的 show 条件都已按它分支
     if (this.keyboardtype === "number") {
@@ -505,13 +522,6 @@ export default {
     this.clearWaiting();
     this.resetResultList();
     this.addAllTxt(temp);
-  },
-  adjustScreenWidth(){
-    device.getInfo({
-      success: (data) => {
-        this.screenWidth = data.screenWidth;
-      }
-    })
   }
 };
 </script>
@@ -523,6 +533,45 @@ export default {
 	left:0;
 	bottom:0;
 	z-index:999
+}
+/* 键盘包装层的完整几何。
+   Band 11 真机固件严格执行 Vela 规则「带 if 的 div 必须有 CSS 规则
+   （position + left/top + width/height），否则其绝对定位子元素不被布局」
+   （docs/emulator-fix.md）：缺类时按键区/控制栏/候选面板整棵不布局，
+   只剩流内的完成栏 —— 这正是手环 11「键盘不弹、只有完成键」的成因。
+   四个包装层都以根原点为基准：kbBody 额外下移 60px（完成栏 32 + 拼音行 28），
+   让键盘体的布局原点停在根顶 +60，与改造前「流内排在完成栏/拼音行之后」完全一致，
+   其绝对定位子节点（按键区 top34 / 控制栏 top0 / 下展面板 top47）坐标逐一不变。 */
+.kbOuter {
+	position:absolute;
+	left:0;
+	top:0;
+	width:100%;
+	height:365px
+}
+.kbInner {
+	position:absolute;
+	left:0;
+	top:0;
+	width:100%;
+	height:365px;
+	background-color:black;
+	flex-direction:column
+}
+.kbBody {
+	position:absolute;
+	left:0;
+	top:60px;
+	width:100%;
+	height:305px
+}
+.kbDown {
+	position:absolute;
+	left:0;
+	top:47px;
+	width:100%;
+	height:263px;
+	background-color:black
 }
 .item {
 	height:52px;
