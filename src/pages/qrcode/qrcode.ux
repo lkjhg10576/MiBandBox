@@ -1,11 +1,10 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
-<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
-    <pagehead if="{{ !kbShow }}" title="快捷生码" clock="{{ clock }}"></pagehead>
-    <div class="inputCard {{ kbShow ? 'inputCardKb' : '' }}" @click="openKb">
+    <pagehead title="快捷生码" clock="{{ clock }}"></pagehead>
+    <div class="inputCard" @click="openInput">
       <text class="f iLabel">文本内容</text>
       <text class="f iText" if="{{ text }}">{{ text }}</text>
       <text class="f iPlace" if="{{ !text }}">点击输入文字或网址</text>
@@ -19,19 +18,16 @@
     <div class="go {{ text ? '' : 'off' }}" @click="generate"><text class="f goT">生成二维码</text></div>
     <text class="f hint">二维码仅在本机生成</text>
 
-    <!-- 键盘态输入法占住屏幕底部 305px，两个入口键会被盖住：按仓库约定 show 收起 -->
-    <div class="favEntry" show="{{ !kbShow }}" @click="openFavs"><text class="f favEntryT">我的收藏</text></div>
-    <div class="importEntry" show="{{ !kbShow }}" @click="openImport"><text class="f importEntryT">从手机导入</text></div>
+    <div class="favEntry" @click="openFavs"><text class="f favEntryT">我的收藏</text></div>
+    <div class="importEntry" @click="openImport"><text class="f importEntryT">从手机导入</text></div>
 
-    <backbtn if="{{ !kbShow }}"></backbtn>
-    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
+    <backbtn></backbtn>
   </div>
 </template>
 
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 78px; width: 206px; height: 108px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
-.inputCardKb { top: 44px; }
 .iLabel { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
 .iText { width: 150px; height: 52px; font-size: 17px; line-height: 22px; color: #FFFFFF; text-overflow: ellipsis; lines: 2; }
 .iPlace { width: 150px; height: 52px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.35); text-overflow: ellipsis; lines: 2; }
@@ -52,7 +48,7 @@
 <script>
 import g from '../../utils/g'
 import prompt from '@system.prompt'
-import textInput from '../../utils/textInput'
+import inputResult from '../../utils/inputResult'
 
 export default {
   data: {
@@ -60,11 +56,18 @@ export default {
     clock: '--:--',
     text: '',
     presets: ['网址', 'WiFi', '名片'],
-    kbShow: false,
     timer: null
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
+    // 通用输入页（/pages/input）的结果是一次性文件，take 后即删除：
+    // 必须在下面任何初始化之外 —— 从输入页返回时 onShow 会再跑一次，这时才取得到结果。
+    // 本页没有 KV/文件重载、也没有 protected 参数赋值，故不存在会在返回时覆盖刚取回值的初始化。
+    inputResult.take((r) => {
+      if (!r || r.field !== 'qrText') return
+      // 长度由 /pages/input 按 max=80 裁剪（multiline=0 会把换行归一为空格）
+      this.text = String(r.value || '')
+    })
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
@@ -75,25 +78,22 @@ export default {
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
-  openKb() {
-    this.kbShow = true
-  },
-  closeKb() {
-    this.kbShow = false
-  },
-  onKey(e) {
-    const content = e && e.detail && e.detail.content ? e.detail.content : ''
-    this.text = textInput.clamp(this.text + content, 80, false)
-  },
-  onDel() {
-    this.text = this.text.slice(0, -1)
+  openInput() {
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'qrText',
+      inputTitle: '二维码文本',
+      text: this.text,
+      max: 80,
+      multiline: 0,
+      hint: '最多 80 字'
+    })
   },
   usePreset(name) {
     g.haptic.short()
     if (name === '网址') this.text = 'https://iot.mi.com/vela'
     else if (name === 'WiFi') {
       // WiFi 走专门表单页（SSID/密码/加密方式/隐藏网络），不再塞示例串
-      this.kbShow = false
       g.router.push('/pages/qrcode/wifi')
     } else this.text = 'BandBox · 手腕上的百宝箱'
   },
@@ -110,7 +110,6 @@ export default {
       prompt.showToast({ message: '请先输入内容', duration: 1500 })
       return
     }
-    this.kbShow = false
     g.haptic.short()
     // fav='1'：本次生成的二维码在 show 页带收藏按钮；其余 4 个复用来源不带
     g.router.push('/pages/qrcode/show', { qr: this.text, fav: '1' })

@@ -13,22 +13,16 @@
 .page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
 
 /* 页面头部：时钟 15px / 标题 17px，整体位于 y=22..72 */
-.header { position: absolute; left: 0px; top: 0px; width: 212px; height: 84px; }
 .clock { position: absolute; left: 0px; top: 22px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.6); }
 .title { position: absolute; left: 0px; top: 42px; width: 212px; height: 30px; line-height: 30px; text-align: center; font-size: 17px; color: #FFFFFF; }
 
 /* 卡片基线 */
 .card { width: 206px; border-radius: 26px; background-color: #262626; }
 .cardTitle { font-size: 17px; color: #FFFFFF; }
-.cardSub { font-size: 14px; color: rgba(255,255,255,0.6); }
 
 /* 按钮与提示 */
 .btnText { font-size: 14px; color: #FFFFFF; }
 .hint { font-size: 14px; color: rgba(255,255,255,0.4); text-align: center; }
-
-/* 内置输入法顶部“完成”栏：页面可通过同名样式覆盖 top。 */
-.kbBar { position: absolute; left: 0px; top: 155px; width: 212px; height: 32px; background-color: #111111; z-index: 1000; flex-direction: row; justify-content: flex-end; align-items: center; padding-right: 14px; }
-.kbBarT { font-size: 14px; color: #0D6EFF; }
 
 /* 底部动作行：主操作按钮（保存 / 完成）独占一行、贴在安全区底部。
    为什么动作键不放页头右上角：页头整条（PageHead.phHit，y0..74）是返回命中区，

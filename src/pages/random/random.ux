@@ -1,37 +1,70 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
-<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="随机数" clock="{{ clock }}"></pagehead>
 
-    <div class="row" show="{{ !kbShow }}">
+    <!-- 常态：最小值 / 最大值两行 + 结果卡 + 抽一个按钮。
+         进编辑态时这四块整体 if 掉，和下面的编辑卡互斥（不叠层）：
+         Vela 4 会把同父容器里动态插入的节点沉到静态兄弟之下，叠着放必出层级问题。 -->
+    <div class="row" if="{{ !editing }}">
       <text class="f label">最小值</text>
-      <div class="valBox" @click="openField('min')"><text class="f val">{{ min }}</text></div>
+      <div class="valBox" @click="openPad('min')"><text class="f val">{{ min }}</text></div>
     </div>
-    <div class="row" style="top: 160px;" show="{{ !kbShow }}">
+    <div class="row" style="top: 160px;" if="{{ !editing }}">
       <text class="f label">最大值</text>
-      <div class="valBox" @click="openField('max')"><text class="f val">{{ max }}</text></div>
+      <div class="valBox" @click="openPad('max')"><text class="f val">{{ max }}</text></div>
     </div>
 
-    <div class="result" show="{{ !kbShow }}">
+    <div class="result" if="{{ !editing }}">
       <text class="f rLabel">结果</text>
       <text class="f rVal" style="font-size: {{ display.length >= 6 ? 40 : 52 }}px;">{{ display }}</text>
     </div>
 
-    <div class="go" show="{{ !kbShow }}" @click="roll"><text class="f goT">抽一个</text></div>
-    <text class="f hint" show="{{ !kbShow }}">点数值输入 · 包含两端</text>
+    <div class="go" if="{{ !editing }}" @click="roll"><text class="f goT">抽一个</text></div>
+    <text class="f hint" if="{{ !editing }}">点数值输入 · 包含两端</text>
 
-    <!-- 键盘顶边最高到 y=187、kbBar 占 155..187，草稿卡必须收在 y=152 以内才不被遮 -->
-    <div class="editCard" if="{{ kbShow }}">
-      <text class="f eLabel">{{ fieldLabel }}</text>
-      <text class="f eValue" if="{{ draft }}">{{ draft }}</text>
-      <text class="f ePlace" if="{{ !draft }}">输入整数</text>
+    <!-- 编辑态：原位自绘的数字键盘（不是系统输入法，也不是跳页）。
+         为什么不用 <input-method>：调上下限是高频即时操作，弹系统键盘会把正文整块盖掉
+         （键盘顶边恒在 y101，正文只剩 y76..100 一条缝），跳通用输入页则多一次转场与路由栈开销 ——
+         两者都是交互倒退。改成在结果卡那一块（y246 起，154px 高）画一张数字卡：
+         0-9 / 负号 / 退格 / 确定 / 取消，点一下当场改、当场生效，不离开本页。
+         校验沿用 utils/numberInput：7 字符上限、±999999。 -->
+    <div class="padCard" if="{{ editing }}">
+      <div class="padHead">
+        <text class="f padLabel">{{ fieldLabel }}</text>
+        <!-- 草稿值用 '' 判空而不是直接判真值：草稿是字符串，"0" 也得显示出来 -->
+        <text class="f padVal" if="{{ draft !== '' }}">{{ draft }}</text>
+        <text class="f padValPh" if="{{ draft === '' }}">输入整数</text>
+      </div>
+      <div class="padGrid">
+        <div class="padRow">
+          <div class="padKey" @click="padKey('1')"><text class="f padKeyT">1</text></div>
+          <div class="padKey" @click="padKey('2')"><text class="f padKeyT">2</text></div>
+          <div class="padKey" @click="padKey('3')"><text class="f padKeyT">3</text></div>
+          <div class="padKey padKeyAlt" @click="padDel"><text class="f padKeyT2">退格</text></div>
+        </div>
+        <div class="padRow">
+          <div class="padKey" @click="padKey('4')"><text class="f padKeyT">4</text></div>
+          <div class="padKey" @click="padKey('5')"><text class="f padKeyT">5</text></div>
+          <div class="padKey" @click="padKey('6')"><text class="f padKeyT">6</text></div>
+          <div class="padKey padKeyAlt" @click="padKey('-')"><text class="f padKeyT">-</text></div>
+        </div>
+        <div class="padRow">
+          <div class="padKey" @click="padKey('7')"><text class="f padKeyT">7</text></div>
+          <div class="padKey" @click="padKey('8')"><text class="f padKeyT">8</text></div>
+          <div class="padKey" @click="padKey('9')"><text class="f padKeyT">9</text></div>
+          <div class="padKey padKeyAlt" @click="padCancel"><text class="f padKeyT2">取消</text></div>
+        </div>
+        <div class="padRow">
+          <div class="padKey padKeyZero" @click="padKey('0')"><text class="f padKeyT">0</text></div>
+          <div class="padKeyOk" @click="padOk"><text class="f padKeyT">确定</text></div>
+        </div>
+      </div>
     </div>
 
     <backbtn></backbtn>
-    <input-method hide="{{ !kbShow }}" keyboardtype="number" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="doneEdit"></input-method>
   </div>
 </template>
 
@@ -47,10 +80,28 @@
 .go { position: absolute; left: 26px; top: 390px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goT { font-size: 14px; color: #FFFFFF; }
 .hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
-.editCard { position: absolute; left: 3px; top: 76px; width: 206px; height: 56px; border-radius: 26px; background-color: #262626; padding: 4px 16px; flex-direction: column; }
-.eLabel { width: 174px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); }
-.eValue { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 26px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
-.ePlace { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+/* 原位数字键盘（编辑态）：卡的位置占住结果卡那一块（y246 起）。
+   卡宽 206px，与结果卡同宽 —— 直接复用 profiles/*.json 里现成的 206px 替换对，
+   物化后自动变成 Pro 330 / band9 186，卡片与其他卡同宽、不超屏。
+   内边距 6px：内容区宽 = 卡宽 − 12（band10 194 / Pro 318 / band9 174）；
+   内宽 194px 需要 profiles/{pro336,band9}.json 各一条 194px 替换对。
+   键面用 flex:1 均分，卡宽变了键宽自动跟着变。 */
+.padCard { position: absolute; left: 3px; top: 246px; width: 206px; height: 154px; border-radius: 26px; background-color: #151515; padding: 6px; flex-direction: column; }
+/* 头行：左边是字段名，右边是草稿值（显式宽度 + 右对齐 ——
+   Vela 4 里自适应宽度的 text 放在 justify-content:flex-end 分支会测宽为 0、不渲染） */
+.padHead { width: 194px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
+.padLabel { width: 56px; height: 20px; line-height: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.padVal { width: 112px; height: 30px; line-height: 30px; text-align: right; font-size: 24px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+.padValPh { width: 112px; height: 30px; line-height: 30px; text-align: right; font-size: 14px; color: rgba(255,255,255,0.3); }
+/* 键面：4 行 × 26px（行距靠 space-between 撑），行内 4 列均分 */
+.padGrid { width: 194px; height: 112px; flex-direction: column; justify-content: space-between; }
+.padRow { width: 194px; height: 26px; flex-direction: row; }
+.padKey { flex: 1; height: 26px; margin-right: 2px; border-radius: 13px; background-color: #262626; align-items: center; justify-content: center; }
+.padKeyAlt { background-color: #333333; }
+.padKeyZero { flex: 3; }
+.padKeyOk { flex: 2; height: 26px; border-radius: 13px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.padKeyT { font-size: 15px; color: #FFFFFF; }
+.padKeyT2 { font-size: 13px; color: #FFFFFF; }
 </style>
 
 <script>
@@ -69,12 +120,11 @@ export default {
     rolling: false,
     timer: null,
     clockTimer: null,
+    // 编辑态：editing 决定常态与编辑卡互斥切换；field 记正在改 min 还是 max
+    editing: false,
     field: '',
     fieldLabel: '最小值',
-    draft: '',
-    kbShow: false,
-    charWarned: false,
-    limitWarned: false
+    draft: ''
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -83,11 +133,11 @@ export default {
     g.clock.sub(this._ck)
   },
   onHide() {
-    this.cancelEdit()
+    this.resetPad()
     this.clear()
   },
   onDestroy() {
-    this.cancelEdit()
+    this.resetPad()
     this.clear()
   },
   clear() {
@@ -96,50 +146,52 @@ export default {
     this.timer = null
     this.clockTimer = null
   },
-  cancelEdit() {
-    this.kbShow = false
+  resetPad() {
+    this.editing = false
     this.field = ''
     this.draft = ''
   },
-  openField(which) {
+  /**
+   * 点数值框进入编辑态：草稿预填当前值，键盘卡直接画在结果卡的位置上。
+   * 滚动动画期间不给进（结果正在跳，此时改上下限会让人对不上号）。
+   */
+  openPad(which) {
     if (this.rolling) return
     this.field = which
     this.fieldLabel = which === 'min' ? '最小值' : '最大值'
     this.draft = String(which === 'min' ? this.min : this.max)
-    this.charWarned = false
-    this.limitWarned = false
-    this.kbShow = true
+    this.editing = true
     g.haptic.short()
   },
-  onKey(e) {
-    const raw = e && e.detail && e.detail.content ? e.detail.content : ''
-    if (!raw) return
-    const r = numberInput.pushKey(this.draft, raw)
-    this.draft = r.draft
-    if (r.reason) this.warnKey(r.reason)
-  },
-  onDel() {
-    this.draft = this.draft.slice(0, -1)
-  },
-  warnKey(reason) {
-    if (reason === 'char') {
-      if (!this.charWarned) {
-        this.charWarned = true
-        prompt.showToast({ message: '只能输入数字和负号', duration: 1600 })
-      }
-    } else if (reason === 'limit') {
-      if (!this.limitWarned) {
-        this.limitWarned = true
-        prompt.showToast({ message: '范围 -999999 ~ 999999', duration: 1600 })
-      }
+  /**
+   * 按键：走 numberInput.pushKey —— 7 字符上限、±999999，
+   * 负号是首位开关（前导零每键归一）。越界/非法一律不收，草稿保持原样。
+   */
+  padKey(k) {
+    const r = numberInput.pushKey(this.draft, k)
+    if (r.reason) {
+      const msg = r.reason === 'limit' ? '范围 -999999 ~ 999999' : '只能输入数字和负号'
+      prompt.showToast({ message: msg, duration: 1600 })
+      g.haptic.long()
+      return
     }
-    g.haptic.long()
+    this.draft = r.draft
+    g.haptic.short()
   },
-  doneEdit() {
-    // 先取 field 再清空：清空后再读就永远写不进 min/max
+  padDel() {
+    if (!this.draft) return
+    this.draft = this.draft.slice(0, -1)
+    g.haptic.short()
+  },
+  /** 取消：草稿作废，原值一个都不动。 */
+  padCancel() {
+    this.resetPad()
+    g.haptic.short()
+  },
+  /** 确定：把草稿写回 min 或 max；空串 / 只有负号 / 越界都不写，留在编辑态让用户改。 */
+  padOk() {
     const which = this.field
     const n = numberInput.parseDraft(this.draft)
-    this.cancelEdit()
     if (n === null) {
       prompt.showToast({ message: '请输入整数', duration: 1400 })
       g.haptic.long()
@@ -147,10 +199,11 @@ export default {
     }
     if (which === 'min') this.min = n
     else if (which === 'max') this.max = n
+    this.resetPad()
     g.haptic.short()
   },
   roll() {
-    if (this.rolling || this.kbShow) return
+    if (this.rolling || this.editing) return
     if (this.min > this.max) {
       prompt.showToast({ message: '最小值不能大于最大值', duration: 1600 })
       g.haptic.long()

@@ -1,12 +1,11 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
-<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="摩斯密码" clock="{{ clock }}"></pagehead>
-    <div class="inputCard {{ kbShow ? 'inputCardKb' : '' }}" @click="openKb">
-      <text class="f iLabel {{ kbShow ? 'iLabelKb' : '' }}">文本</text>
+    <div class="inputCard" @click="openInput">
+      <text class="f iLabel">文本</text>
       <text class="f iText" if="{{ text }}">{{ text }}</text>
       <text class="f iPlace" if="{{ !text }}">仅支持英文/数字/符号</text>
     </div>
@@ -36,16 +35,13 @@
     </div>
 
     <backbtn></backbtn>
-    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
   </div>
 </template>
 
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
-.inputCardKb {}
 .iLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.iLabelKb {}
 .iText { width: 174px; height: 32px; line-height: 32px; font-size: 18px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .morseCard { position: absolute; left: 3px; top: 152px; width: 206px; height: 116px; border-radius: 26px; background-color: #1A1A1A; padding: 8px 16px; flex-direction: column; }
@@ -70,6 +66,7 @@
 import g from '../../utils/g'
 import morse from '../../data/morse'
 import textInput from '../../utils/textInput'
+import inputResult from '../../utils/inputResult'
 import prompt from '@system.prompt'
 
 const DOT = 180
@@ -91,12 +88,25 @@ export default {
     timers: [],
     startAt: 0,
     morseWarned: false,
-    kbShow: false,
     timer: null
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
     this.morseWarned = false
+    // 通用输入页（/pages/input）的结果是一次性文件，take 后即删除：
+    // 必须在下面任何初始化之外 —— 从输入页返回时 onShow 会再跑一次，这时才取得到结果。
+    // 本页没有 KV/文件重载、也没有 protected 参数赋值，故不存在会在返回时覆盖刚取回值的初始化。
+    inputResult.take((r) => {
+      if (!r || r.field !== 'morseText') return
+      const raw = String(r.value || '')
+      const clean = textInput.sanitizeMorse(raw)
+      if (clean !== raw.toUpperCase() && !this.morseWarned) {
+        this.morseWarned = true
+        prompt.showToast({ message: '摩斯密码仅支持英文、数字和常用符号', duration: 1800 })
+      }
+      this.text = textInput.clamp(clean, 30, false)
+      this.code = morse.encode(this.text)
+    })
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
@@ -109,30 +119,20 @@ export default {
     this.stop()
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
-  openKb() {
-    this.kbShow = true
-  },
-  closeKb() {
-    this.kbShow = false
-  },
-  onKey(e) {
-    const raw = e && e.detail && e.detail.content ? e.detail.content : ''
-    const before = this.text + raw
-    const clean = textInput.sanitizeMorse(before)
-    if (clean !== before.toUpperCase() && !this.morseWarned) {
-      this.morseWarned = true
-      prompt.showToast({ message: '摩斯密码仅支持英文、数字和常用符号', duration: 1800 })
-    }
-    this.text = textInput.clamp(clean, 30, false)
-    this.code = morse.encode(this.text)
-  },
-  onDel() {
-    this.text = this.text.slice(0, -1)
-    this.code = morse.encode(this.text)
+  openInput() {
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'morseText',
+      inputTitle: '摩斯原文',
+      text: this.text,
+      max: 30,
+      multiline: 0,
+      hint: '仅支持英文、数字和常用符号，最多 30 字'
+    })
   },
   play() {
     if (!this.text) {
-      this.kbShow = true
+      this.openInput()
       return
     }
     this.stop()

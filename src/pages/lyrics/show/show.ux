@@ -5,24 +5,36 @@
   <div class="page">
     <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
 
-    <!-- 竖屏正文 -->
-    <scroll id="lyScroll" class="lyScroll" if="{{ mode !== 'h' }}" scroll-y="true">
+    <!-- 竖屏正文：菜单打开时整段让位。
+         Vela 4：同一父容器里动态插入/翻转显示的节点会沉到静态兄弟之下，
+         菜单不能做成浮层压在正文上，只能用互斥 if 切视图。 -->
+    <scroll id="lyScroll" class="lyScroll" if="{{ !showMenu && mode !== 'h' }}" scroll-y="true">
       <text class="f lyric">{{ body || '（空歌词）' }}</text>
       <div class="pad"></div>
     </scroll>
 
     <!-- 横屏正文：整块旋转 90°。注意旋转容器与内部滚动容器都用显式像素。 -->
-    <div class="lyLandWrap" if="{{ mode === 'h' }}">
+    <div class="lyLandWrap" if="{{ !showMenu && mode === 'h' }}">
       <scroll id="lyScrollLand" class="lyScrollLand" scroll-y="true">
         <text class="f lyricLand">{{ body || '（空歌词）' }}</text>
         <div class="padLand"></div>
       </scroll>
     </div>
 
-    <div class="bar">
+    <div class="bar" if="{{ !showMenu }}">
       <div class="btn {{ auto ? 'on' : '' }}" @click="toggleAuto"><text class="f btnT">{{ auto ? '自动滚动中' : '自动滚动' }}</text></div>
-      <div class="btn dark" @click="more"><text class="f btnT">更多</text></div>
+      <div class="btn dark" @click="toggleMenu"><text class="f btnT">更多</text></div>
     </div>
+
+    <!-- 菜单视图：原 lyrics/more 子页的 3 个动作（与正文互斥，不叠层） -->
+    <div class="menuWrap" if="{{ showMenu }}">
+      <div class="mRow" @click="editLyrics"><text class="f mT">编辑歌词</text><text class="f mArrow">></text></div>
+      <div class="mRow mRow2" @click="showmode"><text class="f mT">显示方式</text><text class="f mArrow">></text></div>
+      <div class="mRow mRow3" @click="del"><text class="f mT" style="color: #FF6B6B;">{{ delStep === 0 ? '删除歌词' : '再次点击确认删除' }}</text><text class="f mArrow" style="color: #FF6B6B;">></text></div>
+      <text class="f mTip">歌词全部保存在本机</text>
+      <div class="mCancel" @click="closeMenu"><text class="f mCancelT">取消</text></div>
+    </div>
+
     <backbtn></backbtn>
   </div>
 </template>
@@ -48,6 +60,19 @@
 .btn.on { background-color: #00A846; }
 .btn.dark { background-color: #262626; }
 .btnT { font-size: 14px; color: #FFFFFF; }
+/* 菜单视图（并入原 lyrics/more 子页）：包裹层必须是带完整几何的类，
+   否则 Vela 不给里面的绝对定位子元素做布局；left/top 钉在页面原点，子元素坐标即页面坐标。 */
+.menuWrap { position: absolute; left: 0px; top: 0px; width: 212px; height: 466px; }
+.mRow { position: absolute; left: 3px; top: 84px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 18px; }
+.mRow2 { top: 164px; }
+.mRow3 { top: 244px; }
+.mT { font-size: 17px; color: #FFFFFF; }
+.mArrow { font-size: 20px; color: rgba(255,255,255,0.4); }
+.mTip { position: absolute; left: 0px; top: 340px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+/* 取消键：离页头命中区（y0..74）远，落在底部动作行那一档
+   （band10 y420..464；band9 由 profiles/band9.json 里现成的 top: 420px 替换对改到 y390..434）。 */
+.mCancel { position: absolute; left: 3px; top: 420px; width: 206px; height: 44px; border-radius: 22px; background-color: #262626; align-items: center; justify-content: center; }
+.mCancelT { font-size: 14px; color: #FFFFFF; }
 </style>
 
 <script>
@@ -59,10 +84,13 @@ import prompt from '@system.prompt'
 
 export default {
   protected: { name: '' },
-  private: { clock: '--:--', title: '歌词', body: '', mode: 'v', auto: false, timer: null, scrollTimer: null },
+  private: { clock: '--:--', title: '歌词', docTitle: '歌词', body: '', mode: 'v', auto: false, timer: null, scrollTimer: null, showMenu: false, delStep: 0 },
   onShow() {
     this.clock = g.time.formatClock(new Date())
-    this.title = this.name || '歌词'
+    this.showMenu = false
+    this.delStep = 0
+    this.docTitle = this.name || '歌词'
+    this.title = this.docTitle
     this.load()
     g.kv.init(() => {
       this.mode = g.kv.get('lyricsm', 'v') === 'h' ? 'h' : 'v'
@@ -87,14 +115,16 @@ export default {
     docs.read('lyrics', this.name, (text) => {
       // 读失败：docs.read 回调收到 null；此时给出显式提示，不静默空白
       if (text === null || text === undefined) {
-        this.title = this.name || '歌词'
+        this.docTitle = this.name || '歌词'
+        this.title = this.showMenu ? '歌词操作' : this.docTitle
         this.body = ''
         prompt.showToast({ message: '歌词读取失败', duration: 1500 })
         return
       }
       // 与编辑页共用同一套解析规则：首行与文件名一致才算标题，否则首行属于正文
       const doc = parseLyricsDoc(text, this.name)
-      this.title = doc.title || this.name || '歌词'
+      this.docTitle = doc.title || this.name || '歌词'
+      this.title = this.showMenu ? '歌词操作' : this.docTitle
       this.body = doc.body
     })
   },
@@ -117,9 +147,39 @@ export default {
     if (this.scrollTimer) clearInterval(this.scrollTimer)
     this.scrollTimer = null
   },
-  more() {
+  /* 「更多」= 在正文视图与菜单视图之间切换（互斥 if，不是浮层）。
+     进菜单前先停自动滚动 —— 原 more() 子页就是这么做的。 */
+  toggleMenu() {
     this.stopAuto()
-    g.router.push('/pages/lyrics/more', { name: this.name })
+    this.showMenu = !this.showMenu
+    this.delStep = 0
+    this.title = this.showMenu ? '歌词操作' : this.docTitle
+  },
+  closeMenu() {
+    this.showMenu = false
+    this.delStep = 0
+    this.title = this.docTitle
+  },
+  editLyrics() {
+    g.router.push('/pages/lyrics/edit', { name: this.name })
+  },
+  showmode() {
+    g.router.push('/pages/lyrics/showmode')
+  },
+  del() {
+    if (this.delStep === 0) {
+      this.delStep = 1
+      return
+    }
+    docs.remove('lyrics', this.name, (ok) => {
+      g.haptic.long()
+      if (ok) {
+        prompt.showToast({ message: '删除成功', duration: 1200 })
+        g.router.replace('/pages/lylist')
+      } else {
+        prompt.showToast({ message: '删除失败', duration: 1400 })
+      }
+    })
   }
 }
 </script>

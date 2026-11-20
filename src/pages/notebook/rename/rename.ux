@@ -1,30 +1,26 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
-<import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="重命名" clock="{{ clock }}"></pagehead>
-    <div class="card {{ kbShow ? 'cardKb' : '' }}" @click="openKb">
-      <text class="f label {{ kbShow ? 'labelKb' : '' }}">新名称</text>
+    <div class="card" @click="openInput">
+      <text class="f label">新名称</text>
       <text class="f value" if="{{ value }}">{{ value }}</text>
       <text class="f iPlace" if="{{ !value }}">点击输入</text>
     </div>
 
-    <div class="check" show="{{ !kbShow }}" @click="save"><img class="checkImg" src="/common/check.png" /></div>
-    <text class="f tip" show="{{ !kbShow }}">名称最多 20 个字</text>
+    <div class="check" @click="save"><img class="checkImg" src="/common/check.png" /></div>
+    <text class="f tip">名称最多 20 个字</text>
 
     <backbtn></backbtn>
-    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
   </div>
 </template>
 
 <style>
 @import '../../../common/styles/theme.css';
 .card { position: absolute; left: 3px; top: 86px; width: 206px; height: 84px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
-.cardKb {}
 .label { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.45); }
-.labelKb {}
 .value { width: 174px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 174px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .check { position: absolute; left: 74px; top: 210px; width: 64px; height: 64px; align-items: center; justify-content: center; }
@@ -36,15 +32,26 @@
 import g from '../../../utils/g'
 import docs from '../../../utils/docs'
 import prompt from '@system.prompt'
-import textInput from '../../../utils/textInput'
+import inputResult from '../../../utils/inputResult'
 
 export default {
   protected: { docName: '' },
-  private: { clock: '--:--', value: '', oldName: '', kbShow: false, timer: null },
+  private: { clock: '--:--', value: '', oldName: '', loaded: false, timer: null },
   onShow() {
     this.clock = g.time.formatClock(new Date())
-    this.oldName = this.docName
-    this.value = this.docName
+    // 通用输入页（/pages/input）的结果是一次性文件，take 后即删除：
+    // 必须在 loaded 守卫之外 —— 从输入页返回时 onShow 会再跑一次，这时才取得到结果。
+    inputResult.take((r) => {
+      if (!r || r.field !== 'nbName') return
+      this.value = String(r.value || '')
+    })
+    // loaded 守卫：保护参数只在首次进入时赋值。
+    // 从输入页返回时 onShow 会再跑一遍，若无此标志，这里就会用 docName 把刚输入回来的名字原地冲掉。
+    if (!this.loaded) {
+      this.loaded = true
+      this.oldName = this.docName || ''
+      this.value = this.docName || ''
+    }
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
@@ -55,21 +62,18 @@ export default {
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
-  openKb() {
-    this.kbShow = true
-  },
-  closeKb() {
-    this.kbShow = false
-  },
-  onKey(e) {
-    const content = e && e.detail && e.detail.content ? e.detail.content : ''
-    this.value = textInput.clamp(this.value + content, 20, false)
-  },
-  onDel() {
-    this.value = this.value.slice(0, -1)
+  openInput() {
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'nbName',
+      inputTitle: '新名称',
+      text: this.value,
+      max: 20,
+      multiline: 0,
+      hint: '最多 20 字'
+    })
   },
   save() {
-    this.kbShow = false
     const clean = docs.safeName(this.value)
     if (!clean) {
       prompt.showToast({ message: '名称不能为空', duration: 1400 })

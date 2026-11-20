@@ -1,6 +1,5 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
-<import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
@@ -8,14 +7,14 @@
 
     <scroll class="formScroll" scroll-y="true" bounces="true">
       <div class="inner">
-        <!-- 输入密码时隐藏 SSID 卡：密码卡自动顶到表单首位（kbBar 之上），不必动态改 top -->
-        <div class="field" if="{{ !(kbShow && active === 'pass') }}" style="border-color: {{ kbShow && active === 'ssid' ? '#0D6EFF' : 'transparent' }};" @click="pickSsid">
+        <!-- SSID 与密码都跳通用输入页（/pages/input），本页不再挂输入法组件 -->
+        <div class="field" @click="pickSsid">
           <text class="f fLabel">WiFi 名称（SSID）</text>
           <text class="f fValue" if="{{ ssid }}">{{ ssid }}</text>
           <text class="f fPlace" if="{{ !ssid }}">点击输入 WiFi 名称</text>
         </div>
 
-        <div class="field" style="background-color: {{ auth === 'nopass' ? '#1E1E1E' : '#262626' }}; border-color: {{ kbShow && active === 'pass' ? '#0D6EFF' : 'transparent' }};" @click="pickPass">
+        <div class="field" style="background-color: {{ auth === 'nopass' ? '#1E1E1E' : '#262626' }};" @click="pickPass">
           <text class="f fLabel">密码</text>
           <text class="f fValue" if="{{ pass }}">{{ pass }}</text>
           <text class="f fPlace" if="{{ !pass }}">{{ auth === 'nopass' ? '开放网络无需密码' : '点击输入密码' }}</text>
@@ -37,7 +36,6 @@
     </scroll>
 
     <backbtn></backbtn>
-    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
   </div>
 </template>
 
@@ -64,7 +62,7 @@
 import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import wifi from '../../../utils/wifi'
-import textInput from '../../../utils/textInput'
+import inputResult from '../../../utils/inputResult'
 
 export default {
   data: {
@@ -74,12 +72,20 @@ export default {
     pass: '',
     auth: 'WPA',
     hidden: false,
-    active: 'ssid',
-    kbShow: false,
     timer: null
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
+    // 通用输入页（/pages/input）的结果是一次性文件，take 后即删除：
+    // ① 必须在任何初始化之外 —— 从输入页返回时 onShow 会再跑一次，这时才取得到结果；
+    // ② 一次只能 take 一份结果，所以 SSID 与密码两个字段分支并进同一次 take。
+    // 本页没有 KV/文件重载、也没有 protected 参数赋值，故不存在会在返回时覆盖刚取回值的初始化。
+    inputResult.take((r) => {
+      if (!r || !r.field) return
+      // 长度由 /pages/input 按 max 裁剪（multiline=0 会把换行归一为空格）
+      if (r.field === 'wifiSsid') this.ssid = String(r.value || '')
+      else if (r.field === 'wifiPass') this.pass = String(r.value || '')
+    })
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
@@ -91,40 +97,38 @@ export default {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   pickSsid() {
-    this.active = 'ssid'
-    this.kbShow = true
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'wifiSsid',
+      inputTitle: 'WiFi 名称',
+      text: this.ssid,
+      max: 32,
+      multiline: 0,
+      hint: '最多 32 字'
+    })
   },
   pickPass() {
     if (this.auth === 'nopass') {
       prompt.showToast({ message: '开放网络无需密码', duration: 1200 })
       return
     }
-    this.active = 'pass'
-    this.kbShow = true
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'wifiPass',
+      inputTitle: 'WiFi 密码',
+      text: this.pass,
+      max: 64,
+      multiline: 0,
+      hint: '最多 64 字'
+    })
   },
   pickAuth(name) {
     g.haptic.short()
     this.auth = name
-    if (name === 'nopass') {
-      this.kbShow = false
-      if (this.active === 'pass') this.active = 'ssid'
-    }
   },
   toggleHidden() {
     g.haptic.short()
     this.hidden = !this.hidden
-  },
-  closeKb() {
-    this.kbShow = false
-  },
-  onKey(e) {
-    const content = e && e.detail && e.detail.content ? e.detail.content : ''
-    if (this.active === 'ssid') this.ssid = textInput.clamp(this.ssid + content, 32, false)
-    else this.pass = textInput.clamp(this.pass + content, 64, false)
-  },
-  onDel() {
-    if (this.active === 'ssid') this.ssid = this.ssid.slice(0, -1)
-    else this.pass = this.pass.slice(0, -1)
   },
   /**
    * 生成：buildWifi → 校验总长（字节 <= 600 且字符 <= 200，超了 toast）
@@ -132,7 +136,6 @@ export default {
    * 不经过 qrcode.ux 的 80 字符 clamp（不动它的计数器与替换对）。
    */
   onGen() {
-    this.kbShow = false
     if (!this.ssid) {
       prompt.showToast({ message: '请先输入 WiFi 名称', duration: 1500 })
       return

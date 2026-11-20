@@ -1,23 +1,31 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
-<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="节拍器" clock="{{ clock }}"></pagehead>
 
-    <div class="bpmBox" show="{{ !kbShow }}" @click="openField">
+    <!-- BPM 原位步进：调 BPM 是高频即时操作，弹键盘会遮住大卡片、跳页再回来更慢，
+         所以直接在 BPM 卡里放四颗 chip（−5 / −1 / +1 / +5），点一下当场改、当场生效。
+         卡内纵向三段：标题行 + 大数值 + 步进行，总高仍是 112px。 -->
+    <div class="bpmBox">
       <text class="f bpmLabel">BPM（40–240）</text>
       <text class="f val">{{ bpm }}</text>
+      <div class="stepRow">
+        <div class="chip" @click="stepBpm(-5)"><text class="f chipT">−5</text></div>
+        <div class="chip" @click="stepBpm(-1)"><text class="f chipT">−1</text></div>
+        <div class="chip" @click="stepBpm(1)"><text class="f chipT">+1</text></div>
+        <div class="chip" @click="stepBpm(5)"><text class="f chipT">+5</text></div>
+      </div>
     </div>
 
-    <text class="f status" show="{{ !kbShow }}">{{ playing ? '运行中 · ' + bpm + ' BPM · ' + lvLabel : '已就绪 · ' + bpm + ' BPM · ' + lvLabel }}</text>
-    <text class="f gapTxt" show="{{ !kbShow }}">每拍 {{ gap }} 毫秒</text>
+    <text class="f status">{{ playing ? '运行中 · ' + bpm + ' BPM · ' + lvLabel : '已就绪 · ' + bpm + ' BPM · ' + lvLabel }}</text>
+    <text class="f gapTxt">每拍 {{ gap }} 毫秒</text>
 
-    <div class="pulse" show="{{ !kbShow }}" style="background-color: {{ pulseOn ? '#0D6EFF' : '#333333' }};"></div>
+    <div class="pulse" style="background-color: {{ pulseOn ? '#0D6EFF' : '#333333' }};"></div>
 
     <!-- 力度选择：弱（短振）/ 强（长振），默认强。摆在开始键正上方，点一下立刻按新档位振一记，方便直接比手感 -->
-    <div class="levels" show="{{ !kbShow }}">
+    <div class="levels">
       <text class="f lvLabel">力度</text>
       <div class="lv" style="background-color: {{ level === 'weak' ? '#0D6EFF' : 'transparent' }};" @click="setLevel('weak')">
         <text class="f lvT">弱</text>
@@ -27,30 +35,30 @@
       </div>
     </div>
 
-    <div class="go" if="{{ !kbShow && !playing }}" @click="toggle">
+    <div class="go" if="{{ !playing }}" @click="toggle">
       <text class="f goT">开始</text>
     </div>
-    <div class="go goStop" if="{{ !kbShow && playing }}" @click="toggle">
+    <div class="go goStop" if="{{ playing }}" @click="toggle">
       <text class="f goT">结束</text>
     </div>
-    <text class="f hint" show="{{ !kbShow }}">点数值改 BPM · 运行时常亮</text>
-
-    <div class="editCard" if="{{ kbShow }}">
-      <text class="f eLabel">设定 BPM · 节拍继续</text>
-      <text class="f eValue" if="{{ draft }}">{{ draft }}</text>
-      <text class="f ePlace" if="{{ !draft }}">输入 40–240</text>
-    </div>
+    <text class="f hint" style="color: {{ hintAlert ? '#FF3B30' : 'rgba(255,255,255,0.35)' }};">{{ hint }}</text>
 
     <backbtn></backbtn>
-    <input-method hide="{{ !kbShow }}" keyboardtype="number" maxlength="5" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="doneEdit"></input-method>
   </div>
 </template>
 
 <style>
 @import '../../common/styles/theme.css';
 .bpmBox { position: absolute; left: 3px; top: 96px; width: 206px; height: 112px; border-radius: 26px; background-color: #151515; flex-direction: column; align-items: center; justify-content: center; }
-.bpmLabel { width: 190px; height: 18px; line-height: 18px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.45); }
-.val { width: 190px; height: 64px; line-height: 64px; text-align: center; font-size: 52px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+.bpmLabel { width: 190px; height: 16px; line-height: 16px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.45); }
+/* 大数值：16（标题行）+ 54（数值）+ 32（步进行）= 102，卡高 112，上下各留 5px */
+.val { width: 190px; height: 54px; line-height: 54px; text-align: center; font-size: 46px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+/* 步进行：四颗 chip 均分整行宽度（flex:1），卡宽随机型变，chip 自动跟着变宽。
+   行宽取 152px（卡内左右各留 27px）：chip 是带底色的方块，不能顶到卡片 26px 圆角外，
+   否则角上会露出卡片外的方块 —— 窄一点更稳。 */
+.stepRow { width: 152px; height: 32px; flex-direction: row; align-items: center; }
+.chip { flex: 1; height: 32px; margin-right: 4px; border-radius: 16px; background-color: #262626; align-items: center; justify-content: center; }
+.chipT { font-size: 15px; color: #FFFFFF; }
 .status { position: absolute; left: 0px; top: 218px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
 .gapTxt { position: absolute; left: 0px; top: 242px; width: 212px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
 .pulse { position: absolute; left: 91px; top: 278px; width: 30px; height: 30px; border-radius: 15px; }
@@ -62,19 +70,14 @@
 .goStop { background-color: #FF3B30; }
 .goT { font-size: 14px; color: #FFFFFF; }
 .hint { position: absolute; left: 16px; top: 436px; width: 180px; text-align: center; font-size: 13px; line-height: 20px; color: rgba(255,255,255,0.35); }
-.editCard { position: absolute; left: 3px; top: 76px; width: 206px; height: 56px; border-radius: 26px; background-color: #262626; padding: 4px 16px; flex-direction: column; }
-.eLabel { width: 174px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
-.eValue { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 26px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
-.ePlace { width: 174px; height: 32px; line-height: 32px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
 </style>
 
 <script>
 import g from '../../utils/g'
-import prompt from '@system.prompt'
-import numberInput from '../../utils/numberInput'
 
 const BPM_MIN = 40
 const BPM_MAX = 240
+const HINT_IDLE = '点 −/+ 调 BPM'
 
 export default {
   data: {
@@ -86,10 +89,10 @@ export default {
     timer: null,
     beatCount: 0,
     pulseOn: false,
-    kbShow: false,
-    draft: '',
-    charWarned: false,
-    limitWarned: false,
+    // 底部提示行：平时是操作提示，撞到上下限时临时显示夹紧说明
+    hint: HINT_IDLE,
+    hintAlert: false,
+    hintTimer: null,
     // 振动力度档位：弱（短振）/ 强（长振），默认强
     level: 'strong',
     lvLabel: '强'
@@ -102,11 +105,18 @@ export default {
   },
   onHide() {
     this.stop()
+    this.clearHint()
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
     this.stop()
+    this.clearHint()
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  clearHint() {
+    if (this.hintTimer) { clearTimeout(this.hintTimer); this.hintTimer = null }
+    this.hint = HINT_IDLE
+    this.hintAlert = false
   },
   beat() {
     if (!this.playing) return
@@ -147,64 +157,43 @@ export default {
     if (this.playing) this.stop()
     else this.start()
   },
-  openField() {
-    // 编辑期间不停止节拍与常亮
-    this.draft = String(this.bpm)
-    this.charWarned = false
-    this.limitWarned = false
-    this.kbShow = true
-  },
-  onKey(e) {
-    const raw = e && e.detail && e.detail.content ? e.detail.content : ''
-    if (!raw) return
-    const r = numberInput.pushKey(this.draft, raw)
-    this.draft = r.draft
-    if (r.reason) this.warnKey(r.reason)
-  },
-  onDel() {
-    this.draft = this.draft.slice(0, -1)
-  },
-  warnKey(reason) {
-    if (reason === 'char') {
-      if (!this.charWarned) {
-        this.charWarned = true
-        prompt.showToast({ message: 'BPM 只接受数字', duration: 1600 })
-      }
-    } else if (reason === 'limit') {
-      if (!this.limitWarned) {
-        this.limitWarned = true
-        prompt.showToast({ message: '最多输入 6 位', duration: 1600 })
-      }
-    }
-    g.haptic.long()
-  },
-  cancelEdit() {
-    this.kbShow = false
-    this.draft = ''
-    this.charWarned = false
-    this.limitWarned = false
-  },
-  doneEdit() {
-    const n = numberInput.parseDraft(this.draft)
-    this.cancelEdit()
-    if (n === null) {
-      prompt.showToast({ message: '请输入 40–240 的整数', duration: 1400 })
-      g.haptic.long()
-      return
-    }
-    let v = n
-    if (n > BPM_MAX) {
+  /**
+   * BPM 步进：chip 点一下按 ±1 / ±5 改 BPM 并立即生效（40..240 之间夹紧）。
+   * 运行中改 BPM 只重建 interval（restartTimer），不停节拍、不关常亮 ——
+   * 步进是调参数，不是切视图，不该打断正在跑的节拍。
+   */
+  stepBpm(d) {
+    const delta = parseInt(d, 10) || 0
+    if (!delta) return
+    let v = this.bpm + delta
+    if (v > BPM_MAX) {
       v = BPM_MAX
-      prompt.showToast({ message: '最快 240 BPM，已设为 240', duration: 1600 })
+      this.flashHint('最快 240 BPM')
       g.haptic.long()
-    } else if (n < BPM_MIN) {
+    } else if (v < BPM_MIN) {
       v = BPM_MIN
-      prompt.showToast({ message: '最慢 40 BPM，已设为 40', duration: 1600 })
+      this.flashHint('最慢 40 BPM')
       g.haptic.long()
     } else if (!this.playing) {
       g.haptic.short()
     }
+    if (v === this.bpm) return
     this.applyBpm(v)
+  },
+  /**
+   * 撞到上下限时的提示：写在页面自己的提示行里，不用系统 toast ——
+   * 212px 宽的跑道屏上 toast 气泡是贴着屏幕右缘画的，长句会被切掉大半（模拟器实测）。
+   * 提示行是页面自己的元素，文字多长都完整可见。
+   */
+  flashHint(msg) {
+    this.hint = msg
+    this.hintAlert = true
+    if (this.hintTimer) clearTimeout(this.hintTimer)
+    const page = this
+    this.hintTimer = setTimeout(() => {
+      page.hintTimer = null
+      if (page.$valid) page.clearHint()
+    }, 1500)
   },
   applyBpm(n) {
     this.bpm = n

@@ -4,15 +4,29 @@
 <template>
   <div class="page">
     <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
-    <scroll class="body" scroll-y="true">
+
+    <!-- 正文视图：菜单打开时整段让位。
+         Vela 4：同一父容器里动态插入/翻转显示的节点会沉到静态兄弟之下，
+         菜单不能做成浮层压在正文上，只能用互斥 if 切视图。 -->
+    <scroll class="body" scroll-y="true" if="{{ !showMenu }}">
       <text class="f content">{{ content || '（空笔记）' }}</text>
       <div class="pad"></div>
     </scroll>
 
-    <div class="bar">
+    <div class="bar" if="{{ !showMenu }}">
       <div class="btn" @click="edit"><text class="f btnT">编辑</text></div>
-      <div class="btn dark" @click="more"><text class="f btnT">更多</text></div>
+      <div class="btn dark" @click="toggleMenu"><text class="f btnT">更多</text></div>
     </div>
+
+    <!-- 菜单视图：原 notebook/more 子页的 4 个动作（与正文互斥，不叠层） -->
+    <div class="menuWrap" if="{{ showMenu }}">
+      <div class="mRow mRow1" @click="rename"><text class="f mT">重新命名</text><text class="f mArrow">></text></div>
+      <div class="mRow mRow2" @click="qr"><text class="f mT">以二维码分享</text><text class="f mArrow">></text></div>
+      <div class="mRow mRow3" @click="toMarquee"><text class="f mT">推送至跑马灯</text><text class="f mArrow">></text></div>
+      <div class="mRow mRow4" @click="del"><text class="f mT" style="color: #FF6B6B;">{{ delStep === 0 ? '删除笔记' : '再次点击确认删除' }}</text><text class="f mArrow" style="color: #FF6B6B;">></text></div>
+      <div class="mCancel" @click="closeMenu"><text class="f mCancelT">取消</text></div>
+    </div>
+
     <backbtn></backbtn>
   </div>
 </template>
@@ -26,18 +40,34 @@
 .btn { width: 84px; height: 44px; border-radius: 22px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .btn.dark { background-color: #262626; }
 .btnT { font-size: 14px; color: #FFFFFF; }
+/* 菜单视图（并入原 notebook/more 子页）：包裹层必须是带完整几何的类，
+   否则 Vela 不给里面的绝对定位子元素做布局；left/top 钉在页面原点，子元素坐标即页面坐标。 */
+.menuWrap { position: absolute; left: 0px; top: 0px; width: 212px; height: 466px; }
+.mRow { position: absolute; left: 3px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 16px; }
+.mRow1 { top: 84px; }
+.mRow2 { top: 160px; }
+.mRow3 { top: 236px; }
+.mRow4 { top: 312px; }
+.mT { font-size: 17px; color: #FFFFFF; }
+.mArrow { font-size: 20px; color: rgba(255,255,255,0.4); }
+/* 取消键：离页头命中区（y0..74）远，底部留到 y432（band9 安全区 436 以内）。 */
+.mCancel { position: absolute; left: 3px; top: 388px; width: 206px; height: 44px; border-radius: 22px; background-color: #262626; align-items: center; justify-content: center; }
+.mCancelT { font-size: 14px; color: #FFFFFF; }
 </style>
 
 <script>
 import g from '../../../utils/g'
 import docs from '../../../utils/docs'
+import prompt from '@system.prompt'
 
 export default {
   protected: { name: '' },
-  private: { clock: '--:--', title: '笔记', content: '', loaded: false, timer: null },
+  private: { clock: '--:--', title: '笔记', content: '', loaded: false, timer: null, showMenu: false, delStep: 0 },
   onShow() {
     this.clock = g.time.formatClock(new Date())
     this.title = this.name || '笔记'
+    this.showMenu = false
+    this.delStep = 0
     this.load()
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
@@ -62,8 +92,63 @@ export default {
   edit() {
     g.router.push('/pages/notebook/edit', { name: this.name })
   },
-  more() {
-    g.router.push('/pages/notebook/more', { name: this.name })
+  /* 「更多」= 在正文视图与菜单视图之间切换（互斥 if，不是浮层） */
+  toggleMenu() {
+    this.showMenu = !this.showMenu
+    this.delStep = 0
+    this.title = this.showMenu ? '笔记操作' : (this.name || '笔记')
+  },
+  closeMenu() {
+    this.showMenu = false
+    this.delStep = 0
+    this.title = this.name || '笔记'
+  },
+  rename() {
+    g.router.push('/pages/notebook/rename', { docName: this.name })
+  },
+  qr() {
+    docs.read('notes', this.name, (text) => {
+      const body = String(text || '').slice(0, 400)
+      if (!body) {
+        prompt.showToast({ message: '笔记内容为空', duration: 1400 })
+        return
+      }
+      g.router.push('/pages/qrcode/show', { qr: body })
+    })
+  },
+  toMarquee() {
+    docs.read('notes', this.name, (text) => {
+      const body = String(text || '').replace(/\n/g, ' ').slice(0, 40)
+      if (!body) {
+        prompt.showToast({ message: '笔记内容为空', duration: 1400 })
+        return
+      }
+      g.kv.init(() => {
+        g.kv.set('marquee', {
+          text: body,
+          size: 28,
+          speed: 6,
+          color: '#FFFFFF',
+          bg: '#0D6EFF'
+        })
+        g.router.push('/pages/marqueeSet')
+      })
+    })
+  },
+  del() {
+    if (this.delStep === 0) {
+      this.delStep = 1
+      return
+    }
+    docs.remove('notes', this.name, (ok) => {
+      g.haptic.long()
+      if (ok) {
+        prompt.showToast({ message: '删除成功', duration: 1200 })
+        g.router.replace('/pages/notebook/list')
+      } else {
+        prompt.showToast({ message: '删除失败', duration: 1400 })
+      }
+    })
   }
 }
 </script>

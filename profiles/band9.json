@@ -16,7 +16,6 @@
       ["width: 212px", "width: 192px"],
       ["height: 520px", "height: 490px"],
       ["width: 206px", "width: 186px"],
-      ["top: 155px", "top: 125px"],
       ["top: 400px", "top: 370px"]
     ],
     "src/components/PageHead.ux": [
@@ -120,7 +119,8 @@
       ["height: 212px", "height: 192px"],
       ["width: 412px", "width: 382px"],
       ["width: 176px", "width: 156px"],
-      ["top: 420px", "top: 390px"]
+      ["top: 420px", "top: 390px"],
+      ["width: 206px", "width: 186px"]
     ],
     "src/pages/companion/clock/clock.ux": [
       ["left: 212px", "left: 192px"],
@@ -308,11 +308,6 @@
       ["width: 174px", "width: 154px"],
       ["width: 212px", "width: 192px"]
     ],
-    "src/pages/lyrics/more/more.ux": [
-      ["width: 206px", "width: 186px"],
-      ["width: 212px", "width: 192px"],
-      ["top: 340px", "top: 310px"]
-    ],
     "src/pages/lyrics/showmode/showmode.ux": [
       ["width: 206px", "width: 186px"],
       ["width: 140px", "width: 130px"],
@@ -344,7 +339,6 @@
     ],
     "src/pages/metronome/metronome.ux": [
       [".bpmBox { position: absolute; left: 3px; top: 96px; width: 206px;", ".bpmBox { position: absolute; left: 3px; top: 96px; width: 186px;"],
-      [".editCard { position: absolute; left: 3px; top: 76px; width: 206px;", ".editCard { position: absolute; left: 3px; top: 76px; width: 186px;"],
       [".bpmLabel { width: 190px;", ".bpmLabel { width: 170px;"],
       [".val { width: 190px;", ".val { width: 170px;"],
       [".status { position: absolute; left: 0px; top: 218px; width: 212px;", ".status { position: absolute; left: 0px; top: 214px; width: 192px;"],
@@ -352,7 +346,8 @@
       [".pulse { position: absolute; left: 91px; top: 278px; width: 30px;", ".pulse { position: absolute; left: 81px; top: 262px; width: 30px;"],
       [".levels { position: absolute; left: 6px; top: 318px; width: 200px;", ".levels { position: absolute; left: 6px; top: 300px; width: 180px;"],
       [".go { position: absolute; left: 26px; top: 378px;", ".go { position: absolute; left: 16px; top: 344px;"],
-      [".hint { position: absolute; left: 16px; top: 436px; width: 180px;", ".hint { position: absolute; left: 16px; top: 398px; width: 168px;"]
+      [".hint { position: absolute; left: 16px; top: 436px; width: 180px;", ".hint { position: absolute; left: 16px; top: 398px; width: 168px;"],
+      [".stepRow { width: 152px;", ".stepRow { width: 132px;"]
     ],
     "src/pages/morseCode/morseCode.ux": [
       ["width: 206px", "width: 186px"],
@@ -413,13 +408,6 @@
       ["left: 132px", "left: 112px"],
       ["top: 396px", "top: 366px"]
     ],
-    "src/pages/notebook/more/more.ux": [
-      ["width: 206px", "width: 186px"],
-      ["top: 156px", "top: 152px"],
-      ["top: 232px", "top: 224px"],
-      ["top: 308px", "top: 296px"],
-      ["top: 384px", "top: 368px"]
-    ],
     "src/pages/notebook/rename/rename.ux": [
       ["width: 206px", "width: 186px"],
       ["width: 174px", "width: 154px"],
@@ -431,7 +419,8 @@
       ["height: 334px", "height: 304px"],
       ["width: 188px", "width: 168px"],
       ["width: 176px", "width: 156px"],
-      ["top: 420px", "top: 390px"]
+      ["top: 420px", "top: 390px"],
+      ["width: 206px", "width: 186px"]
     ],
     "src/pages/notebook/edit/edit.ux": [
       ["width: 206px", "width: 186px"],
@@ -553,14 +542,11 @@
       ["width: 212px", "width: 192px"],
       ["height: 438px", "height: 408px"],
       ["width: 206px", "width: 186px"],
-      ["width: 174px", "width: 154px"]
-    ],
-    "src/pages/qrcode/favdetail/favdetail.ux": [
-      ["width: 212px", "width: 192px"],
-      ["width: 182px", "width: 162px"],
-      ["left: 26px", "left: 16px"],
-      ["top: 350px", "top: 320px"],
-      ["top: 410px", "top: 380px"]
+      ["width: 174px", "width: 154px"],
+      ["height: 196px", "height: 166px"],
+      ["top: 286px", "top: 256px"],
+      ["top: 342px", "top: 312px"],
+      ["top: 390px", "top: 360px"]
     ],
     "src/pages/qrcode/import/import.ux": [
       ["width: 212px", "width: 192px"],
@@ -576,9 +562,9 @@
       ["top: 390px", "top: 366px"],
       ["width: 110px", "width: 90px"],
       ["width: 206px", "width: 186px"],
-      ["width: 174px", "width: 154px"],
       [".rVal { width: 190px;", ".rVal { width: 170px;"],
-      ["left: 26px", "left: 16px"]
+      ["left: 26px", "left: 16px"],
+      ["width: 194px", "width: 174px"]
     ],
     "src/pages/scoreboard/scoreboard.ux": [
       ["width: 206px", "width: 186px"],
@@ -686,9 +672,7 @@
       [".rCat { width: 170px;", ".rCat { width: 150px;"],
       [".rItem { width: 170px;", ".rItem { width: 150px;"],
       [".rTip { width: 170px;", ".rTip { width: 150px;"],
-      [".foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px;", ".foot { position: absolute; left: 13px; top: 442px; width: 166px; text-align: center; font-size: 12px;"],
-      ["width: 212px", "width: 192px"],
-      ["top: 155px", "top: 125px"]
+      [".foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px;", ".foot { position: absolute; left: 13px; top: 442px; width: 166px; text-align: center; font-size: 12px;"]
     ],
     "src/pages/cpsTest/cpsTest.ux": [
       ["width: 212px", "width: 192px"],

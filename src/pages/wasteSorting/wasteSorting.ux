@@ -1,12 +1,12 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
-<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="垃圾分类" clock="{{ clock }}"></pagehead>
-    <div class="inputCard {{ kbShow ? 'inputCardKb' : '' }}" @click="openKb">
-      <text class="f iLabel {{ kbShow ? 'iLabelKb' : '' }}">物品名称</text>
+    <!-- 物品名称走通用输入页（/pages/input），本页不再挂输入法组件 -->
+    <div class="inputCard" @click="openInput">
+      <text class="f iLabel">物品名称</text>
       <text class="f iText" if="{{ query }}">{{ query }}</text>
       <text class="f iPlace" if="{{ !query }}">点击输入，例如：塑料瓶</text>
     </div>
@@ -25,25 +25,13 @@
     <text class="f foot">分类口径以所在地规定为准</text>
 
     <backbtn></backbtn>
-    <input-method
-      hide="{{ !kbShow }}"
-      keyboardtype="QWERTY"
-      maxlength="5"
-      vibratemode="short"
-      screentype="pill-shaped"
-      @complete="onKey"
-      @delete="onDel"
-      @close="closeKb"
-    ></input-method>
   </div>
 </template>
 
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
-.inputCardKb {}
 .iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.iLabelKb {}
 .iText { width: 174px; height: 36px; line-height: 36px; font-size: 20px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 174px; height: 36px; line-height: 36px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .chips { position: absolute; left: 6px; top: 170px; width: 200px; height: 32px; flex-direction: row; justify-content: space-between; }
@@ -53,8 +41,6 @@
 .rCat { width: 170px; height: 40px; line-height: 40px; font-size: 17px; }
 .rItem { width: 170px; height: 28px; line-height: 28px; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .rTip { width: 170px; height: 72px; font-size: 14px; line-height: 19px; color: rgba(255,255,255,0.6); }
-.kbBar { position: absolute; left: 0px; top: 155px; width: 212px; height: 32px; background-color: #111111; z-index: 1000; flex-direction: row; justify-content: flex-end; align-items: center; padding-right: 14px; }
-.kbBarT { font-size: 14px; color: #0D6EFF; }
 .go { position: absolute; left: 66px; top: 400px; width: 80px; height: 38px; border-radius: 19px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goT { font-size: 14px; color: #FFFFFF; }
 .foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
@@ -63,7 +49,7 @@
 <script>
 import g from '../../utils/g'
 import waste from '../../data/waste'
-import textInput from '../../utils/textInput'
+import inputResult from '../../utils/inputResult'
 
 export default {
   data: {
@@ -75,11 +61,19 @@ export default {
     bg: '#1A1A1A',
     tip: '输入物品名称，或点上面的快捷词。',
     quick: ['塑料瓶', '电池', '果皮', '纸巾'],
-    kbShow: false,
     timer: null
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
+    // 通用输入页（/pages/input）的结果是一次性文件，take 后即删除：
+    // ① 必须在任何初始化之外 —— 从输入页返回时 onShow 会再跑一次，这时才取得到结果；
+    // ② 本页没有 KV/文件重载、也没有 protected 参数赋值，故不存在会在返回时覆盖刚取回值的初始化
+    //    （query 只由本页自己写入，返回时不会被重置）。
+    inputResult.take((r) => {
+      if (!r || r.field !== 'wsQuery') return
+      this.query = String(r.value || '')
+      this.live()
+    })
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
@@ -90,20 +84,16 @@ export default {
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
-  openKb() {
-    this.kbShow = true
-  },
-  closeKb() {
-    this.kbShow = false
-  },
-  onKey(e) {
-    const content = e && e.detail && e.detail.content ? e.detail.content : ''
-    this.query = textInput.clamp(this.query + content, 16, false)
-    this.live()
-  },
-  onDel() {
-    this.query = this.query.slice(0, -1)
-    this.live()
+  openInput() {
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'wsQuery',
+      inputTitle: '物品名称',
+      text: this.query,
+      max: 16,
+      multiline: 0,
+      hint: '最多 16 字'
+    })
   },
   pick(word) {
     this.query = word
@@ -121,7 +111,6 @@ export default {
     }
   },
   doQuery() {
-    this.kbShow = false
     if (!this.query) return
     const r = waste.classify(this.query)
     if (r) this.show(r)

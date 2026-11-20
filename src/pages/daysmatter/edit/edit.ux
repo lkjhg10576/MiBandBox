@@ -1,29 +1,27 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
-<import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
   <div class="page">
     <pagehead title="目标日" clock="{{ clock }}"></pagehead>
 
-    <div class="card {{ kbShow ? 'cardKb' : '' }}" @click="openKb">
-      <text class="f label {{ kbShow ? 'labelKb' : '' }}">事件名称</text>
+    <div class="card" @click="openTitle">
+      <text class="f label">事件名称</text>
       <text class="f value" if="{{ title }}">{{ title }}</text>
       <text class="f iPlace" if="{{ !title }}">例如：考试、生日、旅行</text>
     </div>
 
-    <div class="card card2" show="{{ !kbShow }}" @click="pickDate">
+    <div class="card card2" @click="pickDate">
       <text class="f label">日期</text>
       <text class="f value" style="color: #0D6EFF;">{{ date }}</text>
     </div>
 
-    <text class="f delta" show="{{ !kbShow }}">{{ deltaText }}</text>
+    <text class="f delta">{{ deltaText }}</text>
 
-    <div class="del" show="{{ !kbShow }}" @click="del"><text class="f delT">{{ delStep === 0 ? '删除这个目标日' : '再次点击确认删除' }}</text></div>
+    <div class="del" @click="del"><text class="f delT">{{ delStep === 0 ? '删除这个目标日' : '再次点击确认删除' }}</text></div>
 
-    <div class="save" show="{{ !kbShow }}" @click="save"><text class="f actRowT">保存</text></div>
+    <div class="save" @click="save"><text class="f actRowT">保存</text></div>
     <backbtn></backbtn>
-    <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
   </div>
 </template>
 
@@ -33,10 +31,8 @@
    两键都不放页头 —— 页头整条是返回命中区，动作键压在里面真机上点不到。 */
 .save { position: absolute; left: 3px; top: 330px; width: 206px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .card { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
-.cardKb {}
 .card2 { top: 168px; }
 .label { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); }
-.labelKb {}
 .value { width: 174px; height: 38px; line-height: 38px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .iPlace { width: 174px; height: 38px; line-height: 38px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
 .delta { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.55); }
@@ -48,6 +44,7 @@
 import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import textInput from '../../../utils/textInput'
+import inputResult from '../../../utils/inputResult'
 import pickState from '../pickState'
 import homeEvents from '../../../utils/homeEvents'
 
@@ -65,17 +62,27 @@ export default {
     delStep: 0,
     list: [],
     loaded: false,
-    kbShow: false,
     timer: null
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
     this.delStep = 0
+    // 通用输入页（/pages/input）的结果是一次性文件，take 后即删除：
+    // ① 必须在下面的 !this.loaded 守卫之外 —— 从输入页返回时 onShow 会再跑一次，这时才取得到结果；
+    // ② 一次只能 take 一份结果，所以在这里一次性取回并按 field 分支处理。
+    inputResult.take((r) => {
+      if (!r || r.field !== 'dmTitle') return
+      this.title = textInput.clamp(String(r.value || ''), 20, false)
+    })
+    // loaded 守卫：文件重载只在首次进入时执行。
+    // 从输入页（或日期页）返回时 onShow 会再跑一遍，若无此标志，
+    // load() 回调里的 this.title = found.title 会把刚从输入页取回的事件名称覆盖成旧值。
     if (!this.loaded) {
       this.loaded = true
       this.date = g.time.todayKey()
       this.load()
     } else {
+      // 从日期页返回：只回填日期，绝不碰事件名称。
       this.applyPickedDate()
     }
     const page = this
@@ -124,25 +131,22 @@ export default {
       this.refreshDelta()
     }
   },
-  openKb() {
-    this.kbShow = true
-  },
-  closeKb() {
-    this.kbShow = false
-  },
-  onKey(e) {
-    const content = e && e.detail && e.detail.content ? e.detail.content : ''
-    this.title = textInput.clamp(this.title + content, 20, false)
-  },
-  onDel() {
-    this.title = this.title.slice(0, -1)
+  openTitle() {
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'dmTitle',
+      inputTitle: '事件名称',
+      text: this.title,
+      max: 20,
+      multiline: 0,
+      hint: '最多 20 字'
+    })
   },
   pickDate() {
     pickState.date = ''
     g.router.push('/pages/daysmatter/inputdate', { date: this.date })
   },
   save() {
-    this.kbShow = false
     const title = this.title.trim()
     if (!title) {
       prompt.showToast({ message: '请填写事件名称', duration: 1400 })

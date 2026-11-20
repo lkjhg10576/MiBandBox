@@ -3,8 +3,12 @@
 
 <template>
   <div class="page">
-    <pagehead title="二维码收藏" clock="{{ clock }}"></pagehead>
-    <scroll class="body" scroll-y="true" bounces="true">
+    <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
+
+    <!-- 列表视图（原 fav 页本体）。
+         Vela 4：同一父容器里动态插入/翻转显示的节点会沉到静态兄弟之下，
+         详情不能做成浮层压在列表上，只能用互斥 if 切视图。 -->
+    <scroll class="body" scroll-y="true" bounces="true" if="{{ !detail }}">
       <div class="inner">
         <div class="itemWrap" for="{{ items }}">
           <div class="favCard" @click="tapItem($item)">
@@ -22,12 +26,30 @@
         <div class="pad"></div>
       </div>
     </scroll>
+
+    <!-- 详情视图：原 qrcode/favdetail 子页并入本页（不再跳页，值不再跨页传）。
+         包裹层 .dWrap 必须带完整几何的类（position + left/top + width/height），
+         否则 Vela 不给里面的绝对定位子元素做布局；
+         left/top 钉在页面原点，子元素坐标即页面坐标。 -->
+    <div class="dWrap" if="{{ detail }}">
+      <scroll class="dBody" scroll-y="true" bounces="true">
+        <text class="f full">{{ detailText }}</text>
+        <div class="dPad"></div>
+      </scroll>
+      <div class="genBtn" @click="onRegen"><text class="f genT">重新生成二维码</text></div>
+      <div class="delBtn" style="background-color: {{ armed ? '#FF3B30' : '#262626' }};" @click="tapDelete">
+        <text class="f delT">{{ armed ? '再次点击以取消' : '取消收藏' }}</text>
+      </div>
+      <div class="listBtn" @click="backToList"><text class="f listT">返回列表</text></div>
+    </div>
+
     <backbtn></backbtn>
   </div>
 </template>
 
 <style>
 @import '../../../common/styles/theme.css';
+/* 列表视图：宽度/高度字面量与 profiles/{pro336,band9}.json 里 fav.ux 的替换对一一对应，勿动。 */
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
 .inner { width: 212px; flex-direction: column; }
 .itemWrap { width: 212px; flex-direction: column; }
@@ -40,12 +62,27 @@
 .emptyT { font-size: 16px; color: rgba(255,255,255,0.5); }
 .emptyS { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.3); }
 .pad { width: 212px; height: 16px; }
+
+/* 详情视图（原 qrcode/favdetail 子页）：收藏原文 scroll（原文最长 512 字节，完整展示）
+   + 重新生成二维码 + 取消收藏（两击确认）+ 底部「返回列表」。
+   三个动作键都不放页头 —— 页头整条是返回命中区，压在里面真机上点不到；
+   动作键一律落页面底部（band10 底 430 / Pro 底 430 / band9 底 400，均在安全区内）。 */
+.dWrap { position: absolute; left: 0px; top: 0px; width: 212px; height: 466px; }
+.dBody { position: absolute; left: 0px; top: 82px; width: 212px; height: 196px; }
+.full { width: 174px; margin: 12px 19px 0px 19px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.85); }
+.dPad { width: 174px; height: 16px; }
+.genBtn { position: absolute; left: 3px; top: 286px; width: 206px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.genT { font-size: 14px; color: #FFFFFF; }
+.delBtn { position: absolute; left: 3px; top: 342px; width: 206px; height: 40px; border-radius: 20px; background-color: #262626; align-items: center; justify-content: center; }
+.delT { font-size: 14px; color: #FFFFFF; }
+.listBtn { position: absolute; left: 3px; top: 390px; width: 206px; height: 40px; border-radius: 20px; background-color: #262626; align-items: center; justify-content: center; }
+.listT { font-size: 14px; color: rgba(255,255,255,0.75); }
 </style>
 
 <script>
 import g from '../../../utils/g'
+import prompt from '@system.prompt'
 import qrFavStore from '../../../utils/qrFavStore'
-import favState from './favState'
 
 /** 收藏时间显示：YYYY-MM-DD HH:MM（照 password.ux 的 fmtTime 口径）。 */
 function fmtTime(ms) {
@@ -62,8 +99,14 @@ export default {
     _ck: null,
     _unsub: null,
     clock: '--:--',
+    title: '二维码收藏',
     items: [],
-    timer: null
+    timer: null,
+    /* 详情视图状态：原 favdetail 子页并入本页后不再跨页传值，favState.js 已随子页一起删除。 */
+    detail: false,
+    detailId: '',
+    detailText: '',
+    armed: false
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -74,6 +117,7 @@ export default {
     this._unsub = qrFavStore.subscribe(() => {
       if (page.$valid) page.loadItems()
     })
+    this.armed = false
     this.loadItems()
   },
   onHide() {
@@ -104,13 +148,57 @@ export default {
     g.router.push('/pages/qrcode/show', { qr: item.text, fav: '0' })
   },
   /**
-   * 详情/删除入口：按 id 传值（列表 unshift 会变下标，不能按 index 传）。
+   * 详情/删除入口：进本页详情视图（不再跳子页）。
    * 点击区与条目卡是 for 内的两块兄弟节点，互不冒泡。
    */
   tapDetail(item) {
     g.haptic.short()
-    favState.item = { id: item.id, text: item.text }
-    g.router.push('/pages/qrcode/favdetail')
+    this.detailId = item.id
+    this.detailText = item.text
+    this.armed = false
+    this.detail = true
+    this.title = '收藏详情'
+  },
+  /** 复位详情视图（回列表；触感由调用方决定，删除后不再叠一次短振）。 */
+  closeDetail() {
+    this.detail = false
+    this.armed = false
+    this.title = '二维码收藏'
+  },
+  /** 底部「返回列表」。 */
+  backToList() {
+    g.haptic.short()
+    this.closeDetail()
+  },
+  /**
+   * 现场重新生成：show 页以 fav='0' 打开（内容已在收藏里，不再显示收藏按钮）。
+   */
+  onRegen() {
+    if (!this.detailText) {
+      prompt.showToast({ message: '收藏内容缺失，可能已被删除', duration: 1500 })
+      return
+    }
+    g.haptic.short()
+    g.router.push('/pages/qrcode/show', { qr: this.detailText, fav: '0' })
+  },
+  /**
+   * 两次点击确认取消收藏（同 sentence/favdetail 的 armed 模式）：
+   * 首次点按震动并把按钮转红提示；再次点按才删 qrFavs 并回列表刷新。
+   */
+  tapDelete() {
+    if (!this.armed) {
+      g.haptic.short()
+      this.armed = true
+      return
+    }
+    g.haptic.long()
+    const page = this
+    qrFavStore.remove(this.detailId, (found) => {
+      if (!page.$valid) return
+      prompt.showToast({ message: found ? '已取消收藏' : '收藏不存在', duration: 1200 })
+      page.closeDetail()
+      page.loadItems()
+    })
   }
 }
 </script>

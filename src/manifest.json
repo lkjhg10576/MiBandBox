@@ -2,7 +2,7 @@
   "package": "com.lkjhg.bandbox",
   "name": "BandBox",
   "versionName": "0.1.2",
-  "versionCode": 271,
+  "versionCode": 272,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -92,9 +92,6 @@
       },
       "pages/notebook/rename": {
         "component": "rename"
-      },
-      "pages/notebook/more": {
-        "component": "more"
       },
       "pages/fluorescence": {
         "component": "fluorescence"
@@ -201,9 +198,6 @@
       "pages/qrcode/fav": {
         "component": "fav"
       },
-      "pages/qrcode/favdetail": {
-        "component": "favdetail"
-      },
       "pages/qrcode/import": {
         "component": "import"
       },
@@ -227,9 +221,6 @@
       },
       "pages/lyrics/show": {
         "component": "show"
-      },
-      "pages/lyrics/more": {
-        "component": "more"
       },
       "pages/lyrics/showmode": {
         "component": "showmode"
