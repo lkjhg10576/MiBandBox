@@ -50,6 +50,39 @@ AtomGit 每次提交都会**覆盖**镜像仓库代码。也就是说控制台�
 > 首次做这一套时，`media/`、`downloads/`、`manifest_v2.json` 已随一次提交入库，
 > 从此控制台与镜像不再互相覆盖丢失。
 
+## 铁律：`downloads/` 里的 rpk 必须本地先入库，控制台不会替你写（2026-11-21 打回）
+
+**0.1.2 的打回理由**：`manifest downloads 文件存在性 · 缺失文件：
+downloads/com.lkjhg.bandbox.release.0.1.2.rpk、
+downloads/com.lkjhg.bandbox.pro.release.0.1.2.rpk、
+downloads/com.lkjhg.bandbox.band9.release.0.1.2.rpk`。
+
+**根因**：控制台的「更新仓库 manifest 与资产」只写 **2 类**文件 —— 清单
+`manifest_v2.json` 与 `media/` 里的图标/头图/预览图（见控制台日志
+`~/.local/share/moe.astralsight.astroboxcc/logs/resource/edit_*.log` 里
+「批量上传 2 个文件（Git Data API）」那一段）。**包体本体（`downloads/*.rpk`）
+控制台不上传到 GitHub**：控制台只在清单里写好 `downloads.<机型>.file_name`
+（仓库内相对路径），然后由审核按 `resource.csv` 钉住的 `repo_commit_hash` 去
+那个提交里找文件。文件不在 → 打回。
+
+> 2026-11-21 19:22 那次控制台会话的提交 `2f0f1a6` 只含
+> `manifest_v2.json` + `media/BandBox 头图 1200x800.png` 两个文件；
+> 而 `downloads/` 在那个提交里仍只有两个 0.1.1 的包 —— 三个 0.1.2 包
+> 只存在于本地 `release/BandBox-0.1.2/`，从未进过 `downloads/`。
+
+**所以上架新版本的完整顺序**（别跳步）：
+
+1. 出包（`release/BandBox-<版本>/` 三包）；
+2. **把每个要上架的包按原文件名复制进 `downloads/`**（`downloads/*.rpk` 已用
+   `.gitignore` 的 `!downloads/*.rpk` 例外规则放行入库）；
+3. 本地提交并推送 → 镜像仓库（GitHub）里才有这些文件；
+4. 控制台再编辑/提交 → 它写清单（含新 file_name）→ 审核钉的提交里文件已存在；
+5. `node tools/astrobox-sync.mjs` 把控制台写的清单拉回本地，`astrobox-sync --check`
+   与门禁 **R13** 复查引用完整性。
+
+> 反过来也成立：控制台**会**写 `downloads/` 吗？—— 不会（0.1.1 时那两份 0.1.1 包
+> 是本地放进去后随提交入库的，控制台只更新清单指向它们）。
+
 ## 机型 ↔ 包体对照
 
 平台设备代号取自 AstroBox 官方 `devices_v2.json`；真机分辨率取自米坛知识库
@@ -57,7 +90,7 @@ AtomGit 每次提交都会**覆盖**镜像仓库代码。也就是说控制台�
 
 | 设备 | 平台代号 | 真机分辨率 | 用哪个包 |
 |---|---|---|---|
-| 小米手环 9 | `xmb9` | 192 × 490 | **暂不支持，不上架**（窄长包按 212×520 设计，右侧会裁） |
+| 小米手环 9 | `xmb9` | 192 × 490 | `com.lkjhg.bandbox.band9.release.*.rpk`（**0.1.2 起支持并上架**，见下方 band9 profile） |
 | 小米手环 9 Pro | `xmb9p` | 336 × 480 | `com.lkjhg.bandbox.pro.release.*.rpk` |
 | 小米手环 10 | `xmb10` | 212 × 520 | `com.lkjhg.bandbox.release.*.rpk` |
 | 小米手环 10 NFC | `xmb10nfc` | 212 × 520 | `com.lkjhg.bandbox.release.*.rpk` |
@@ -67,23 +100,17 @@ AtomGit 每次提交都会**覆盖**镜像仓库代码。也就是说控制台�
 平台设备表里**没有手环 9 的 NFC 代号**（只有 `xmb10nfc`），所以「含 NFC 版」在
 索引里就落在 `xmb10nfc` 一项。
 
-> ⚠️ **手环 11 的上架前提**：手环 11 与手环 10 同为 212×520，沿用标准包即可，
-> 但**必须等内置输入法的真机修复进发行版**（`0.1.2-271` 的 Beta 已修，根因见
+> ✅ **手环 11 的上架前提已满足**：手环 11 与手环 10 同为 212×520，沿用标准包即可，
+> 前提是内置输入法的真机修复进发行版（`0.1.2-271` 的 Beta 已修，根因见
 > `notes/0.1.2-band11.md`）：手环 11 固件严格执行「带 `if` 的 div 必须有 CSS 规则，
 > 否则其绝对定位子元素不被布局」这条 Vela 规则，输入法组件的按键区整棵不布局，
-> 只剩「完成」栏。当前发行版 0.1.1 不含此修复 —— **先出发行版，再上架 xmb11/xmb11nfc**。
+> 只剩「完成」栏。**0.1.2 发行版（versionCode 279）已含此修复** ——
+> `xmb11` / `xmb11nfc` 自 0.1.2 起上架。
 
-> ⚠️ **手环 9（192×490）为什么这版不上架**：窄长包的布局是**固定像素宽度**的
-> （`src/pages/home/home.ux` 里写着 `width: 212px` / `206px` / `200px`，绝对定位），
-> 装到 192px 宽的屏上右侧会被裁 14~20px（倒计时卡右端的「查看」按钮、最右一列
-> 图标与文字）。
->
-> 要上架手环 9，需要像 `pro336` 那样再加一套 `192×490` 的 profile：布局常量、
-> 影子图尺寸、R9 资源校验都要跟着改，页面里的固定宽度也要逐个收窄。规模参考 ——
-> `pro336` 是 212→336（+58% 宽、首页 2 列变 3 列）改了 77 个文件；192 只窄 20px
-> （-9.4%）且列数不变，触点应少得多，但仍是独立的活。
-> 在那之前，索引的 `devices` 列里**不要出现 `xmb9`**（控制台表单里也别勾手环 9），
-> 否则手环 9 用户会装到显示不全的包。
+> ✅ **手环 9（192×490）已支持**：0.1.2 起新增 `band9` profile（Vela 4 胶囊屏
+> 192×490），布局常量、影子图尺寸、固定像素宽度逐个收窄后不再裁切；
+> 平台索引里 `xmb9` 指向 `com.lkjhg.bandbox.band9.release.*.rpk`。
+> （历史背景：0.1.1 时窄长包按 212×520 设计、右侧裁 14~20px，故当年不上架。）
 
 ## 商店图标（`media/icon_astrobox.png`）
 
@@ -103,3 +130,15 @@ AtomGit 每次提交都会**覆盖**镜像仓库代码。也就是说控制台�
 1. `resource.csv` 索引行的 `repo_commit_hash` 指向的提交里，`item.icon` 等引用文件**确实存在**；
 2. `manifest_v2.json` 的 `downloads` 设备列表与项目实际支持的机型一致；
 3. 版本号：平台按「包名 + versionCode」判新旧，撞号会被当成旧包拒收。
+
+**再加一条（同属第 1 条的延伸）**：清单里 `downloads.*.file_name` 指向的 **rpk 包体**
+也必须在那个被钉住的提交里存在 —— 控制台不写包体，本地没先放进 `downloads/` 并推送，
+审核就会报「manifest downloads 文件存在性 · 缺失文件」。
+
+自查（本地真源侧）：
+
+```bash
+node tools/astrobox-sync.mjs --check   # 清单每条引用在本地都能找到实体文件
+node tools/release-gate.mjs --only-r13  # 同一件事的构建期硬约束
+node tools/verify-rpk.mjs downloads/com.lkjhg.bandbox.release.0.1.2.rpk   # 签名 + 包内版本
+```
