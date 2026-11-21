@@ -74,6 +74,25 @@
 - 发行版的版本提要写 `notes/<版本>.md`，脚本会自动插进产物目录的 `说明.md`。
 - `--prune` 只清 `release/` 下的旧发行版**目录**，不动历史 zip，也不影响 `beta/`。
 
+## 插件上架 AstroBox 官方插件源（2026-11-21 起）
+
+手机端插件（`plugin/bandbox-helper/`）走的是**另一套**上架流程，与上面快应用的
+「资源仓库 + 控制台」完全不同，细节见 `notes/astrobox-plugin.md`：
+
+- **官方插件源仓**是 `AstralSightStudios/AstroBox-NG-Plugin-Repo`，它的 `index.txt` 每行是一个
+  **作者仓库的 raw 基地址**；Action 每 4 小时抓各作者仓的 `manifest.json` 汇总成 `index.json`，
+  客户端读它 = 插件市场。**上架动作 = 往那个 `index.txt` 末尾追加一行**（末尾斜杠必须留），
+  提 PR 即可，不用控制台。
+- **真源在 AtomGit**：插件仓 `atomgit.com/gcw_MchqrexB/bandbox_helper`，用平台的仓库镜像功能
+  单向 push 到 `github.com/lkjhg10576/bandbox_helper`（市场只认 GitHub raw；国内连 GitHub 慢，
+  所以推代码走 AtomGit）。**GitHub 镜像仓必须公开、分支名必须是 `main`** —— 分支叫 `master`
+  会 404，插件在市场里静默消失。
+- **发布目录三件套必须同目录**：`manifest.json` + `entry`(wasm) + `icon`，缺一个客户端下载就失败。
+  `scripts/build.mjs` 现在会把 manifest 与 icon 一并拷进 `dist/`，使 `dist/` 本身即发布目录。
+- **发布命令**：`cd plugin/bandbox-helper && node scripts/publish.mjs`（构建 → 同步 → 推 AtomGit →
+  轮询校验镜像）。改插件后重跑同一条；`manifest.json` 的 `version` 要升，市场才认新版本。
+- 国内 `gh` 走 git 协议克隆极慢，**用 `gh api` 的 `/contents` 与 `/pulls` 提交**（细节见 notes）。
+
 ### 产物不许手改：签名后改包 = 手环拒装（2026-11-17 起）
 
 **事故**：0.1.1 发行版的**标准版包**（`com.lkjhg.bandbox.release.0.1.1.rpk`，手环 10 / 10 NFC）正常构建并签名后，又被二次改写 —— 包根被塞进 `BandBox辅助.abp` 与 Pro 版 rpk 两个多余文件，**rpk 签名块（`RPK Sig Block 42`）被挤没了**。结果：手环直接拒装，渠道也判「不是 release 包」。Pro 版包与插件自始至终没被动过。

@@ -41,6 +41,7 @@ bandbox-helper/
 │   └── ui.js             声明式 UI（双 Tab：歌词同步 / 动态口令）
 ├── scripts/
 │   ├── build.mjs         componentize → dist/plugin.wasm → dist/*.abp
+│   ├── publish.mjs       发布到 AtomGit 插件仓（→ 镜像 GitHub → 官方插件源）
 │   ├── fetch-wit.mjs     拉取 WIT
 │   ├── gen-gbk-table.mjs 生成 GBK 映射表
 │   └── gen-icon.py       生成图标
@@ -62,6 +63,20 @@ npm run package      # 产出 dist/plugin.wasm + dist/BandBox辅助.abp
 
 把 `dist/BandBox辅助.abp` 装到手机上的 AstroBox 里即可。
 `.abp` 是标准 deflate zip（带合法 DOS 时间戳），可直接用系统解压工具查看内容。
+
+## 发布
+
+插件已上架 AstroBox 官方插件源（手机 AstroBox 的「插件市场」可搜到）。
+改完插件后：
+
+```bash
+node scripts/publish.mjs   # 构建 → 同步 → 推 AtomGit → 校验 GitHub 镜像
+```
+
+真源在 AtomGit 插件仓 `gcw_MchqrexB/bandbox_helper`，用平台的仓库镜像功能单向 push 到
+`github.com/lkjhg10576/bandbox_helper`，官方插件源仓的 `index.txt` 里登记的是这个 GitHub 地址。
+`dist/` 本身就是发布目录（`manifest.json` + `plugin.wasm` + `icon.png` + `.abp`），三者必须同目录，
+客户端按「基址 + 目录 + 文件名」下载。完整流程与坑位见 `notes/astrobox-plugin.md`。
 
 ### 为什么用 componentize-qjs 而不是官方的 componentize-js
 
