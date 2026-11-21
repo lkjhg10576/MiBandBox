@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <text class="f hint">轻触翻开 · 答案仅供参考</text>
+    <text class="f hint">摇一摇翻开</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -37,6 +37,17 @@
 <script>
 
 import g from '../../utils/g'
+import accelHub from '../../utils/accelHub'
+import motionCore from '../../utils/motionCore'
+import motionShake from '../../utils/motionShake'
+
+// 本页同时只有一个实例：内核与处理器放模块作用域（体感页的既有做法）。
+// 页面对象不能同时有 data 与 private（Vela 运行时会抛错），所以不用 private。
+let core = null
+let shake = null
+let myHandler = null   // 挂进 accelHub 的帧消费者（引用存模块级，摘除时传同一个）
+let opening = false    // 摇一摇触发 push 的防重入标志
+
 export default {
   data: { clock: '--:--', timer: null },
   onShow() {
@@ -44,15 +55,52 @@ export default {
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
+    // 封面摇一摇 = 翻开（apps.js 描述「摇一摇 · 看答案」）：每次进页换新内核
+    core = motionCore.createMotionCore({})
+    shake = motionShake.createShake({})
+    opening = false
+    // 订阅由本页（栈底传感器页）持有：注册一次后帧持续投递，经 accelHub 的消费者槽
+    // 转发给当前可见页（封面自己或答案页）。本页 hide 时绝不退订 —— 答案页全靠
+    // 这份订阅，且全局退订异步落定会误杀别的注册（E2E 实测，见 accelHub 注释）
+    accelHub.ensureSubscribed()
+    myHandler = (ret) => {
+      if (!core || !shake) return
+      const t = Date.now()
+      const snap = core.feed(ret.x || 0, ret.y || 0, ret.z || 0, t)
+      const events = shake.feed(snap, t)
+      for (let i = 0; i < events.length; i++) {
+        page.handle(events[i])
+      }
+    }
+    accelHub.setConsumer(myHandler)
   },
   onHide() {
+    // 只摘自己的消费者：被 a1 盖住时槽已是 a1 的（引用不同摘不动），
+    // 这里防的是「页头返回回首页」路径 —— 回首页后没人消费帧，封面内核休眠
+    accelHub.clearConsumer(myHandler)
+    myHandler = null
+    core = null
+    shake = null
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
+    accelHub.clearConsumer(myHandler)
+    accelHub.unsubscribe()
+    core = null
+    shake = null
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
+  handle(ev) {
+    if (!ev || ev.type !== 'shake' || !this.$valid) return
+    this.open()
+  },
   open() {
+    if (opening) return
+    opening = true
     g.haptic.short()
+    // 翻开即离开本页：消费者槽由 a1.onShow 接管；本页内核在 onHide 休眠。
+    // 摇一摇路径下本页不另开静默窗 —— a1 接管前 refractory 1.2s + opening
+    // 防重入已经挡住了马达共振与同摇余波
     g.router.push('/pages/answer/a1')
   }
 }

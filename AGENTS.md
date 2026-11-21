@@ -213,6 +213,20 @@ Vela 有条渲染规则：**带 `if` 的 div 必须有 CSS 规则（`position` +
 （`powercontext-project-context` 技能的 `remember_memory`，scope 用 `resolve_scope_binding` 解析出的绑定），
 保证跨会话、跨助手共享；不要只写在本地文件或聊天里就当作已记住。
 
+## 加速度计订阅必须走 accelHub（2026-11-22 起，勿破坏）
+
+Vela 的 `@system.sensor` 实测语义（band10 模拟器 E2E 判决，答案之书摇一摇落地时发现）：
+
+- **全局只有一个订阅槽**：槽被占时后续 `subscribeAccelerometer` 被**静默忽略**（不回调 fail、不抛错），新页面从此收不到帧 —— 答案之书 E2E 连续复现「封面摇一摇灵、答案页必聋」；
+- `unsubscribeAccelerometer()` 是**全局退订**且**异步落定**，紧跟着的新订阅会被一起杀掉；
+- 已注册回调**持续收帧，与注册页可见性无关**（栈底页被覆盖时照常投递）。
+
+因此：
+
+- **任何页面不得直接调 `subscribeAccelerometer` / `unsubscribeAccelerometer`**，跨页面共享传感器的场景一律用 `src/utils/accelHub.js`：订阅只做一次、由栈底传感器页持有（封面 `ensureSubscribed()`），帧经消费者槽转发给当前可见页；页面 `onShow` 用 `setConsumer` 挂自己的处理器（引用存模块级变量）、`onHide` 用 `clearConsumer` 摘（引用比较防误摘），`onHide`/`onDestroy` 一律**不退订**（只有持有页 `onDestroy` 才 `unsubscribe`）。
+- 独立叶子页（如体感枪 / 空气投篮，邻居页不订阅）可维持旧的「onShow 订阅 / onHide 退订」模式；一旦要与其它传感器页共存于同一条路由栈，必须迁到 accelHub。
+- 摇一摇内核在 `src/utils/motionShake.js`（迟滞边沿 + 双甩配对 + 冷却 + 静默窗 + 上膛窗），本地单测 `node tools/test-motion-shake.mjs`，E2E `tools/shake-sim.py`（gRPC 注入 z 轴甩动，不转屏）。
+
 ## 其它硬约束（勿破坏）
 
 - 发行包内**不带性能埋点**：`src/utils/perf.js` 的 `ENABLED` 必须为 `false`，`src/app.ux` 不得 import 埋点模块。

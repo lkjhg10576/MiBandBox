@@ -11,7 +11,7 @@
     </div>
 
     <div class="again" @click="again"><text class="f againT">再问一次</text></div>
-    <text class="f close" @click="close">合上书</text>
+    <text class="f close" @click="close">合上书 · 仅供参考</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -30,7 +30,21 @@
 
 <script>
 import g from '../../../utils/g'
+import accelHub from '../../../utils/accelHub'
+import motionCore from '../../../utils/motionCore'
+import motionShake from '../../../utils/motionShake'
 import answers from '../../../data/answers'
+
+// 答案页摇一摇 = 再问一次（与「再问一次」按键同义）。
+// 上膛 800ms：从封面摇进来时，用户的摇动尾巴 + 进页提示振都打在新内核上 ——
+// 不挡的话一进来就自己又翻一页
+const ARM_MS = 800
+
+// 本页同时只有一个实例：内核与处理器放模块作用域（体感页的既有做法）。
+// 页面对象不能同时有 data 与 private（Vela 运行时会抛错），所以不用 private。
+let core = null
+let shake = null
+let myHandler = null   // 挂进 accelHub 的帧消费者（帧来自封面持有的订阅，本页不订阅）
 
 export default {
   data: { clock: '--:--', answer: '…', shown: false, timer: null },
@@ -39,13 +53,40 @@ export default {
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
+    core = motionCore.createMotionCore({})
+    shake = motionShake.createShake({ armMs: ARM_MS })
+    myHandler = (ret) => {
+      if (!core || !shake) return
+      const t = Date.now()
+      const snap = core.feed(ret.x || 0, ret.y || 0, ret.z || 0, t)
+      const events = shake.feed(snap, t)
+      for (let i = 0; i < events.length; i++) {
+        page.handle(events[i])
+      }
+    }
+    accelHub.setConsumer(myHandler)
     this.again()
   },
   onHide() {
+    accelHub.clearConsumer(myHandler)
+    myHandler = null
+    core = null
+    shake = null
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
+    accelHub.clearConsumer(myHandler)
+    myHandler = null
+    core = null
+    shake = null
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  handle(ev) {
+    if (!ev || ev.type !== 'shake' || !this.$valid) return
+    // 摇一摇 = 再问一次：反馈振之后开静默窗 —— 马达共振不许被算成下一记（计划 3.5(1)：
+    // 触发并反馈震动后强制 ≥350ms 防抖冷却）
+    this.again()
+    shake.muteFor(motionShake.MUTE_AFTER_HAPTIC)
   },
   again() {
     this.shown = false
@@ -57,6 +98,7 @@ export default {
   },
   close() {
     g.haptic.short()
+    // 不退订 —— 订阅归封面（栈底传感器页）持有；回封面后封面 onShow 重新接管消费者槽
     g.router.back()
   }
 }
