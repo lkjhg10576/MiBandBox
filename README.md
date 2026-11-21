@@ -17,7 +17,7 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>包名 <code>com.lkjhg.bandbox</code> · 版本 <code>0.1.2</code>（versionCode 277）· 平台 Vela JS 快应用</p>
+  <p>包名 <code>com.lkjhg.bandbox</code> · 版本 <code>0.1.2</code>（versionCode 278）· 平台 Vela JS 快应用</p>
 </div>
 
 <img src="assets/promo/BandBox 头图 1200x800.png" alt="BandBox：小米手环上的 40 个本地工具" />
