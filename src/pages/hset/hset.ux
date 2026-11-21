@@ -28,7 +28,19 @@
       </div>
       <text class="f check" if="{{ current === 'list' }}">✓</text>
     </div>
-    <text class="f hint">{{ catOn ? '选样式将关闭分类模式' : '选择后立即生效' }}</text>
+    <div class="opt optC" if="{{ hasDual }}" style="background-color: {{ current === 'grid2' ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="pick('grid2')">
+      <div class="optIcon">
+        <div class="miniGrid">
+          <div class="miniCell2" for="{{ dualCells }}"></div>
+        </div>
+      </div>
+      <div class="optText">
+        <text class="f oTitle">{{ g2Name }}</text>
+        <text class="f oSub">一屏两列，图标更大</text>
+      </div>
+      <text class="f check" if="{{ current === 'grid2' }}">✓</text>
+    </div>
+    <text class="f hint" if="{{ !hasDual }}">{{ catOn ? '选样式将关闭分类模式' : '选择后立即生效' }}</text>
     <backbtn></backbtn>
   </div>
 </template>
@@ -39,10 +51,17 @@
 .opt { position: absolute; left: 3px; width: 206px; height: 116px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 12px 16px; }
 .optA { top: 92px; }
 .optB { top: 216px; }
+/* grid2 行（双栏）：Pro 专属，HOME.cols !== 2 才渲染，band10/band9 不出现。
+   基线 top 与 .optB 同为 216（该机型不渲染、互不影响）；Pro 上 .optB 被
+   profiles/pro336.json 的整行替换对移到 340，本行留在 216，构成 92/216/340 三行 */
+.optC { top: 216px; }
 .opt.on { background-color: rgba(13,110,255,0.22); }
 .optIcon { width: 44px; height: 44px; border-radius: 14px; background-color: #111111; margin-right: 8px; align-items: center; justify-content: center; }
 .miniGrid { width: 38px; height: 38px; flex-direction: row; flex-wrap: wrap; }
 .miniCell { width: 16px; height: 16px; margin: 1px; border-radius: 4px; background-color: #0D6EFF; }
+/* 双栏预览：2×2 大格。选择器带 2 后缀，避开 Pro 上 .miniCell 的 16→10 替换对，
+   Pro 上保持每行两格的预览观感 */
+.miniCell2 { width: 16px; height: 16px; margin: 1px; border-radius: 4px; background-color: #0D6EFF; }
 .miniList { width: 38px; height: 38px; flex-direction: column; justify-content: space-between; }
 .miniRow { width: 38px; height: 9px; border-radius: 4px; background-color: #0D6EFF; }
 .optText { width: 100px; flex-direction: column; }
@@ -50,15 +69,30 @@
 .oSub { width: 100px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); }
 .check { width: 20px; font-size: 20px; color: #0D6EFF; text-align: center; }
 .hint { position: absolute; left: 0px; top: 420px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+/* 注意：勿给 .hint 补 height —— text 叶子加了 height 会挪基线（band10 像素对比实测 +41 坏点）；
+   if 的几何完整性规则只约束「有绝对定位子元素的容器」，此处是叶子，不需要 */
 </style>
 
 <script>
 import g from '../../utils/g'
 import layoutApi from '../../utils/homeLayout'
 import layoutFlag from '../../utils/layoutFlag'
+import { HOME } from '../../common/layout.js'
 
 export default {
-  data: { clock: '--:--', current: 'grid', catOn: false, picking: false, gridCells: [1, 2, 3, 4], three: [1, 2, 3] },
+  // hasDual：网格不是两列的机型（Pro 三栏）才出「双栏」选项；g2Name 拆开拼接是因为
+  // pro336 对本文件的标题文案有全量替换（换成三栏叫法），grid2 行必须保持两栏叫法
+  data: {
+    clock: '--:--',
+    current: 'grid',
+    catOn: false,
+    picking: false,
+    gridCells: [1, 2, 3, 4],
+    dualCells: [1, 2, 3, 4],
+    hasDual: HOME.cols !== 2,
+    g2Name: '双栏' + '网格',
+    three: [1, 2, 3]
+  },
   onShow() {
     this.picking = false
     this.clock = g.time.formatClock(new Date())
@@ -74,7 +108,7 @@ export default {
   },
   /**
    * 分类模式开着时，本页勾选的是「记住的样式」（KV 键 homeStyle），不是当前生效的模式：
-   * 两个选项都不能被勾上会让用户以为设置没生效，所以给个明确指向 + 提示文案。
+   * 选项都不能被勾上会让用户以为设置没生效，所以给个明确指向 + 提示文案。
    */
   applyCurrent(mode) {
     if (mode === 'cat') {
@@ -85,11 +119,11 @@ export default {
       g.kv.init(() => {
         if (!page.$valid) return
         const s = g.kv.get('homeStyle', 'grid')
-        page.current = s === 'list' ? 'list' : 'grid'
+        page.current = s === 'list' ? 'list' : s === 'grid2' ? 'grid2' : 'grid'
       })
     } else {
       this.catOn = false
-      this.current = mode === 'list' ? 'list' : 'grid'
+      this.current = mode === 'list' ? 'list' : mode === 'grid2' ? 'grid2' : 'grid'
     }
   },
   pick(mode) {

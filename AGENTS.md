@@ -93,12 +93,22 @@
 工具已增到 40 个，首页双栏网格要滚 20 行。「设置」页有独立一张**「工具分类」开关卡**：打开后首页改为单栏显示 9 个工具类别，点进类别再单栏显示该类工具（两次点击直达），关闭则回到上次记住的网格/列表样式。
 
 - **分类成员关系的唯一真源是 `src/data/cats.js`**（9 类 / 40 工具）。`src/data/apps.js` **一律不加 `cat` 字段** —— 它的数组顺序是模拟器脚本（`tools/shoot-routes.py` / `motion-sim.py` / `cube-sim.py`）的 index 导航依据，也是 `tools/perf-audit.mjs` 的节点计数依据；两处各写一份成员必然漂移。类别详情页 `src/pages/toolcat/toolcat.ux` 的路由是 `pages/toolcat`，用 `protected: { cat }` 收类别 id。
-- **布局状态机是三态**：`app.ux` 的 `normalizeLayout` / `src/utils/layoutFlag.js` 的 read+write / `home.ux` 的 `applyLayout` 都认 `'grid' | 'list' | 'cat'`。分类模式复用既有的 grid/list 状态机（模块闭包 `layoutState` + KV `'home'` 键 + `layout.txt` 启动快标志 + watcher），**不另建一套**。另加一个 KV 键 **`'homeStyle'`** 记住上次的非分类样式（开关关闭时还原用）。
+- **布局状态机是四态**：`app.ux` 的 `normalizeLayout` / `src/utils/layoutFlag.js` 的 read+write / `home.ux` 的 `applyLayout` 都认 `'grid' | 'grid2' | 'list' | 'cat'`（`grid2` = Pro 专属双栏网格，见下一节）。分类模式复用既有的布局状态机（模块闭包 `layoutState` + KV `'home'` 键 + `layout.txt` 启动快标志 + watcher），**不另建一套**。另加一个 KV 键 **`'homeStyle'`** 记住上次的非分类样式（开关关闭时还原用，grid2 也参与）。
 - **三写范式**：任何布局变更都要 `app.setHomeLayout(mode)` → `layoutFlag.write(mode)` → `g.kv.set('home', mode)` + `g.kv.flush()` 三处同写。`set.ux` 的「恢复默认设置」**必须补 `layoutFlag.write('grid')`**，否则恢复默认后重启会先按旧标志闪一帧旧布局再被 KV 纠正。
 - **设置页的开关卡不能换成 `<switch>`**，沿用项目既有开关语言（内联 style 三元 + 文字「开/关」，见 `calculator.ux` 的 `.swRow`）。设置页现在五张卡（首页样式 / 工具分类 / 目标日不常驻 / 关于 / 恢复默认），`5×(76+8)+16=436` 超出两机型的 body（band10 418 / Pro 358），所以 `.body` 已改成 `<scroll>` + `.inner`（照 `about.ux` 的结构）—— **别再改回普通 `<div>`**，否则 Pro 上后两张卡会被裁掉。
-- **`src/pages/set/set.ux` 里的 `'双栏网格'` 字面量带单引号**（pro336 的替换对 `["'双栏网格'","'三栏网格'"]` 靠它命中）；**全文件严禁出现 `'三栏网格'`**（否则 test-profile「replace 不得在基线出现」直接 fail）。字面量只允许出现在 `layoutName()` 与 `data` 默认值两处。
+- **`src/pages/set/set.ux` 里的 `'双栏网格'` 字面量带单引号**（pro336 的替换对 `["'双栏网格'","'三栏网格'"]` 靠它命中）；**全文件严禁出现 `'三栏网格'`**（否则 test-profile「replace 不得在基线出现」直接 fail）。字面量只允许出现在 `layoutName()` 与 `data` 默认值两处。grid2 的显示名必须写 `'双栏' + '网格'` 拼接（见下一节），**注释里同样不许出现替换串原文（find 或 replace 都不行）**——test-profile 按整文件子串匹配，注释也会命中，本次构建期被拦过一次。
 - **工具数只有一个口径 = `src/data/apps.js` 的条目数**（当前 **40**）：头图、README / README_EN、发布说明里写「N 个工具」都以它为准，改工具时这几处同步改。两个容易数错的：**「进制转换」不是独立工具** —— 它是「单位换算」里的第 13 类（`src/pages/unitconvert/unitconvert.ux` 里的 `radix` 卡），不进首页网格、不占名额；**「体感手枪 / 空气投篮」是同一个工具**「体感游戏」。版本线口径：0.1.0 正式版 32 → 0.1.0 Beta 线 37 → **0.1.1 = 37**（换源 + Pro 适配，未加工具）→ 0.1.2 = **40**（魔方计时 / 桌面伴侣 / 快捷色卡）。
 - **门禁 R16**（工具分类表完备性）：`tools/release-gate.mjs` 每次构建前核对 `cats.js` 的成员并集 == `apps.js` 的全部工具 id，且无重复 / 无未知 id / 图标文件真实存在。新增工具**漏挂分类**在该工具从分类模式里彻底消失，而分类模式默认是关的 —— 运行期毫无症状，只有用户打开分类模式才发现。所以这是构建期硬约束，不是可选检查。（更详细的诊断脚本是本地工具 `tools/test-cats.mjs`；`tools/` 整目录不入库，所以门禁里的实现必须自包含。）
+
+## 首页双栏网格模式 grid2（2026-11-21 起，Pro 专属，勿破坏）
+
+「首页样式」页（`src/pages/hset/hset.ux`）在**网格不是两列**的机型上多出一个「双栏」选项（模式值 `'grid2'`）：Pro（三栏）可选三栏 / 双栏 / 单栏；band10 / band9 的网格本就是两列，选项自动隐藏，页面与改前逐像素一致。
+
+- **显隐判据只有一处**：`hset.ux` data 的 `hasDual: HOME.cols !== 2`（`layout.js` 按 profile 生成，Pro cols=3）。选项行 `.optC` 带 `if="{{ hasDual }}"`；预览格用独立的 `.miniCell2`（与 `.miniCell` 分离是为了避开 Pro 的 16→10 替换对，Pro 上保持 2×2 大格预览）。
+- **Pro 上样式页三行 top 92/216/340**：`.optC` 基线 top 与 `.optB` 同写 216（band10 不渲染、互不影响），Pro 靠替换对 `[".optB { top: 216px; }", ".optB { top: 340px; }"]`（整行精确对）把「单栏列表」行移到 340；底部提示行 `.hint` 在 Pro 上 `if="{{ !hasDual }}"` 隐藏（第三行卡底 y456 已贴快应用画布底 466）。改任何一行的 top 时，三行间距（卡高 116 + 8）要一起对齐。
+- **渲染**：`home.ux` 的 grid2 分支与 grid 分支同构（`if` 门控 + scroll + flex-wrap，不用 show），卡片用 `.cell2` —— 基线宽 96 是占位（band10 不渲染），Pro 替换对 `["width: 96px", "width: 159px"]`（=(336−18)/2，每行恰好两格），高度沿用 `.cell` 的 70→76 替换对；内容高走 `dualGridHeight()` = 固定两列 × `HOME.rowH` + `HOME.padBottom`（Pro 21×82+48=1770）。home.ux 里**不许出现 `function gridHeight` 前缀的本地定义**（test-profile 硬约束），所以双栏的内容高函数叫 `dualGridHeight`。
+- **文案防误伤（两处拼接，勿改回直写）**：pro336 对 `hset.ux` 有**不带引号**的全量替换对（双栏叫法→三栏叫法），hset.ux 里 grid2 选项标题必须写 `g2Name: '双栏' + '网格'`；`set.ux` 的 `layoutName()` grid2 分支同理（那边是带引号替换对）。
+- **grid2 全链路参与状态机**：四处归一化（`app.ux` / `layoutFlag.js` read+write / `home.ux` applyLayout / `set.ux` applyMode + `hset.ux` applyCurrent）、`'homeStyle'` 记忆与还原（`toggleCat` 的两个三元）、`layout.txt` 快标志都认 `'grid2'`。band10/band9 上该值永远不会被写入（选项隐藏），但状态机放行（渲染与 grid 一致），不按机型分流。
 
 ## 首页目标日不常驻模式（2026-11-18 起）
 

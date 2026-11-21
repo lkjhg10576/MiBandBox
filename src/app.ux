@@ -12,7 +12,9 @@ import qrBridge from './utils/qrBridge'
 import layoutFlag from './utils/layoutFlag'
 
 function normalizeLayout(mode) {
-  return mode === 'list' ? 'list' : mode === 'cat' ? 'cat' : 'grid'
+  // grid2 = 双栏网格（Pro 专属选项）。band10/band9 的网格本就是两列，设置页不出该选项，
+  // 但状态机全局放行该值：首页对 grid2 按两列渲染，在这些机型上与 grid 视觉一致，无需按机型分流
+  return mode === 'list' ? 'list' : mode === 'cat' ? 'cat' : mode === 'grid2' ? 'grid2' : 'grid'
 }
 
 /**

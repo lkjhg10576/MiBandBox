@@ -26,6 +26,18 @@
       </div>
     </scroll>
 
+    <!-- 双栏网格（grid2）：Pro 专属的第二种网格形态（HOME.cols !== 2 时样式页才出该选项），
+         band10/band9 的网格本就是两列、不会出现此模式。与 grid 分支同构，仅卡片用 .cell2（更宽）、
+         内容高用 gridHeight2（固定两列）；if 而非 show（同上：容器型 show 的动态翻转不可靠） -->
+    <scroll class="apps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'grid2' }}" scroll-y="true" bounces="true">
+      <div class="grid" style="height: {{ gridHeight2 }}px;">
+        <div class="f cell2" for="{{ cells }}" @click="open($item)">
+          <img class="icon" src="{{ $item.icon }}" />
+          <text class="f name">{{ $item.name }}</text>
+        </div>
+      </div>
+    </scroll>
+
     <list class="apps listApps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'list' }}" bounces="true">
       <list-item type="app" class="rowCell" for="{{ cells }}" @click="open($item)">
         <img class="rowIcon" src="{{ $item.icon }}" />
@@ -143,6 +155,20 @@
   flex-direction: column;
   padding-top: 4px;
 }
+/* 双栏网格卡片：仅 grid2 分支渲染。宽度 96 是 band10 基线占位（该机型不出此模式），
+   Pro 由 profiles/pro336.json 替换为 159（(336-6-12)/2，flex-wrap 每行恰好两格）；
+   高度沿用 .cell 的 70→76 替换对，行距 = 76+6 与 HOME.rowH 保持一致 */
+.cell2 {
+  width: 96px;
+  height: 70px;
+  margin: 3px;
+  border-radius: 26px;
+  background-color: #1A1A1A;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: column;
+  padding-top: 4px;
+}
 .icon {
   width: 28px;
   height: 28px;
@@ -215,7 +241,7 @@ import catData from '../../data/cats'
 import layoutApi from '../../utils/homeLayout'
 import homeEvents from '../../utils/homeEvents'
 import homeToday from '../../utils/homeToday'
-import { gridHeight } from '../../common/layout.js'
+import { gridHeight, HOME } from '../../common/layout.js'
 
 const SETTINGS_TILE = {
   id: '__settings__',
@@ -229,6 +255,13 @@ const CELLS = apps.concat([SETTINGS_TILE])
 
 // 分类模式的行：9 个类别 + 末尾设置行（设置行走 route 分支，不进类别页）
 const CAT_CELLS = catData.rows.concat([SETTINGS_TILE])
+
+// 双栏网格（grid2）的内容高：固定两列；行高/底部留白仍取本 profile 的 HOME
+// （band10 76/60，Pro 82/48），列数不随 profile 变化。
+// 注意：函数名避开 g-r-i-d-H-e-i-g-h-t 前缀（test-profile 会拦 home.ux 里的本地定义）
+function dualGridHeight(count) {
+  return Math.ceil(count / 2) * HOME.rowH + HOME.padBottom
+}
 
 let layoutWatcher = null
 
@@ -249,6 +282,7 @@ export default {
     cells: CELLS,
     catCells: CAT_CELLS,
     gridHeight: gridHeight(CELLS.length),
+    gridHeight2: dualGridHeight(CELLS.length),
     timer: null,
     _ck: null
   },
@@ -304,7 +338,7 @@ export default {
     })
   },
   applyLayout(mode) {
-    const next = mode === 'list' ? 'list' : mode === 'cat' ? 'cat' : 'grid'
+    const next = mode === 'list' ? 'list' : mode === 'cat' ? 'cat' : mode === 'grid2' ? 'grid2' : 'grid'
     if (this.layout !== next) this.layout = next
     if (!this.layoutReady) this.layoutReady = true
   },

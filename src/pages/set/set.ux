@@ -75,7 +75,11 @@ import prompt from '@system.prompt'
 
 /** 布局名：分类单栏 / 单栏列表 / 双栏网格（Pro 的「双栏网格」由 profile 替换成「三栏网格」） */
 function layoutName(mode) {
-  return mode === 'cat' ? '分类单栏' : mode === 'list' ? '单栏列表' : '双栏网格'
+  if (mode === 'cat') return '分类单栏'
+  if (mode === 'list') return '单栏列表'
+  // grid2 在 Pro 上也显示两栏叫法：拆开拼接，避开本文件的带引号文案替换对
+  if (mode === 'grid2') return '双栏' + '网格'
+  return '双栏网格'
 }
 
 export default {
@@ -124,7 +128,7 @@ export default {
   },
   /** 布局模式 → 两张卡的显示字段（首页样式 + 工具分类开关） */
   applyMode(mode) {
-    const m = mode === 'cat' ? 'cat' : mode === 'list' ? 'list' : 'grid'
+    const m = mode === 'cat' ? 'cat' : mode === 'list' ? 'list' : mode === 'grid2' ? 'grid2' : 'grid'
     this.catOn = m === 'cat'
     this.catHint = m === 'cat' ? '首页按类别单栏显示' : '首页直接显示全部工具'
     this.layoutText = layoutName(m)
@@ -149,13 +153,13 @@ export default {
       const cur = g.kv.get('home', 'grid')
       let mode
       if (cur !== 'cat') {
-        // 开：先把当前样式（网格/列表）记进 homeStyle
-        g.kv.set('homeStyle', cur === 'list' ? 'list' : 'grid')
+        // 开：先把当前样式（网格/双栏/列表）记进 homeStyle
+        g.kv.set('homeStyle', cur === 'list' ? 'list' : cur === 'grid2' ? 'grid2' : 'grid')
         mode = 'cat'
       } else {
         // 关：回到 homeStyle 记住的样式
         const s = g.kv.get('homeStyle', 'grid')
-        mode = s === 'list' ? 'list' : 'grid'
+        mode = s === 'list' ? 'list' : s === 'grid2' ? 'grid2' : 'grid'
       }
       // 三写范式：内存状态 + 启动快标志 + KV（与 hset.pick 同一套）
       const app = layoutApi.api(page)

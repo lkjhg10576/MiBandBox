@@ -44,6 +44,7 @@
       ["width: 66px", "width: 78px"],
       ["width: 93px", "width: 100px"],
       ["width: 97px", "width: 104px"],
+      ["width: 96px", "width: 159px"],
       ["height: 70px", "height: 76px"],
       ["width: 200px", "width: 324px"],
       ["width: 128px", "width: 256px"],
@@ -73,6 +74,7 @@
       ["width: 206px", "width: 330px"],
       ["width: 100px", "width: 224px"],
       ["width: 212px", "width: 336px"],
+      [".optB { top: 216px; }", ".optB { top: 340px; }"],
       ["双栏网格", "三栏网格"],
       ["gridCells: [1, 2, 3, 4]", "gridCells: [1, 2, 3, 4, 5, 6]"],
       [".miniCell { width: 16px;", ".miniCell { width: 10px;"]
