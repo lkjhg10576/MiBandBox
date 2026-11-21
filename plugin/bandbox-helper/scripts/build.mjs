@@ -150,18 +150,27 @@ const size = fs.statSync(outWasm).size
 console.log('[build] plugin.wasm =', (size / 1024 / 1024).toFixed(2), 'MB')
 
 // ------------------------------------------------------------------
-// 打包成 .abp
+// 组装发布目录
+//
+// AstroBox 官方插件源的约定：一个目录里放 manifest.json + entry(wasm) + icon，
+// 客户端按「基址 + 目录 + 文件名」去 raw 地址下载，缺一个就装不上。
+// 所以 dist/ 本身就是可发布目录，再由 scripts/publish.mjs 推到插件仓的 release/。
+// ------------------------------------------------------------------
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'))
+const iconPath = path.join(root, 'icon.png')
+
+fs.copyFileSync(path.join(root, 'manifest.json'), path.join(DIST, 'manifest.json'))
+fs.copyFileSync(iconPath, path.join(DIST, 'icon.png'))
+console.log('[build] 发布目录 =', DIST, '(manifest.json + plugin.wasm + icon.png)')
+
+// ------------------------------------------------------------------
+// 打包成 .abp（手动安装用；市场分发不需要，留着方便国内用户旁路安装）
 // ------------------------------------------------------------------
 if (process.argv.includes('--package')) {
-  const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'))
-  const iconPath = path.join(root, 'icon.png')
-
   const entries = []
-  entries.push({ name: 'manifest.json', data: Buffer.from(JSON.stringify(manifest, null, 2), 'utf8') })
+  entries.push({ name: 'manifest.json', data: fs.readFileSync(path.join(DIST, 'manifest.json')) })
   entries.push({ name: 'plugin.wasm', data: fs.readFileSync(outWasm) })
-  if (fs.existsSync(iconPath)) {
-    entries.push({ name: 'icon.png', data: fs.readFileSync(iconPath) })
-  }
+  entries.push({ name: 'icon.png', data: fs.readFileSync(path.join(DIST, 'icon.png')) })
 
   const abp = path.join(DIST, manifest.name + '.abp')
   writeZip(entries, abp)
