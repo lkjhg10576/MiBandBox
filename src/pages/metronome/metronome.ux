@@ -5,18 +5,12 @@
   <div class="page">
     <pagehead title="节拍器" clock="{{ clock }}"></pagehead>
 
-    <!-- BPM 原位步进：调 BPM 是高频即时操作，弹键盘会遮住大卡片、跳页再回来更慢，
-         所以直接在 BPM 卡里放四颗 chip（−5 / −1 / +1 / +5），点一下当场改、当场生效。
-         卡内纵向三段：标题行 + 大数值 + 步进行，总高仍是 112px。 -->
-    <div class="bpmBox">
+    <!-- BPM 卡：点一下（大数值 / 整张卡）进统一数字键盘页（pages/numinput）输入。
+         不用内置 <input-method>：它贴快应用画布底（466px）摆放、键盘顶边恒在 y101，
+         会把本页正文整块盖住；整页键盘不遮正文，回来用 numInputSession / inputResult 取结果。 -->
+    <div class="bpmBox" @click="openBpmPad">
       <text class="f bpmLabel">BPM（40–240）</text>
       <text class="f val">{{ bpm }}</text>
-      <div class="stepRow">
-        <div class="chip" @click="stepBpm(-5)"><text class="f chipT">−5</text></div>
-        <div class="chip" @click="stepBpm(-1)"><text class="f chipT">−1</text></div>
-        <div class="chip" @click="stepBpm(1)"><text class="f chipT">+1</text></div>
-        <div class="chip" @click="stepBpm(5)"><text class="f chipT">+5</text></div>
-      </div>
     </div>
 
     <text class="f status">{{ playing ? '运行中 · ' + bpm + ' BPM · ' + lvLabel : '已就绪 · ' + bpm + ' BPM · ' + lvLabel }}</text>
@@ -41,7 +35,7 @@
     <div class="go goStop" if="{{ playing }}" @click="toggle">
       <text class="f goT">结束</text>
     </div>
-    <text class="f hint" style="color: {{ hintAlert ? '#FF3B30' : 'rgba(255,255,255,0.35)' }};">{{ hint }}</text>
+    <text class="f hint">点数字改 BPM</text>
 
     <backbtn></backbtn>
   </div>
@@ -49,16 +43,12 @@
 
 <style>
 @import '../../common/styles/theme.css';
+/* BPM 卡：整卡是命中区，点它进统一数字键盘页（pages/numinput）输入。
+   卡内纵向两行：标题 + 大数值，16 + 54 = 70，卡高 112，上下各留 21px。 */
 .bpmBox { position: absolute; left: 3px; top: 96px; width: 206px; height: 112px; border-radius: 26px; background-color: #151515; flex-direction: column; align-items: center; justify-content: center; }
 .bpmLabel { width: 190px; height: 16px; line-height: 16px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.45); }
-/* 大数值：16（标题行）+ 54（数值）+ 32（步进行）= 102，卡高 112，上下各留 5px */
+/* 大数值：16（标题行）+ 54（数值）= 70，卡高 112，上下各留 21px */
 .val { width: 190px; height: 54px; line-height: 54px; text-align: center; font-size: 46px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
-/* 步进行：四颗 chip 均分整行宽度（flex:1），卡宽随机型变，chip 自动跟着变宽。
-   行宽取 152px（卡内左右各留 27px）：chip 是带底色的方块，不能顶到卡片 26px 圆角外，
-   否则角上会露出卡片外的方块 —— 窄一点更稳。 */
-.stepRow { width: 152px; height: 32px; flex-direction: row; align-items: center; }
-.chip { flex: 1; height: 32px; margin-right: 4px; border-radius: 16px; background-color: #262626; align-items: center; justify-content: center; }
-.chipT { font-size: 15px; color: #FFFFFF; }
 .status { position: absolute; left: 0px; top: 218px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
 .gapTxt { position: absolute; left: 0px; top: 242px; width: 212px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
 .pulse { position: absolute; left: 91px; top: 278px; width: 30px; height: 30px; border-radius: 15px; }
@@ -74,10 +64,11 @@
 
 <script>
 import g from '../../utils/g'
+import numInputSession from '../../utils/numInputSession'
+import inputResult from '../../utils/inputResult'
 
 const BPM_MIN = 40
 const BPM_MAX = 240
-const HINT_IDLE = '点 −/+ 调 BPM'
 
 export default {
   data: {
@@ -89,34 +80,43 @@ export default {
     timer: null,
     beatCount: 0,
     pulseOn: false,
-    // 底部提示行：平时是操作提示，撞到上下限时临时显示夹紧说明
-    hint: HINT_IDLE,
-    hintAlert: false,
-    hintTimer: null,
     // 振动力度档位：弱（短振）/ 强（长振），默认强
     level: 'strong',
-    lvLabel: '强'
+    lvLabel: '强',
+    // 进键盘页前是否在跑：键盘页盖住本页时 onHide 必须停拍（否则页面藏在下面还在振），
+    // 回来后在 onShow 里按这个标记接着跑 —— 调速度不该打断节拍。
+    resumeAfterPad: false
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
+
+    // 接收统一数字键盘页（pages/numinput）返回的 BPM（优先内存同步读取，文件异步兜底）
+    const syncRes = numInputSession.take('bpm')
+    if (syncRes) {
+      this.applyBpmInput(syncRes.value)
+      inputResult.clear()
+    } else {
+      inputResult.take((r) => {
+        if (r && r.field === 'bpm' && page.$valid) page.applyBpmInput(r.value)
+      })
+    }
+
+    // 从键盘页回来：之前在跑就接着跑（刚才的停拍只是因为页面被盖住了）
+    if (this.resumeAfterPad) {
+      this.resumeAfterPad = false
+      if (!this.playing) this.start()
+    }
   },
   onHide() {
     this.stop()
-    this.clearHint()
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   onDestroy() {
     this.stop()
-    this.clearHint()
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
-  },
-  clearHint() {
-    if (this.hintTimer) { clearTimeout(this.hintTimer); this.hintTimer = null }
-    this.hint = HINT_IDLE
-    this.hintAlert = false
   },
   beat() {
     if (!this.playing) return
@@ -158,42 +158,38 @@ export default {
     else this.start()
   },
   /**
-   * BPM 步进：chip 点一下按 ±1 / ±5 改 BPM 并立即生效（40..240 之间夹紧）。
-   * 运行中改 BPM 只重建 interval（restartTimer），不停节拍、不关常亮 ——
-   * 步进是调参数，不是切视图，不该打断正在跑的节拍。
+   * 点 BPM 卡 → 统一数字键盘页（pages/numinput）：整页全屏键盘，本页正文不被遮挡；
+   * 结果经 numInputSession（内存快通道）+ inputResult（一次性文件兜底）回传。
+   *
+   * value 传空串而不是当前值：键盘页 maxLen=3 会把「已填满」的草稿判为超限，
+   * 预填 3 位 BPM 后按任何数字都只会被「已达最大长度限制」挡回来（想从 120 改成 140
+   * 得先退格三次）；当前值放进 hint 提示行，按「取消」则保留原值。
+   * 范围（40~240）由键盘页校验，本页 applyBpmInput 再 clamp 一层兜底。
    */
-  stepBpm(d) {
-    const delta = parseInt(d, 10) || 0
-    if (!delta) return
-    let v = this.bpm + delta
-    if (v > BPM_MAX) {
-      v = BPM_MAX
-      this.flashHint('最快 240 BPM')
-      g.haptic.long()
-    } else if (v < BPM_MIN) {
-      v = BPM_MIN
-      this.flashHint('最慢 40 BPM')
-      g.haptic.long()
-    } else if (!this.playing) {
-      g.haptic.short()
-    }
-    if (v === this.bpm) return
-    this.applyBpm(v)
+  openBpmPad() {
+    // 键盘页盖住本页时 onHide 会停拍：先记下是否在跑，回来接着跑
+    this.resumeAfterPad = this.playing
+    g.haptic.short()
+    g.router.push('/pages/numinput', {
+      field: 'bpm',
+      title: 'BPM',
+      value: '',
+      type: 'int',
+      allowNegative: '0',
+      allowDecimal: '0',
+      min: BPM_MIN,
+      max: BPM_MAX,
+      maxLen: '3',
+      hint: BPM_MIN + ' ~ ' + BPM_MAX + '（当前 ' + this.bpm + '）'
+    })
   },
-  /**
-   * 撞到上下限时的提示：写在页面自己的提示行里，不用系统 toast ——
-   * 212px 宽的跑道屏上 toast 气泡是贴着屏幕右缘画的，长句会被切掉大半（模拟器实测）。
-   * 提示行是页面自己的元素，文字多长都完整可见。
-   */
-  flashHint(msg) {
-    this.hint = msg
-    this.hintAlert = true
-    if (this.hintTimer) clearTimeout(this.hintTimer)
-    const page = this
-    this.hintTimer = setTimeout(() => {
-      page.hintTimer = null
-      if (page.$valid) page.clearHint()
-    }, 1500)
+  /** 写回键盘页返回的 BPM（键盘页已按 40~240 校验，这里再 clamp 一层兜底）。 */
+  applyBpmInput(val) {
+    const v = parseInt(val, 10)
+    if (isNaN(v)) return
+    const n = Math.max(BPM_MIN, Math.min(BPM_MAX, v))
+    if (n === this.bpm) return
+    this.applyBpm(n)
   },
   applyBpm(n) {
     this.bpm = n

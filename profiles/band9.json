@@ -346,8 +346,7 @@
       [".pulse { position: absolute; left: 91px; top: 278px; width: 30px;", ".pulse { position: absolute; left: 81px; top: 262px; width: 30px;"],
       [".levels { position: absolute; left: 6px; top: 318px; width: 200px;", ".levels { position: absolute; left: 6px; top: 300px; width: 180px;"],
       [".go { position: absolute; left: 26px; top: 378px;", ".go { position: absolute; left: 16px; top: 344px;"],
-      [".hint { position: absolute; left: 16px; top: 436px; width: 180px;", ".hint { position: absolute; left: 16px; top: 398px; width: 168px;"],
-      [".stepRow { width: 152px;", ".stepRow { width: 132px;"]
+      [".hint { position: absolute; left: 16px; top: 436px; width: 180px;", ".hint { position: absolute; left: 16px; top: 398px; width: 168px;"]
     ],
     "src/pages/morseCode/morseCode.ux": [
       ["width: 206px", "width: 186px"],

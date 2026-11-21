@@ -491,8 +491,7 @@
       ["left: 91px", "left: 153px"],
       ["left: 6px", "left: 68px"],
       ["left: 26px", "left: 88px"],
-      ["left: 16px", "left: 78px"],
-      [".stepRow { width: 152px;", ".stepRow { width: 276px;"]
+      ["left: 16px", "left: 78px"]
     ],
     "src/pages/tapTempo/tapTempo.ux": [
       ["width: 212px", "width: 336px"],
