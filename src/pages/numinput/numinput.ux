@@ -1,0 +1,266 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
+
+    <!-- 上方显示输入内容 -->
+    <div class="displayCard">
+      <text class="f dispHint">{{ hintText }}</text>
+      <text class="f dispVal" if="{{ displayVal !== '' }}">{{ displayVal }}</text>
+      <text class="f dispVal dispPlace" if="{{ displayVal === '' }}">点击下方键盘输入</text>
+    </div>
+
+    <!-- 下方全屏小键盘 -->
+    <div class="padBox">
+      <div class="padRow">
+        <div class="key keyNum" @click="pressNum('1')"><text class="f keyNumT">1</text></div>
+        <div class="key keyNum" @click="pressNum('2')"><text class="f keyNumT">2</text></div>
+        <div class="key keyNum" @click="pressNum('3')"><text class="f keyNumT">3</text></div>
+        <div class="key keyFn" @click="pressDel"><text class="f keyFnT">退格</text></div>
+      </div>
+      <div class="padRow">
+        <div class="key keyNum" @click="pressNum('4')"><text class="f keyNumT">4</text></div>
+        <div class="key keyNum" @click="pressNum('5')"><text class="f keyNumT">5</text></div>
+        <div class="key keyNum" @click="pressNum('6')"><text class="f keyNumT">6</text></div>
+        <div class="key keyFn" @click="pressClear"><text class="f keyFnT">C</text></div>
+      </div>
+      <div class="padRow">
+        <div class="key keyNum" @click="pressNum('7')"><text class="f keyNumT">7</text></div>
+        <div class="key keyNum" @click="pressNum('8')"><text class="f keyNumT">8</text></div>
+        <div class="key keyNum" @click="pressNum('9')"><text class="f keyNumT">9</text></div>
+        <div class="key {{ canNegative ? 'keySym' : 'keyDisabled' }}" @click="pressNeg"><text class="f keySymT">−</text></div>
+      </div>
+      <div class="padRow">
+        <div class="key {{ canDecimal ? 'keySym' : 'keyDisabled' }}" @click="pressDot"><text class="f keySymT">.</text></div>
+        <div class="key keyNum" @click="pressNum('0')"><text class="f keyNumT">0</text></div>
+        <div class="key keyFn" @click="cancel"><text class="f keyFnT">取消</text></div>
+        <div class="key keyOk" @click="confirm"><text class="f keyOkT">确定</text></div>
+      </div>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+/* 上方输入展示卡：y76 起，高 64px */
+.displayCard { position: absolute; left: 3px; top: 76px; width: 206px; height: 64px; border-radius: 20px; background-color: #1A1A1A; padding: 6px 14px; flex-direction: column; justify-content: center; }
+.dispHint { width: 178px; height: 16px; line-height: 16px; font-size: 12px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.dispVal { width: 178px; height: 36px; line-height: 36px; text-align: right; font-size: 28px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.dispPlace { color: rgba(255,255,255,0.25); font-size: 14px; }
+
+/* 下方全屏小键盘容器：y146 起，高 316px，到底 462px */
+.padBox { position: absolute; left: 3px; top: 146px; width: 206px; height: 316px; flex-direction: column; justify-content: space-between; }
+.padRow { width: 206px; height: 74px; flex-direction: row; justify-content: space-between; }
+.key { width: 48px; height: 74px; border-radius: 18px; align-items: center; justify-content: center; }
+.keyNum { background-color: #262626; }
+.keyNumT { font-size: 26px; color: #FFFFFF; }
+.keyFn { background-color: #333333; }
+.keyFnT { font-size: 16px; color: rgba(255,255,255,0.85); }
+.keySym { background-color: #333333; }
+.keySymT { font-size: 26px; color: #FFFFFF; }
+.keyDisabled { background-color: #1A1A1A; opacity: 0.35; }
+.keyOk { background-color: #0D6EFF; }
+.keyOkT { font-size: 16px; color: #FFFFFF; }
+</style>
+
+<script>
+import g from '../../utils/g'
+import prompt from '@system.prompt'
+import numInputSession from '../../utils/numInputSession'
+import inputResult from '../../utils/inputResult'
+
+export default {
+  protected: {
+    field: '',
+    title: '',
+    value: '',
+    type: 'decimal',
+    allowNegative: '1',
+    allowDecimal: '1',
+    min: '',
+    max: '',
+    maxLen: '12',
+    hint: ''
+  },
+
+  private: {
+    _ck: null,
+    clock: '--:--',
+    titleText: '数字输入',
+    draft: '',
+    displayVal: '',
+    hintText: '',
+    isDecimal: true,
+    canNegative: true,
+    canDecimal: true,
+    lenLimit: 12,
+    minBound: null,
+    maxBound: null
+  },
+
+  onInit() {
+    numInputSession.clear()
+    inputResult.clear()
+
+    this.titleText = this.title || '数字输入'
+    this.isDecimal = this.type !== 'int' && String(this.allowDecimal) !== '0'
+    this.canDecimal = this.isDecimal
+    this.canNegative = String(this.allowNegative) !== '0'
+    this.lenLimit = parseInt(this.maxLen, 10) || 12
+
+    if (this.min !== '' && this.min !== undefined && this.min !== null) {
+      const mn = Number(this.min)
+      if (isFinite(mn)) this.minBound = mn
+    }
+    if (this.max !== '' && this.max !== undefined && this.max !== null) {
+      const mx = Number(this.max)
+      if (isFinite(mx)) this.maxBound = mx
+    }
+
+    const initVal = this.value !== undefined && this.value !== null ? String(this.value) : ''
+    this.draft = initVal
+    this.updateDisplay()
+
+    if (this.hint) {
+      this.hintText = this.hint
+    } else if (this.minBound !== null && this.maxBound !== null) {
+      this.hintText = '范围 ' + this.minBound + ' ~ ' + this.maxBound
+    } else if (!this.canDecimal) {
+      this.hintText = this.canNegative ? '请输入整数（支持负数）' : '请输入正整数'
+    } else {
+      this.hintText = '最多 ' + this.lenLimit + ' 位字符'
+    }
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  updateDisplay() {
+    this.displayVal = this.draft
+  },
+
+  pressNum(k) {
+    if (this.draft.length >= this.lenLimit) {
+      prompt.showToast({ message: '已达最大长度限制', duration: 1400 })
+      g.haptic.long()
+      return
+    }
+    if (this.draft === '0') {
+      this.draft = k === '0' ? '0' : k
+    } else if (this.draft === '-0') {
+      this.draft = k === '0' ? '-0' : '-' + k
+    } else {
+      this.draft += k
+    }
+    this.updateDisplay()
+    g.haptic.short()
+  },
+
+  pressDot() {
+    if (!this.canDecimal) {
+      prompt.showToast({ message: '当前仅支持整数', duration: 1400 })
+      g.haptic.long()
+      return
+    }
+    if (this.draft.indexOf('.') >= 0) return
+    if (this.draft.length >= this.lenLimit) return
+    if (this.draft === '' || this.draft === '-') {
+      this.draft = this.draft === '-' ? '-0.' : '0.'
+    } else {
+      this.draft += '.'
+    }
+    this.updateDisplay()
+    g.haptic.short()
+  },
+
+  pressNeg() {
+    if (!this.canNegative) {
+      prompt.showToast({ message: '当前不支持负数', duration: 1400 })
+      g.haptic.long()
+      return
+    }
+    if (this.draft.charAt(0) === '-') {
+      this.draft = this.draft.slice(1)
+    } else {
+      this.draft = '-' + this.draft
+    }
+    this.updateDisplay()
+    g.haptic.short()
+  },
+
+  pressDel() {
+    if (!this.draft) return
+    this.draft = this.draft.slice(0, -1)
+    this.updateDisplay()
+    g.haptic.short()
+  },
+
+  pressClear() {
+    this.draft = ''
+    this.updateDisplay()
+    g.haptic.short()
+  },
+
+  cancel() {
+    g.haptic.short()
+    g.router.back()
+  },
+
+  confirm() {
+    const s = this.draft.trim()
+    if (s === '' || s === '-' || s === '.' || s === '-.') {
+      prompt.showToast({ message: '请输入有效数值', duration: 1400 })
+      g.haptic.long()
+      return
+    }
+    const n = Number(s)
+    if (!isFinite(n)) {
+      prompt.showToast({ message: '数值不合法', duration: 1400 })
+      g.haptic.long()
+      return
+    }
+    if (!this.canDecimal && s.indexOf('.') >= 0) {
+      prompt.showToast({ message: '仅支持整数', duration: 1400 })
+      g.haptic.long()
+      return
+    }
+    if (this.minBound !== null && n < this.minBound) {
+      prompt.showToast({ message: '不得小于 ' + this.minBound, duration: 1400 })
+      g.haptic.long()
+      return
+    }
+    if (this.maxBound !== null && n > this.maxBound) {
+      prompt.showToast({ message: '不得大于 ' + this.maxBound, duration: 1400 })
+      g.haptic.long()
+      return
+    }
+
+    let resStr = s
+    if (resStr.endsWith('.')) resStr = resStr.slice(0, -1)
+    if (resStr === '-0') resStr = '0'
+
+    numInputSession.set(this.field, resStr)
+    inputResult.save(this.field, resStr, () => {
+      g.router.back()
+    })
+    g.haptic.short()
+  }
+}
+</script>

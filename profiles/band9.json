@@ -563,8 +563,7 @@
       ["width: 110px", "width: 90px"],
       ["width: 206px", "width: 186px"],
       [".rVal { width: 190px;", ".rVal { width: 170px;"],
-      ["left: 26px", "left: 16px"],
-      ["width: 194px", "width: 174px"]
+      ["left: 26px", "left: 16px"]
     ],
     "src/pages/scoreboard/scoreboard.ux": [
       ["width: 206px", "width: 186px"],
@@ -643,9 +642,7 @@
       [".to { top: 218px; }", ".to { top: 208px; }"],
       [".unitNameTo { top: 228px; }", ".unitNameTo { top: 218px; }"],
       [".chevTo { top: 226px; }", ".chevTo { top: 216px; }"],
-      [".valueTo { top: 264px; }", ".valueTo { top: 254px; }"],
-      ["top: 346px", "top: 316px"],
-      ["width: 47px", "width: 41px"]
+      [".valueTo { top: 264px; }", ".valueTo { top: 254px; }"]
     ],
     "src/pages/unitconvert/picker/picker.ux": [
       ["width: 206px", "width: 186px"],
@@ -702,6 +699,11 @@
       ["width: 212px", "width: 192px"],
       ["top: 324px", "top: 294px"],
       ["top: 432px", "top: 394px"]
+    ],
+    "src/pages/numinput/numinput.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 178px", "width: 158px"],
+      ["width: 48px", "width: 43px"]
     ]
   },
   "manifest": {}

@@ -239,8 +239,7 @@
       ["width: 110px", "width: 234px"],
       ["width: 190px", "width: 314px"],
       ["left: 26px", "left: 88px"],
-      ["width: 170px", "width: 294px"],
-      ["width: 194px", "width: 318px"]
+      ["width: 170px", "width: 294px"]
     ],
     "src/pages/lightRandom/lightRandom.ux": [
       ["left: 12px", "left: 78px"],
@@ -584,12 +583,7 @@
       ["width: 206px", "width: 330px"],
       ["left: 165px", "left: 289px"],
       ["width: 140px", "width: 250px"],
-      ["width: 174px", "width: 294px"],
-      ["top: 346px", "top: 322px"],
-      ["width: 47px", "width: 78px"],
-      ["height: 26px", "height: 32px"],
-      ["line-height: 26px", "line-height: 32px"],
-      ["height: 120px", "height: 144px"]
+      ["width: 174px", "width: 294px"]
     ],
     "src/pages/unitconvert/picker/picker.ux": [
       ["width: 206px", "width: 330px"],
@@ -695,6 +689,11 @@
     ],
     "src/pages/companion/clock/clock.ux": [
       ["left: 212px; top: 0px; width: 520px; height: 212px", "left: 336px; top: 0px; width: 480px; height: 336px"]
+    ],
+    "src/pages/numinput/numinput.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 178px", "width: 302px"],
+      ["width: 48px", "width: 78px"]
     ]
   },
   "manifest": {}

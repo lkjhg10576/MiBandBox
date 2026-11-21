@@ -24,16 +24,7 @@
       <text class="f result">{{ result }}</text>
     </div>
 
-    <text class="f hint" show="{{ !padShow }}">点数值输入 · 点 › 换单位</text>
-
-    <!-- 默认隐藏，点数值区弹出、再点收起；结构与类别页一致（for + @click($item)）。 -->
-    <div class="pad" if="{{ padShow }}">
-      <div class="padGrid">
-        <div class="key" for="{{ keys }}" @click="tapKey($item)">
-          <text class="f keyT">{{ $item.t }}</text>
-        </div>
-      </div>
-    </div>
+    <text class="f hint">点数值输入 · 点 › 换单位</text>
 
     <backbtn></backbtn>
   </div>
@@ -57,29 +48,16 @@
 .result { width: 174px; height: 46px; line-height: 46px; text-align: right; font-size: 32px; color: #9FC4FF; text-overflow: ellipsis; lines: 1; }
 .sep { position: absolute; left: 16px; top: 206px; width: 180px; height: 1px; background-color: rgba(255,255,255,0.12); }
 .hint { position: absolute; left: 16px; top: 330px; width: 180px; height: 18px; line-height: 18px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
-
-/* 4×4 自绘数字键盘：容器按 4×(47+2×2)=204px 宽、4×(26+2×2)=120px 高收口，
-   底边正好落在 466 的安全区边界，避免 flex-wrap 把第 4 个键挤到下一行。 */
-.pad { position: absolute; left: 3px; top: 346px; width: 206px; height: 120px; background-color: #000000; }
-.padGrid { width: 206px; height: 120px; flex-direction: row; flex-wrap: wrap; }
-.key { width: 47px; height: 26px; margin: 2px; border-radius: 13px; background-color: #262626; align-items: center; justify-content: center; }
-.keyT { width: 47px; height: 26px; line-height: 26px; text-align: center; font-size: 17px; color: #FFFFFF; }
 </style>
 
 <script>
 import g from '../../../utils/g'
 import units from '../../../utils/units'
 import unitSession from '../unitSession'
+import numInputSession from '../../../utils/numInputSession'
+import inputResult from '../../../utils/inputResult'
 
 const KV_KEY = 'unitConvert.last'
-
-/** 4 列 × 4 行；第 3 行第 4 键留空（noop）。系统字体缺 ⌫ 字形，键帽用「退」。 */
-const KEYS = [
-  { k: '7', t: '7' }, { k: '8', t: '8' }, { k: '9', t: '9' }, { k: 'back', t: '退' },
-  { k: '4', t: '4' }, { k: '5', t: '5' }, { k: '6', t: '6' }, { k: 'clear', t: 'C' },
-  { k: '1', t: '1' }, { k: '2', t: '2' }, { k: '3', t: '3' }, { k: 'noop', t: '' },
-  { k: '0', t: '0' }, { k: '.', t: '.' }, { k: 'neg', t: '−' }, { k: 'hide', t: '收起' }
-]
 
 export default {
   /** 入口参数：类别 id。跨页选中结果走 globalThis 会话态，不走 KV 传值。 */
@@ -98,9 +76,7 @@ export default {
     input: '',
     hasInput: false,
     emptyInput: true,
-    result: '—',
-    padShow: false,
-    keys: KEYS
+    result: '—'
   },
 
   onShow() {
@@ -108,6 +84,21 @@ export default {
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
+
+    // 接收从 pages/numinput 返回的数值（优先内存同步读取，文件异步兜底）
+    const syncRes = numInputSession.take('convertVal')
+    if (syncRes) {
+      this.input = syncRes.value
+      this.recompute()
+      inputResult.clear()
+    } else {
+      inputResult.take((r) => {
+        if (r && r.field === 'convertVal' && page.$valid) {
+          page.input = r.value
+          page.recompute()
+        }
+      })
+    }
 
     const cat = units.category(this.type) || units.CATEGORIES[0]
     const pending = unitSession.take()
@@ -140,17 +131,14 @@ export default {
     }
 
     this.applyUnits()
-    this.setPad(false)
   },
 
   onHide() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
-    this.setPad(false)
   },
 
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
-    this.setPad(false)
   },
 
   /** 同步单位名、结果，并把本次选择记到 KV（仅持久化，不用于跨页传值）。 */
@@ -178,59 +166,25 @@ export default {
     this.emptyInput = !this.hasInput
   },
 
-  /** 键盘显隐（if 条件渲染）。 */
-  setPad(show) {
-    this.padShow = show
-  },
-
-  /** 点数值区：弹出 / 收起自绘键盘。 */
+  /** 点数值区：调用统一的全屏数字键盘界面。 */
   openPad() {
-    this.setPad(!this.padShow)
     g.haptic.short()
+    g.router.push('/pages/numinput', {
+      field: 'convertVal',
+      title: this.titleText || '数值换算',
+      value: this.input,
+      type: 'decimal',
+      allowNegative: '1',
+      allowDecimal: '1',
+      maxLen: '12',
+      hint: '输入数值进行换算'
+    })
   },
 
   pick(slot) {
     g.haptic.short()
     const current = slot === 'to' ? this.toId : this.fromId
     g.router.push('/pages/unitconvert/picker', { type: this.catId, slot: slot, current: current })
-  },
-
-  /** 与类别页一致：事件里传整个行对象。 */
-  tapKey(item) {
-    const k = item && item.k
-    if (!k || k === 'noop') return
-    g.haptic.short()
-    if (k === 'hide') {
-      this.setPad(false)
-      return
-    }
-    if (k === 'clear') {
-      this.input = ''
-      this.recompute()
-      return
-    }
-    if (k === 'back') {
-      this.input = this.input.slice(0, -1)
-      this.recompute()
-      return
-    }
-    if (k === 'neg') {
-      this.input = this.input.charAt(0) === '-' ? this.input.slice(1) : '-' + this.input
-      this.recompute()
-      return
-    }
-    if (k === '.') {
-      if (this.input.indexOf('.') >= 0) return
-      this.input = (this.input === '' || this.input === '-') ? this.input + '0.' : this.input + '.'
-      this.recompute()
-      return
-    }
-    // 数字键：最多 12 个字符，避免 32px 数值区溢出
-    if (this.input.length >= 12) return
-    if (this.input === '0') this.input = k
-    else if (this.input === '-0' && k !== '0') this.input = '-' + k
-    else this.input += k
-    this.recompute()
   }
 }
 </script>

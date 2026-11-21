@@ -231,6 +231,9 @@
       "pages/input": {
         "component": "input"
       },
+      "pages/numinput": {
+        "component": "numinput"
+      },
       "pages/otp/list": {
         "component": "list"
       },
