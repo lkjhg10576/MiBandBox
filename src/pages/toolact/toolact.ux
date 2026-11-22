@@ -5,7 +5,7 @@
   <div class="page">
     <pagehead title="功能设置" clock="{{ clock }}"></pagehead>
     <scroll class="body" scroll-y="true" bounces="true">
-      <div class="inner">
+      <div class="inner" style="height: {{ innerH }}px;">
         <div class="infoCard">
           <img class="infoIcon" src="{{ tool.icon }}" />
           <div class="infoMeta">
@@ -48,19 +48,23 @@
 <style>
 @import '../../common/styles/theme.css';
 
+/* 内容高必须显式给（style="height: {{ innerH }}px;"）：Vela 的 scroll 不给内容高就按视口高裁
+   —— 卡片被 flex 压扁（文字挤在一起）、整页滚不动。Pro 的视口只有 358px，
+   而内容是 348px：只差 10px，再加一张卡就会踩中设置页踩过的那个坑。
+   .card / .pad 一律 flex-shrink:0：常量与 CSS 对不上时宁可裁掉尾巴也不压扁文字。 */
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 418px; }
 .inner { width: 212px; flex-direction: column; }
-.infoCard { width: 206px; height: 72px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #1A1A1A; flex-direction: row; align-items: center; padding: 0px 14px; }
+.infoCard { width: 206px; height: 72px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #1A1A1A; flex-direction: row; align-items: center; padding: 0px 14px; flex-shrink: 0; }
 .infoIcon { width: 34px; height: 34px; margin-right: 10px; }
 .infoMeta { width: 134px; height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; }
 .infoName { width: 134px; height: 26px; line-height: 26px; text-align: left; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .infoDesc { width: 134px; height: 20px; line-height: 20px; text-align: left; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
-.card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; }
+.card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; flex-shrink: 0; }
 .cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
 .cTitle { font-size: 17px; color: #FFFFFF; }
 .cState { height: 30px; line-height: 30px; text-align: right; font-size: 14px; }
 .cSub { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
-.pad { width: 212px; height: 16px; }
+.pad { width: 212px; height: 16px; flex-shrink: 0; }
 </style>
 
 <script>
@@ -68,6 +72,22 @@ import g from '../../utils/g'
 import apps from '../../data/apps'
 import homeTools from '../../utils/homeTools'
 import prompt from '@system.prompt'
+
+/**
+ * 页面卡片几何常量：滚动内容高（innerH）= 信息卡 + 设置卡 ×个数 + 末尾留白。
+ *
+ * 为什么必须显式给内容高：Vela 的 <scroll> 不给子容器高度就按视口高裁内容 ——
+ * 卡片被 flex 压扁（文字挤在一起），整页也滚不动（设置页 2026-11-22 踩过这个坑）。
+ * 约束：常量必须与 CSS 的 .infoCard / .card / .pad 对得上，
+ * 且 CARD_COUNT 必须等于模板里 .card 的个数 —— 新增一个设置项要改这里。
+ */
+const INFO_H = 72       // .infoCard 高
+const INFO_GAP = 8      // .infoCard 下外边距
+const CARD_H = 76       // .card 高
+const CARD_GAP = 8      // .card 下外边距
+const CARD_COUNT = 3    // 模板里的 .card 个数（功能置顶 / 功能收藏 / 隐藏功能）
+const PAD_H = 16        // .pad 高
+const INNER_H = INFO_H + INFO_GAP + CARD_COUNT * (CARD_H + CARD_GAP) + PAD_H
 
 export default {
   protected: { id: '' },
@@ -80,6 +100,7 @@ export default {
     pinCount: 0,
     pinSubText: '首页最上方显示',
     busy: false,
+    innerH: INNER_H,
     _ck: null
   },
   onShow() {

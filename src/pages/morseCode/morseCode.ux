@@ -12,8 +12,12 @@
 
     <div class="morseCard">
       <text class="f mLabel">电码</text>
-      <scroll class="morseScroll" scroll-y="true">
-        <text class="f morse">{{ code || '·- 等待输入' }}</text>
+      <scroll class="morseScroll" scroll-y="true" bounces="true">
+        <!-- 电码内容必须显式给高：Vela 的 scroll 不给子容器高度就按视口高裁，
+             一长串电码（30 字原文能编出上百个符号）超出视口的部分既滚不到也看不见 -->
+        <div class="morseInner" style="height: {{ morseH }}px;">
+          <text class="f morse">{{ code || '·- 等待输入' }}</text>
+        </div>
       </scroll>
     </div>
 
@@ -47,6 +51,8 @@
 .morseCard { position: absolute; left: 3px; top: 152px; width: 206px; height: 116px; border-radius: 26px; background-color: #1A1A1A; padding: 8px 16px; flex-direction: column; }
 .mLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: #4E87FF; }
 .morseScroll { width: 174px; height: 78px; }
+/* 电码内容容器：宽度跟 .morseScroll 走，高度按符号数估算后写在 style 上 */
+.morseInner { width: 174px; flex-direction: column; flex-shrink: 0; }
 .morse { width: 174px; font-size: 18px; line-height: 26px; color: #FFFFFF; letter-spacing: 1px; }
 .playRow { position: absolute; left: 3px; top: 276px; width: 206px; height: 40px; flex-direction: row; justify-content: space-between; }
 .pBtn { width: 64px; height: 38px; border-radius: 19px; background-color: #0D6EFF; align-items: center; justify-content: center; }
@@ -66,7 +72,9 @@
 import g from '../../utils/g'
 import morse from '../../data/morse'
 import textInput from '../../utils/textInput'
+import textMetrics from '../../utils/textMetrics'
 import inputResult from '../../utils/inputResult'
+import { TEXT } from '../../common/layout.js'
 import prompt from '@system.prompt'
 
 const DOT = 180
@@ -74,6 +82,11 @@ const DASH = 540
 const GAP = 180
 const CHAR_GAP = 540
 const WORD_GAP = 1260
+
+/** 电码文字的排版参数（与 CSS 的 .morse 对齐：字号 18 / 行高 26 / 字距 1） */
+const MORSE_FONT = 18
+const MORSE_LINE = 26
+const MORSE_SPACING = 1
 
 export default {
   data: {
@@ -88,11 +101,13 @@ export default {
     timers: [],
     startAt: 0,
     morseWarned: false,
+    morseH: MORSE_LINE * 2,
     timer: null
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
     this.morseWarned = false
+    this.syncMorseHeight()
     // 通用输入页（/pages/input）的结果是一次性文件，take 后即删除：
     // 必须在下面任何初始化之外 —— 从输入页返回时 onShow 会再跑一次，这时才取得到结果。
     // 本页没有 KV/文件重载、也没有 protected 参数赋值，故不存在会在返回时覆盖刚取回值的初始化。
@@ -106,6 +121,7 @@ export default {
       }
       this.text = textInput.clamp(clean, 30, false)
       this.code = morse.encode(this.text)
+      this.syncMorseHeight()
     })
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
@@ -118,6 +134,15 @@ export default {
   onDestroy() {
     this.stop()
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  /**
+   * 电码内容的显式高度：Vela 的 scroll 不给内容高就按视口高裁，
+   * 一长串电码（30 字原文能编出上百个符号）超出 78px 视口的部分既滚不到也看不见。
+   * 高度按符号数估算（textMetrics），宁可高估留一段空白，也不要把电码底部裁掉。
+   */
+  syncMorseHeight() {
+    const s = this.code || '·- 等待输入'
+    this.morseH = textMetrics.textHeight(s, TEXT.morseW, MORSE_FONT, MORSE_LINE, MORSE_SPACING)
   },
   openInput() {
     g.haptic.short()
@@ -137,6 +162,7 @@ export default {
     }
     this.stop()
     this.code = morse.encode(this.text)
+    this.syncMorseHeight()
     const seq = []
     const words = this.text.toUpperCase().split(' ')
     words.forEach((word, wi) => {

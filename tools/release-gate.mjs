@@ -33,11 +33,13 @@
  *                            新增工具漏挂分类 → 该工具在分类模式里没有入口，且分类模式默认关着，
  *                            运行期毫无症状。所以「成员并集 == 全部工具」必须是构建期硬约束。
  *                            （更详细的诊断脚本是本地工具 tools/test-cats.mjs）
- *   R17 设置页滚动内容高自洽  Vela 的 <scroll> 必须显式给内容高，不给就按视口高裁：卡片被压扁、
- *                            文字挤成一团、整页滚不动。设置页卡片数会持续增长，内容高由
- *                            CARD_COUNT×(CARD_H+CARD_GAP)+PAD_H 算出，常量与 CSS 对不上、
- *                            卡片数与模板对不上（新增设置项忘了改常量）一律拦下构建。
- *                            （2026-11-22 用户报的现象：设置项增多后整页挤在一起、滚不动）
+ *   R17 滚动内容高自洽        Vela 的 <scroll> 必须显式给内容高，不给就按视口高裁：卡片被压扁、
+ *                            文字挤成一团、整页滚不动；长文本超出视口的部分既滚不到也看不见
+ *                            （2026-11-22 用户报的现象：设置项增多后整页挤在一起）。核对
+ *                            ① 所有纵向 scroll 的直接子容器都有显式高度；② 卡片列表页的
+ *                            几何常量与 CSS 一致、卡片数与模板一致；③ profile 的
+ *                            layout.text 宽度令牌与 CSS 文本框宽度一致。已知未修的页面记在
+ *                            R17_EXEMPT 表里（逐页收口，修好一页删一行）。
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
@@ -120,6 +122,9 @@ function parseUxStyle(css) {
 function parseUxTemplate(tpl) {
   const roots = []
   const stack = []
+  // 先去掉注释：注释里出现 <text> / <switch> 这类字面量会把标签配对数打乱
+  // （calculator.ux / colorcard.ux 的注释里都有），后面的元素树层级全错。
+  tpl = tpl.replace(/<!--[\s\S]*?-->/g, '')
   const re = /<(\/?)([a-zA-Z][\w-]*)((?:"[^"]*"|'[^']*'|[^<>])*?)(\/?)>/g
   let m
   while ((m = re.exec(tpl))) {
@@ -739,15 +744,71 @@ for (const f of walk('src', '.ux')) {
   }
 }
 
-// ---------- R17 设置页滚动内容高与卡片数自洽 ----------
-// 设置页的卡片会随功能增加而增长，而 Vela 的 <scroll> 必须显式给内容高：
-// 不给就按视口高裁内容 —— 卡片被 flex 压扁（文字挤成一团）、整页滚不动
-// （2026-11-22 用户报的现象）。内容高 = CARD_COUNT×(CARD_H+CARD_GAP)+PAD_H，
-// 三个常量都要与 CSS 对得上，CARD_COUNT 还要等于模板里 .card 的实际个数：
-// 新增设置项忘了改常量就在构建期拦下，别等用户在真机上看到挤成一团的字。
+// ---------- R17 <scroll> 内容容器必须显式给高 ----------
+// Vela 的 <scroll> 不给子容器显式高度就按视口高裁内容：卡片被 flex 压扁（标题与副标题
+// 挤成一团）、整页滚不动 —— 2026-11-22 用户在设置页报的现象；长文本（输入页预览、
+// 摩斯电码）超出视口的部分更是既滚不到也看不见。
+// 三条检查：
+//   1) 所有纵向 scroll 的直接子容器都要有显式高度（CSS 类给 height，或 style 里给 height）；
+//   2) 卡片列表页（设置页 / 功能设置页）的几何常量要与 CSS 对得上，卡片数要与模板一致；
+//   3) profile 的 layout.text 宽度令牌要与 CSS 里的文本框宽度一致（文本高度估算靠它折行）。
 {
-  const rel = 'src/pages/set/set.ux'
-  if (fs.existsSync(path.join(ROOT, rel))) {
+  // 已知未修的页面（同一类缺陷，先记账、逐页收口；修好一页就删掉一行）。
+  // 键 = 页面相对路径 + '|' + 内容容器的 class，长文本页与列表页都记在这儿。
+  const R17_EXEMPT = {
+    'src/pages/lyrics/edit/edit.ux|fBody': '歌词正文长文本：内容高待按字数估算（需按 profile 补文本框宽令牌）',
+    'src/pages/lyrics/show/show.ux|lyric': '歌词正文长文本：内容高待按字数估算（需按 profile 补文本框宽令牌）',
+    'src/pages/lyrics/show/show.ux|lyricLand': '横屏歌词正文长文本：同上',
+    'src/pages/notebook/edit/edit.ux|fBody': '笔记正文长文本：内容高待按字数估算（需按 profile 补文本框宽令牌）',
+    'src/pages/notebook/show/show.ux|content': '笔记正文长文本：同上',
+    'src/pages/otp/settings/settings.ux|inner': '卡片高度随提示文案行数变化，内容高待收口',
+    'src/pages/qrcode/fav/fav.ux|inner': '收藏列表条数不定（且条目副标题可能折行），内容高待收口',
+    'src/pages/qrcode/fav/fav.ux|full': '二维码详情长文本：内容高待按字数估算',
+    'src/pages/qrcode/wifi/wifi.ux|inner': '表单区内容高待显式给出（当前内容 244 < 视口 442，暂不影响显示）',
+  }
+  // ---- 1) 全量扫描：每个纵向 scroll 的直接子容器都要有显式高度 ----
+  for (const rel of walk('src', '.ux')) {
+    const raw = read(rel)
+    const tplM = raw.match(/<template>([\s\S]*?)<\/template>/)
+    const styleM = raw.match(/<style>([\s\S]*?)<\/style>/)
+    if (!tplM || !styleM) continue
+    const rules = parseUxStyle(styleM[1])
+    const visit = (el) => {
+      if (el.tag === 'scroll') {
+        const attrs = el.attrs || ''
+        // 纵向 = scroll-y（横向跑马灯 scroll-x 的内容高度由文字行数决定，不需要显式高）
+        const isY = /scroll-y="true"/.test(attrs)
+        const isX = /scroll-x="true"/.test(attrs)
+        if (isY && !isX) {
+          for (const c of el.children) {
+            const cls = uxClasses(c.attrs)
+            // 键取最后一个 class（最具体那个：class="f fBody" → fBody）
+            if (R17_EXEMPT[rel + '|' + cls[cls.length - 1]]) continue
+            // style 里显式给了 height？（按声明拆开看，避免把 border-bottom-height 之类的当 height）
+            const sm = /style="([^"]*)"/.exec(c.attrs || '')
+            const inlineH = sm ? /(^|;)\s*height\s*:/.test(sm[1]) : false
+            const clsH = cls.some((k) => rules[k] && rules[k].height !== undefined)
+            if (!inlineH && !clsH) {
+              fail('R17', rel,
+                `<scroll> 的内容容器 <${c.tag} class="${uxClasses(c.attrs).join(' ')}"> 没有显式高度：` +
+                'Vela 的 scroll 会按视口高裁内容 —— 卡片被压扁、长文本滚不到也看不见')
+            }
+          }
+        }
+      }
+      for (const c of el.children) visit(c)
+    }
+    for (const r of parseUxTemplate(tplM[1])) visit(r)
+  }
+
+  // ---- 2) 卡片列表页：几何常量与 CSS 自洽、卡片数与模板一致 ----
+  const CARD_PAGES = [
+    { rel: 'src/pages/set/set.ux', info: null },
+    { rel: 'src/pages/toolact/toolact.ux', info: 'infoCard' },
+  ]
+  for (const page of CARD_PAGES) {
+    if (!fs.existsSync(path.join(ROOT, page.rel))) continue
+    const rel = page.rel
     const src = read(rel)
     /** 取某条 CSS 规则的声明体（要求 class 名后紧跟空格+{，避免 .cardXxx 误命中） */
     const rule = (cls) => {
@@ -769,19 +830,25 @@ for (const f of walk('src', '.ux')) {
       if (got === null) fail('R17', rel, `找不到常量 ${name}（${why}）`)
       else if (got !== want) fail('R17', rel, `${name} = ${got}，应为 ${want}：${why}`)
     }
+    // margin 简写「0px 3px 8px 3px」：下外边距是第 3 个值
+    const marginBottom = (body) => {
+      if (!body) return null
+      const m = body.match(/margin: ([\d.]+)px ([\d.]+)px ([\d.]+)px ([\d.]+)px/)
+      return m ? Number(m[3]) : null
+    }
     const card = rule('card')
     const pad = rule('pad')
     if (!card) fail('R17', rel, 'CSS 里找不到 .card 规则')
     if (!pad) fail('R17', rel, 'CSS 里找不到 .pad 规则')
     expect('CARD_H', px(card, 'height'), '.card 高')
-    // margin 简写「0px 3px 8px 3px」：下外边距是第 3 个值
-    const mb = (() => {
-      if (!card) return null
-      const m = card.match(/margin: ([\d.]+)px ([\d.]+)px ([\d.]+)px ([\d.]+)px/)
-      return m ? Number(m[3]) : null
-    })()
-    expect('CARD_GAP', mb, '.card 下外边距')
+    expect('CARD_GAP', marginBottom(card), '.card 下外边距')
     expect('PAD_H', px(pad, 'height'), '.pad 高')
+    if (page.info) {
+      const info = rule(page.info)
+      if (!info) fail('R17', rel, `CSS 里找不到 .${page.info} 规则`)
+      expect('INFO_H', px(info, 'height'), `.${page.info} 高`)
+      expect('INFO_GAP', marginBottom(info), `.${page.info} 下外边距`)
+    }
     // 模板里 .card 的个数（新增设置项要改 CARD_COUNT）
     const tpl = (src.match(/<template>([\s\S]*?)<\/template>/) || ['', ''])[1]
     const count = (tpl.match(/class="card"/g) || []).length
@@ -800,9 +867,39 @@ for (const f of walk('src', '.ux')) {
     if (!/innerH:\s*INNER_H/.test(src)) {
       fail('R17', rel, 'data 里没有 innerH: INNER_H（内容高没绑到 .inner 上）')
     }
-    // .card 必须 flex-shrink:0：万一常量与 CSS 对不上，宁可裁掉尾巴也不压扁文字
+    // .card 必须 flex-shrink:0：常量与 CSS 对不上时宁可裁掉尾巴也不压扁文字
     if (!/flex-shrink:\s*0/.test(card || '')) {
       fail('R17', rel, '.card 缺 flex-shrink:0：内容高与 CSS 对不上时卡片会被压扁')
+    }
+  }
+
+  // ---- 3) profile 的 layout.text 宽度令牌必须与 CSS 里的文本框宽度一致 ----
+  // 文本高度估算（src/utils/textMetrics.js）按这个宽度折行，宽度对不上就会低估行数、
+  // 把文字底部裁掉。
+  {
+    const want = process.env.BANDBOX_PROFILE || 'band10'
+    const profFile = path.join(ROOT, 'profiles', want + '.json')
+    if (fs.existsSync(profFile)) {
+      const prof = JSON.parse(fs.readFileSync(profFile, 'utf8'))
+      const tok = (prof.layout && prof.layout.text) || {}
+      const cssWidth = (rel, cls) => {
+        if (!fs.existsSync(path.join(ROOT, rel))) return null
+        const src = read(rel)
+        const m = src.match(new RegExp('\\.' + cls + ' \\{([^}]*)\\}'))
+        if (!m) return null
+        const w = m[1].match(/width:\s*(\d+)px/)
+        return w ? Number(w[1]) : null
+      }
+      const expectTok = (name, got, why) => {
+        if (got === null || tok[name] === undefined) return
+        if (tok[name] !== got) {
+          fail('R17', `profiles/${want}.json`,
+            `layout.text.${name} = ${tok[name]}，应为 ${got}（${why}）—— 文本高度估算按这个宽度折行`)
+        }
+      }
+      expectTok('inputW', cssWidth('src/pages/input/input.ux', 'pvScroll'), 'input.ux 的 .pvScroll 宽')
+      expectTok('inputMultiW', cssWidth('src/pages/input/input.ux', 'pvMulti'), 'input.ux 的 .pvMulti 宽')
+      expectTok('morseW', cssWidth('src/pages/morseCode/morseCode.ux', 'morseScroll'), 'morseCode.ux 的 .morseScroll 宽')
     }
   }
 }

@@ -8,7 +8,8 @@
     "home": { "cols": 2, "rowH": 76, "padBottom": 60 },
     "marquee": { "minCopyW": 200 },
     "ime": { "kbW": 192, "containerH": 305 },
-    "companion": { "drawableH": 436 }
+    "companion": { "drawableH": 436 },
+    "text": { "inputW": 154, "inputMultiW": 118, "morseW": 154 }
   },
   "assets": { "shadow": [192, 84] },
   "files": {

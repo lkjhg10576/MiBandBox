@@ -119,26 +119,35 @@
 - **工具数只有一个口径 = `src/data/apps.js` 的条目数**（当前 **40**）：头图、README / README_EN、发布说明里写「N 个工具」都以它为准，改工具时这几处同步改。两个容易数错的：**「进制转换」不是独立工具** —— 它是「单位换算」里的第 13 类（`src/pages/unitconvert/unitconvert.ux` 里的 `radix` 卡），不进首页网格、不占名额；**「体感手枪 / 空气投篮」是同一个工具**「体感游戏」。版本线口径：0.1.0 正式版 32 → 0.1.0 Beta 线 37 → **0.1.1 = 37**（换源 + Pro 适配，未加工具）→ 0.1.2 = **40**（魔方计时 / 桌面伴侣 / 快捷色卡）。
 - **门禁 R16**（工具分类表完备性）：`tools/release-gate.mjs` 每次构建前核对 `cats.js` 的成员并集 == `apps.js` 的全部工具 id，且无重复 / 无未知 id / 图标文件真实存在。新增工具**漏挂分类**在该工具从分类模式里彻底消失，而分类模式默认是关的 —— 运行期毫无症状，只有用户打开分类模式才发现。所以这是构建期硬约束，不是可选检查。（更详细的诊断脚本是本地工具 `tools/test-cats.mjs`；`tools/` 整目录不入库，所以门禁里的实现必须自包含。）
 
-## 设置页滚动适配（2026-11-22 起，勿破坏）
+## 滚动内容高约定（2026-11-22 起，勿破坏）
 
-「设置」页的卡片会随功能持续增加（六张 → 更多），而 Vela 的 `<scroll>` **必须显式给内容高**：
-不给就按视口高裁内容 —— 卡片被 flex 压扁（标题与副标题挤成一团）、整页滚不动。
-2026-11-22 用户报的就是这个（设置项增多后整页挤在一起、看不到后面的设置项）。**同一条规律对所有
-`<scroll>` 页成立**：`calculator.ux` / `history.ux` / `home.ux` / `about.ux` 都是
-`style="height: {{ … }}px;"`，谁漏了就会重演。
+Vela 的 `<scroll>` **必须显式给内容高**（子容器给 `height`）。不给就按视口高裁内容：
+卡片被 flex 压扁（标题与副标题挤成一团）、整页滚不动；长文本（输入框预览、摩斯电码、
+歌词、笔记正文）超出视口的部分更是既滚不到也看不见。
+2026-11-22 用户在设置页报的就是这个（设置项增多后整页挤在一起、看不到后面的设置项）。
 
-- **内容高只有一个算法**：`src/pages/set/set.ux` 的
-  `INNER_H = CARD_COUNT × (CARD_H + CARD_GAP) + PAD_H`，绑到
-  `<div class="inner" style="height: {{ innerH }}px;">`。四个常量与 CSS 的对应关系：
+- **卡片列表页（设置页 / 功能设置页）**：`src/pages/set/set.ux` 与
+  `src/pages/toolact/toolact.ux` 的 `INNER_H = 信息卡 + CARD_COUNT ×(CARD_H+CARD_GAP) + PAD_H`，
+  绑到 `<div class="inner" style="height: {{ innerH }}px;">`。常量与 CSS 的对应关系：
   `CARD_H` = `.card` 高、`CARD_GAP` = `.card` 下外边距、`PAD_H` = `.pad` 高、
   `CARD_COUNT` = **模板里 `.card` 的个数**。
-- **新增设置项要改 `CARD_COUNT`**，否则最后几张卡滚不到；`.card` / `.pad` 一律 `flex-shrink:0`
+  **新增设置项要改 `CARD_COUNT`**，否则最后几张卡滚不到；`.card` / `.pad` 一律 `flex-shrink:0`
   （常量与 CSS 对不上时宁可裁掉尾巴，也不压扁文字）。
-- **`PAD_H = 48` 不是随手取的**：`.body` 的视口底（band10 82+418=500）超出画布底 466，
+- **`PAD_H = 48` 不是随手取的**：设置页 `.body` 的视口底（band10 82+418=500）超出画布底 466，
   末尾留白保证滚到底时最后一张卡完整落在可绘制区内。
-- **门禁 R17**（设置页滚动内容高自洽）：`tools/release-gate.mjs` 每次构建前核对
-  三个常量与 CSS 一致、`CARD_COUNT` == 模板里 `.card` 个数、`.inner` 有显式高度、
-  `INNER_H` 算式用上了 `CARD_COUNT` / `PAD_H`、`.card` 带 `flex-shrink:0` —— 任一条不符直接拦下构建。
+- **长文本页按字数估算**：`src/utils/textMetrics.js` 估算文本折行后的高度（字宽分档 + 1.08 安全系数
+  + 多给一行，**宁可高估留空白，不要低估把文字底部裁掉**），页面把它绑到内容容器的 `height`。
+  文本框宽度随 profile 变，宽度令牌在 `profiles/*.json` 的 `layout.text`（由
+  `tools/apply-profile.mjs` 生成进 `src/common/layout.js` 的 `TEXT`）：
+  `inputW` / `inputMultiW`（输入页预览框）/ `morseW`（摩斯电码框）。
+- **门禁 R17**（滚动内容高自洽）：`tools/release-gate.mjs` 每次构建前核对
+  ① 所有纵向 `<scroll>` 的直接子容器都有显式高度（CSS 类给 `height` 或 `style` 里给）；
+  ② 卡片列表页的常量与 CSS 一致、`CARD_COUNT` == 模板里 `.card` 个数、`.inner` 有显式高度、
+  `INNER_H` 算式用上了 `CARD_COUNT` / `PAD_H`、`.card` 带 `flex-shrink:0`；
+  ③ profile 的 `layout.text` 宽度令牌与 CSS 里的文本框宽度一致 —— 任一条不符直接拦下构建。
+  **已知未修的页面记在 R17 的 `R17_EXEMPT` 表里**（同一类缺陷，逐页收口；修好一页删一行）：
+  歌词正文 ×3 / 笔记正文 ×2 / 口令设置卡片 / 收藏列表与详情 / WiFi 表单。
+  （另：`parseUxTemplate` 解析前会先去掉 HTML 注释 —— 注释里出现 `<text>` 这类字面量会把标签配对打乱。）
 
 ## 首页双栏网格模式 grid2（2026-11-21 起，Pro 专属，勿破坏）
 

@@ -9,6 +9,7 @@ export const HOME = {"cols":2,"rowH":76,"padBottom":60}
 export const MARQUEE = {"minCopyW":240}
 export const IME = {"kbW":192,"containerH":305}
 export const COMPANION = {"drawableH":466}
+export const TEXT = {"inputW":174,"inputMultiW":138,"morseW":174}
 
 /** 首页网格内容高度：ceil(格子数 / 列数) * 行高 + 底部留白 */
 export function gridHeight(count) {
