@@ -401,11 +401,11 @@ export default {
 
       let cellsKey = ''
       for (let i = 0; i < nextCells.length; i++) {
-        cellsKey += nextCells[i].id + ','
+        cellsKey += nextCells[i].id + ':' + (nextCells[i].desc || '') + ','
       }
       let curCellsKey = ''
       for (let i = 0; i < page.cells.length; i++) {
-        curCellsKey += page.cells[i].id + ','
+        curCellsKey += page.cells[i].id + ':' + (page.cells[i].desc || '') + ','
       }
 
       if (cellsKey !== curCellsKey) {

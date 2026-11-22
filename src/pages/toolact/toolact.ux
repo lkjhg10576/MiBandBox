@@ -27,7 +27,7 @@
             <text class="f cTitle">功能收藏</text>
             <text class="f cState" style="color: {{ isFav ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ isFav ? '已收藏' : '未收藏' }}</text>
           </div>
-          <text class="f cSub">{{ isFav ? '已加入收藏列表 · 点按取消' : '加入首页收藏快捷入口' }}</text>
+          <text class="f cSub">{{ isHide ? '请先恢复显示' : (isFav ? '已加入收藏列表 · 点按取消' : '加入首页收藏快捷入口') }}</text>
         </div>
 
         <div class="card" @click="toggleHide">
@@ -122,7 +122,9 @@ export default {
     this.isHide = hide.indexOf(this.id) !== -1
     this.pinCount = pin.length
 
-    if (this.isPin) {
+    if (this.isHide) {
+      this.pinSubText = '请先恢复显示'
+    } else if (this.isPin) {
       this.pinSubText = '首页最上方显示 · 点按取消'
     } else {
       this.pinSubText = this.pinCount >= 4 ? '最多置顶 4 个' : '首页最上方显示'
@@ -130,6 +132,10 @@ export default {
   },
   togglePin() {
     if (this.busy) return
+    if (this.isHide) {
+      prompt.showToast({ message: '已隐藏，请先恢复显示', duration: 1600 })
+      return
+    }
     this.busy = true
     const page = this
     homeTools.togglePin(this.id, (res) => {
@@ -147,6 +153,10 @@ export default {
   },
   toggleFav() {
     if (this.busy) return
+    if (this.isHide) {
+      prompt.showToast({ message: '已隐藏，请先恢复显示', duration: 1600 })
+      return
+    }
     this.busy = true
     const page = this
     homeTools.toggleFav(this.id, (res) => {
@@ -169,11 +179,16 @@ export default {
         page.isHide = true
         page.isPin = false
         page.isFav = false
+        page.pinCount = (res.pin && res.pin.length) || 0
       } else {
         prompt.showToast({ message: '已恢复显示', duration: 1600 })
         page.isHide = false
       }
-      page.pinSubText = page.isPin ? '首页最上方显示 · 点按取消' : '首页最上方显示'
+      if (page.isHide) {
+        page.pinSubText = '请先恢复显示'
+      } else {
+        page.pinSubText = page.isPin ? '首页最上方显示 · 点按取消' : (page.pinCount >= 4 ? '最多置顶 4 个' : '首页最上方显示')
+      }
     })
   }
 }
