@@ -1,13 +1,17 @@
 {
   "name": "BandBox辅助",
   "icon": "icon.png",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "LRC 歌词推送 + 动态口令（TOTP）账户同步：手机端选歌词或批量导入 otpauth:// 账户，与手环 BandBox 双向同步",
   "author": "BandBox",
   "website": "https://atomgit.com/gcw_MchqrexB/bandbox_helper",
   "entry": "plugin.wasm",
   "wasi_version": 3,
   "api_level": 4,
-  "permissions": ["device", "interconnect", "register_interconnect_recv"],
+  "permissions": [
+    "device",
+    "interconnect",
+    "register_interconnect_recv"
+  ],
   "additional_files": []
 }

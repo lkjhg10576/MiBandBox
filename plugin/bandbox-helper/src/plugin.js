@@ -58,7 +58,7 @@ const ACK_TIMEOUT = 20000
  * 手机端装的是哪一版是排查链路问题的第一步。
  * scripts/build.mjs 会在构建期校验两者一致。
  */
-export const PLUGIN_VERSION = '0.1.2'
+export const PLUGIN_VERSION = '0.1.3'
 
 /** 设备列表的最小刷新间隔（毫秒），避免频繁调宿主 */
 const DEVICE_REFRESH_MIN = 2000
