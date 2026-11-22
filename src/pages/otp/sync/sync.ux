@@ -190,6 +190,10 @@ export default {
         }
       }
     })
+
+    // 认领启动期间缓冲的 OTP 推送（协议栈不在启动路径，进入本页时才接手）。
+    // 放在订阅之后：claim 回放会触发 notifySync，本页要先挂上监听才收得到。
+    otpBridge.init()
   },
 
   disarm() {

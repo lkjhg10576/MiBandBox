@@ -41,13 +41,15 @@ import interconnectUtil from '../../../utils/interconnect'
 import otpProtocol from '../../../utils/otpProtocol'
 import qrProtocol from '../../../utils/qrProtocol'
 import qrFavStore from '../../../utils/qrFavStore'
+import qrBridge from '../../../utils/qrBridge'
 import prompt from '@system.prompt'
 import brightness from '@system.brightness'
 
 /**
  * 二维码「从手机导入」接收页：UI 骨架与 otp/sync、lyrics/transfer 同一套。
  *
- * 分工：常驻 qrBridge（app.ux onCreate 注册）负责收 qr_import 并落库收藏，
+ * 分工：qrBridge 负责收 qr_import 并落库收藏（协议栈不在启动路径，
+ * 由本页进入时认领 pushInbox 缓冲、接手推送），
  * 本页只做「看得见」的部分 —— 连接状态、接收结果展示、跳转收藏。
  * bandbox-qr 协议消息集只有 qr_import/qr_ack/qr_err 三条、没有心跳消息，
  * 连接检测复用同一插件的心跳链路：插件每 5 秒无条件下发 bandbox-otp hello，
@@ -118,6 +120,9 @@ export default {
     this.refreshRows()
 
     this.arm()
+    // 认领启动期间缓冲的二维码推送（协议栈不在启动路径，进入本页时才接手）。
+    // 放在 arm() 之后：回放落库会 notify qrFavStore，本页要先挂上监听。
+    qrBridge.init()
     this.probe()
 
     brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })

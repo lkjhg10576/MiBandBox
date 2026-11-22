@@ -61,6 +61,7 @@
 import g from '../../../utils/g'
 import otpStore from '../../../utils/otpStore'
 import otp from '../../../utils/otp'
+import otpBridge from '../../../utils/otpBridge'
 import otpSession from '../otpSession'
 
 /**
@@ -85,6 +86,9 @@ export default {
     this.arm()
     this.refresh()
     this.startTick()
+    // 认领启动期间缓冲的 OTP 推送（协议栈不在启动路径，进入本页时才接手），
+    // 回放落库后本列表会立刻显示手机推来的新账户。
+    otpBridge.init()
   },
 
   onHide() {

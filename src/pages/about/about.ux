@@ -42,7 +42,7 @@
 @import '../../common/styles/theme.css';
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 418px; }
 .inner { width: 212px; flex-direction: column; }
-.logo { width: 56px; height: 56px; margin-top: 4px; margin-left: 78px; border-radius: 15px; }
+.logo { width: 56px; height: 56px; margin-top: 4px; margin-left: 78px; border-radius: 28px; }
 .name { width: 212px; height: 32px; line-height: 32px; text-align: center; font-size: 17px; color: #FFFFFF; }
 .ver { width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.5); }
 .desc { width: 180px; margin: 10px 16px 14px 16px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.7); }

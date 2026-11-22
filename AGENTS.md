@@ -207,6 +207,18 @@ Vela 有条渲染规则：**带 `if` 的 div 必须有 CSS 规则（`position` +
 - 插件文档/注释里**不要**再用版本阈值表达行为（例如「≤0.3.1 用旧包名」）——编号归一后 `0.1.1` 会被误读成旧包；改写成不依赖版本号的表述。
 - **例外（0.1.1 换源）**：本版插件源码确实改了（`TARGET_PKG` 换成新包名），但版本号**停在 `0.1.1`** 与快应用对齐 —— 平台侧 0.1.0 已下架、旧插件失去使用对象，不存在版本混淆；下次插件源码再改动时，恢复「插件源码改动即升号、且与快应用同号」的规矩。
 
+## 冷启动减负：协议栈不进启动路径（2026-11-22 起，勿破坏）
+
+手环 CPU 弱、工具多，冷启动是硬指标。实测 band10 模拟器：**app.jsc 从 51,520 B 降到 23,867 B（−53.7%）**，协议栈求值段 38ms → 29ms。
+
+- **`app.ux` 不得 import `otpBridge` / `qrBridge` / `otpProtocol` / `otp` / `otpAccounts` / `otpStore` / `qrProtocol` / `qrFavStore`** —— 启动路径只留 `src/utils/pushInbox.js` 这一份薄缓冲层（约 4KB）。
+- **手机推送的接收链路**：`app.ux onCreate` 调 `pushInbox.init()` 订阅 `interconnect`，收到的消息按 `app` 字段分流进 `otp` / `qr` 两个桶（歌词协议 `bandbox-lyrics` 不进缓冲，由歌词页自己订阅）。用户进入对应页面时，桥接层 `init()` 调 `pushInbox.claim('otp'|'qr', handle)` **认领并原样回放** → 落库与回执照旧，**数据不丢**。
+- **认领触发点**（页面 `onShow` 里调）：`otp/sync/sync.ux`、`otp/list/list.ux`（`otpBridge.init()`）、`qrcode/fav/fav.ux`、`qrcode/import/import.ux`（`qrBridge.init()`）。到达这些页之前，插件推送都躺在缓冲里；进页即回放落库。**新增 OTP / 二维码相关页时要在它的 `onShow` 里补上对应 init**，否则该页看不到缓冲里的推送。
+- **状态必须挂 global**：工具链把每个页面打成独立 bundle、模块级变量不跨 bundle 共享 —— `pushInbox` / `otpBridge` / `qrBridge` 的状态都挂在 `global.__bbPushInbox` / `global.__bbOtpBridge` / `global.__bbQrBridge` 上。**分片会话（otp 的 `session`）必须全 app 只有一份**，否则同一笔分片事务的各片分落在不同页面被认领时会重组失败。挂法照 `global.js` / `perf.js` 的先例。
+- **行为变化（已知且可接受）**：插件侧「手环在线 · N 个账户」的显示**推迟到用户首次进入 OTP / 二维码页**（此前是进入应用即显示）。歌词推送链路不受影响（歌词页自带就绪广播）。
+- **别把 `announceReady` 的节流单位改回毫秒**：`lastAnnounceAt` 统一用 `otp.epochSeconds()`（秒）。早前 `onStatus` 里用 `Date.now()`（毫秒）赋值、节流处又按秒比较，单位不一致会让自己的节流把就绪广播挡掉（`now - lastAnnounceAt` 为负 → 直接 return，插件侧永远等不到 ready）。
+- **本地测冷启动**：该 Vela 模拟器镜像**没有 Android logcat 服务**（`adb logcat` 与 gRPC `streamLogcat` 都取不到快应用日志），测量要走「埋点写 `internal://files/bandbox/perf.txt` → `adb shell cat /data/files/<pkg>/bandbox/perf.txt`」。`src/utils/perf.js` 的 `ENABLED` **必须保持 false**，发行包不带埋点（门禁 R2 会拦）。
+
 ## 记忆存储
 
 本项目所有需要「记住」的约定、决策、约束与进度，统一写入 **PowerContext**

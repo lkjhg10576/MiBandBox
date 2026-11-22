@@ -1,21 +1,37 @@
 /**
- * 二维码导入常驻接收层：app 生命周期内唯一的 bandbox-qr 协议入口。
+ * 二维码导入接收层：bandbox-qr 协议的唯一入口。
  *
- * 四条硬约束（照 otpBridge.js 的既有范式，与歌词/OTP 共存）：
+ * 与互联层的关系（照 otpBridge.js 的既有范式，与歌词/OTP 共存）：
  *   ① dispatch() 会把同一文本分发给所有 listener，歌词/OTP 订阅与本模块同时收到，
  *      三方都靠 app 字段过滤（本协议 parse 对其它协议消息返回 bad-app 静默忽略）。
  *   ② interconnect 有 80ms 同文本去重 → 每条消息 id 必须唯一（协议已保证）。
- *   ③ 只在 init() 时用 parse 双校验补处理一次 getLastMessage()，
- *      不依赖缓存存在、不调用也不修改 clearLastMessage()（歌词页 onHide 会清它）。
- *   ④ 本模块注册后在整个 app 生命周期内不退订（常驻）。
+ *   ③ 消息接收改为「认领 pushInbox 缓冲」：启动路径只留 pushInbox 这一份
+ *      薄缓冲层（见 pushInbox.js 的背景说明），本模块的协议栈不进 app.jsc。
+ *      init() 时把缓冲原样回放给 handle()，落库与回执照旧 —— 数据不丢。
+ *   ④ 认领后消息直达本模块，不重复订阅 interconnect。
  *
  * 回执不当强依赖：手表→手机方向在部分固件不可用，reply() 失败静默。
  */
 import interconnectUtil from './interconnect'
 import qrProtocol from './qrProtocol'
 import qrFavStore from './qrFavStore'
+import pushInbox from './pushInbox'
 
-let inited = false
+/**
+ * 状态挂在 global 上：工具链把每个页面打成独立 bundle、模块级变量不跨
+ * bundle 共享 —— 认领标记必须全 app 只有一份，否则每个页面都会重复认领。
+ * 挂法照 global.js / perf.js 的先例。
+ */
+const g =
+  typeof global !== 'undefined'
+    ? global
+    : typeof globalThis !== 'undefined'
+      ? globalThis
+      : {}
+
+const KEY = '__bbQrBridge'
+if (!g[KEY]) g[KEY] = { inited: false }
+const st = g[KEY]
 
 /**
  * 发送一条编码消息给手机（失败静默）。
@@ -54,27 +70,17 @@ function handle(raw) {
 }
 
 /**
- * 初始化（幂等）：注册常驻消息订阅与缓存补处理。
- * 在 app.ux onCreate 的 interconnectUtil.init() / otpBridge.init() 之后调用。
+ * 初始化（幂等）：认领 pushInbox 缓冲。
+ *
+ * 调用时机：用户进入二维码相关页时（由页面 onInit 触发），不再由
+ * app.ux onCreate 调用 —— 协议栈不进启动路径。
  */
 function init() {
-  if (inited) return
-  inited = true
+  if (st.inited) return
+  st.inited = true
 
-  interconnectUtil.onMessage((text) => {
-    try {
-      handle(text)
-    } catch (e) {}
-  })
-
-  // 兼容「刚 init 就已收到消息」：只补处理一次缓存，
-  // 不依赖缓存存在、不动 clearLastMessage()（歌词页 onHide 会清它）
-  const cached = interconnectUtil.getLastMessage()
-  if (cached) {
-    try {
-      handle(cached)
-    } catch (e) {}
-  }
+  // 认领启动期间缓冲的二维码推送，原样回放（落库 + 回执照旧）
+  pushInbox.claim('qr', handle)
 }
 
 export default { init, handle }
