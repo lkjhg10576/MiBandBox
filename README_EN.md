@@ -82,7 +82,7 @@ Every image below is the **actual running app inside the Vela simulator** (Xiaom
 | <img src="assets/screenshots/page_31_about.png" width="180" alt="About page" /> | <img src="assets/screenshots/page_30_settings.png" width="180" alt="Settings" /> | <img src="assets/screenshots/page_18_system.png" width="180" alt="System info" /> |
 | **About** (icon / version) | **Settings** (home layout / categories / date card) | **System info** (model / screen / storage) |
 
-The home screen offers a **two-column grid / single-column list** toggle (*Settings → Home layout*) and shows the countdown of your nearest saved date on top by default (*Settings → Non-persistent date card* hides the card and gives the freed space to the tool list when no date is saved).
+The home screen supports switching between **two-column grid / single-column list / category list** styles (*Settings → Home layout / Tool categories*) and shows the countdown of your nearest saved date on top by default (*Settings → Non-persistent date card* hides the card and gives the freed space to the tool list when no date is saved). **Tool management via long press**: long press any tool on the home screen, category view, or favourites page to **pin** (up to 4 tools to the top), **favourite** (adds a quick access tile), or **hide** (hidden from home and categories, manageable under *Settings → Hidden tools*).
 
 ---
 
@@ -151,6 +151,13 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 ---
 
 ## Highlights
+
+### 📌 Long Press Tool Management (Pin / Favourite / Hide)
+
+Long press any tool in any layout to open the management menu:
+- **Pin**: Pin up to 4 high-frequency tools to the top of the home screen (in category view, pinned tools are shown at the top while also retained in their categories);
+- **Favourite**: Save favourite tools with no count limit; creates a quick "Favourites" tile on the home screen;
+- **Hide**: Hide unused tools from the home screen and category lists; restore them at any time in *Settings → Hidden tools* (automatically unpins and unfavourites when hidden).
 
 ### 📱 Transfer lyrics from your phone
 

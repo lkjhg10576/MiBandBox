@@ -5,12 +5,15 @@
   <div class="page">
     <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
     <list class="tools" bounces="true">
-      <list-item type="tool" class="rowCell" for="{{ items }}" @click="open($item)">
+      <list-item type="tool" class="rowCell" for="{{ items }}" @click="open($item)" @longpress="onLong($item)">
         <img class="rowIcon" src="{{ $item.icon }}" />
         <div class="rowMeta">
           <text class="f rowName">{{ $item.name }}</text>
           <text class="f rowDesc">{{ $item.desc }}</text>
         </div>
+      </list-item>
+      <list-item type="empty" class="empty" if="{{ items.length === 0 }}">
+        <text class="f emptyT">该分类的工具已全部隐藏</text>
       </list-item>
       <list-item type="pad" class="listPad"></list-item>
     </list>
@@ -28,12 +31,17 @@
 .rowMeta { width: 128px; height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; }
 .rowName { width: 128px; height: 26px; line-height: 26px; text-align: left; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .rowDesc { width: 128px; height: 20px; line-height: 20px; text-align: left; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+.empty { width: 200px; height: 300px; align-items: center; justify-content: center; }
+.emptyT { font-size: 15px; color: rgba(255,255,255,0.4); text-align: center; }
 .listPad { width: 200px; height: 40px; }
 </style>
 
 <script>
 import g from '../../utils/g'
 import cats from '../../data/cats'
+import homeTools from '../../utils/homeTools'
+
+let lastLongAt = 0
 
 export default {
   // 路由参数：首页分类行带 cat=<类别 id>
@@ -46,12 +54,24 @@ export default {
     g.clock.sub(this._ck)
     // 非法/缺失 cat 兜底到第一类：正常路径永远非空，不做空态页
     const c = cats.category(this.cat) || cats.CATS[0]
-    // 只在类别变化时重渲染整表
-    if (this.catId !== c.id) {
-      this.catId = c.id
-      this.titleText = c.name
-      this.items = cats.toolsOf(c.id)
-    }
+    this.catId = c.id
+    this.titleText = c.name
+    homeTools.read((prefs) => {
+      if (!page.$valid) return
+      const rawTools = cats.toolsOf(c.id)
+      const hide = (prefs && prefs.hide) || []
+      const hideMap = {}
+      for (let i = 0; i < hide.length; i++) {
+        hideMap[hide[i]] = true
+      }
+      const visible = []
+      for (let i = 0; i < rawTools.length; i++) {
+        if (!hideMap[rawTools[i].id]) {
+          visible.push(rawTools[i])
+        }
+      }
+      page.items = visible
+    })
   },
   onHide() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
@@ -60,7 +80,14 @@ export default {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   open(item) {
+    if (Date.now() - lastLongAt < 800) return
     if (item && item.route) g.router.push(item.route)
+  },
+  onLong(item) {
+    if (!item || !item.id || item.id.indexOf('__') === 0) return
+    lastLongAt = Date.now()
+    g.haptic.short()
+    g.router.push('/pages/toolact', { id: item.id })
   }
 }
 </script>

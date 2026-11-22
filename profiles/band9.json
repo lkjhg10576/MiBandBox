@@ -51,6 +51,25 @@
       ["width: 200px", "width: 180px"],
       ["width: 128px", "width: 112px"]
     ],
+    "src/pages/toolact/toolact.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 418px", "height: 388px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["width: 134px", "width: 114px"]
+    ],
+    "src/pages/toolfav/toolfav.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 128px", "width: 112px"]
+    ],
+    "src/pages/toolhide/toolhide.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 128px", "width: 112px"]
+    ],
     "src/pages/about/about.ux": [
       ["height: 880px;", "height: 990px;"],
       ["width: 212px", "width: 192px"],

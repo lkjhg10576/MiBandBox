@@ -114,7 +114,7 @@
 - **分类成员关系的唯一真源是 `src/data/cats.js`**（9 类 / 40 工具）。`src/data/apps.js` **一律不加 `cat` 字段** —— 它的数组顺序是模拟器脚本（`tools/shoot-routes.py` / `motion-sim.py` / `cube-sim.py`）的 index 导航依据，也是 `tools/perf-audit.mjs` 的节点计数依据；两处各写一份成员必然漂移。类别详情页 `src/pages/toolcat/toolcat.ux` 的路由是 `pages/toolcat`，用 `protected: { cat }` 收类别 id。
 - **布局状态机是四态**：`app.ux` 的 `normalizeLayout` / `src/utils/layoutFlag.js` 的 read+write / `home.ux` 的 `applyLayout` 都认 `'grid' | 'grid2' | 'list' | 'cat'`（`grid2` = Pro 专属双栏网格，见下一节）。分类模式复用既有的布局状态机（模块闭包 `layoutState` + KV `'home'` 键 + `layout.txt` 启动快标志 + watcher），**不另建一套**。另加一个 KV 键 **`'homeStyle'`** 记住上次的非分类样式（开关关闭时还原用，grid2 也参与）。
 - **三写范式**：任何布局变更都要 `app.setHomeLayout(mode)` → `layoutFlag.write(mode)` → `g.kv.set('home', mode)` + `g.kv.flush()` 三处同写。`set.ux` 的「恢复默认设置」**必须补 `layoutFlag.write('grid')`**，否则恢复默认后重启会先按旧标志闪一帧旧布局再被 KV 纠正。
-- **设置页的开关卡不能换成 `<switch>`**，沿用项目既有开关语言（内联 style 三元 + 文字「开/关」，见 `calculator.ux` 的 `.swRow`）。设置页现在五张卡（首页样式 / 工具分类 / 目标日不常驻 / 关于 / 恢复默认），`5×(76+8)+16=436` 超出两机型的 body（band10 418 / Pro 358），所以 `.body` 已改成 `<scroll>` + `.inner`（照 `about.ux` 的结构）—— **别再改回普通 `<div>`**，否则 Pro 上后两张卡会被裁掉。
+- **设置页的开关卡不能换成 `<switch>`**，沿用项目既有开关语言（内联 style 三元 + 文字「开/关」，见 `calculator.ux` 的 `.swRow`）。设置页现在六张卡（首页样式 / 工具分类 / 隐藏功能 / 目标日不常驻 / 关于 / 恢复默认），`6×(76+8)+16=520` 超出两机型的 body（band10 418 / Pro 358），所以 `.body` 已改成 `<scroll>` + `.inner`（照 `about.ux` 的结构）—— **别再改回普通 `<div>`**，否则 Pro 上后两张卡会被裁掉。
 - **`src/pages/set/set.ux` 里的 `'双栏网格'` 字面量带单引号**（pro336 的替换对 `["'双栏网格'","'三栏网格'"]` 靠它命中）；**全文件严禁出现 `'三栏网格'`**（否则 test-profile「replace 不得在基线出现」直接 fail）。字面量只允许出现在 `layoutName()` 与 `data` 默认值两处。grid2 的显示名必须写 `'双栏' + '网格'` 拼接（见下一节），**注释里同样不许出现替换串原文（find 或 replace 都不行）**——test-profile 按整文件子串匹配，注释也会命中，本次构建期被拦过一次。
 - **工具数只有一个口径 = `src/data/apps.js` 的条目数**（当前 **40**）：头图、README / README_EN、发布说明里写「N 个工具」都以它为准，改工具时这几处同步改。两个容易数错的：**「进制转换」不是独立工具** —— 它是「单位换算」里的第 13 类（`src/pages/unitconvert/unitconvert.ux` 里的 `radix` 卡），不进首页网格、不占名额；**「体感手枪 / 空气投篮」是同一个工具**「体感游戏」。版本线口径：0.1.0 正式版 32 → 0.1.0 Beta 线 37 → **0.1.1 = 37**（换源 + Pro 适配，未加工具）→ 0.1.2 = **40**（魔方计时 / 桌面伴侣 / 快捷色卡）。
 - **门禁 R16**（工具分类表完备性）：`tools/release-gate.mjs` 每次构建前核对 `cats.js` 的成员并集 == `apps.js` 的全部工具 id，且无重复 / 无未知 id / 图标文件真实存在。新增工具**漏挂分类**在该工具从分类模式里彻底消失，而分类模式默认是关的 —— 运行期毫无症状，只有用户打开分类模式才发现。所以这是构建期硬约束，不是可选检查。（更详细的诊断脚本是本地工具 `tools/test-cats.mjs`；`tools/` 整目录不入库，所以门禁里的实现必须自包含。）
@@ -138,6 +138,22 @@
 - 读写统一走 `src/utils/homeToday.js`（`read(cb)` / `toggle(cb)`），首页 `onShow` 读、设置页开关写，**别在页面里另写 `'todayAuto'` 字面量**。「恢复默认设置」要把它一起复位（`applyTodayMode(false)`）。
 - **没有目标日**的口径 = `homeEvents.load` 返回的 `best` 为空（空列表、日期全部非法都算）。
 - 卡片隐藏用 `if="{{ showToday }}"`（容器型 `show` 动态翻转不可靠，见首页网格的既有坑）；列表换 `.appsUp` 类：band10 `top 92 / height 394`，Pro 由 `profiles/pro336.json` 的 `["height: 394px","height: 348px"]` 换成 348。394 = 常驻态 304 + 卡片 88 + 2px 间距；两态**底部对齐**（band10 486 / Pro 440）。改目标日卡高度时同步改这两个数。
+
+## 首页长按工具管理（置顶 / 收藏 / 隐藏）（2026-11-22 起，勿破坏）
+
+无论使用何种首页布局，长按任意工具条目弹出操作页（`src/pages/toolact/toolact.ux`，路由 `pages/toolact`，参数 `{ id }`），支持**功能置顶**（上限 4 个）、**功能收藏**（无上限）与**隐藏功能**：
+
+- **KV 三键单一真源**：`pinApps`（置顶 id 数组，≤4）、`favApps`（收藏 id 数组）、`hideApps`（隐藏 id 数组），全部读写统一走 `src/utils/homeTools.js`（`read(cb)` / `togglePin(id, cb)` / `toggleFav(id, cb)` / `toggleHide(id, cb)`），页面中不各写 key 字面量。
+- **隐藏自动移出置顶与收藏**：隐藏一个已置顶或已收藏的工具时，`homeTools.toggleHide` 数据层统一收口，把该工具同步移出 `pinApps` 与 `favApps`，避免隐藏工具残留在置顶区或收藏页。
+- **四种布局显示规则**：
+  - `grid` / `grid2` / `list`：置顶工具移到首页最上方（按置顶操作先后顺序），原位置不再显示、后序工具上移补位；有收藏项时，首页「收藏功能」入口格（`__favtools__`）出现在**置顶区之后**的第一格，点击进收藏页（`pages/toolfav`）；
+  - `cat`（分类单栏）：置顶工具以单栏条目在首页顶部显示，同时在其所属分类详情页（`pages/toolcat`）照常显示（**双显示口径**，工具分类归属不变，`cats.js` 零改动）；全隐藏的分类在分类列表中**保留**，显示「0 个工具」；
+  - 收藏工具在原列表位置照常显示（收藏只在首页新增快捷入口，不移动原位置）；
+  - 隐藏工具在首页与分类详情页都不显示，管理入口在 **设置 → 隐藏功能**（`pages/toolhide`）。
+- **`@longpress` 原生事件与防误触守卫**：
+  - 主页（`home.ux`）、分类详情页（`toolcat.ux`）、收藏页（`toolfav.ux`）三处均支持长按工具条目；分类行（`item.cat`）与内部占位行（`__` 前缀，如 `__settings__`、`__favtools__`）不响应长按；
+  - 模块级 `lastLongAt` 守卫（800ms）：长按触发时记录 `Date.now()`，`open(item)` 首行校验互斥，彻底防止长按抬手后系统补发 click 误进工具页面。
+- **三个新页面规范**：`toolact` / `toolfav` / `toolhide` 均严格遵守门禁规范——不使用 `data`（只用 `protected` + `private`，避开 Vela 黑屏坑）；可点元素必须 y≥92（严格遵守门禁 **R15**，不与页头返回命中区重叠）；并在 `src/manifest.json` 与 `profiles/pro336.json`、`profiles/band9.json` 中完整登记。
 
 ## 设备 profile（2026-11-12 起；2026-11-20 增 band9，勿破坏）
 

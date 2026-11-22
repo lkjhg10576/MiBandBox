@@ -1,0 +1,90 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="隐藏功能" clock="{{ clock }}"></pagehead>
+    <list class="tools" bounces="true">
+      <list-item type="tool" class="rowCell" for="{{ items }}" @click="open($item)" @longpress="onLong($item)">
+        <img class="rowIcon" src="{{ $item.icon }}" />
+        <div class="rowMeta">
+          <text class="f rowName">{{ $item.name }}</text>
+          <text class="f rowDesc">{{ $item.desc }}</text>
+        </div>
+      </list-item>
+      <list-item type="empty" class="empty" if="{{ items.length === 0 }}">
+        <text class="f emptyT">没有隐藏的功能</text>
+        <text class="f emptyS">长按任意工具可选择隐藏</text>
+      </list-item>
+      <list-item type="pad" class="listPad"></list-item>
+    </list>
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+.tools { position: absolute; left: 0px; top: 82px; width: 212px; height: 408px; padding: 0px 6px 0px 6px; background-color: #000000; }
+.rowCell { width: 200px; height: 68px; margin: 0px 0px 8px 0px; border-radius: 26px; background-color: #1A1A1A; flex-direction: row; align-items: center; justify-content: flex-start; padding: 0px 12px; }
+.rowIcon { width: 34px; height: 34px; margin-right: 10px; }
+.rowMeta { width: 128px; height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; }
+.rowName { width: 128px; height: 26px; line-height: 26px; text-align: left; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.rowDesc { width: 128px; height: 20px; line-height: 20px; text-align: left; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+.empty { width: 200px; height: 300px; align-items: center; justify-content: center; flex-direction: column; }
+.emptyT { font-size: 17px; color: #FFFFFF; margin-bottom: 6px; }
+.emptyS { font-size: 14px; color: rgba(255,255,255,0.4); }
+.listPad { width: 200px; height: 40px; }
+</style>
+
+<script>
+import g from '../../utils/g'
+import apps from '../../data/apps'
+import homeTools from '../../utils/homeTools'
+
+let lastLongAt = 0
+
+export default {
+  protected: {},
+  private: { clock: '--:--', items: [], _ck: null },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+
+    homeTools.read((prefs) => {
+      if (!page.$valid) return
+      const hide = (prefs && prefs.hide) || []
+      const hideMap = {}
+      for (let i = 0; i < hide.length; i++) {
+        hideMap[hide[i]] = true
+      }
+      const list = []
+      for (let i = 0; i < apps.length; i++) {
+        if (hideMap[apps[i].id]) {
+          list.push(apps[i])
+        }
+      }
+      page.items = list
+    })
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  open(item) {
+    if (Date.now() - lastLongAt < 800) return
+    if (!item || !item.id) return
+    g.router.push('/pages/toolact', { id: item.id })
+  },
+  onLong(item) {
+    if (!item || !item.id) return
+    lastLongAt = Date.now()
+    g.haptic.short()
+    g.router.push('/pages/toolact', { id: item.id })
+  }
+}
+</script>

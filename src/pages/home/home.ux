@@ -19,7 +19,7 @@
          逛一次目标日回来才显示）；if 在 layoutReady 翻转时全新建节点，规避该坑 -->
     <scroll class="apps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'grid' }}" scroll-y="true" bounces="true">
       <div class="grid" style="height: {{ gridHeight }}px;">
-        <div class="f cell" for="{{ cells }}" @click="open($item)">
+        <div class="f cell" for="{{ cells }}" @click="open($item)" @longpress="onLong($item)">
           <img class="icon" src="{{ $item.icon }}" />
           <text class="f name">{{ $item.name }}</text>
         </div>
@@ -31,7 +31,7 @@
          内容高用 gridHeight2（固定两列）；if 而非 show（同上：容器型 show 的动态翻转不可靠） -->
     <scroll class="apps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'grid2' }}" scroll-y="true" bounces="true">
       <div class="grid" style="height: {{ gridHeight2 }}px;">
-        <div class="f cell2" for="{{ cells }}" @click="open($item)">
+        <div class="f cell2" for="{{ cells }}" @click="open($item)" @longpress="onLong($item)">
           <img class="icon" src="{{ $item.icon }}" />
           <text class="f name">{{ $item.name }}</text>
         </div>
@@ -39,7 +39,7 @@
     </scroll>
 
     <list class="apps listApps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'list' }}" bounces="true">
-      <list-item type="app" class="rowCell" for="{{ cells }}" @click="open($item)">
+      <list-item type="app" class="rowCell" for="{{ cells }}" @click="open($item)" @longpress="onLong($item)">
         <img class="rowIcon" src="{{ $item.icon }}" />
         <div class="rowMeta">
           <text class="f rowName">{{ $item.name }}</text>
@@ -52,7 +52,7 @@
     <!-- 分类单栏：与上面 list 分支逐字同构，只把 for 的数据源换成 catCells。
          用 if 不用 show（同上：Pro 真机容器型 show 翻转不可靠）；listPad 必须保留。 -->
     <list class="apps listApps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'cat' }}" bounces="true">
-      <list-item type="cat" class="rowCell" for="{{ catCells }}" @click="open($item)">
+      <list-item type="cat" class="rowCell" for="{{ catCells }}" @click="open($item)" @longpress="onLong($item)">
         <img class="rowIcon" src="{{ $item.icon }}" />
         <div class="rowMeta">
           <text class="f rowName">{{ $item.name }}</text>
@@ -241,6 +241,7 @@ import catData from '../../data/cats'
 import layoutApi from '../../utils/homeLayout'
 import homeEvents from '../../utils/homeEvents'
 import homeToday from '../../utils/homeToday'
+import homeTools from '../../utils/homeTools'
 import { gridHeight, HOME } from '../../common/layout.js'
 
 const SETTINGS_TILE = {
@@ -264,6 +265,7 @@ function dualGridHeight(count) {
 }
 
 let layoutWatcher = null
+let lastLongAt = 0
 
 export default {
   data: {
@@ -294,6 +296,7 @@ export default {
     this.watchLayout()
     this.syncLayout()
     this.readTodayMode()
+    this.rebuildCells()
     this.refresh()
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
@@ -388,8 +391,46 @@ export default {
       this.clock = g.time.formatClock(new Date())
     }
   },
+  /** 读偏好设置并重构主要布局与分类布局的工具列表 */
+  rebuildCells() {
+    const page = this
+    homeTools.read((prefs) => {
+      if (!page.$valid) return
+      const nextCells = homeTools.buildMain(apps, prefs)
+      const nextCatCells = homeTools.buildCatRows(catData.CATS, apps, prefs)
+
+      let cellsKey = ''
+      for (let i = 0; i < nextCells.length; i++) {
+        cellsKey += nextCells[i].id + ','
+      }
+      let curCellsKey = ''
+      for (let i = 0; i < page.cells.length; i++) {
+        curCellsKey += page.cells[i].id + ','
+      }
+
+      if (cellsKey !== curCellsKey) {
+        page.cells = nextCells
+        page.gridHeight = gridHeight(nextCells.length)
+        page.gridHeight2 = dualGridHeight(nextCells.length)
+      }
+
+      let catKey = ''
+      for (let i = 0; i < nextCatCells.length; i++) {
+        catKey += nextCatCells[i].id + ':' + nextCatCells[i].desc + ','
+      }
+      let curCatKey = ''
+      for (let i = 0; i < page.catCells.length; i++) {
+        curCatKey += page.catCells[i].id + ':' + page.catCells[i].desc + ','
+      }
+
+      if (catKey !== curCatKey) {
+        page.catCells = nextCatCells
+      }
+    })
+  },
   open(item) {
     if (!item) return
+    if (Date.now() - lastLongAt < 800) return
     // 分类行带 cat（无 route）：进类别页；普通工具行与设置行带 route：直接进工具
     if (item.cat) {
       g.haptic.short()
@@ -398,6 +439,12 @@ export default {
     }
     if (!item.route) return
     g.router.push(item.route)
+  },
+  onLong(item) {
+    if (!item || !item.id || item.cat || item.id.indexOf('__') === 0) return
+    lastLongAt = Date.now()
+    g.haptic.short()
+    g.router.push('/pages/toolact', { id: item.id })
   },
   openDays() {
     g.router.push('/pages/daysmatter/list')

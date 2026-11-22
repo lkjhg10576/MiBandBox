@@ -75,6 +75,15 @@
       "pages/toolcat": {
         "component": "toolcat"
       },
+      "pages/toolact": {
+        "component": "toolact"
+      },
+      "pages/toolfav": {
+        "component": "toolfav"
+      },
+      "pages/toolhide": {
+        "component": "toolhide"
+      },
       "pages/about": {
         "component": "about"
       },
