@@ -11,6 +11,10 @@
  * 两种版式共用同一个时间行（8 个定宽格：6 数字 + 2 冒号），关闭秒钟时只保留 5 格；
  * 行宽随之变窄并整组居中 → 时分整体向右平移、保持居中（用户口径）。
  *
+ * 精美样式（2026-11-22 第三版式，fancyFor/buildFancy，参考图表盘风）：三机型同一公式，
+ * 时间居左（自绘粗 condensed 数字图）+ 右栏「周几几号 / 目标日倒计时 / 分隔线 / 电量」；固定 HH:MM 无秒，
+ * 由设置页「精美样式」开关经路由参数启用，简洁样式（上述两种版式）保持不变。
+ *
  * 跑道屏（band10，212×520）与矩形屏（pro336，336×480）的应用可绘制高度都是 466
  * （theme.css：band10 的 y466 以下是系统栏/药丸收窄区；Pro 实测 480 − 14 系统栏）——
  * 旋转后 local x 对应这块高度，所以内容宽度只能用 466，用满 SCREEN.h 会让最后一位秒
@@ -52,6 +56,48 @@ const ROWS = {
   hintH: 14,
   hintFont: 10
 }
+
+/**
+ * 精美样式（2026-11-22 第三版式，参考图表盘风，用户可选）：三机型同一套公式 ——
+ * 时间居左（自绘粗 condensed 数字图，见 tools/gen-assets/gen.py 的 common_fancy_digits），
+ * 右栏信息列自上而下：周几 + 几号 / 目标日倒计时 / 分隔线 / 电量徽标，全部左对齐。
+ * 简洁样式的周几是红色；精美样式按参考图为白色。冒号是两个圆点 div，不占图片资产。
+ *
+ * 全部比例都从参考图（用户给的手环照片）量出来，归一化到「字高」：
+ *   数字墨迹宽 0.322、笔画粗 0.106、字距 0.0625、冒号点径 0.098、点心距 0.32、
+ *   右栏文字高 0.144 字高、右栏总高 0.68 字高、时间字高 0.75 屏高。
+ * 改数字字形时两边同步（gen.py 打印实测值，这里是显示侧镜像）。
+ */
+const FANCY = {
+  pad: 14,
+  /** 时间区与右栏之间的最小余量（实际间隙由剩余空间决定，通常更大） */
+  gapMin: 12,
+  /** 字距（字高比例，参考图实测 0.0625） */
+  trackRatio: 0.06,
+  /** 冒号圆点直径 / 两点净间隙（字高比例；点心距 = 直径 + 净间隙 = 0.32） */
+  dotRatio: 0.10,
+  dotGapRatio: 0.22,
+  /** 字高上限（屏高比例；参考图 0.75，且不得超过源图字高 FD_CAP —— 只缩不放，放大会糊） */
+  hCap: 0.78,
+  /** 日期行 / 倒计时行 / 电量字号 = 字高比例（实测：参考图白字墨迹高 0.144 字高，
+   *  而中文字形墨迹只有字号的 ~0.85 → 字号比例取 0.17 才等效） */
+  dateRatio: 0.17,
+  midRatio: 0.16,
+  batRatio: 0.145,
+  /** 右栏行间隙 = 字高比例 */
+  rowGapRatio: 0.05,
+  hintH: 14,
+  hintFont: 10
+}
+
+/** 自绘数字的源图墨迹宽（px，源图 cap 高 = FD_CAP）：真源是 gen.py 的绘制规格
+ *  （生成时打印实测值），这里是显示侧的镜像 —— img 显示宽 = round(源宽 × digitH / FD_CAP)；
+ *  改字形两边同步。 */
+export const FD_SRC_W = [58, 33, 58, 58, 58, 58, 58, 58, 58, 58]
+export const FD_CAP = 180
+
+/** 最宽数字的源墨迹宽（时间行宽试算用） */
+const FD_MAX_SRC_W = Math.max.apply(null, FD_SRC_W)
 
 /** 应用可绘制高度（主题安全区）：band10 / pro336 实测 466；band9（192×490）竖屏收窄带同比例，436。
  *  真源在各 profile 的 layout.companion.drawableH（apply-profile 生成进 layout.js）。 */
@@ -228,6 +274,123 @@ function layoutRows(stripW, stripH) {
 }
 
 /**
+ * 精美样式在给定字高下的全部几何：时间行（上界）+ 右栏信息列。
+ * 右栏宽 = 各行内容宽的max（日期组 / 倒计时 / 电量组）—— 列宽跟着内容走，
+ * 分隔线铺满整列，文字左对齐（参考图口径）。
+ */
+function fancyMetrics(cap) {
+  const p = FANCY
+  // 数字显示宽 = 源墨迹宽等比缩放（每位数字宽窄不同，「1」明显窄）
+  const digitW = Math.round((FD_MAX_SRC_W * cap) / FD_CAP)
+  const track = Math.max(1, Math.round(cap * p.trackRatio))
+  const dotD = Math.max(2, Math.round(cap * p.dotRatio))
+  const dotGap = Math.max(2, Math.round(cap * p.dotGapRatio))
+  const timeRowW = 4 * digitW + dotD + 4 * track
+
+  const dateFont = Math.max(1, Math.round(cap * p.dateRatio))
+  const dateLineH = Math.round(dateFont * 1.25)
+  const midFont = Math.max(1, Math.round(cap * p.midRatio))
+  const midLineH = Math.round(midFont * 1.25)
+  const bat = batteryGeo(Math.max(1, Math.round(cap * p.batRatio)))
+
+  // 日期行内部：周几（两字）+ 间隙 + 几号（两位数字格，单个数字居中）
+  const weekW = Math.ceil(dateFont * 2) + 2
+  const dateGap = Math.max(4, Math.round(dateFont * 0.3))
+  const dayW = Math.ceil(dateFont * 1.24)
+  // 倒计时行固定宽（最长「NNN天」= 3 数字 + 1 汉字 ≈ 2.8em），文本左对齐防抖动
+  const midW = Math.ceil(midFont * 3)
+  // 右栏宽：取各行内容最宽的一条（列随内容走，文字左对齐，不留空档）
+  const infoW = Math.max(weekW + dateGap + dayW, midW, bat.batGroupW)
+
+  const rowGap = Math.max(2, Math.round(cap * p.rowGapRatio))
+
+  return {
+    digitW,
+    track,
+    dotD,
+    dotGap,
+    timeRowW,
+    dateFont,
+    dateLineH,
+    midFont,
+    midLineH,
+    weekW,
+    dateGap,
+    dayW,
+    midW,
+    infoW,
+    rowGap,
+    // 倒计时 + 间隙 + 分隔线的组高（无目标日时整组不渲染，右栏剩日期/电量两段居中）
+    midGrpH: midLineH + rowGap + 2,
+    // 右栏总高：日期 + 间隙 + (倒计时 + 间隙 + 分隔线 + 间隙) + 电量
+    infoH: dateLineH + rowGap + midLineH + rowGap + 2 + rowGap + bat.batLineH,
+    ...bat
+  }
+}
+
+/**
+ * 精美样式：时间居左（自绘数字图，紧排）+ 右栏信息列（周几几号 / 倒计时 / 分隔线 / 电量）。
+ * 三机型同一公式，全部由 stripW/stripH 缩放导出。
+ * @param {number} stripW 横条宽（= 可绘制高度 466 / band9 436）
+ * @param {number} stripH 横条高（= 屏宽）
+ */
+function layoutFancy(stripW, stripH) {
+  const p = FANCY
+  const rowW = stripW - p.pad * 2
+  const rowH = stripH - p.hintH - 2
+
+  // 字高上限：屏高比例 + 源图字高（FD_CAP）—— 显示端只允许缩小（放大会把 1× 边缘拉糊）
+  const maxH = Math.min(Math.floor(stripH * p.hCap), FD_CAP)
+  // 递减试算：时间行 + 右栏 + 最小间隙必须放得进内容区（右栏宽随字高变，两者此消彼长）
+  let cap = 1
+  let m = null
+  for (let h = maxH; h >= 1; h--) {
+    const cand = fancyMetrics(h)
+    if (cand.timeRowW + cand.infoW + p.gapMin <= rowW) {
+      cap = h
+      m = cand
+      break
+    }
+  }
+  if (!m) m = fancyMetrics(1)
+
+  return {
+    mode: 'fancy',
+    stripW,
+    stripH,
+    padL: p.pad,
+    padR: p.pad,
+    rowW,
+    rowH,
+    hintH: p.hintH,
+    hintFont: p.hintFont,
+    digitH: cap,
+    colonW: m.dotD,
+    timeW: m.timeRowW,
+    gap: rowW - m.timeRowW - m.infoW,
+    divW: m.infoW,
+    ...m
+  }
+}
+
+/**
+ * 按给定屏幕算精美样式几何（导出给单测：各机型都算一遍，不必物化 profile）。
+ * @param {{w:number,h:number}} screen 竖屏尺寸
+ * @param {number} [drawableH] 可绘制高度（缺省取当前 profile 的 COMPANION.drawableH）
+ */
+export function fancyFor(screen, drawableH) {
+  const dh = drawableH || DRAWABLE_H
+  const stripW = Math.min(screen.h, dh)
+  const stripH = screen.w
+  return layoutFancy(stripW, stripH)
+}
+
+/** 当前构建目标（band10 基线 / pro336 物化）的精美样式几何 */
+export function buildFancy() {
+  return fancyFor(SCREEN)
+}
+
+/**
  * 按给定屏幕算几何（导出给单测：各机型都算一遍，不必物化 profile）。
  * @param {{w:number,h:number}} screen 竖屏尺寸
  * @param {number} [drawableH] 可绘制高度（缺省取当前 profile 的 COMPANION.drawableH）
@@ -244,4 +407,4 @@ export function build() {
   return layoutFor(SCREEN)
 }
 
-export default { build, layoutFor }
+export default { build, buildFancy, layoutFor, fancyFor, FD_SRC_W, FD_CAP }

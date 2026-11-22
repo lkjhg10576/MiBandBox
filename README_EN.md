@@ -122,7 +122,7 @@ The home screen offers a **two-column grid / single-column list** toggle (*Setti
 | Fluorescent stick | Full-screen single-colour loop, pausable, stays at max brightness |
 | Red light | Red / warm orange / white / cool light at full brightness, lights up on entry |
 | Color card | Enter a colour as HEX or RGB with a live preview in both formats; tap "View" for a full-screen look, tap the screen or swipe back to exit; max brightness and keep-screen-on can be enabled while viewing (remembered) |
-| Desktop companion | Use the band as a desk clock: day of the month and weekday (in red) on the left, big HH:MM with seconds on the right; the setup page offers ten brightness levels and keep-screen-on, and the screen stays bright while it runs |
+| Desktop companion | Use the band as a desk clock: day of the month and weekday (in red) on the left, big HH:MM with seconds on the right; the setup page offers ten brightness levels, keep-screen-on, and an optional "exquisite" watchface-style layout (large self-drawn clock digits plus a date / countdown / battery column, HH:MM only), and the screen stays bright while it runs |
 | Marquee | Text, size, speed and colour; scrolls horizontally in portrait, rotates 90° in landscape |
 | Lyrics | Local lyrics with auto-scroll in portrait and landscape, plus "transfer from phone" |
 | Level | Dual-axis tilt dot with a crosshair, calibratable; four tiers (green / blue / orange / red) follow the tilt |

@@ -24,10 +24,10 @@
         <text class="f cTitle">保持常亮</text>
         <text class="f swState" style="color: {{ keepOn ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ keepOn ? '开' : '关' }}</text>
       </div>
-      <text class="f cSub">激活期间不自动熄屏</text>
+      <text class="f cSub">横放手环 · 不自动熄屏</text>
     </div>
 
-    <!-- 秒钟开关：关闭后时钟只显示时分（时分整组居中，会向右平移半格秒的位置） -->
+    <!-- 秒钟开关：关闭后时钟只显示时分（时分整组居中，会向右平移半格秒的位置）；精美样式固定无秒 -->
     <div class="card cardB" style="background-color: {{ secShow ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="toggleSec">
       <div class="cardTop">
         <text class="f cTitle">显示秒钟</text>
@@ -36,7 +36,14 @@
       <text class="f cSub">关闭后只显示时分</text>
     </div>
 
-    <text class="f hint" if="{{ hintShow }}">开始后横放手环，长亮显示时间</text>
+    <!-- 精美样式开关：开启后时钟页用表盘风版式（自绘粗 condensed 数字 + 右栏信息列），固定显示时分 -->
+    <div class="card cardC" style="background-color: {{ fancyOn ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="toggleFancy">
+      <div class="cardTop">
+        <text class="f cTitle">精美样式</text>
+        <text class="f swState" style="color: {{ fancyOn ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ fancyOn ? '开' : '关' }}</text>
+      </div>
+      <text class="f cSub">表盘风版式 · 固定显示时分</text>
+    </div>
 
     <div class="actRow" @click="start"><text class="f actRowT">开始</text></div>
     <backbtn></backbtn>
@@ -46,42 +53,41 @@
 <style>
 @import '../../common/styles/theme.css';
 
-/* 版式（band10 基线；Pro 只替换宽度，纵向位置共用 —— 两张开关卡后正文到 352，
-   Pro 的底部动作行从 360 起，正好留 8px）：
-   PageHead 0..84 → 标签/百分比 90..110 → slider 114..156 → 步进行 162..206
-   → 常亮卡 214..280 → 秒钟卡 286..352 → 提示 362..384（仅 band10）→ 底部「开始」400..448。 */
-.label { position: absolute; left: 12px; top: 90px; width: 110px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.pct { position: absolute; left: 122px; top: 90px; width: 78px; height: 20px; line-height: 20px; text-align: right; font-size: 14px; color: #FFFFFF; }
-.level { position: absolute; left: 6px; top: 114px; width: 200px; height: 42px; color: #2A2A2A; selected-color: #0D6EFF; block-color: #FFFFFF; padding-left: 10px; padding-right: 10px; }
-.stepRow { position: absolute; left: 6px; top: 162px; width: 200px; height: 44px; flex-direction: row; align-items: center; justify-content: space-between; }
-.stepBtn { width: 56px; height: 44px; border-radius: 22px; background-color: #1A1A1A; align-items: center; justify-content: center; }
+/* 版式（band10 基线；Pro 只替换宽度，纵向节奏三机型共用）：
+   PageHead 0..84 → 标签/百分比 76..94 → slider 98..140 → 步进行 142..182
+   → 常亮卡 186..252 → 秒钟卡 258..324 → 精美卡 330..396 → 底部「开始」400..448。
+   Pro 的底部动作行经页内覆盖改到 408（见下方 .actRow），三张卡才能按基线排满。
+   原先的 hint 行删掉了（「横放手环」语义并进常亮卡副文案），腾出的空间给第三张卡。 */
+.label { position: absolute; left: 12px; top: 76px; width: 110px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.pct { position: absolute; left: 122px; top: 76px; width: 78px; height: 20px; line-height: 20px; text-align: right; font-size: 14px; color: #FFFFFF; }
+.level { position: absolute; left: 6px; top: 98px; width: 200px; height: 42px; color: #2A2A2A; selected-color: #0D6EFF; block-color: #FFFFFF; padding-left: 10px; padding-right: 10px; }
+.stepRow { position: absolute; left: 6px; top: 142px; width: 200px; height: 40px; flex-direction: row; align-items: center; justify-content: space-between; }
+.stepBtn { width: 56px; height: 40px; border-radius: 22px; background-color: #1A1A1A; align-items: center; justify-content: center; }
 .stepT { font-size: 22px; color: #FFFFFF; }
-.stepVal { width: 84px; height: 44px; line-height: 44px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.75); }
+.stepVal { width: 84px; height: 40px; line-height: 40px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.75); }
 /* .card 必须在本页写 position/top：它是可点元素，R15 靠绝对盒判断它是否压住页头命中区。
-   两张卡共用宽度/高度/内边距，只差 top（cardA / cardB）。 */
+   三张卡共用宽度/高度/内边距，只差 top（cardA / cardB / cardC）；Pro 用替换对把三张卡上移。 */
 .card { position: absolute; left: 3px; width: 206px; height: 66px; border-radius: 22px; background-color: #262626; padding: 9px 16px; flex-direction: column; }
-.cardA { top: 214px; }
-.cardB { top: 286px; }
+.cardA { top: 186px; }
+.cardB { top: 258px; }
+.cardC { top: 330px; }
 .cardTop { width: 100%; height: 28px; flex-direction: row; align-items: center; justify-content: space-between; }
 .cTitle { font-size: 16px; color: #FFFFFF; }
 /* 开关状态字：与 set.ux / calculator 的 swRow 同一套写法（内联 style 三元 + 「开/关」），不用 <switch> */
 .swState { width: 40px; height: 28px; line-height: 28px; text-align: right; font-size: 16px; }
 .cSub { width: 100%; height: 20px; line-height: 20px; font-size: 13px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
-/* 提示用 206 宽（与卡片同宽，复用 206→330 的替换对），两机型都居中。
-   Pro 正文比 band10 矮 40px（底部动作行 360 起），这行提示放不下 → 由 hintShow 关掉。 */
-.hint { position: absolute; left: 3px; top: 362px; width: 206px; height: 22px; line-height: 22px; font-size: 13px; color: rgba(255,255,255,0.35); }
+/* 底部动作行：基线显式写 400（与 theme.css 同值，band10/band9 无变化）。
+   Pro 的三张卡按基线 top 排到 396，theme 的 Pro 动作行（360）会压到卡上 ——
+   本页用替换对把它改到 408..456（可绘制底 466 上方留 10px），卡片尺寸三机型保持一致。 */
+.actRow { top: 400px; }
 </style>
 
 <script>
 import g from '../../utils/g'
-import { SCREEN } from '../../common/layout.js'
 
 // 十档亮度（0..255）。档 1 不取 0：桌面伴侣是「长亮显示」，全黑没有意义。
 const LEVELS = [40, 64, 88, 112, 136, 160, 183, 207, 231, 255]
 const DEFAULT_LEVEL = 7
-
-// Pro（480）的正文比 band10（520）少 40px：底部动作行在 360 而不是 400，卡片下方没地方放提示行
-const HINT_SHOW = SCREEN.h >= 500
 
 function clampLevel(v) {
   let lv = Math.round(Number(v))
@@ -102,7 +108,7 @@ export default {
     pct: DEFAULT_LEVEL * 10,
     keepOn: true,
     secShow: true,
-    hintShow: HINT_SHOW,
+    fancyOn: false,
     dirty: false
   },
   onShow() {
@@ -121,8 +127,9 @@ export default {
       const lv = Number(cfg.level)
       if (lv >= 1 && lv <= 10) this.level = Math.round(lv)
       if (typeof cfg.keepOn === 'boolean') this.keepOn = cfg.keepOn
-      // 老配置没有 sec 字段：默认显示秒钟（与旧行为一致）
+      // 老配置没有 sec / fancy 字段：默认显示秒钟、简洁样式（与旧行为一致）
       if (typeof cfg.sec === 'boolean') this.secShow = cfg.sec
+      if (typeof cfg.fancy === 'boolean') this.fancyOn = cfg.fancy
       this.pct = this.level * 10
       this.preview()
     })
@@ -146,7 +153,7 @@ export default {
    */
   saveCfg() {
     const page = this
-    const cfg = { level: this.level, keepOn: this.keepOn, sec: this.secShow }
+    const cfg = { level: this.level, keepOn: this.keepOn, sec: this.secShow, fancy: this.fancyOn }
     g.kv.init(() => {
       if (!page.$valid) return
       g.kv.set('companionCfg', cfg)
@@ -187,9 +194,15 @@ export default {
     this.secShow = !this.secShow
     this.saveCfg()
   },
+  toggleFancy() {
+    g.haptic.short()
+    this.dirty = true
+    this.fancyOn = !this.fancyOn
+    this.saveCfg()
+  },
   start() {
     g.haptic.short()
-    const cfg = { level: this.level, keepOn: this.keepOn, sec: this.secShow }
+    const cfg = { level: this.level, keepOn: this.keepOn, sec: this.secShow, fancy: this.fancyOn }
     const value = valueOf(cfg.level)
     // 先把亮度会话归属转给时钟页（同步）：设置页随即 onHide，它的延迟释放会被归属检查取消。
     g.screen.hold({ keepOn: cfg.keepOn, value }, 'clock')
@@ -199,7 +212,8 @@ export default {
       g.router.push('/pages/companion/clock', {
         value: String(value),
         keepOn: cfg.keepOn ? '1' : '0',
-        showSec: cfg.sec ? '1' : '0'
+        showSec: cfg.sec ? '1' : '0',
+        fancy: cfg.fancy ? '1' : '0'
       })
     })
   }

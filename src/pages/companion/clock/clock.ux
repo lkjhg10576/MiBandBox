@@ -1,16 +1,19 @@
 <template>
   <!-- 桌面显示页：整页点按退出（textShow 的范式），没有 PageHead。
        结构全部是流式子元素 —— 旋转容器里只放流式内容（绝对定位子元素在真机上未验证）。
-       两种版式由 companionGeo 按机型选（geo.rows）：
+       三种版式：简洁样式由 companionGeo 按机型选（geo.rows）：
          · 矮横条（band10）：左列几号 + 周几，右列 HH:MM:SS + 电量；两列上排/下排行高相同 → 字顶对齐。
          · 高横条（Pro）：上排「几号 + 周几（左）/ 电量（右）」，下排整行大号 HH:MM:SS。
        秒钟开关由设置页传入（showSec='0' 时只显示时分）：去掉秒的 3 个格后行宽变窄、
-       仍由时间列居中 → 时分整体向右平移。 -->
+       仍由时间列居中 → 时分整体向右平移。
+       精美样式（fancy='1'，设置页开关经路由参数传入）：三机型同一公式 —— 左大号圆体时间
+       （自绘数字图 fd_*.png）+ 右栏信息列（周几几号 / 目标日倒计时 / 分隔线 / 电量），
+       固定 HH:MM，秒钟开关不作用；几何在 companionGeo 的 layoutFancy（geoF）。 -->
   <div class="page" @click="back">
     <div class="landWrap">
       <div class="clockCol" style="width: {{ geo.stripW }}px; height: {{ geo.stripH }}px;">
-        <!-- ===== 矮横条：左日期列 / 右时间列 ===== -->
-        <div class="body bodyCols" if="{{ !geo.rows }}" style="width: {{ geo.rowW }}px; height: {{ geo.rowH }}px;">
+        <!-- ===== 矮横条：左日期列 / 右时间列（简洁样式） ===== -->
+        <div class="body bodyCols" if="{{ fancy !== '1' && !geo.rows }}" style="width: {{ geo.rowW }}px; height: {{ geo.rowH }}px;">
           <div class="dateCol" style="width: {{ geo.dateColW }}px; height: {{ geo.contentH }}px;">
             <text class="f dayNum" style="width: {{ geo.dateColW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.dayFont }}px;">{{ day }}</text>
             <text class="f weekTxt" style="width: {{ geo.dateColW }}px; height: {{ geo.bottomH }}px; line-height: {{ geo.bottomH }}px; font-size: {{ geo.weekFont }}px;">{{ week }}</text>
@@ -37,8 +40,8 @@
           </div>
         </div>
 
-        <!-- ===== 高横条：上排日期行 / 下排大时间 ===== -->
-        <div class="body bodyRows" if="{{ geo.rows }}" style="width: {{ geo.rowW }}px; height: {{ geo.rowH }}px;">
+        <!-- ===== 高横条：上排日期行 / 下排大时间（简洁样式） ===== -->
+        <div class="body bodyRows" if="{{ fancy !== '1' && geo.rows }}" style="width: {{ geo.rowW }}px; height: {{ geo.rowH }}px;">
           <div class="dateRow" style="width: {{ geo.dateRowW }}px; height: {{ geo.dateRowH }}px;">
             <div class="dateGroup">
               <text class="f dayNum" style="width: {{ geo.dayW }}px; height: {{ geo.dateRowH }}px; line-height: {{ geo.dateRowH }}px; font-size: {{ geo.dayFont }}px;">{{ day }}</text>
@@ -60,6 +63,46 @@
             <text class="f tCol" if="{{ showSec === '1' }}" style="width: {{ geo.colonW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">:</text>
             <text class="f tDig" if="{{ showSec === '1' }}" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s1 }}</text>
             <text class="f tDig" if="{{ showSec === '1' }}" style="width: {{ geo.digitW }}px; height: {{ geo.topH }}px; line-height: {{ geo.topH }}px; font-size: {{ geo.timeFont }}px;">{{ s2 }}</text>
+            </div>
+          </div>
+
+        <!-- ===== 精美样式（参考图表盘风）：左大号自绘数字时间，右栏信息列。
+             数字按各自墨迹宽紧排（「1」比「0」窄），字距由 geoF.track 给；
+             冒号是两个圆点 div（颜色与 gen.py 的 FD_COLOR 同步：#B9E7DD），不占图片资产；
+             倒计时行取目标日（今天/未来 N 天），无目标日整组不渲染、分隔线跟着隐藏，
+             日期与电量之间仍只留一段间隙（间隙元素与倒计时组同生共死）；
+             固定 HH:MM，秒钟开关不作用。 ===== -->
+        <div class="fbody" if="{{ fancy === '1' }}" style="width: {{ geoF.rowW }}px; height: {{ geoF.rowH }}px;">
+          <div class="fTime" style="width: {{ geoF.timeRowW }}px; height: {{ geoF.digitH }}px;">
+            <img class="fDig" src="/common/images/fd_{{ h1 }}.png" style="width: {{ fw1 }}px; height: {{ geoF.digitH }}px; margin-right: {{ geoF.track }}px;" />
+            <img class="fDig" src="/common/images/fd_{{ h2 }}.png" style="width: {{ fw2 }}px; height: {{ geoF.digitH }}px; margin-right: {{ geoF.track }}px;" />
+            <div class="fColon" style="width: {{ geoF.colonW }}px; height: {{ geoF.digitH }}px; margin-right: {{ geoF.track }}px;">
+              <div class="fDot" style="width: {{ geoF.dotD }}px; height: {{ geoF.dotD }}px;"></div>
+              <div class="fDotGap" style="width: 1px; height: {{ geoF.dotGap }}px;"></div>
+              <div class="fDot" style="width: {{ geoF.dotD }}px; height: {{ geoF.dotD }}px;"></div>
+            </div>
+            <img class="fDig" src="/common/images/fd_{{ m1 }}.png" style="width: {{ fw3 }}px; height: {{ geoF.digitH }}px; margin-right: {{ geoF.track }}px;" />
+            <img class="fDig" src="/common/images/fd_{{ m2 }}.png" style="width: {{ fw4 }}px; height: {{ geoF.digitH }}px;" />
+          </div>
+          <div class="fInfo" style="width: {{ geoF.infoW }}px; height: {{ geoF.infoH }}px;">
+            <div class="fDate" style="width: {{ geoF.infoW }}px; height: {{ geoF.dateLineH }}px;">
+              <text class="f fWeek" style="width: {{ geoF.weekW }}px; height: {{ geoF.dateLineH }}px; line-height: {{ geoF.dateLineH }}px; font-size: {{ geoF.dateFont }}px;">{{ week }}</text>
+              <div class="fDateGap" style="width: {{ geoF.dateGap }}px; height: 1px;"></div>
+              <text class="f fDay" style="width: {{ geoF.dayW }}px; height: {{ geoF.dateLineH }}px; line-height: {{ geoF.dateLineH }}px; font-size: {{ geoF.dateFont }}px; text-align: center;">{{ day }}</text>
+            </div>
+            <div class="fGapV" style="width: 1px; height: {{ geoF.rowGap }}px;"></div>
+            <div class="fMidGrp" if="{{ midShow }}" style="width: {{ geoF.infoW }}px; height: {{ geoF.midGrpH }}px;">
+              <text class="f fMid" style="width: {{ geoF.midW }}px; height: {{ geoF.midLineH }}px; line-height: {{ geoF.midLineH }}px; font-size: {{ geoF.midFont }}px; text-overflow: ellipsis; lines: 1;">{{ midText }}</text>
+              <div class="fGapV" style="width: 1px; height: {{ geoF.rowGap }}px;"></div>
+              <div class="fDiv" style="width: {{ geoF.divW }}px; height: 2px;"></div>
+            </div>
+            <div class="fGapV" if="{{ midShow }}" style="width: 1px; height: {{ geoF.rowGap }}px;"></div>
+            <div class="fBat" style="width: {{ geoF.infoW }}px; height: {{ geoF.batLineH }}px;">
+              <div class="batInner" if="{{ batShow }}" style="width: {{ geoF.batGroupW }}px; height: {{ geoF.batLineH }}px;">
+                <img class="batBolt" src="/common/images/bolt.png" style="width: {{ geoF.boltW }}px; height: {{ geoF.boltH }}px; margin-right: {{ geoF.batGap }}px;" />
+                <text class="f batTxt" style="width: {{ geoF.pctW }}px; height: {{ geoF.batLineH }}px; line-height: {{ geoF.batLineH }}px; font-size: {{ geoF.batFont }}px;">{{ batText }}</text>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -103,15 +146,44 @@
 .tCol { text-align: center; color: #FFFFFF; font-weight: bold; }
 .batTxt { text-align: center; color: #FFFFFF; font-weight: bold; }
 .exitHint { text-align: center; color: rgba(255,255,255,0.22); }
+
+/* ===== 精美样式：方向/对齐/颜色，几何全部内联（companionGeo.layoutFancy） ===== */
+/* 时间与右栏之间用 space-between 分开：时间块贴左、右栏贴右，
+   中间的空档随「1」的窄字形自然变大（右栏位置永远不动，不会因分钟变化而漂）。 */
+.fbody { flex-direction: row; align-items: center; justify-content: space-between; flex-shrink: 0; }
+/* 时间行：数字按各自墨迹宽紧排、左对齐；字距由内联 margin-right 给 */
+.fTime { flex-direction: row; align-items: center; justify-content: flex-start; flex-shrink: 0; }
+.fDig { flex-shrink: 0; }
+/* 冒号：两个圆点 div（颜色与 gen.py FD_COLOR #B9E7DD 同步），不占图片资产 */
+.fColon { flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+.fDot { background-color: #B9E7DD; border-radius: 50%; flex-shrink: 0; }
+.fDotGap { flex-shrink: 0; }
+.fGapV { flex-shrink: 0; }
+/* 右栏信息列：主轴（纵向）居中 —— 无倒计时时日期/电量两段整体居中；交叉轴左对齐（参考图口径） */
+.fInfo { flex-direction: column; align-items: flex-start; justify-content: center; flex-shrink: 0; }
+.fDate { flex-direction: row; align-items: center; flex-shrink: 0; }
+.fDateGap { flex-shrink: 0; }
+.fWeek { color: #FFFFFF; font-weight: bold; }
+.fDay { color: #FFFFFF; font-weight: bold; }
+/* 倒计时 + 分隔线组：无目标日整组 if 掉 */
+.fMidGrp { flex-direction: column; align-items: flex-start; flex-shrink: 0; }
+.fMid { color: #FFFFFF; font-weight: bold; }
+.fDiv { background-color: rgba(255,255,255,0.16); }
+.fBat { flex-direction: row; align-items: center; flex-shrink: 0; }
 </style>
 
 <script>
 import g from '../../../utils/g'
 import companionGeo from '../../../utils/companionGeo'
+import homeEvents from '../../../utils/homeEvents'
 import battery from '@system.battery'
 
 // 几何在模块求值时算好（首帧即正确，不会先按默认布局闪一帧）
 const G = companionGeo.build()
+// 精美样式几何 + 数字图显示宽（按源图墨迹宽 × digitH / 源 cap 高 180 等比缩放）
+// 每位数字宽度不同（「1」窄、「0」宽），页面按实际字形给宽 —— 与字符同帧更新防错位
+const GF = companionGeo.buildFancy()
+const FD_W = companionGeo.FD_SRC_W.map((w) => Math.round((w * GF.digitH) / companionGeo.FD_CAP))
 
 // 走时定时器与分级刷新缓存放模块作用域（本页同时只有一个实例）：onHide / onDestroy 都清。
 let alignTimer = null
@@ -132,14 +204,17 @@ function stopTimers() {
 }
 
 export default {
-  // showSec 由设置页传入：'1' = 显示秒钟（默认），'0' = 只显示时分
+  // showSec 由设置页传入：'1' = 显示秒钟（默认），'0' = 只显示时分。
+  // fancy 由设置页传入：'1' = 精美样式（固定 HH:MM，秒钟开关不作用）
   protected: {
     value: '183',
     keepOn: '1',
-    showSec: '1'
+    showSec: '1',
+    fancy: '0'
   },
   private: {
     geo: G,
+    geoF: GF,
     day: '',
     week: '',
     h1: '0',
@@ -148,6 +223,12 @@ export default {
     m2: '0',
     s1: '0',
     s2: '0',
+    fw1: FD_W[0],
+    fw2: FD_W[0],
+    fw3: FD_W[0],
+    fw4: FD_W[0],
+    midShow: false,
+    midText: '',
     batText: '',
     batShow: false
   },
@@ -161,6 +242,7 @@ export default {
     lastSec = null
     lastDay = null
     this.refresh()
+    this.refreshMid()
     stopTimers()
     const page = this
     // 先对齐秒边界再起 1s 心跳：直接 setInterval 会带着进入时的毫秒相位，秒数跳变肉眼可见地不均
@@ -192,10 +274,16 @@ export default {
       this.h2 = hm.charAt(1)
       this.m1 = hm.charAt(3)
       this.m2 = hm.charAt(4)
+      // 精美样式：数字图随字形宽窄变宽（紧墨迹裁切，每位宽度不同），与字符同帧更新防错位
+      this.fw1 = FD_W[Number(hm.charAt(0))]
+      this.fw2 = FD_W[Number(hm.charAt(1))]
+      this.fw3 = FD_W[Number(hm.charAt(3))]
+      this.fw4 = FD_W[Number(hm.charAt(4))]
       this.refreshBattery()
     }
-    // 关闭秒钟时不写秒字段：省一次重绘，也避免误触秒格（模板里秒格整体不渲染）
-    if (this.showSec === '1') {
+    // 关闭秒钟时不写秒字段：省一次重绘，也避免误触秒格（模板里秒格整体不渲染）。
+    // 精美样式固定 HH:MM，同样不写秒。
+    if (this.showSec === '1' && this.fancy !== '1') {
       const ss = g.time.pad2(now.getSeconds())
       if (ss !== lastSec) {
         lastSec = ss
@@ -209,7 +297,31 @@ export default {
       // 几号只显示纯数字（不带「日」）；周几取「周二」这种两字形式
       this.day = '' + now.getDate()
       this.week = g.time.weekdayName(now)
+      // 跨天后倒计时数字会变（目标日本身不变），重取一次
+      this.refreshMid()
     }
+  },
+  /**
+   * 右栏倒计时（精美样式）：取最近目标日，今天=「今天」、未来=「N天」，过去/无效/无目标日整组隐藏。
+   * homeEvents 带 60s 缓存，onShow 与跨天各取一次足够。
+   */
+  refreshMid() {
+    const page = this
+    homeEvents.load((res) => {
+      if (!page.$valid) return
+      const best = res && res.best
+      const st = best && best.d && best.d.status
+      if (st === 'future') {
+        page.midText = best.d.days + '天'
+        page.midShow = true
+      } else if (st === 'today') {
+        page.midText = '今天'
+        page.midShow = true
+      } else {
+        page.midText = ''
+        page.midShow = false
+      }
+    })
   },
   /**
    * 电量：官方文档 level 是 0.0-1.0，样例却按百分数打印 —— 两种实现都兼容。
