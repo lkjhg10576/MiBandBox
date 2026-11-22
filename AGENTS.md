@@ -114,10 +114,31 @@
 - **分类成员关系的唯一真源是 `src/data/cats.js`**（9 类 / 40 工具）。`src/data/apps.js` **一律不加 `cat` 字段** —— 它的数组顺序是模拟器脚本（`tools/shoot-routes.py` / `motion-sim.py` / `cube-sim.py`）的 index 导航依据，也是 `tools/perf-audit.mjs` 的节点计数依据；两处各写一份成员必然漂移。类别详情页 `src/pages/toolcat/toolcat.ux` 的路由是 `pages/toolcat`，用 `protected: { cat }` 收类别 id。
 - **布局状态机是四态**：`app.ux` 的 `normalizeLayout` / `src/utils/layoutFlag.js` 的 read+write / `home.ux` 的 `applyLayout` 都认 `'grid' | 'grid2' | 'list' | 'cat'`（`grid2` = Pro 专属双栏网格，见下一节）。分类模式复用既有的布局状态机（模块闭包 `layoutState` + KV `'home'` 键 + `layout.txt` 启动快标志 + watcher），**不另建一套**。另加一个 KV 键 **`'homeStyle'`** 记住上次的非分类样式（开关关闭时还原用，grid2 也参与）。
 - **三写范式**：任何布局变更都要 `app.setHomeLayout(mode)` → `layoutFlag.write(mode)` → `g.kv.set('home', mode)` + `g.kv.flush()` 三处同写。`set.ux` 的「恢复默认设置」**必须补 `layoutFlag.write('grid')`**，否则恢复默认后重启会先按旧标志闪一帧旧布局再被 KV 纠正。
-- **设置页的开关卡不能换成 `<switch>`**，沿用项目既有开关语言（内联 style 三元 + 文字「开/关」，见 `calculator.ux` 的 `.swRow`）。设置页现在六张卡（首页样式 / 工具分类 / 隐藏功能 / 目标日不常驻 / 关于 / 恢复默认），`6×(76+8)+16=520` 超出两机型的 body（band10 418 / Pro 358），所以 `.body` 已改成 `<scroll>` + `.inner`（照 `about.ux` 的结构）—— **别再改回普通 `<div>`**，否则 Pro 上后两张卡会被裁掉。
+- **设置页的开关卡不能换成 `<switch>`**，沿用项目既有开关语言（内联 style 三元 + 文字「开/关」，见 `calculator.ux` 的 `.swRow`）。设置页现在六张卡（首页样式 / 工具分类 / 隐藏功能 / 目标日不常驻 / 关于 / 恢复默认），内容高 `6×(76+8)+48=552` 超出两机型的 body（band10 418 / Pro 358），所以 `.body` 是 `<scroll>` + `.inner`（照 `about.ux` 的结构）—— **别再改回普通 `<div>`**，否则 Pro 上后两张卡会被裁掉。**`.inner` 必须显式给高度**（`style="height: {{ innerH }}px;"`），见下一节。
 - **`src/pages/set/set.ux` 里的 `'双栏网格'` 字面量带单引号**（pro336 的替换对 `["'双栏网格'","'三栏网格'"]` 靠它命中）；**全文件严禁出现 `'三栏网格'`**（否则 test-profile「replace 不得在基线出现」直接 fail）。字面量只允许出现在 `layoutName()` 与 `data` 默认值两处。grid2 的显示名必须写 `'双栏' + '网格'` 拼接（见下一节），**注释里同样不许出现替换串原文（find 或 replace 都不行）**——test-profile 按整文件子串匹配，注释也会命中，本次构建期被拦过一次。
 - **工具数只有一个口径 = `src/data/apps.js` 的条目数**（当前 **40**）：头图、README / README_EN、发布说明里写「N 个工具」都以它为准，改工具时这几处同步改。两个容易数错的：**「进制转换」不是独立工具** —— 它是「单位换算」里的第 13 类（`src/pages/unitconvert/unitconvert.ux` 里的 `radix` 卡），不进首页网格、不占名额；**「体感手枪 / 空气投篮」是同一个工具**「体感游戏」。版本线口径：0.1.0 正式版 32 → 0.1.0 Beta 线 37 → **0.1.1 = 37**（换源 + Pro 适配，未加工具）→ 0.1.2 = **40**（魔方计时 / 桌面伴侣 / 快捷色卡）。
 - **门禁 R16**（工具分类表完备性）：`tools/release-gate.mjs` 每次构建前核对 `cats.js` 的成员并集 == `apps.js` 的全部工具 id，且无重复 / 无未知 id / 图标文件真实存在。新增工具**漏挂分类**在该工具从分类模式里彻底消失，而分类模式默认是关的 —— 运行期毫无症状，只有用户打开分类模式才发现。所以这是构建期硬约束，不是可选检查。（更详细的诊断脚本是本地工具 `tools/test-cats.mjs`；`tools/` 整目录不入库，所以门禁里的实现必须自包含。）
+
+## 设置页滚动适配（2026-11-22 起，勿破坏）
+
+「设置」页的卡片会随功能持续增加（六张 → 更多），而 Vela 的 `<scroll>` **必须显式给内容高**：
+不给就按视口高裁内容 —— 卡片被 flex 压扁（标题与副标题挤成一团）、整页滚不动。
+2026-11-22 用户报的就是这个（设置项增多后整页挤在一起、看不到后面的设置项）。**同一条规律对所有
+`<scroll>` 页成立**：`calculator.ux` / `history.ux` / `home.ux` / `about.ux` 都是
+`style="height: {{ … }}px;"`，谁漏了就会重演。
+
+- **内容高只有一个算法**：`src/pages/set/set.ux` 的
+  `INNER_H = CARD_COUNT × (CARD_H + CARD_GAP) + PAD_H`，绑到
+  `<div class="inner" style="height: {{ innerH }}px;">`。四个常量与 CSS 的对应关系：
+  `CARD_H` = `.card` 高、`CARD_GAP` = `.card` 下外边距、`PAD_H` = `.pad` 高、
+  `CARD_COUNT` = **模板里 `.card` 的个数**。
+- **新增设置项要改 `CARD_COUNT`**，否则最后几张卡滚不到；`.card` / `.pad` 一律 `flex-shrink:0`
+  （常量与 CSS 对不上时宁可裁掉尾巴，也不压扁文字）。
+- **`PAD_H = 48` 不是随手取的**：`.body` 的视口底（band10 82+418=500）超出画布底 466，
+  末尾留白保证滚到底时最后一张卡完整落在可绘制区内。
+- **门禁 R17**（设置页滚动内容高自洽）：`tools/release-gate.mjs` 每次构建前核对
+  三个常量与 CSS 一致、`CARD_COUNT` == 模板里 `.card` 个数、`.inner` 有显式高度、
+  `INNER_H` 算式用上了 `CARD_COUNT` / `PAD_H`、`.card` 带 `flex-shrink:0` —— 任一条不符直接拦下构建。
 
 ## 首页双栏网格模式 grid2（2026-11-21 起，Pro 专属，勿破坏）
 

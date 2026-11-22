@@ -5,7 +5,7 @@
   <div class="page">
     <pagehead title="设置" clock="{{ clock }}"></pagehead>
     <scroll class="body" scroll-y="true" bounces="true">
-      <div class="inner">
+      <div class="inner" style="height: {{ innerH }}px;">
         <div class="card" @click="goStyle">
           <div class="cardTop">
             <text class="f cTitle">首页样式</text>
@@ -58,19 +58,22 @@
 <style>
 @import '../../common/styles/theme.css';
 
-/* 卡片六张：6×(76+8)=504 + .pad 16 = 520，超出两机型的 body（band10 418 / Pro 358），
-   所以 body 改成 scroll（同 about.ux 的 .body + .inner），别再改回普通 div。 */
+/* 卡片六张：内容高 6×(76+8)+48 = 552，超出两机型的 body（band10 418 / Pro 358），
+   所以 body 改成 scroll（同 about.ux 的 .body + .inner），别再改回普通 div。
+   内容高必须显式写进 .inner（style="height: {{ innerH }}px;"）：Vela 的 scroll 不给内容高
+   就按视口高裁 —— 卡片被 flex 压扁（文字挤在一起）、整页滚不动（2026-11-22 修的就是这个）。
+   .card / .pad 一律 flex-shrink:0：万一常量与 CSS 对不上，宁可裁掉尾巴也不压扁文字。 */
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 418px; }
 .inner { width: 212px; flex-direction: column; }
-.card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; }
+.card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; flex-shrink: 0; }
 .cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
 .cTitle { font-size: 17px; color: #FFFFFF; }
 .arrow { font-size: 20px; color: rgba(255,255,255,0.4); }
 /* 开关状态字：与 calculator 的 swRow 同一套写法（内联 style 三元 + 文字「开/关」），不用 <switch> */
 .swState { width: 40px; height: 30px; line-height: 30px; text-align: right; font-size: 16px; }
 .cSub { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
-/* 末尾留白 16px：滚动到底时最后一张卡不贴边 */
-.pad { width: 212px; height: 16px; }
+/* 末尾留白 48px：滚动到底时最后一张卡要完整落在可绘制区内（视口底 500 超出画布底 466） */
+.pad { width: 212px; height: 48px; flex-shrink: 0; }
 </style>
 
 <script>
@@ -80,6 +83,22 @@ import layoutFlag from '../../utils/layoutFlag'
 import homeToday from '../../utils/homeToday'
 import homeTools from '../../utils/homeTools'
 import prompt from '@system.prompt'
+
+/**
+ * 设置页卡片几何常量：滚动内容高（innerH）= 卡片数 ×(卡高+卡间距) + 末尾留白。
+ *
+ * 为什么必须显式给内容高：Vela 的 <scroll> 不给子容器高度就按视口高裁内容 ——
+ * 卡片被 flex 压扁（文字挤在一起），整页也滚不动（2026-11-22 的 bug）。
+ * 三条约束，改任何一条都要同步：
+ *   1) CARD_H / CARD_GAP / PAD_H 必须与 CSS 的 .card / .pad 对得上；
+ *   2) CARD_COUNT 必须等于模板里 .card 的个数 —— **新增设置项要改这里**；
+ *   3) 门禁 R17 会逐条核对（改了卡片忘了改常量，构建直接拦下）。
+ */
+const CARD_H = 76      // .card 高
+const CARD_GAP = 8     // .card 下外边距
+const CARD_COUNT = 6   // 模板里的 .card 个数
+const PAD_H = 48       // .pad 高：末尾留白，保证滚到底时最后一张卡完整可见
+const INNER_H = CARD_COUNT * (CARD_H + CARD_GAP) + PAD_H
 
 /** 布局名：分类单栏 / 单栏列表 / 双栏网格（Pro 的「双栏网格」由 profile 替换成「三栏网格」） */
 function layoutName(mode) {
@@ -104,6 +123,7 @@ export default {
     kvDirty: false,
     catBusy: false,
     todayBusy: false,
+    innerH: INNER_H,
     timer: null
   },
   onShow() {

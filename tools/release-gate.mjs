@@ -33,6 +33,11 @@
  *                            新增工具漏挂分类 → 该工具在分类模式里没有入口，且分类模式默认关着，
  *                            运行期毫无症状。所以「成员并集 == 全部工具」必须是构建期硬约束。
  *                            （更详细的诊断脚本是本地工具 tools/test-cats.mjs）
+ *   R17 设置页滚动内容高自洽  Vela 的 <scroll> 必须显式给内容高，不给就按视口高裁：卡片被压扁、
+ *                            文字挤成一团、整页滚不动。设置页卡片数会持续增长，内容高由
+ *                            CARD_COUNT×(CARD_H+CARD_GAP)+PAD_H 算出，常量与 CSS 对不上、
+ *                            卡片数与模板对不上（新增设置项忘了改常量）一律拦下构建。
+ *                            （2026-11-22 用户报的现象：设置项增多后整页挤在一起、滚不动）
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
@@ -730,6 +735,74 @@ for (const f of walk('src', '.ux')) {
           fail('R16', catsRel, `分类图标不存在：${m[1]}`)
         }
       }
+    }
+  }
+}
+
+// ---------- R17 设置页滚动内容高与卡片数自洽 ----------
+// 设置页的卡片会随功能增加而增长，而 Vela 的 <scroll> 必须显式给内容高：
+// 不给就按视口高裁内容 —— 卡片被 flex 压扁（文字挤成一团）、整页滚不动
+// （2026-11-22 用户报的现象）。内容高 = CARD_COUNT×(CARD_H+CARD_GAP)+PAD_H，
+// 三个常量都要与 CSS 对得上，CARD_COUNT 还要等于模板里 .card 的实际个数：
+// 新增设置项忘了改常量就在构建期拦下，别等用户在真机上看到挤成一团的字。
+{
+  const rel = 'src/pages/set/set.ux'
+  if (fs.existsSync(path.join(ROOT, rel))) {
+    const src = read(rel)
+    /** 取某条 CSS 规则的声明体（要求 class 名后紧跟空格+{，避免 .cardXxx 误命中） */
+    const rule = (cls) => {
+      const m = src.match(new RegExp('\\.' + cls + ' \\{([^}]*)\\}'))
+      return m ? m[1] : null
+    }
+    const px = (body, prop) => {
+      if (!body) return null
+      const m = body.match(new RegExp(prop + ': (\\d+)px'))
+      return m ? Number(m[1]) : null
+    }
+    const konst = (name) => {
+      const m = src.match(new RegExp('const ' + name + ' = (\\d+)'))
+      return m ? Number(m[1]) : null
+    }
+    const expect = (name, want, why) => {
+      if (want === null) return
+      const got = konst(name)
+      if (got === null) fail('R17', rel, `找不到常量 ${name}（${why}）`)
+      else if (got !== want) fail('R17', rel, `${name} = ${got}，应为 ${want}：${why}`)
+    }
+    const card = rule('card')
+    const pad = rule('pad')
+    if (!card) fail('R17', rel, 'CSS 里找不到 .card 规则')
+    if (!pad) fail('R17', rel, 'CSS 里找不到 .pad 规则')
+    expect('CARD_H', px(card, 'height'), '.card 高')
+    // margin 简写「0px 3px 8px 3px」：下外边距是第 3 个值
+    const mb = (() => {
+      if (!card) return null
+      const m = card.match(/margin: ([\d.]+)px ([\d.]+)px ([\d.]+)px ([\d.]+)px/)
+      return m ? Number(m[3]) : null
+    })()
+    expect('CARD_GAP', mb, '.card 下外边距')
+    expect('PAD_H', px(pad, 'height'), '.pad 高')
+    // 模板里 .card 的个数（新增设置项要改 CARD_COUNT）
+    const tpl = (src.match(/<template>([\s\S]*?)<\/template>/) || ['', ''])[1]
+    const count = (tpl.match(/class="card"/g) || []).length
+    expect('CARD_COUNT', count, '模板里的 .card 个数')
+    // 滚动内容容器必须显式给高
+    if (!/class="inner"[^>]*style="[^"]*height:/.test(tpl)) {
+      fail('R17', rel, '滚动内容容器 .inner 没有显式高度（style="height: …px"）：' +
+        'Vela 的 scroll 会按视口高裁内容，卡片被压扁且整页滚不动')
+    }
+    // 内容高必须由卡片数算出来（不然加卡片时高度不会跟着长）
+    const expr = (src.match(/const INNER_H = ([^\n]+)/) || [])[1]
+    if (!expr) fail('R17', rel, '找不到 const INNER_H（滚动内容高）')
+    else if (!/CARD_COUNT/.test(expr) || !/PAD_H/.test(expr)) {
+      fail('R17', rel, `INNER_H 的算式没用上 CARD_COUNT / PAD_H：${expr.trim()}`)
+    }
+    if (!/innerH:\s*INNER_H/.test(src)) {
+      fail('R17', rel, 'data 里没有 innerH: INNER_H（内容高没绑到 .inner 上）')
+    }
+    // .card 必须 flex-shrink:0：万一常量与 CSS 对不上，宁可裁掉尾巴也不压扁文字
+    if (!/flex-shrink:\s*0/.test(card || '')) {
+      fail('R17', rel, '.card 缺 flex-shrink:0：内容高与 CSS 对不上时卡片会被压扁')
     }
   }
 }
