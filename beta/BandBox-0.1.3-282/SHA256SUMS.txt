@@ -1,4 +1,0 @@
-143aa4334204a38acc42aa4da30a70459718e31106a81ae240f761797d9c5ec4  com.lkjhg.bandbox.band9.debug.0.1.3.rpk
-dd3946947a6a7068e3d79cd777e49292cd1564d06c291d7991e4fab3c0834959  com.lkjhg.bandbox.debug.0.1.3.rpk
-0a8e4d434aa4b5e5dbf59de5ff833f23ca5c81d2e3a093eda4d8a60125467ea6  com.lkjhg.bandbox.pro.debug.0.1.3.rpk
-96dc11849b1ffe32134a3ab6f120e7b1f48770cb4eefb97659d2294be0746e01  BandBox辅助.abp
