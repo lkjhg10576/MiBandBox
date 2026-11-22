@@ -45,7 +45,11 @@ function token() {
 }
 
 async function api(tok, url, accept = 'application/vnd.github+json') {
-  const r = await fetch(`https://api.github.com${url}`, {
+  // 用 URL 解析而非字符串拼接：防止 url 以 `@` 开头时被解析成
+  // `https://api.github.com@evil.com/...`，把带 token 的请求发到别的主机上。
+  const target = new URL(url, 'https://api.github.com/')
+  if (target.hostname !== 'api.github.com') throw new Error(`拒绝请求非法目标主机：${target.hostname}`)
+  const r = await fetch(target, {
     headers: { Authorization: `Bearer ${tok}`, Accept: accept, 'User-Agent': 'bandbox-astrobox-sync' },
   })
   if (!r.ok) throw new Error(`${r.status} ${r.statusText} ${url}`)
