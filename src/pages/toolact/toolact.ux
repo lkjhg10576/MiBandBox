@@ -14,20 +14,20 @@
           </div>
         </div>
 
-        <div class="card" @click="togglePin">
+        <div class="card" style="background-color: {{ isPin ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="togglePin">
           <div class="cardTop">
             <text class="f cTitle">功能置顶</text>
-            <text class="f cState" style="color: {{ isPin ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ isPin ? '已置顶' : '未置顶' }}</text>
+            <text class="f swState" style="color: {{ isPin ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ isPin ? '开' : '关' }}</text>
           </div>
           <text class="f cSub">{{ pinSubText }}</text>
         </div>
 
-        <div class="card" @click="toggleFav">
+        <div class="card" style="background-color: {{ isFav ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="toggleFav">
           <div class="cardTop">
             <text class="f cTitle">功能收藏</text>
-            <text class="f cState" style="color: {{ isFav ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ isFav ? '已收藏' : '未收藏' }}</text>
+            <text class="f swState" style="color: {{ isFav ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ isFav ? '开' : '关' }}</text>
           </div>
-          <text class="f cSub">{{ isHide ? '请先恢复显示' : (isFav ? '已加入收藏列表 · 点按取消' : '加入首页收藏快捷入口') }}</text>
+          <text class="f cSub">{{ favSubText }}</text>
         </div>
 
         <div class="card" @click="toggleHide">
@@ -62,6 +62,9 @@
 .card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; flex-shrink: 0; }
 .cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
 .cTitle { font-size: 17px; color: #FFFFFF; }
+/* 开关状态字：与设置页「工具分类」开关同一套写法（整张卡作开关：开=卡底染蓝 + 「开」，
+   关=灰底 + 「关」），不用 <switch>。置顶 / 收藏都走这一套，开启状态一眼可见。 */
+.swState { width: 40px; height: 30px; line-height: 30px; text-align: right; font-size: 16px; }
 .cState { height: 30px; line-height: 30px; text-align: right; font-size: 14px; }
 .cSub { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
 .pad { width: 212px; height: 16px; flex-shrink: 0; }
@@ -98,7 +101,8 @@ export default {
     isFav: false,
     isHide: false,
     pinCount: 0,
-    pinSubText: '首页最上方显示',
+    pinSubText: '点按置顶到首页顶部',
+    favSubText: '点按加入收藏快捷入口',
     busy: false,
     innerH: INNER_H,
     _ck: null
@@ -143,13 +147,17 @@ export default {
     this.isHide = hide.indexOf(this.id) !== -1
     this.pinCount = pin.length
 
+    this.syncSubText()
+  },
+  /** 两张开关卡的副标题：开关状态由「开/关」与卡底染色表达，副标题只说明动作与限制 */
+  syncSubText() {
     if (this.isHide) {
       this.pinSubText = '请先恢复显示'
-    } else if (this.isPin) {
-      this.pinSubText = '首页最上方显示 · 点按取消'
-    } else {
-      this.pinSubText = this.pinCount >= 4 ? '最多置顶 4 个' : '首页最上方显示'
+      this.favSubText = '请先恢复显示'
+      return
     }
+    this.pinSubText = this.isPin ? '已置顶 · 首页顶部显示' : (this.pinCount >= 4 ? '最多置顶 4 个' : '点按置顶到首页顶部')
+    this.favSubText = this.isFav ? '已加入收藏列表' : '点按加入收藏快捷入口'
   },
   togglePin() {
     if (this.busy) return
@@ -169,7 +177,7 @@ export default {
       g.haptic.short()
       page.isPin = res.active
       page.pinCount = (res.pin && res.pin.length) || 0
-      page.pinSubText = page.isPin ? '首页最上方显示 · 点按取消' : (page.pinCount >= 4 ? '最多置顶 4 个' : '首页最上方显示')
+      page.syncSubText()
     })
   },
   toggleFav() {
@@ -185,6 +193,7 @@ export default {
       if (!page.$valid) return
       g.haptic.short()
       page.isFav = res.active
+      page.syncSubText()
     })
   },
   toggleHide() {
@@ -205,11 +214,7 @@ export default {
         prompt.showToast({ message: '已恢复显示', duration: 1600 })
         page.isHide = false
       }
-      if (page.isHide) {
-        page.pinSubText = '请先恢复显示'
-      } else {
-        page.pinSubText = page.isPin ? '首页最上方显示 · 点按取消' : (page.pinCount >= 4 ? '最多置顶 4 个' : '首页最上方显示')
-      }
+      page.syncSubText()
     })
   }
 }
