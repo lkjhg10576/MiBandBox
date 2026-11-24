@@ -65,28 +65,28 @@
 /* 计时视图 */
 .status { position: absolute; left: 0px; top: 92px; width: 212px; height: 26px; line-height: 26px; text-align: center; font-size: 16px; }
 .bigTime { position: absolute; left: 0px; top: 126px; width: 212px; height: 64px; line-height: 64px; text-align: center; font-size: 44px; color: #FFFFFF; }
-.subInfo { position: absolute; left: 0px; top: 198px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.45); }
+.subInfo { position: absolute; left: 0px; top: 198px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 /* 主按钮：z-index 20 < 返回按钮的 99，不会挡住返回 */
 .mainBtn { position: absolute; left: 26px; top: 260px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; z-index: 20; align-items: center; justify-content: center; }
 .mainBtnT { font-size: 17px; font-weight: bold; color: #FFFFFF; }
 /* 手动结束：判定失灵时的兜底（小号、弱化，不抢主按钮） */
 .stopBtn { position: absolute; left: 66px; top: 265px; width: 80px; height: 30px; border-radius: 15px; background-color: #262626; z-index: 20; align-items: center; justify-content: center; }
-.stopBtnT { font-size: 13px; color: rgba(255,255,255,0.7); }
-.hint1 { position: absolute; left: 0px; top: 340px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
-.hint2 { position: absolute; left: 0px; top: 366px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.25); }
+.stopBtnT { font-size: 14px; color: rgba(255,255,255,0.7); }
+.hint1 { position: absolute; left: 0px; top: 340px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
+.hint2 { position: absolute; left: 0px; top: 366px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 /* 统计视图 */
 .secLabel { position: absolute; left: 6px; top: 92px; width: 200px; height: 22px; line-height: 22px; font-size: 15px; color: rgba(255,255,255,0.6); }
 .rowWrap { position: absolute; left: 3px; top: 120px; width: 206px; height: 200px; flex-direction: column; }
 .row { width: 206px; height: 36px; margin-bottom: 4px; border-radius: 18px; background-color: #1A1A1A; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 16px; }
-.rowIdx { width: 30px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.4); }
+.rowIdx { width: 30px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .rowTime { width: 76px; height: 26px; line-height: 26px; text-align: right; font-size: 20px; color: #FFFFFF; }
 /* 平均卡：卡是绝对定位 → 卡里的绝对定位子元素以「卡」为基准，不是页面 */
 .avgCard { position: absolute; left: 3px; top: 320px; width: 206px; height: 86px; border-radius: 26px; background-color: #262626; }
 .avgLabel { position: absolute; left: 18px; top: 10px; width: 120px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); }
 .avgVal { position: absolute; left: 18px; top: 32px; width: 140px; height: 38px; line-height: 38px; font-size: 28px; color: #FFFFFF; }
-.avgCount { position: absolute; left: 140px; top: 42px; width: 54px; height: 20px; line-height: 20px; text-align: right; font-size: 13px; color: rgba(255,255,255,0.4); }
+.avgCount { position: absolute; left: 140px; top: 42px; width: 54px; height: 20px; line-height: 20px; text-align: right; font-size: 14px; color: rgba(255,255,255,0.55); }
 .clearBtn { position: absolute; left: 66px; top: 424px; width: 80px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
-.clearT { font-size: 13px; color: rgba(255,255,255,0.6); }
+.clearT { font-size: 14px; color: rgba(255,255,255,0.7); }
 /* 翻页指示点：竖排在屏幕右侧 */
 .dots { position: absolute; left: 203px; top: 190px; width: 6px; height: 24px; flex-direction: column; align-items: center; }
 .dot { width: 6px; height: 6px; border-radius: 3px; margin-top: 3px; margin-bottom: 3px; }

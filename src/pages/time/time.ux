@@ -65,8 +65,8 @@
 .bar { width: 174px; height: 6px; border-radius: 3px; background-color: #3A3A3A; margin-top: 4px; margin-bottom: 4px; }
 .fill { height: 6px; border-radius: 3px; background-color: #0D6EFF; }
 .green { background-color: #00C853; }
-.sub { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.4); }
-.foot { width: 212px; height: 24px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.35); }
+.sub { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.55); }
+.foot { width: 212px; height: 24px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 .pad { width: 212px; height: 16px; }
 </style>
 

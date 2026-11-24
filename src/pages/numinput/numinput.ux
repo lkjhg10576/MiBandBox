@@ -49,9 +49,9 @@
 
 /* 上方输入展示卡：y76 起，高 64px */
 .displayCard { position: absolute; left: 3px; top: 76px; width: 206px; height: 64px; border-radius: 20px; background-color: #1A1A1A; padding: 6px 14px; flex-direction: column; justify-content: center; }
-.dispHint { width: 178px; height: 16px; line-height: 16px; font-size: 12px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.dispHint { width: 178px; height: 16px; line-height: 16px; font-size: 14px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; }
 .dispVal { width: 178px; height: 36px; line-height: 36px; text-align: right; font-size: 28px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.dispPlace { color: rgba(255,255,255,0.25); font-size: 14px; }
+.dispPlace { color: rgba(255,255,255,0.45); font-size: 14px; }
 
 /* 下方全屏小键盘容器：y146 起，高 316px，到底 462px */
 .padBox { position: absolute; left: 3px; top: 146px; width: 206px; height: 316px; flex-direction: column; justify-content: space-between; }

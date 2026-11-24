@@ -35,22 +35,22 @@
    改放底部一行（蓝色文字链接，与 kbBar 的「完成」同一套链接样式）。 */
 .ref { position: absolute; left: 0px; top: 400px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 14px; color: #0D6EFF; }
 .scoreCard { position: absolute; left: 3px; top: 78px; width: 206px; height: 112px; border-radius: 26px; background-color: #262626; align-items: center; justify-content: center; flex-direction: column; }
-.sLabel { font-size: 14px; color: rgba(255,255,255,0.45); }
+.sLabel { font-size: 14px; color: rgba(255,255,255,0.55); }
 .sVal { width: 206px; height: 56px; line-height: 56px; text-align: center; font-size: 38px; color: #0D6EFF; }
-.sSub { width: 190px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
-.sRaw { width: 190px; height: 16px; line-height: 16px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.28); }
+.sSub { width: 190px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; }
+.sRaw { width: 190px; height: 16px; line-height: 16px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 /* 四条测试行压到 30px 高（原来 44px），给底部腾出「开始测试 + 参考 + 提示」三行的位置；
    Pro 屏幕矮 40px，pro336.json 再把这三行各上移一点，避免「开始测试」压到测试行。 */
 .tests { position: absolute; left: 3px; top: 198px; width: 206px; height: 136px; flex-direction: column; }
 .test { width: 206px; height: 30px; margin-bottom: 4px; border-radius: 16px; background-color: #1C1C1C; padding: 2px 12px; flex-direction: column; }
 .tTop { width: 182px; height: 20px; flex-direction: row; align-items: center; justify-content: space-between; }
 .tName { font-size: 14px; color: rgba(255,255,255,0.75); }
-.tMs { font-size: 14px; color: rgba(255,255,255,0.45); }
+.tMs { font-size: 14px; color: rgba(255,255,255,0.55); }
 .bar { width: 182px; height: 4px; border-radius: 2px; background-color: #333333; }
 .fill { height: 4px; border-radius: 2px; background-color: #00C853; }
 .go { position: absolute; left: 26px; top: 350px; width: 160px; height: 44px; border-radius: 22px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goT { font-size: 14px; color: #FFFFFF; }
-.hint { position: absolute; left: 16px; top: 428px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.3); }
+.hint { position: absolute; left: 16px; top: 428px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>

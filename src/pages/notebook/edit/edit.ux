@@ -32,12 +32,12 @@
 .field.on { border-color: #0D6EFF; }
 .bodyCard { position: absolute; left: 3px; top: 150px; width: 206px; height: 96px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
 .bodyCard.on { border-color: #0D6EFF; }
-.fLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.fLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .fTitle { width: 174px; height: 32px; line-height: 32px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.fPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); }
+.fPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.45); }
 .bodyScroll { width: 174px; height: 64px; }
 .fBody { width: 174px; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.85); }
-.tip { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.tip { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>

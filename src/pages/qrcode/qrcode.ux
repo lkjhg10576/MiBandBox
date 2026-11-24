@@ -28,17 +28,17 @@
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 78px; width: 206px; height: 108px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
-.iLabel { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iLabel { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); }
 .iText { width: 150px; height: 52px; font-size: 17px; line-height: 22px; color: #FFFFFF; text-overflow: ellipsis; lines: 2; }
-.iPlace { width: 150px; height: 52px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.35); text-overflow: ellipsis; lines: 2; }
-.counter { position: absolute; right: 14px; top: 84px; font-size: 14px; color: rgba(255,255,255,0.3); }
+.iPlace { width: 150px; height: 52px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 2; }
+.counter { position: absolute; right: 14px; top: 84px; font-size: 14px; color: rgba(255,255,255,0.45); }
 .quick { position: absolute; left: 6px; top: 200px; width: 200px; height: 36px; flex-direction: row; justify-content: space-between; }
 .chip { width: 62px; height: 32px; border-radius: 16px; background-color: #1E1E1E; align-items: center; justify-content: center; }
 .chipT { font-size: 14px; color: rgba(255,255,255,0.7); }
 .go { position: absolute; left: 26px; top: 264px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .go.off { background-color: #2A2A2A; }
 .goT { font-size: 14px; color: #FFFFFF; }
-.hint { position: absolute; left: 16px; top: 330px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.3); }
+.hint { position: absolute; left: 16px; top: 330px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
 .favEntry { position: absolute; left: 26px; top: 372px; width: 160px; height: 40px; border-radius: 20px; background-color: #1E1E1E; align-items: center; justify-content: center; }
 .favEntryT { font-size: 14px; color: rgba(255,255,255,0.7); }
 .importEntry { position: absolute; left: 26px; top: 418px; width: 160px; height: 40px; border-radius: 20px; background-color: #1E1E1E; align-items: center; justify-content: center; }

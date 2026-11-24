@@ -42,10 +42,10 @@
 .plus2 { position: absolute; left: 0px; top: 198px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 18px; color: #FF9500; }
 .plus3 { position: absolute; left: 0px; top: 186px; width: 212px; height: 24px; line-height: 24px; text-align: center; font-size: 18px; color: rgba(255,255,255,0.5); }
 .score { position: absolute; left: 0px; top: 286px; width: 212px; height: 80px; line-height: 80px; text-align: center; font-size: 64px; color: #FFFFFF; }
-.best { position: absolute; left: 0px; top: 368px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
+.best { position: absolute; left: 0px; top: 368px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 .reset { position: absolute; left: 66px; top: 396px; width: 80px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
-.resetT { font-size: 13px; color: rgba(255,255,255,0.6); }
-.hint { position: absolute; left: 0px; top: 432px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.35); }
+.resetT { font-size: 14px; color: rgba(255,255,255,0.7); }
+.hint { position: absolute; left: 0px; top: 432px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>

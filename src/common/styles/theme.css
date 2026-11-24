@@ -12,17 +12,17 @@
 /* overflow:hidden 兜底裁剪：任何子元素超宽都不再撑出横向可拖动区域（抢占右滑返回） */
 .page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
 
-/* 页面头部：时钟 15px / 标题 17px，整体位于 y=22..72 */
-.clock { position: absolute; left: 0px; top: 22px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.6); }
-.title { position: absolute; left: 0px; top: 42px; width: 212px; height: 30px; line-height: 30px; text-align: center; font-size: 17px; color: #FFFFFF; }
+/* 页面头部：时钟 16px / 标题 18px，整体位于 y=22..72 */
+.clock { position: absolute; left: 0px; top: 22px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 16px; color: rgba(255,255,255,0.72); }
+.title { position: absolute; left: 0px; top: 42px; width: 212px; height: 30px; line-height: 30px; text-align: center; font-size: 18px; color: #FFFFFF; }
 
 /* 卡片基线 */
 .card { width: 206px; border-radius: 26px; background-color: #262626; }
-.cardTitle { font-size: 17px; color: #FFFFFF; }
+.cardTitle { font-size: 18px; color: #FFFFFF; }
 
-/* 按钮与提示 */
-.btnText { font-size: 14px; color: #FFFFFF; }
-.hint { font-size: 14px; color: rgba(255,255,255,0.4); text-align: center; }
+/* 按钮与提示：正文/提示的字号底线 15px、颜色底线 0.55（见 AGENTS.md「字号与图标清晰度」） */
+.btnText { font-size: 15px; color: #FFFFFF; }
+.hint { font-size: 15px; color: rgba(255,255,255,0.55); text-align: center; }
 
 /* 底部动作行：主操作按钮（保存 / 完成）独占一行、贴在安全区底部。
    为什么动作键不放页头右上角：页头整条（PageHead.phHit，y0..74）是返回命中区，
@@ -32,4 +32,4 @@
    top 400 = 安全区底部（band10 y466）往上留 18px；Pro 屏幕矮 40px，
    profiles/pro336.json 里 theme.css 这条把 top 改成 360。 */
 .actRow { position: absolute; left: 3px; top: 400px; width: 206px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
-.actRowT { font-size: 15px; color: #FFFFFF; }
+.actRowT { font-size: 16px; color: #FFFFFF; }

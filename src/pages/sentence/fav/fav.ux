@@ -27,8 +27,8 @@
 .favCard { width: 206px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 14px 16px; flex-direction: column; flex-shrink: 0; }
 .favText { width: 174px; font-size: 18px; line-height: 26px; color: #FFFFFF; flex-shrink: 0; }
 .empty { width: 212px; height: 200px; align-items: center; justify-content: center; flex-direction: column; flex-shrink: 0; }
-.emptyT { font-size: 16px; color: rgba(255,255,255,0.5); }
-.emptyS { margin-top: 10px; font-size: 13px; color: rgba(255,255,255,0.3); }
+.emptyT { font-size: 16px; color: rgba(255,255,255,0.6); }
+.emptyS { margin-top: 10px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .pad { width: 212px; height: 24px; flex-shrink: 0; }
 </style>
 

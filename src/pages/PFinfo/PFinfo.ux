@@ -28,7 +28,7 @@
 .dName { flex: 1; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .dScore { width: 36px; text-align: right; font-size: 20px; color: #0D6EFF; }
 .badge { width: 36px; height: 20px; line-height: 20px; margin-left: 4px; border-radius: 10px; background-color: #0D6EFF; text-align: center; font-size: 14px; color: #FFFFFF; }
-.note { width: 190px; margin: 4px 11px 0px 11px; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.3); text-align: center; }
+.note { width: 190px; margin: 4px 11px 0px 11px; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); text-align: center; }
 .pad { width: 212px; height: 20px; }
 </style>
 

@@ -29,11 +29,11 @@
 .rowCell { width: 200px; height: 68px; margin: 0px 0px 8px 0px; border-radius: 26px; background-color: #1A1A1A; flex-direction: row; align-items: center; justify-content: flex-start; padding: 0px 12px; }
 .rowIcon { width: 34px; height: 34px; margin-right: 10px; }
 .rowMeta { width: 128px; height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; }
-.rowName { width: 128px; height: 26px; line-height: 26px; text-align: left; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.rowDesc { width: 128px; height: 20px; line-height: 20px; text-align: left; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+.rowName { width: 128px; height: 28px; line-height: 28px; text-align: left; font-size: 19px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.rowDesc { width: 128px; height: 21px; line-height: 21px; text-align: left; font-size: 15px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
 .empty { width: 200px; height: 300px; align-items: center; justify-content: center; flex-direction: column; }
 .emptyT { font-size: 17px; color: #FFFFFF; margin-bottom: 6px; }
-.emptyS { font-size: 14px; color: rgba(255,255,255,0.4); }
+.emptyS { font-size: 15px; color: rgba(255,255,255,0.6); }
 .listPad { width: 200px; height: 40px; }
 </style>
 

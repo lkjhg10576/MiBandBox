@@ -36,14 +36,14 @@
 @import '../../common/styles/theme.css';
 .tapZone { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
 .big { position: absolute; left: 0px; top: 112px; width: 212px; height: 96px; line-height: 96px; text-align: center; font-size: 76px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.unit { position: absolute; left: 0px; top: 210px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.45); }
+.unit { position: absolute; left: 0px; top: 210px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 .status { position: absolute; left: 20px; top: 236px; width: 172px; height: 26px; line-height: 26px; text-align: center; font-size: 16px; color: rgba(255,255,255,0.7); text-overflow: ellipsis; lines: 1; }
 .pulse { position: absolute; left: 91px; top: 272px; width: 30px; height: 30px; border-radius: 15px; background-color: #333333; }
 .meta { position: absolute; left: 0px; top: 312px; width: 212px; height: 26px; line-height: 26px; text-align: center; font-size: 18px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
 .go { position: absolute; left: 26px; top: 358px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; z-index: 20; align-items: center; justify-content: center; }
 .goStop { background-color: #FF3B30; }
 .goT { font-size: 17px; font-weight: bold; color: #FFFFFF; }
-.hint { position: absolute; left: 16px; top: 424px; width: 180px; height: 40px; text-align: center; font-size: 13px; line-height: 20px; color: rgba(255,255,255,0.4); }
+.hint { position: absolute; left: 16px; top: 424px; width: 180px; height: 40px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>

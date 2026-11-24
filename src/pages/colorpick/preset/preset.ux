@@ -1,0 +1,121 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="预置颜色" clock="{{ clock }}"></pagehead>
+
+    <!-- 单列预置色列表：第一条从 y92 起（新页面可点元素一律 y≥92）。
+         条目是普通 flex 子元素（不定位），R15 的绝对盒扫描不会误判；
+         整列 5 条 5×(58+6)=320，y92..412，落在可绘底 466 之内，无需滚动。 -->
+    <div class="plist">
+      <div class="pItem" for="{{ items }}" style="background-color: {{ $item.bg }};" @click="choose($item)">
+        <div class="pSw" style="background-color: {{ $item.hexCss }};"></div>
+        <div class="pMeta">
+          <text class="f pName">{{ $item.name }}</text>
+          <text class="f pHex" style="color: {{ $item.hexT }};">{{ $item.hexCss }}</text>
+        </div>
+        <text class="f pCur">{{ $item.cur ? '当前' : '' }}</text>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+
+.plist { position: absolute; left: 3px; top: 92px; width: 206px; flex-direction: column; }
+/* 条目：色块 + 色名 / HEX 两行 + 右侧「当前」标记（当前草稿同色时染蓝并标字） */
+.pItem { width: 206px; height: 58px; margin-bottom: 6px; border-radius: 22px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 14px; flex-shrink: 0; }
+.pSw { width: 32px; height: 32px; border-radius: 10px; margin-right: 12px; background-color: #262626; }
+.pMeta { width: 106px; height: 40px; flex-direction: column; align-items: flex-start; justify-content: center; }
+.pName { width: 106px; height: 22px; line-height: 22px; text-align: left; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.pHex { width: 106px; height: 18px; line-height: 18px; text-align: left; font-size: 14px; color: rgba(255,255,255,0.55); }
+.pCur { width: 28px; height: 20px; line-height: 20px; text-align: right; font-size: 14px; color: #0D6EFF; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import color from '../../../utils/color'
+
+/** 预置色常量（钉死，别随手改）：与 companion.ux 的缺省色 #B9E7DD 同一口径。
+ *  hex 一律 6 位大写不带 '#'（与 color.parse 的 hex 同单位）。 */
+const PRESETS = [
+  { id: 'mint', name: '薄荷绿', hex: 'B9E7DD' },
+  { id: 'sky', name: '天蓝', hex: '5AC8FA' },
+  { id: 'orange', name: '橙', hex: 'FFA940' },
+  { id: 'white', name: '白', hex: 'FFFFFF' },
+  { id: 'purple', name: '浅紫', hex: 'B39DDB' }
+]
+
+/** 预置色回传会话（globalThis 快通道，照 numInputSession 先例）：
+ *  本页写、colorpick.ux 的 onShow 同步取。两个页面的 SESSION_KEY 必须逐字一致
+ *  （工具链把每页打成独立 bundle，模块级变量不跨页共享）。
+ *  值 = { hex: 6 位大写不带 '#' } */
+const SESSION_KEY = '__bandboxColorPickSession'
+
+function globalStore() {
+  if (typeof globalThis !== 'undefined') return globalThis
+  if (typeof global !== 'undefined') return global
+  return {}
+}
+
+function stripHash(s) {
+  const t = s ? String(s) : ''
+  return t.charAt(0) === '#' ? t.slice(1) : t
+}
+
+export default {
+  protected: { current: '' },
+
+  private: {
+    _ck: null,
+    clock: '--:--',
+    items: []
+  },
+
+  onInit() {
+    // 标记「当前」：主页面把当前草稿（合法时）传进来（6 位大写不带 '#'）
+    const cur = stripHash(this.current).toUpperCase()
+    const list = []
+    for (let i = 0; i < PRESETS.length; i++) {
+      const p = PRESETS[i]
+      const hit = cur !== '' && p.hex === cur
+      list.push({
+        id: p.id,
+        name: p.name,
+        hex: p.hex,
+        hexCss: '#' + p.hex,
+        bg: hit ? 'rgba(13,110,255,0.24)' : '#262626',
+        hexT: hit ? '#0D6EFF' : 'rgba(255,255,255,0.55)',
+        cur: hit
+      })
+    }
+    this.items = list
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  /** 点选：把预置色写进会话快通道再返回 —— 主页面 onShow 同步取到并回填草稿。
+   *  这里**不写 KV**：写盘统一在主页面点「应用」时做（先读旧 cfg 再合并写回）。 */
+  choose(item) {
+    if (!item || !item.hex) return
+    if (!color.isHex6(item.hex)) return
+    globalStore()[SESSION_KEY] = { hex: item.hex, at: Date.now() }
+    g.haptic.short()
+    g.router.back()
+  }
+}
+</script>

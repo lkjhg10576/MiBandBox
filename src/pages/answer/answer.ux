@@ -9,7 +9,7 @@
       <div class="sheet s2"></div>
       <div class="sheet s3"></div>
       <div class="cover">
-        <img class="book" src="/common/icons/answer.png" />
+        <img class="book" src="/common/icons/answerBig.png" />
         <text class="f coverT">答案之书</text>
         <text class="f coverS">想一个问题</text>
       </div>
@@ -29,9 +29,9 @@
 .s3 { left: 40px; top: 54px; transform: rotate(-3deg); background-color: #20365E; }
 .cover { position: absolute; left: 32px; top: 42px; width: 148px; height: 204px; border-radius: 18px; background-color: #0D6EFF; align-items: center; justify-content: center; flex-direction: column; }
 .book { width: 66px; height: 66px; margin-bottom: 14px; }
-.coverT { font-size: 17px; color: #FFFFFF; }
+.coverT { font-size: 18px; color: #FFFFFF; }
 .coverS { font-size: 14px; color: rgba(255,255,255,0.7); }
-.hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.4); }
+.hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>

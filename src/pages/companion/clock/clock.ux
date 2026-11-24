@@ -6,9 +6,10 @@
          · 高横条（Pro）：上排「几号 + 周几（左）/ 电量（右）」，下排整行大号 HH:MM:SS。
        秒钟开关由设置页传入（showSec='0' 时只显示时分）：去掉秒的 3 个格后行宽变窄、
        仍由时间列居中 → 时分整体向右平移。
-       精美样式（fancy='1'，设置页开关经路由参数传入）：三机型同一公式 —— 左大号圆体时间
-       （自绘数字图 fd_*.png）+ 右栏信息列（周几几号 / 目标日倒计时 / 分隔线 / 电量），
-       固定 HH:MM，秒钟开关不作用；几何在 companionGeo 的 layoutFancy（geoF）。 -->
+       精美样式（fancy='1'，设置页开关经路由参数传入）：三机型同一公式 —— 左大号数字时间
+       （彩色底容器 + 反相遮罩位图 fdm_*.png，颜色随 color 路由参数 = 设置页取色）
+       + 右栏信息列（周几几号 / 目标日倒计时 / 分隔线 / 电量），固定 HH:MM，秒钟开关不作用；
+       几何在 companionGeo 的 layoutFancy（geoF）。 -->
   <div class="page" @click="back">
     <div class="landWrap">
       <div class="clockCol" style="width: {{ geo.stripW }}px; height: {{ geo.stripH }}px;">
@@ -66,25 +67,45 @@
             </div>
           </div>
 
-        <!-- ===== 精美样式（参考图表盘风）：左大号自绘数字时间，右栏信息列。
-             数字按各自墨迹宽紧排（「1」比「0」窄），字距由 geoF.track 给；
-             冒号是两个圆点 div（颜色与 gen.py 的 FD_COLOR 同步：#B9E7DD），不占图片资产；
-             倒计时行取目标日（今天/未来 N 天），无目标日整组不渲染、分隔线跟着隐藏，
-             日期与电量之间仍只留一段间隙（间隙元素与倒计时组同生共死）；
+        <!-- ===== 精美样式（参考图表盘风）：左大号数字时间，右栏信息列。
+             数字 = **彩色底容器 + 反相遮罩位图**（src/common/images/fdm_*.png）：
+             容器 background-color = 运行时取色（digBg），遮罩图 RGB 恒黑、alpha = 255 − 字形 alpha
+             → 字形的孔透出容器色、其余被不透明黑盖住（页面底色 #000000，黑底与背景无缝）；
+             合成结果 = 颜色 × 字形 alpha，与「彩色字形直接画在黑底」逐像素等价。
+             遮罩没到位时容器保持黑色（digBg=#000），避免先闪出一个彩色方块；
+             4 张遮罩都 complete（或兜底定时器到）才切成取色。
+             字形按各自墨迹宽紧排（「1」比「0」窄），字距由 geoF.track 给；
+             冒号是两个圆点 div（颜色同数字），不占图片资产；
+             时间行与右栏用绝对 left/top 纵向居中（几何见 companionGeo.layoutFancy 的
+             timeTop/infoTop）；倒计时行取目标日（今天/未来 N 天，bestCompanion），
+             无目标日整组不渲染、分隔线跟着隐藏，日期与电量之间仍只留一段间隙；
              固定 HH:MM，秒钟开关不作用。 ===== -->
-        <div class="fbody" if="{{ fancy === '1' }}" style="width: {{ geoF.rowW }}px; height: {{ geoF.rowH }}px;">
-          <div class="fTime" style="width: {{ geoF.timeRowW }}px; height: {{ geoF.digitH }}px;">
-            <img class="fDig" src="/common/images/fd_{{ h1 }}.png" style="width: {{ fw1 }}px; height: {{ geoF.digitH }}px; margin-right: {{ geoF.track }}px;" />
-            <img class="fDig" src="/common/images/fd_{{ h2 }}.png" style="width: {{ fw2 }}px; height: {{ geoF.digitH }}px; margin-right: {{ geoF.track }}px;" />
-            <div class="fColon" style="width: {{ geoF.colonW }}px; height: {{ geoF.digitH }}px; margin-right: {{ geoF.track }}px;">
-              <div class="fDot" style="width: {{ geoF.dotD }}px; height: {{ geoF.dotD }}px;"></div>
-              <div class="fDotGap" style="width: 1px; height: {{ geoF.dotGap }}px;"></div>
-              <div class="fDot" style="width: {{ geoF.dotD }}px; height: {{ geoF.dotD }}px;"></div>
+        <div class="fbody" if="{{ fancy === '1' }}">
+          <!-- 时间行与右栏都**绝对定位**：Vela 的绝对定位子节点挂在直接父节点的布局原点，
+               带绝对子元素的容器必须自己给全 position + left/top + width/height（手环 11 固件坑，
+               2026-11-20 的 if 包装层同一条规则）。这里两层都按该规则写：
+               fbody(relative) → fTime/fInfo(absolute, 纵向用 layoutFancy 的 timeTop/infoTop 居中)
+               → fDigit/fColon(absolute)。 -->
+          <div class="fTime" style="left: 0px; top: {{ geoF.timeTop }}px; width: {{ geoF.timeRowW }}px; height: {{ geoF.digitH }}px;">
+            <div class="fDigit" style="left: {{ l1 }}px; top: 0px; width: {{ fw1 }}px; height: {{ geoF.digitH }}px; background-color: {{ digBg }};">
+              <img class="fMask" src="/common/images/fdm_{{ h1 }}.png" style="width: {{ fw1 }}px; height: {{ geoF.digitH }}px;" oncomplete="maskReady" />
             </div>
-            <img class="fDig" src="/common/images/fd_{{ m1 }}.png" style="width: {{ fw3 }}px; height: {{ geoF.digitH }}px; margin-right: {{ geoF.track }}px;" />
-            <img class="fDig" src="/common/images/fd_{{ m2 }}.png" style="width: {{ fw4 }}px; height: {{ geoF.digitH }}px;" />
+            <div class="fDigit" style="left: {{ l2 }}px; top: 0px; width: {{ fw2 }}px; height: {{ geoF.digitH }}px; background-color: {{ digBg }};">
+              <img class="fMask" src="/common/images/fdm_{{ h2 }}.png" style="width: {{ fw2 }}px; height: {{ geoF.digitH }}px;" oncomplete="maskReady" />
+            </div>
+            <div class="fColon" style="left: {{ lc }}px; top: 0px; width: {{ geoF.colonW }}px; height: {{ geoF.digitH }}px;">
+              <div class="fDot" style="width: {{ geoF.dotD }}px; height: {{ geoF.dotD }}px; background-color: {{ digBg }};"></div>
+              <div class="fDotGap" style="width: 1px; height: {{ geoF.dotGap }}px;"></div>
+              <div class="fDot" style="width: {{ geoF.dotD }}px; height: {{ geoF.dotD }}px; background-color: {{ digBg }};"></div>
+            </div>
+            <div class="fDigit" style="left: {{ l3 }}px; top: 0px; width: {{ fw3 }}px; height: {{ geoF.digitH }}px; background-color: {{ digBg }};">
+              <img class="fMask" src="/common/images/fdm_{{ m1 }}.png" style="width: {{ fw3 }}px; height: {{ geoF.digitH }}px;" oncomplete="maskReady" />
+            </div>
+            <div class="fDigit" style="left: {{ l4 }}px; top: 0px; width: {{ fw4 }}px; height: {{ geoF.digitH }}px; background-color: {{ digBg }};">
+              <img class="fMask" src="/common/images/fdm_{{ m2 }}.png" style="width: {{ fw4 }}px; height: {{ geoF.digitH }}px;" oncomplete="maskReady" />
+            </div>
           </div>
-          <div class="fInfo" style="width: {{ geoF.infoW }}px; height: {{ geoF.infoH }}px;">
+          <div class="fInfo" style="right: 0px; top: {{ geoF.infoTop }}px; width: {{ geoF.infoW }}px; height: {{ geoF.infoH }}px;">
             <div class="fDate" style="width: {{ geoF.infoW }}px; height: {{ geoF.dateLineH }}px;">
               <text class="f fWeek" style="width: {{ geoF.weekW }}px; height: {{ geoF.dateLineH }}px; line-height: {{ geoF.dateLineH }}px; font-size: {{ geoF.dateFont }}px;">{{ week }}</text>
               <div class="fDateGap" style="width: {{ geoF.dateGap }}px; height: 1px;"></div>
@@ -145,22 +166,36 @@
 .tDig { text-align: center; color: #FFFFFF; font-weight: bold; }
 .tCol { text-align: center; color: #FFFFFF; font-weight: bold; }
 .batTxt { text-align: center; color: #FFFFFF; font-weight: bold; }
-.exitHint { text-align: center; color: rgba(255,255,255,0.22); }
+.exitHint { text-align: center; color: rgba(255,255,255,0.5); }
 
-/* ===== 精美样式：方向/对齐/颜色，几何全部内联（companionGeo.layoutFancy） ===== */
-/* 时间与右栏之间用 space-between 分开：时间块贴左、右栏贴右，
-   中间的空档随「1」的窄字形自然变大（右栏位置永远不动，不会因分钟变化而漂）。 */
-.fbody { flex-direction: row; align-items: center; justify-content: space-between; flex-shrink: 0; }
-/* 时间行：数字按各自墨迹宽紧排、左对齐；字距由内联 margin-right 给 */
-.fTime { flex-direction: row; align-items: center; justify-content: flex-start; flex-shrink: 0; }
-.fDig { flex-shrink: 0; }
-/* 冒号：两个圆点 div（颜色与 gen.py FD_COLOR #B9E7DD 同步），不占图片资产 */
-.fColon { flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
-.fDot { background-color: #B9E7DD; border-radius: 50%; flex-shrink: 0; }
+/* ===== 精美样式：方向/对齐/颜色，几何由 layoutFancy 内联；唯一的例外是带 if 的
+   .fbody —— 它的宽高必须是**类级**静态几何（手环 11 固件规则），见下。 ===== */
+/* fbody 是定位上下文；时间行/右栏/数字容器/遮罩图全部绝对定位 —— 每层容器都带
+   position + left/top（或 right）+ width/height，绝对子元素才会被布局（手环 11 固件规则）。
+   纵向不用 flex 居中：timeTop/infoTop 由 layoutFancy 按 (stripH − 盒高)/2 算出，
+   保证盒中心 = 屏中心，药丸可见宽约束才成立。 */
+/* fbody 是带 if 的包装层，必须自己带**类级全几何**（position + left/top + width/height；
+   内联不算数 —— 手环 11 固件对「带 if 但类里没有完整几何」的 div 不布局其绝对定位子元素）。
+   基线 384×196 = band10 的 rowW×rowH；pro336/band9 由 profiles 的替换对改成对应值，
+   与 companionGeo.fancyFor 的试算结果必须一致（单测 test-companion-geo 交叉核对）。 */
+.fbody { position: relative; left: 0px; top: 0px; width: 384px; height: 196px; flex-direction: row; flex-shrink: 0; }
+/* 时间行：数字按各自墨迹宽紧排、左对齐；各数字的 left 由脚本按实际字宽算（防错位） */
+.fTime { position: absolute; flex-direction: row; align-items: center; justify-content: flex-start; }
+/* 数字容器：彩色底（背景色 = digBg = 运行时取色）。遮罩图叠在上面：不透明黑盖住底色，
+   只有字形的孔透出底色 → 合成出任意取色的字形。**不要加 overflow:hidden**：
+   Vela 按旋转前的盒子裁剪绝对子元素，遮罩图要正好铺满容器。 */
+.fDigit { position: absolute; }
+/* 遮罩图：铺满数字容器（object-fit:fill 兜住「按比例缩放」的引擎差异；
+   源图 61×190 与显示盒 53×165 的宽高比差 0.05%，「1」差 1.3%，差出来的边缘
+   与字形同色，看不出来） */
+.fMask { object-fit: fill; }
+/* 冒号：两个圆点 div（颜色同数字），不占图片资产 */
+.fColon { position: absolute; flex-direction: column; align-items: center; justify-content: center; }
+.fDot { border-radius: 50%; flex-shrink: 0; }
 .fDotGap { flex-shrink: 0; }
 .fGapV { flex-shrink: 0; }
 /* 右栏信息列：主轴（纵向）居中 —— 无倒计时时日期/电量两段整体居中；交叉轴左对齐（参考图口径） */
-.fInfo { flex-direction: column; align-items: flex-start; justify-content: center; flex-shrink: 0; }
+.fInfo { position: absolute; flex-direction: column; align-items: flex-start; justify-content: center; }
 .fDate { flex-direction: row; align-items: center; flex-shrink: 0; }
 .fDateGap { flex-shrink: 0; }
 .fWeek { color: #FFFFFF; font-weight: bold; }
@@ -180,14 +215,34 @@ import battery from '@system.battery'
 
 // 几何在模块求值时算好（首帧即正确，不会先按默认布局闪一帧）
 const G = companionGeo.build()
-// 精美样式几何 + 数字图显示宽（按源图墨迹宽 × digitH / 源 cap 高 180 等比缩放）
-// 每位数字宽度不同（「1」窄、「0」宽），页面按实际字形给宽 —— 与字符同帧更新防错位
+// 精美样式几何（时间行 + 右栏）与每个数字在当前显示字高下的墨迹宽（「1」窄）
 const GF = companionGeo.buildFancy()
-const FD_W = companionGeo.FD_SRC_W.map((w) => Math.round((w * GF.digitH) / companionGeo.FD_CAP))
+const FD_W = companionGeo.fancyWidths(GF.digitH)
+
+/** 时间行内各段的 left（数字按实际墨迹宽紧排；「1」窄，后面的字自动左移）。
+ *  返回 [l1, l2, lc(冒号), l3, l4]；调用方在每分钟换字时重算。 */
+function digitLefts(w1, w2, w3) {
+  const l1 = 0
+  const l2 = l1 + w1 + GF.track
+  const lc = l2 + w2 + GF.track
+  const l3 = lc + GF.colonW + GF.track
+  return [l1, l2, lc, l3, l3 + w3 + GF.track]
+}
+const LEFT0 = digitLefts(FD_W[0], FD_W[0], FD_W[0])
+
+/** 取色参数归一化：只收 '#RRGGBB'；缺省/undefined/脏值一律回落到薄荷绿（与设置页缺省一致）。 */
+const DEFAULT_COLOR = '#B9E7DD'
+function normColor(c) {
+  if (typeof c !== 'string') return DEFAULT_COLOR
+  const s = c.charAt(0) === '#' ? c : '#' + c
+  if (!/^#[0-9A-Fa-f]{6}$/.test(s)) return DEFAULT_COLOR
+  return s.toUpperCase()
+}
 
 // 走时定时器与分级刷新缓存放模块作用域（本页同时只有一个实例）：onHide / onDestroy 都清。
 let alignTimer = null
 let tickTimer = null
+let maskTimer = null
 let lastHM = null
 let lastSec = null
 let lastDay = null
@@ -201,20 +256,33 @@ function stopTimers() {
     clearInterval(tickTimer)
     tickTimer = null
   }
+  if (maskTimer) {
+    clearTimeout(maskTimer)
+    maskTimer = null
+  }
 }
 
 export default {
   // showSec 由设置页传入：'1' = 显示秒钟（默认），'0' = 只显示时分。
   // fancy 由设置页传入：'1' = 精美样式（固定 HH:MM，秒钟开关不作用）
+  // color 由设置页传入：精美样式的数字/冒号颜色（'#RRGGBB'，缺省薄荷绿 #B9E7DD）
   protected: {
     value: '183',
     keepOn: '1',
     showSec: '1',
-    fancy: '0'
+    fancy: '0',
+    color: '#B9E7DD'
   },
   private: {
     geo: G,
     geoF: GF,
+    // 精美样式数字/冒号的当前颜色（路由参数归一化后写这里；模板内联 style 绑定）
+    selColor: '#B9E7DD',
+    // 数字容器/冒号圆点的底色：遮罩位图没到位时是黑色（= 页面底色，看不见色块），
+    // 4 张遮罩都加载完（或兜底定时器到）才切成取色。
+    digBg: '#000000',
+    // 已加载完成的遮罩张数
+    maskCount: 0,
     day: '',
     week: '',
     h1: '0',
@@ -223,16 +291,36 @@ export default {
     m2: '0',
     s1: '0',
     s2: '0',
+    // 每位数字的显示宽（源宽 × 显示字高 / 源字高；「1」明显窄）
     fw1: FD_W[0],
     fw2: FD_W[0],
     fw3: FD_W[0],
     fw4: FD_W[0],
+    // 时间行各段的绝对 left（紧排；数字宽度变化时重算）
+    l1: LEFT0[0],
+    l2: LEFT0[1],
+    lc: LEFT0[2],
+    l3: LEFT0[3],
+    l4: LEFT0[4],
     midShow: false,
     midText: '',
     batText: '',
     batShow: false
   },
+  /**
+   * 首帧就要是对的：onInit 里就把颜色、当前时间与日期算好。
+   * （原来只有 private 占位值 —— 四个「0」+ 空日期，要等 onShow 的 refresh() 才换真实值，
+   *  首帧停在薄荷绿 00:00；精美样式重建字形树还要 3 秒，真机上尤其明显。）
+   */
+  onInit() {
+    this.selColor = normColor(this.color)
+    const now = new Date()
+    this.applyTime(g.time.pad2(now.getHours()) + ':' + g.time.pad2(now.getMinutes()))
+    this.applyDate(now)
+  },
   onShow() {
+    // 精美样式取色：路由参数缺省/非法都回落薄荷绿（对 undefined 防御）
+    this.selColor = normColor(this.color)
     // 亮度/常亮必须在同步路径上（塞进异步回调会被时序吞掉，同 flashlight / 色卡查看页）。
     // hold 的归属令牌保证「旧页 onHide 晚于新页 onShow」的两种时序都不会中途退出会话。
     g.screen.hold({ value: Number(this.value), keepOn: this.keepOn === '1' }, 'clock')
@@ -242,9 +330,17 @@ export default {
     lastSec = null
     lastDay = null
     this.refresh()
-    this.refreshMid()
     stopTimers()
     const page = this
+    // 兜底：遮罩的 complete 事件没来（老引擎/异常）也要在 400ms 后上色，
+    // 否则数字会一直是黑的。（必须排在 stopTimers 之后，否则会被它清掉）
+    maskTimer = setTimeout(() => {
+      maskTimer = null
+      if (page.digBg !== page.selColor) {
+        page.maskCount = 4
+        page.digBg = page.selColor
+      }
+    }, 400)
     // 先对齐秒边界再起 1s 心跳：直接 setInterval 会带着进入时的毫秒相位，秒数跳变肉眼可见地不均
     alignTimer = setTimeout(() => {
       alignTimer = null
@@ -261,6 +357,43 @@ export default {
     g.screen.releaseSoon('clock')
   },
   /**
+   * 遮罩位图加载完成：4 张都到了才把数字/冒号从黑色换成取色
+   * （否则遮罩没到位时会先闪出一个彩色方块）。
+   * 重复 complete（换分钟换 src 会重新加载）直接忽略。
+   */
+  maskReady() {
+    if (this.digBg === this.selColor) return
+    this.maskCount = this.maskCount + 1
+    if (this.maskCount >= 4) this.digBg = this.selColor
+  },
+  /** 把 HH:MM 写进字段：时分数字 + 各位的显示宽 + 时间行各段的 left（紧排）。 */
+  applyTime(hm) {
+    this.h1 = hm.charAt(0)
+    this.h2 = hm.charAt(1)
+    this.m1 = hm.charAt(3)
+    this.m2 = hm.charAt(4)
+    const w1 = FD_W[Number(hm.charAt(0))]
+    const w2 = FD_W[Number(hm.charAt(1))]
+    const w3 = FD_W[Number(hm.charAt(3))]
+    const w4 = FD_W[Number(hm.charAt(4))]
+    this.fw1 = w1
+    this.fw2 = w2
+    this.fw3 = w3
+    this.fw4 = w4
+    const lefts = digitLefts(w1, w2, w3)
+    this.l1 = lefts[0]
+    this.l2 = lefts[1]
+    this.lc = lefts[2]
+    this.l3 = lefts[3]
+    this.l4 = lefts[4]
+  },
+  /** 写日期（几号 + 周几）。 */
+  applyDate(now) {
+    // 几号只显示纯数字（不带「日」）；周几取「周二」这种两字形式
+    this.day = '' + now.getDate()
+    this.week = g.time.weekdayName(now)
+  },
+  /**
    * 分级写值（同 time.ux）：秒每秒写一次，HH:MM 只在分钟变化时写，日期/周几只在跨天时写。
    * 长亮页面里少一次大字号重绘就少一分发热；定宽格也保证数字变化不引起横向位移。
    * 电量变化慢，跟分钟一起刷新（每秒调一次系统接口没有意义）。
@@ -270,15 +403,7 @@ export default {
     const hm = g.time.pad2(now.getHours()) + ':' + g.time.pad2(now.getMinutes())
     if (hm !== lastHM) {
       lastHM = hm
-      this.h1 = hm.charAt(0)
-      this.h2 = hm.charAt(1)
-      this.m1 = hm.charAt(3)
-      this.m2 = hm.charAt(4)
-      // 精美样式：数字图随字形宽窄变宽（紧墨迹裁切，每位宽度不同），与字符同帧更新防错位
-      this.fw1 = FD_W[Number(hm.charAt(0))]
-      this.fw2 = FD_W[Number(hm.charAt(1))]
-      this.fw3 = FD_W[Number(hm.charAt(3))]
-      this.fw4 = FD_W[Number(hm.charAt(4))]
+      this.applyTime(hm)
       this.refreshBattery()
     }
     // 关闭秒钟时不写秒字段：省一次重绘，也避免误触秒格（模板里秒格整体不渲染）。
@@ -294,22 +419,22 @@ export default {
     const dayKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate()
     if (dayKey !== lastDay) {
       lastDay = dayKey
-      // 几号只显示纯数字（不带「日」）；周几取「周二」这种两字形式
-      this.day = '' + now.getDate()
-      this.week = g.time.weekdayName(now)
+      this.applyDate(now)
       // 跨天后倒计时数字会变（目标日本身不变），重取一次
       this.refreshMid()
     }
   },
   /**
-   * 右栏倒计时（精美样式）：取最近目标日，今天=「今天」、未来=「N天」，过去/无效/无目标日整组隐藏。
+   * 右栏倒计时（精美样式）：取「开着在桌面伴侣中显示」的最近目标日（homeEvents 的 bestCompanion），
+   * 今天=「今天」、未来=「N天」，过去/无效/无目标日整组隐藏。
+   * 字段缺失时（旧数据 / 回调没带 bestCompanion）按「无目标日」防御 —— 整组不渲染。
    * homeEvents 带 60s 缓存，onShow 与跨天各取一次足够。
    */
   refreshMid() {
     const page = this
     homeEvents.load((res) => {
       if (!page.$valid) return
-      const best = res && res.best
+      const best = res && res.bestCompanion
       const st = best && best.d && best.d.status
       if (st === 'future') {
         page.midText = best.d.days + '天'

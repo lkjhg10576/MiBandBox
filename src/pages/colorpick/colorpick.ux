@@ -1,0 +1,337 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="精美样式颜色" clock="{{ clock }}"></pagehead>
+
+    <!-- 模式段选：本页所有可点元素一律 y≥92（新页面 R15 口径比老色卡页严，色卡页的段选在 y76）。
+         两段用内联 style 三元染选中色（fluorescence / colorcard 同款语言）。
+         键面进页即固定（InputMethod 的 watchKeyboardTypePropsChange 是空函数），编辑中不切模式。 -->
+    <div class="segs" if="{{ !kbShow }}">
+      <div class="seg" style="background-color: {{ mode === 'hex' ? '#0D6EFF' : 'transparent' }};" @click="pickMode('hex')"><text class="f segT">HEX</text></div>
+      <div class="seg" style="background-color: {{ mode === 'rgb' ? '#0D6EFF' : 'transparent' }};" @click="pickMode('rgb')"><text class="f segT">RGB</text></div>
+    </div>
+
+    <!-- 色值输入卡（非键盘态）：点按弹键盘。卡片只做背景，前景文本是卡的 flex 子元素。 -->
+    <div class="inCard" if="{{ !kbShow }}" @click="openKb">
+      <text class="f inLabel">色值 · {{ modeLabel }}</text>
+      <text class="f inVal" if="{{ !empty }}">{{ valText }}</text>
+      <text class="f inVal inPh" if="{{ empty }}">{{ placeText }}</text>
+    </div>
+
+    <!-- 键盘态草稿卡：弹键盘后 y101 以下全被键盘盖住（组件整体合成在页面内容之上），
+         草稿只能放进 y76..100 这条缝，不然用户只能盲输。本卡不可点 ——
+         新页面可点元素一律 y≥92，收键盘走输入法组件自带的「完成」栏（y101..133，恒在）。 -->
+    <div class="draftKb" if="{{ kbShow }}">
+      <text class="f dkLabel">{{ modeLabel }}</text>
+      <text class="f dkVal">{{ valText }}</text>
+    </div>
+
+    <!-- 颜色预览卡：不可点、不进全屏预览（相对快捷色卡裁剪掉的功能）。
+         合法 → 实际颜色 + 双格式（主行当前模式、副行另一模式）；非法/空 → 中性灰提示。
+         文字颜色随底色自适应（color.fgFor，与色卡页一致）。 -->
+    <div class="pvCard" if="{{ !kbShow }}" style="background-color: {{ pvBg }};">
+      <text class="f pvMain" style="color: {{ pvFg }};">{{ pvLine1 }}</text>
+      <text class="f pvSub" style="color: {{ pvFg }};">{{ pvLine2 }}</text>
+    </div>
+
+    <!-- 底部动作键：色卡页的「查看」换成本页的「应用」（写 companionCfg.color 后返回） -->
+    <div class="applyBtn" if="{{ !kbShow }}" @click="applyColor"><text class="f applyT">应用</text></div>
+
+    <!-- 预置颜色入口：点进 pages/colorpick/preset 选一个预置色，回来只回填草稿，写盘统一走「应用」 -->
+    <div class="presetRow" if="{{ !kbShow }}" @click="goPreset">
+      <text class="f presetT">预置颜色</text>
+      <text class="f presetArrow">></text>
+    </div>
+
+    <text class="f hintLine" if="{{ !kbShow }}">选好颜色后点「应用」</text>
+
+    <!-- 双实例：键面进页即固定，按模式互斥显隐；共享 complete/delete，页面按模式路由。
+         hex 面打不出逗号、rgb 面打不出字母，越权键由页面 onKey 过滤 + toast（色卡页同款）。 -->
+    <input-method hide="{{ !kbShow || mode !== 'hex' }}" keyboardtype="hex" maxlength="6" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
+    <input-method hide="{{ !kbShow || mode !== 'rgb' }}" keyboardtype="rgb" maxlength="11" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+/* 纵向节奏（band10 基线，Pro / band9 纵向共用；可绘底 466）：
+   页头 0..74（命中区）→ 段选 92..126 → 输入卡 130..182 → 预览卡 186..274
+   → 「应用」278..326 → 「预置颜色」330..378 → 提示行 384..402。
+   所有可点元素的 top ≥ 92（比老色卡页的 y76 更严）。 */
+.segs { position: absolute; left: 3px; top: 92px; width: 206px; height: 34px; flex-direction: row; border-radius: 17px; background-color: #1A1A1A; padding: 3px; }
+.seg { flex: 1; height: 28px; border-radius: 14px; align-items: center; justify-content: center; }
+.segT { font-size: 14px; color: #FFFFFF; }
+.inCard { position: absolute; left: 3px; top: 130px; width: 206px; height: 52px; border-radius: 26px; background-color: #262626; padding: 3px 12px; flex-direction: column; }
+.inLabel { width: 182px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.55); }
+.inVal { width: 182px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
+.inPh { color: rgba(255,255,255,0.45); }
+/* 键盘态草稿卡：单行 24px 高，正好落在键盘顶（y101）之上的 y76..100 缝里 */
+.draftKb { position: absolute; left: 3px; top: 76px; width: 206px; height: 24px; border-radius: 12px; background-color: #1A1A1A; padding: 0px 12px; flex-direction: row; align-items: center; }
+.dkLabel { width: 40px; height: 24px; line-height: 24px; font-size: 14px; color: rgba(255,255,255,0.55); }
+.dkVal { width: 142px; height: 24px; line-height: 24px; text-align: right; font-size: 16px; color: #0D6EFF; }
+.pvCard { position: absolute; left: 3px; top: 186px; width: 206px; height: 88px; border-radius: 26px; align-items: center; justify-content: center; flex-direction: column; }
+.pvMain { width: 182px; height: 26px; line-height: 26px; text-align: center; font-size: 18px; }
+.pvSub { width: 182px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; margin-top: 4px; }
+.applyBtn { position: absolute; left: 3px; top: 278px; width: 206px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.applyT { font-size: 14px; color: #FFFFFF; }
+.presetRow { position: absolute; left: 3px; top: 330px; width: 206px; height: 48px; border-radius: 24px; background-color: #262626; flex-direction: row; align-items: center; }
+.presetT { margin-left: 14px; width: 140px; height: 24px; line-height: 24px; font-size: 15px; color: #FFFFFF; }
+.presetArrow { margin-right: 14px; width: 38px; height: 24px; line-height: 24px; text-align: right; font-size: 19px; color: rgba(255,255,255,0.4); }
+.hintLine { position: absolute; left: 0px; top: 384px; width: 212px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
+</style>
+
+<script>
+import g from '../../utils/g'
+import prompt from '@system.prompt'
+import color from '../../utils/color'
+
+/** companion 配置键：与 companion.ux 同一个 KV 键。
+ *  注意 companion.ux 的 saveCfg 是**整份覆写**，所以本页写 color 时必须先读旧 cfg
+ *  再合并写回，否则会把 level / keepOn / sec / fancy 一起冲掉（整份配置丢字段）。 */
+const KV_KEY = 'companionCfg'
+/** 精美样式缺省色（薄荷绿 #B9E7DD）：与 companion.ux 的 DEFAULT_COLOR 同一口径 */
+const DEFAULT_HEX = 'B9E7DD'
+
+/** 预置色回传会话（globalThis 快通道，照 numInputSession 先例）：
+ *  工具链把每个页面打成独立 bundle、模块级变量不跨 bundle 共享，所以只能挂 globalThis。
+ *  preset.ux 里的 SESSION_KEY 必须与本文件逐字一致。
+ *  值 = { hex: 6 位大写不带 '#' }（与 color.parse 的 hex 同单位） */
+const SESSION_KEY = '__bandboxColorPickSession'
+
+/** 草稿权威副本（模块闭包，不进 private）：
+ *  草稿若只存在页面字段里，页面重渲染/重建时会被初值覆盖，下一次按键就从空草稿起算 ——
+ *  症状正是「新键覆盖旧键、只能输入一位」（colorcard / radix 同款修复）。 */
+let draftStore = ''
+
+function globalStore() {
+  if (typeof globalThis !== 'undefined') return globalThis
+  if (typeof global !== 'undefined') return global
+  return {}
+}
+
+function stripHash(s) {
+  const t = s ? String(s) : ''
+  return t.charAt(0) === '#' ? t.slice(1) : t
+}
+
+/** 归一化成 6 位大写 hex（不带 '#'）；不合法返回空串 */
+function normHex(s) {
+  const t = stripHash(s).toUpperCase()
+  return color.isHex6(t) ? t : ''
+}
+
+function takeSession() {
+  const st = globalStore()
+  const s = st[SESSION_KEY]
+  if (!s || !s.hex) return null
+  st[SESSION_KEY] = null
+  return s
+}
+
+export default {
+  // 新页面一律 protected + private，不用 data（Vela 对 data 与 private 共存直接抛错黑屏）。
+  // 本页无路由参数，protected 留空占位。
+  protected: {},
+
+  private: {
+    _ck: null,
+    clock: '--:--',
+    mode: 'hex',
+    modeLabel: 'HEX',
+    placeText: '点击输入',
+    draft: '',
+    empty: true,
+    valText: '',
+    kbShow: false,
+    dirty: false,
+    charWarned: false,
+    limitWarned: false,
+    commaWarned: false,
+    pvBg: '#262626',
+    pvFg: 'rgba(255,255,255,0.35)',
+    pvLine1: '如 FF8800',
+    pvLine2: '实时预览'
+  },
+
+  onInit() {
+    // 只有新页面实例才清草稿；重渲染不会走 onInit，输入中的草稿不会被清掉
+    draftStore = ''
+    this.draft = ''
+    this.refresh()
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+
+    // ① 预置色回传：同步会话，优先于异步读盘（预置页写完即 router.back，这里同步取到）
+    const s = takeSession()
+    if (s && normHex(s.hex)) {
+      draftStore = color.format(normHex(s.hex), this.mode)
+      this.dirty = true
+      this.refresh()
+    }
+    // ② 当前已应用的颜色预填（dirty：用户已手动改过时不用存储旧值覆盖 UI）
+    g.kv.init(() => {
+      if (!page.$valid || page.dirty || page.kbShow) return
+      const cfg = g.kv.get(KV_KEY, null)
+      const hex = cfg && typeof cfg.color === 'string' ? normHex(cfg.color) : ''
+      if (!draftStore) draftStore = color.format(hex || DEFAULT_HEX, page.mode)
+      page.refresh()
+    })
+  },
+
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    this.kbShow = false
+  },
+
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    this.kbShow = false
+  },
+
+  /** 唯一显示同步点：闭包草稿 → 输入卡/键盘态草稿/预览卡。 */
+  refresh() {
+    this.draft = draftStore
+    this.empty = draftStore === ''
+    this.valText = this.empty ? '' : (this.mode === 'hex' ? '#' + draftStore : draftStore)
+    const v = color.parse(draftStore, this.mode)
+    if (this.empty) {
+      this.pvBg = '#262626'
+      this.pvFg = 'rgba(255,255,255,0.35)'
+      this.pvLine1 = this.mode === 'hex' ? '如 FF8800' : '如 255,136,0'
+      this.pvLine2 = '实时预览'
+    } else if (!v.ok) {
+      this.pvBg = '#262626'
+      this.pvFg = 'rgba(255,255,255,0.45)'
+      this.pvLine1 = '色值不完整'
+      this.pvLine2 = this.mode === 'hex' ? '3 或 6 位十六进制' : 'R,G,B 各 0-255'
+    } else {
+      this.pvBg = '#' + v.hex
+      this.pvFg = color.fgFor(v.hex)
+      const rgbText = 'rgb(' + color.formatRgb(v.hex) + ')'
+      this.pvLine1 = this.mode === 'hex' ? '#' + v.hex : rgbText
+      this.pvLine2 = this.mode === 'hex' ? rgbText : '#' + v.hex
+    }
+  },
+
+  openKb() {
+    this.charWarned = false
+    this.limitWarned = false
+    this.commaWarned = false
+    this.kbShow = true
+    g.haptic.short()
+  },
+
+  closeKb() {
+    this.kbShow = false
+    g.haptic.short()
+  },
+
+  onKey(e) {
+    const raw = e && e.detail && e.detail.content ? e.detail.content : ''
+    if (!raw) return
+    if (this.mode === 'hex') {
+      // hex 键面理论上只会出 0-9/A-F，仍按字符过滤（色卡页 / radix 同款防御）
+      const ch = raw.toUpperCase()
+      if (!/^[0-9A-F]$/.test(ch)) return this.warnKey('char')
+      if (draftStore.length >= 6) return this.warnKey('limit')
+      draftStore = draftStore + ch
+    } else {
+      if (raw === ',') {
+        const parts = draftStore.split(',')
+        if (draftStore === '' || parts.length >= 3 || draftStore.charAt(draftStore.length - 1) === ',') return this.warnKey('comma')
+        draftStore = draftStore + ','
+      } else if (/^[0-9]$/.test(raw)) {
+        const parts = draftStore.split(',')
+        if (parts[parts.length - 1].length >= 3) return this.warnKey('limit')
+        draftStore = draftStore + raw
+      } else {
+        return this.warnKey('char')
+      }
+    }
+    this.dirty = true
+    this.refresh()
+  },
+
+  onDel() {
+    this.dirty = true
+    draftStore = draftStore.slice(0, -1)
+    this.refresh()
+  },
+
+  /** 一次性 toast 去重（仿 radix / colorcard）：同类警告一轮键盘会话只提示一次 */
+  warnKey(kind) {
+    let msg = ''
+    // toast 文案长度受屏宽限制（band10 只有 212px，超宽会被右侧裁掉），每条控制在 ~9 个全角字以内
+    if (kind === 'char' && !this.charWarned) {
+      this.charWarned = true
+      msg = this.mode === 'hex' ? '只能输 0-9 A-F' : '只能输数字逗号'
+    } else if (kind === 'limit' && !this.limitWarned) {
+      this.limitWarned = true
+      msg = this.mode === 'hex' ? '最多 6 位十六进制' : '每段最多 3 位数字'
+    } else if (kind === 'comma' && !this.commaWarned) {
+      this.commaWarned = true
+      msg = 'RGB 只有三段'
+    }
+    if (msg) prompt.showToast({ message: msg, duration: 1600 })
+    g.haptic.long()
+  },
+
+  /** 切换输入模式：当前草稿合法则按数值守恒换算成新模式表示；不合法则清空（色卡页 pickMode 同款） */
+  pickMode(m) {
+    if (!m || m === this.mode || this.kbShow) return
+    const v = color.parse(draftStore, this.mode)
+    this.mode = m
+    this.modeLabel = m === 'rgb' ? 'RGB' : 'HEX'
+    draftStore = v.ok ? color.format(v.hex, m) : ''
+    this.charWarned = false
+    this.limitWarned = false
+    this.commaWarned = false
+    this.dirty = true
+    this.refresh()
+    g.haptic.short()
+  },
+
+  /** 进预置色列表页；把当前草稿（合法时）带过去，列表里好标出「当前」那一条 */
+  goPreset() {
+    if (this.kbShow) return
+    const v = color.parse(draftStore, this.mode)
+    g.haptic.short()
+    g.router.push('/pages/colorpick/preset', { current: v.ok ? v.hex : '' })
+  },
+
+  /** 「应用」：写 companionCfg.color + flush + toast + 返回。
+   *  必须先读旧 cfg 再合并写回（companion.ux 的 saveCfg 是整份覆写），
+   *  否则会把 level / keepOn / sec / fancy 一起抹掉。 */
+  applyColor() {
+    if (this.kbShow) return
+    const v = color.parse(draftStore, this.mode)
+    if (!v.ok) {
+      // toast 要短：band10 只有 212px（色卡页实测长句会被裁），细节交给预览卡承载
+      const msg = this.empty ? '请先输入色值' : '色值不完整'
+      prompt.showToast({ message: msg, duration: 1800 })
+      g.haptic.long()
+      return
+    }
+    const hex = '#' + v.hex
+    // 写盘不依赖页面存活：回调里不读 this（返回后 $valid 会变 false，读 this 会把写盘吞掉）
+    g.kv.init(() => {
+      const prev = g.kv.get(KV_KEY, null)
+      const next = prev && typeof prev === 'object' ? Object.assign({}, prev) : {}
+      next.color = hex
+      g.kv.set(KV_KEY, next)
+      g.kv.flush()
+    })
+    g.haptic.short()
+    prompt.showToast({ message: '已应用', duration: 1200 })
+    g.router.back()
+  }
+}
+</script>

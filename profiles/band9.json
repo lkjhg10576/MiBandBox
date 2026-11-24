@@ -145,7 +145,8 @@
     "src/pages/companion/clock/clock.ux": [
       ["left: 212px", "left: 192px"],
       ["width: 520px", "width: 490px"],
-      ["height: 212px", "height: 192px"]
+      ["height: 212px", "height: 192px"],
+      ["width: 384px; height: 196px", "width: 362px; height: 176px"]
     ],
     "src/pages/companion/companion.ux": [
       ["width: 206px", "width: 186px"],
@@ -193,12 +194,11 @@
       ["top: 444px", "top: 414px"]
     ],
     "src/pages/daysmatter/edit/edit.ux": [
-      ["top: 330px", "top: 300px"],
       ["width: 206px", "width: 186px"],
       ["width: 174px", "width: 154px"],
       ["width: 212px", "width: 192px"],
       ["left: 48px", "left: 38px"],
-      ["top: 400px", "top: 370px"]
+      ["width: 40px", "width: 24px"]
     ],
     "src/pages/daysmatter/inputdate/inputdate.ux": [
       ["width: 212px", "width: 192px"],
@@ -688,7 +688,7 @@
       [".rCat { width: 170px;", ".rCat { width: 150px;"],
       [".rItem { width: 170px;", ".rItem { width: 150px;"],
       [".rTip { width: 170px;", ".rTip { width: 150px;"],
-      [".foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px;", ".foot { position: absolute; left: 13px; top: 442px; width: 166px; text-align: center; font-size: 12px;"]
+      [".foot { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px;", ".foot { position: absolute; left: 13px; top: 442px; width: 166px; text-align: center; font-size: 14px;"]
     ],
     "src/pages/cpsTest/cpsTest.ux": [
       ["width: 212px", "width: 192px"],
@@ -718,6 +718,17 @@
       ["width: 212px", "width: 192px"],
       ["top: 324px", "top: 294px"],
       ["top: 432px", "top: 394px"]
+    ],
+    "src/pages/colorpick/colorpick.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 182px", "width: 162px"],
+      ["width: 142px", "width: 122px"],
+      ["width: 140px", "width: 120px"],
+      ["width: 212px", "width: 192px"]
+    ],
+    "src/pages/colorpick/preset/preset.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 106px", "width: 86px"]
     ],
     "src/pages/numinput/numinput.ux": [
       ["width: 206px", "width: 186px"],

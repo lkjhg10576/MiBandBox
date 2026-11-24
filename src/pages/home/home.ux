@@ -90,8 +90,8 @@
   width: 108px;
   height: 24px;
   line-height: 24px;
-  font-size: 14px;
-  color: rgba(255,255,255,0.6);
+  font-size: 15px;
+  color: rgba(255,255,255,0.72);
   lines: 1;
   text-overflow: ellipsis;
 }
@@ -100,15 +100,15 @@
   height: 24px;
   line-height: 24px;
   text-align: right;
-  font-size: 14px;
-  color: rgba(255,255,255,0.4);
+  font-size: 15px;
+  color: rgba(255,255,255,0.55);
   lines: 1;
 }
 .event {
   width: 174px;
   height: 26px;
   line-height: 26px;
-  font-size: 17px;
+  font-size: 18px;
   color: #FFFFFF;
   text-overflow: ellipsis;
   lines: 1;
@@ -117,7 +117,7 @@
   width: 174px;
   height: 22px;
   line-height: 22px;
-  font-size: 15px;
+  font-size: 16px;
   lines: 1;
 }
 .apps {
@@ -153,7 +153,7 @@
   align-items: center;
   justify-content: flex-start;
   flex-direction: column;
-  padding-top: 4px;
+  padding-top: 6px;
 }
 /* 双栏网格卡片：仅 grid2 分支渲染。宽度 96 是 band10 基线占位（该机型不出此模式），
    Pro 由 profiles/pro336.json 替换为 159（(336-6-12)/2，flex-wrap 每行恰好两格）；
@@ -167,18 +167,18 @@
   align-items: center;
   justify-content: flex-start;
   flex-direction: column;
-  padding-top: 4px;
+  padding-top: 6px;
 }
 .icon {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
 }
 .name {
   width: 93px;
-  height: 20px;
-  line-height: 20px;
+  height: 24px;
+  line-height: 24px;
   text-align: center;
-  font-size: 16px;
+  font-size: 18px;
   color: #FFFFFF;
   text-overflow: ellipsis;
   lines: 1;
@@ -208,21 +208,21 @@
 }
 .rowName {
   width: 128px;
-  height: 26px;
-  line-height: 26px;
+  height: 28px;
+  line-height: 28px;
   text-align: left;
-  font-size: 17px;
+  font-size: 19px;
   color: #FFFFFF;
   text-overflow: ellipsis;
   lines: 1;
 }
 .rowDesc {
   width: 128px;
-  height: 20px;
-  line-height: 20px;
+  height: 21px;
+  line-height: 21px;
   text-align: left;
-  font-size: 14px;
-  color: rgba(255,255,255,0.4);
+  font-size: 15px;
+  color: rgba(255,255,255,0.6);
   text-overflow: ellipsis;
   lines: 1;
 }
@@ -362,22 +362,24 @@ export default {
   refresh() {
     this.refreshClock()
     this.refreshDate()
-    // 目标日数据带 60 秒缓存：回到首页不必每次读盘 + 解析 + 全表遍历
+    // 目标日数据带 60 秒缓存：回到首页不必每次读盘 + 解析 + 全表遍历。
+    // 首页只显示开着「在主页显示」开关的那条（bestHome）；旧数据的双开迁移在数据层完成。
     homeEvents.load((r) => {
-      const best = r && r.best
-      // 空列表 / 日期全部非法都算「没有目标日」：不常驻模式下据此收起顶部卡片
-      this.hasToday = !!best
+      const bestHome = r && r.bestHome
+      // 没有开着主页开关的目标日（空列表 / 全部没开 / 日期全部非法）都算「没有目标日」：
+      // 不常驻模式下据此收起顶部卡片，常驻模式下显示占位文案
+      this.hasToday = !!bestHome
       this.applyToday()
-      if (!best) {
+      if (!bestHome) {
         // 没有目标日时回到占位文案（常驻模式下卡片仍显示「记录一个目标日」）
         this.eventTitle = '记录一个目标日'
         this.eventDelta = '把重要的日子放在心上'
         this.eventColor = 'rgba(255,255,255,0.4)'
         return
       }
-      this.eventTitle = best.item.title || best.item.display_name || '目标日'
-      this.eventDelta = best.d.text
-      this.eventColor = best.d.status === 'today' ? '#00C853' : '#0D6EFF'
+      this.eventTitle = bestHome.item.title || bestHome.item.display_name || '目标日'
+      this.eventDelta = bestHome.d.text
+      this.eventColor = bestHome.d.status === 'today' ? '#00C853' : '#0D6EFF'
     })
   },
   refreshDate() {

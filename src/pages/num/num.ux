@@ -28,8 +28,8 @@
 .display { position: absolute; left: 3px; top: 80px; width: 206px; height: 150px; border-radius: 26px; background-color: #262626; align-items: center; justify-content: center; flex-direction: column; }
 .num { width: 206px; height: 86px; line-height: 86px; text-align: center; font-size: 62px; color: #0D6EFF; letter-spacing: 2px; }
 .num.small { font-size: 44px; }
-.dLabel { font-size: 14px; color: rgba(255,255,255,0.35); }
-.label { position: absolute; left: 12px; top: 250px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.dLabel { font-size: 14px; color: rgba(255,255,255,0.55); }
+.label { position: absolute; left: 12px; top: 250px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .chips { position: absolute; left: 6px; top: 276px; width: 200px; height: 64px; flex-direction: row; flex-wrap: wrap; justify-content: space-between; }
 /* 选中态走内联 style：本渲染器不支持 .chip.on 复合类选择器，会把复合规则套到所有 .chip */
 .chip { width: 96px; height: 28px; margin-bottom: 6px; border-radius: 14px; background-color: #262626; align-items: center; justify-content: center; }

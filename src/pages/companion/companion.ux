@@ -45,6 +45,16 @@
       <text class="f cSub">表盘风版式 · 固定显示时分</text>
     </div>
 
+    <!-- 精美样式颜色入口：只在精美样式开时出现（关着时改颜色没有意义）。
+         点进 pages/colorpick 取色 / 选预置色；副标题直接显示当前颜色的 HEX。 -->
+    <div class="card cardD" if="{{ fancyOn }}" @click="goColor">
+      <div class="cardTop">
+        <text class="f cTitle">精美样式颜色</text>
+        <text class="f arrow">></text>
+      </div>
+      <text class="f cSub">当前 {{ colorHex }}</text>
+    </div>
+
     <div class="actRow" @click="start"><text class="f actRowT">开始</text></div>
     <backbtn></backbtn>
   </div>
@@ -53,41 +63,60 @@
 <style>
 @import '../../common/styles/theme.css';
 
-/* 版式（band10 基线；Pro 只替换宽度，纵向节奏三机型共用）：
-   PageHead 0..84 → 标签/百分比 76..94 → slider 98..140 → 步进行 142..182
-   → 常亮卡 186..252 → 秒钟卡 258..324 → 精美卡 330..396 → 底部「开始」400..448。
-   Pro 的底部动作行经页内覆盖改到 408（见下方 .actRow），三张卡才能按基线排满。
-   原先的 hint 行删掉了（「横放手环」语义并进常亮卡副文案），腾出的空间给第三张卡。 */
-.label { position: absolute; left: 12px; top: 76px; width: 110px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
-.pct { position: absolute; left: 122px; top: 76px; width: 78px; height: 20px; line-height: 20px; text-align: right; font-size: 14px; color: #FFFFFF; }
-.level { position: absolute; left: 6px; top: 98px; width: 200px; height: 42px; color: #2A2A2A; selected-color: #0D6EFF; block-color: #FFFFFF; padding-left: 10px; padding-right: 10px; }
-.stepRow { position: absolute; left: 6px; top: 142px; width: 200px; height: 40px; flex-direction: row; align-items: center; justify-content: space-between; }
-.stepBtn { width: 56px; height: 40px; border-radius: 22px; background-color: #1A1A1A; align-items: center; justify-content: center; }
-.stepT { font-size: 22px; color: #FFFFFF; }
-.stepVal { width: 84px; height: 40px; line-height: 40px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.75); }
+/* 版式（band10 基线；Pro / band9 只替换宽度，纵向节奏三机型共用 —— 三机型的快应用画布底都是 466）：
+   PageHead 0..84 → 标签/百分比 76..94 → slider 94..136 → 步进行 136..172
+   → 常亮卡 176..228 → 秒钟卡 232..284 → 精美卡 288..340 → 颜色卡 344..396（仅精美样式开时渲染）
+   → 底部「开始」400..448。
+   四张卡 + 动作行要一起落进 466：卡片高度 66→52、卡间距 8→4，顶部三段各上收 4px 换出空间，
+   动作行保持基线 400（与 theme.css 同值，band10/band9 无变化）。
+   原先的 hint 行删掉了（「横放手环」语义并进常亮卡副文案）。 */
+.label { position: absolute; left: 12px; top: 76px; width: 110px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.55); }
+.pct { position: absolute; left: 122px; top: 76px; width: 78px; height: 18px; line-height: 18px; text-align: right; font-size: 14px; color: #FFFFFF; }
+.level { position: absolute; left: 6px; top: 94px; width: 200px; height: 42px; color: #2A2A2A; selected-color: #0D6EFF; block-color: #FFFFFF; padding-left: 10px; padding-right: 10px; }
+.stepRow { position: absolute; left: 6px; top: 136px; width: 200px; height: 36px; flex-direction: row; align-items: center; justify-content: space-between; }
+.stepBtn { width: 56px; height: 36px; border-radius: 20px; background-color: #1A1A1A; align-items: center; justify-content: center; }
+.stepT { font-size: 20px; color: #FFFFFF; }
+.stepVal { width: 84px; height: 36px; line-height: 36px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.75); }
 /* .card 必须在本页写 position/top：它是可点元素，R15 靠绝对盒判断它是否压住页头命中区。
-   三张卡共用宽度/高度/内边距，只差 top（cardA / cardB / cardC）；Pro 用替换对把三张卡上移。 */
-.card { position: absolute; left: 3px; width: 206px; height: 66px; border-radius: 22px; background-color: #262626; padding: 9px 16px; flex-direction: column; }
-.cardA { top: 186px; }
-.cardB { top: 258px; }
-.cardC { top: 330px; }
-.cardTop { width: 100%; height: 28px; flex-direction: row; align-items: center; justify-content: space-between; }
+   四张卡共用宽度/高度/内边距，只差 top（cardA..cardD）；高度压到 52 = padding 6×2 + 标题行 20 + 副标题行 18 + 2px 余量。 */
+.card { position: absolute; left: 3px; width: 206px; height: 52px; border-radius: 20px; background-color: #262626; padding: 6px 14px; flex-direction: column; }
+.cardA { top: 176px; }
+.cardB { top: 232px; }
+.cardC { top: 288px; }
+/* 第 4 张（精美样式颜色入口）带 if 包装（只在精美样式开时渲染），所以自带完整几何
+   （position + left/top + width/height）—— 手环 11 固件对「带 if 但无 CSS 规则」的 div
+   不布局其绝对定位子元素，不能只靠 .card 的合并规则。 */
+.cardD { position: absolute; left: 3px; top: 344px; width: 206px; height: 52px; }
+.cardTop { width: 100%; height: 20px; flex-direction: row; align-items: center; justify-content: space-between; }
 .cTitle { font-size: 16px; color: #FFFFFF; }
+.arrow { font-size: 19px; color: rgba(255,255,255,0.55); }
 /* 开关状态字：与 set.ux / calculator 的 swRow 同一套写法（内联 style 三元 + 「开/关」），不用 <switch> */
-.swState { width: 40px; height: 28px; line-height: 28px; text-align: right; font-size: 16px; }
-.cSub { width: 100%; height: 20px; line-height: 20px; font-size: 13px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.swState { width: 40px; height: 20px; line-height: 20px; text-align: right; font-size: 15px; }
+.cSub { width: 100%; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.7); text-overflow: ellipsis; lines: 1; }
 /* 底部动作行：基线显式写 400（与 theme.css 同值，band10/band9 无变化）。
-   Pro 的三张卡按基线 top 排到 396，theme 的 Pro 动作行（360）会压到卡上 ——
-   本页用替换对把它改到 408..456（可绘制底 466 上方留 10px），卡片尺寸三机型保持一致。 */
+   这行字面量同时是 profiles/pro336.json 的替换对 find（Pro 上改到 408），改它会让 profile 漂移。 */
 .actRow { top: 400px; }
 </style>
 
 <script>
 import g from '../../utils/g'
+import color from '../../utils/color'
 
 // 十档亮度（0..255）。档 1 不取 0：桌面伴侣是「长亮显示」，全黑没有意义。
 const LEVELS = [40, 64, 88, 112, 136, 160, 183, 207, 231, 255]
 const DEFAULT_LEVEL = 7
+
+/** 精美样式缺省色（薄荷绿 #B9E7DD）：companionCfg.color 缺省与取色页的 DEFAULT_HEX 同一口径。
+ *  单位统一 '#RRGGBB'（大写、带 #）—— 取色页写、本页读、clock.ux 收的都是这个口径。 */
+const DEFAULT_COLOR = '#B9E7DD'
+
+/** 归一化成 '#RRGGBB'；不合法返回空串（老配置没有 color 字段 / 写进脏值时回落缺省） */
+function normColor(s) {
+  if (typeof s !== 'string') return ''
+  const t = s.charAt(0) === '#' ? s.slice(1) : s
+  const u = t.toUpperCase()
+  return color.isHex6(u) ? '#' + u : ''
+}
 
 function clampLevel(v) {
   let lv = Math.round(Number(v))
@@ -109,6 +138,9 @@ export default {
     keepOn: true,
     secShow: true,
     fancyOn: false,
+    colorHex: DEFAULT_COLOR,
+    // 是否已经从 KV 读到了 color（冷启动读盘窗口内先别用缺省值把旧 color 冲掉）
+    colorSynced: false,
     dirty: false
   },
   onShow() {
@@ -130,6 +162,9 @@ export default {
       // 老配置没有 sec / fancy 字段：默认显示秒钟、简洁样式（与旧行为一致）
       if (typeof cfg.sec === 'boolean') this.secShow = cfg.sec
       if (typeof cfg.fancy === 'boolean') this.fancyOn = cfg.fancy
+      // 老配置没有 color 字段：回落缺省薄荷绿（取色页在同一 KV 键上写 '#RRGGBB'）
+      this.colorHex = normColor(cfg.color) || DEFAULT_COLOR
+      this.colorSynced = true
       this.pct = this.level * 10
       this.preview()
     })
@@ -148,17 +183,37 @@ export default {
     g.screen.hold({ keepOn: this.keepOn, value: valueOf(this.level) }, 'companion')
   },
   /**
-   * 档位 / 常亮 / 秒钟选择落盘：改动即写，不只在「开始」时写。
+   * 档位 / 常亮 / 秒钟 / 精美样式颜色落盘：改动即写，不只在「开始」时写。
    * 原先只在 start() 里落盘，导致用户调完亮度直接返回 → 下次进来还是旧档位。
+   * cfg 是整份覆写，color 不能随手写成缺省值去覆盖用户选过的颜色 ——
+   * 页面还没从 KV 同步过 color 时（冷启动读盘窗口），保留 KV 里的旧值。
    */
   saveCfg() {
     const page = this
-    const cfg = { level: this.level, keepOn: this.keepOn, sec: this.secShow, fancy: this.fancyOn }
     g.kv.init(() => {
       if (!page.$valid) return
+      const prev = g.kv.get('companionCfg', null)
+      const cfg = {
+        level: page.level,
+        keepOn: page.keepOn,
+        sec: page.secShow,
+        fancy: page.fancyOn,
+        color: page.resolvedColor(prev)
+      }
       g.kv.set('companionCfg', cfg)
       g.kv.flush()
     })
+  },
+  /** 本次要写进 cfg 的 color：已同步过就用页面值，否则沿用旧 cfg（防把用户选的颜色冲掉） */
+  resolvedColor(prev) {
+    if (this.colorSynced) return this.colorHex
+    const old = prev && typeof prev === 'object' ? normColor(prev.color) : ''
+    return old || DEFAULT_COLOR
+  },
+  /** 进取色页（第 4 张卡；写盘由取色页的「应用」负责，这里只导航） */
+  goColor() {
+    g.haptic.short()
+    g.router.push('/pages/colorpick')
   },
   /** slider 的 change 只有拖动结束才触发；e.progress 防御式取值 + 回声守卫 */
   onLevel(e) {
@@ -202,18 +257,23 @@ export default {
   },
   start() {
     g.haptic.short()
+    const page = this
     const cfg = { level: this.level, keepOn: this.keepOn, sec: this.secShow, fancy: this.fancyOn }
     const value = valueOf(cfg.level)
     // 先把亮度会话归属转给时钟页（同步）：设置页随即 onHide，它的延迟释放会被归属检查取消。
     g.screen.hold({ keepOn: cfg.keepOn, value }, 'clock')
     g.kv.init(() => {
+      // color 取「当前已应用的」（companionCfg.color，缺省 #B9E7DD）：
+      // 已同步过用页面值，否则保留 KV 里的旧值（冷启动读盘窗口内别写缺省）
+      cfg.color = page.resolvedColor(g.kv.get('companionCfg', null))
       g.kv.set('companionCfg', cfg)
       g.kv.flush()
       g.router.push('/pages/companion/clock', {
         value: String(value),
         keepOn: cfg.keepOn ? '1' : '0',
         showSec: cfg.sec ? '1' : '0',
-        fancy: cfg.fancy ? '1' : '0'
+        fancy: cfg.fancy ? '1' : '0',
+        color: cfg.color
       })
     })
   }

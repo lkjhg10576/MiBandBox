@@ -45,7 +45,7 @@
 .wave { width: 8px; border-radius: 4px; }
 .go { position: absolute; left: 26px; top: 378px; width: 160px; height: 48px; border-radius: 24px; align-items: center; justify-content: center; }
 .goT { font-size: 14px; color: #FFFFFF; }
-.hint { position: absolute; left: 16px; top: 436px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.35); }
+.hint { position: absolute; left: 16px; top: 436px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>

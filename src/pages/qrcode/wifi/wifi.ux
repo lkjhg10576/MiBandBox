@@ -45,9 +45,9 @@
 .formScroll { position: absolute; left: 0px; top: 78px; width: 212px; height: 442px; }
 .inner { width: 212px; flex-direction: column; }
 .field { width: 206px; margin: 0px 3px 8px 3px; height: 40px; border-radius: 20px; background-color: #262626; padding: 4px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
-.fLabel { width: 174px; height: 16px; line-height: 16px; font-size: 12px; color: rgba(255,255,255,0.45); }
+.fLabel { width: 174px; height: 16px; line-height: 16px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .fValue { width: 174px; height: 20px; line-height: 20px; font-size: 15px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.fPlace { width: 174px; height: 20px; line-height: 20px; font-size: 13px; color: rgba(255,255,255,0.3); }
+.fPlace { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); }
 .chips { margin: 4px 6px 0px 6px; height: 32px; flex-direction: row; justify-content: space-between; }
 .chip { width: 62px; height: 32px; border-radius: 16px; background-color: #1E1E1E; align-items: center; justify-content: center; }
 .chipT { font-size: 14px; color: #FFFFFF; }

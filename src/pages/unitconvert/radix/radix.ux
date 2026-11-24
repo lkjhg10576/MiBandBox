@@ -56,18 +56,18 @@
 .chip { width: 47px; height: 40px; border-radius: 20px; background-color: #262626; align-items: center; justify-content: center; }
 .chipT { font-size: 14px; }
 .inCard { position: absolute; left: 3px; top: 124px; width: 206px; height: 68px; border-radius: 26px; background-color: #262626; padding: 4px 12px; flex-direction: column; }
-.inLabel { width: 182px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.inLabel { width: 182px; height: 16px; line-height: 16px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .inVal { width: 182px; height: 22px; line-height: 22px; font-size: 18px; color: #FFFFFF; }
-.inPh { color: rgba(255,255,255,0.3); }
+.inPh { color: rgba(255,255,255,0.45); }
 .resCard { position: absolute; left: 3px; top: 200px; width: 206px; height: 192px; border-radius: 26px; background-color: #151515; padding: 6px 12px; flex-direction: column; }
 .rRow { width: 182px; height: 60px; flex-direction: column; }
-.rLabel { width: 182px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.rLabel { width: 182px; height: 16px; line-height: 16px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .rVal { width: 182px; height: 22px; line-height: 22px; font-size: 18px; color: #9FC4FF; }
 .editCard { position: absolute; left: 3px; top: 76px; width: 206px; height: 72px; border-radius: 26px; background-color: #262626; padding: 4px 12px; flex-direction: column; }
 .editCardKb {}
-.eLabel { width: 182px; height: 16px; line-height: 16px; font-size: 13px; color: rgba(255,255,255,0.45); }
+.eLabel { width: 182px; height: 16px; line-height: 16px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .eVal { width: 182px; height: 24px; line-height: 24px; text-align: center; font-size: 20px; color: #0D6EFF; }
-.ePh { color: rgba(255,255,255,0.3); }
+.ePh { color: rgba(255,255,255,0.45); }
 </style>
 
 <script>

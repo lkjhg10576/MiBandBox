@@ -67,11 +67,11 @@
 .inner { width: 212px; flex-direction: column; }
 .card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; flex-shrink: 0; }
 .cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
-.cTitle { font-size: 17px; color: #FFFFFF; }
-.arrow { font-size: 20px; color: rgba(255,255,255,0.4); }
+.cTitle { font-size: 18px; color: #FFFFFF; }
+.arrow { font-size: 20px; color: rgba(255,255,255,0.5); }
 /* 开关状态字：与 calculator 的 swRow 同一套写法（内联 style 三元 + 文字「开/关」），不用 <switch> */
 .swState { width: 40px; height: 30px; line-height: 30px; text-align: right; font-size: 16px; }
-.cSub { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.cSub { width: 174px; height: 22px; line-height: 22px; font-size: 15px; color: rgba(255,255,255,0.7); text-overflow: ellipsis; lines: 1; }
 /* 末尾留白 48px：滚动到底时最后一张卡要完整落在可绘制区内（视口底 500 超出画布底 466） */
 .pad { width: 212px; height: 48px; flex-shrink: 0; }
 </style>

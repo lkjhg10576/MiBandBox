@@ -45,9 +45,9 @@
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 64px; border-radius: 26px; background-color: #262626; padding: 6px 16px; flex-direction: column; }
-.iLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iLabel { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.6); }
 .iText { width: 174px; height: 32px; line-height: 32px; font-size: 18px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.iPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
+.iPlace { width: 174px; height: 32px; line-height: 32px; font-size: 15px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
 .morseCard { position: absolute; left: 3px; top: 152px; width: 206px; height: 116px; border-radius: 26px; background-color: #1A1A1A; padding: 8px 16px; flex-direction: column; }
 .mLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: #4E87FF; }
 .morseScroll { width: 174px; height: 78px; }

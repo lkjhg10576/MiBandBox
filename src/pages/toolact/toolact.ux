@@ -57,16 +57,16 @@
 .infoCard { width: 206px; height: 72px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #1A1A1A; flex-direction: row; align-items: center; padding: 0px 14px; flex-shrink: 0; }
 .infoIcon { width: 34px; height: 34px; margin-right: 10px; }
 .infoMeta { width: 134px; height: 52px; flex-direction: column; align-items: flex-start; justify-content: center; }
-.infoName { width: 134px; height: 26px; line-height: 26px; text-align: left; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.infoDesc { width: 134px; height: 20px; line-height: 20px; text-align: left; font-size: 14px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+.infoName { width: 134px; height: 28px; line-height: 28px; text-align: left; font-size: 19px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.infoDesc { width: 134px; height: 21px; line-height: 21px; text-align: left; font-size: 15px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
 .card { width: 206px; height: 76px; margin: 0px 3px 8px 3px; border-radius: 26px; background-color: #262626; padding: 11px 16px; flex-direction: column; flex-shrink: 0; }
 .cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
-.cTitle { font-size: 17px; color: #FFFFFF; }
+.cTitle { font-size: 18px; color: #FFFFFF; }
 /* 开关状态字：与设置页「工具分类」开关同一套写法（整张卡作开关：开=卡底染蓝 + 「开」，
    关=灰底 + 「关」），不用 <switch>。置顶 / 收藏都走这一套，开启状态一眼可见。 */
 .swState { width: 40px; height: 30px; line-height: 30px; text-align: right; font-size: 16px; }
-.cState { height: 30px; line-height: 30px; text-align: right; font-size: 14px; }
-.cSub { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.cState { height: 30px; line-height: 30px; text-align: right; font-size: 15px; }
+.cSub { width: 174px; height: 22px; line-height: 22px; font-size: 15px; color: rgba(255,255,255,0.7); text-overflow: ellipsis; lines: 1; }
 .pad { width: 212px; height: 16px; flex-shrink: 0; }
 </style>
 

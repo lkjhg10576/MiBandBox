@@ -48,11 +48,11 @@
 <style>
 @import '../../common/styles/theme.css';
 .inputCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 78px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
-.iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.iLabel { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); }
 .iText { width: 158px; height: 40px; line-height: 40px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.iPlace { width: 158px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
-.counter { position: absolute; right: 14px; top: 8px; font-size: 14px; color: rgba(255,255,255,0.3); }
-.label { position: absolute; left: 12px; width: 80px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.iPlace { width: 158px; height: 40px; line-height: 40px; font-size: 15px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.counter { position: absolute; right: 14px; top: 8px; font-size: 14px; color: rgba(255,255,255,0.45); }
+.label { position: absolute; left: 12px; width: 80px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .chips { position: absolute; left: 6px; width: 200px; height: 32px; flex-direction: row; justify-content: space-between; }
 .chip { width: 62px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
 .chip.on { background-color: rgba(13,110,255,0.35); }

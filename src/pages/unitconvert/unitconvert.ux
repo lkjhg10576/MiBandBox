@@ -33,8 +33,8 @@
   align-items: center;
   justify-content: center;
 }
-.cName { width: 91px; height: 24px; line-height: 24px; text-align: center; font-size: 17px; color: #FFFFFF; }
-.cSub { width: 91px; height: 18px; line-height: 18px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.4); text-overflow: ellipsis; lines: 1; }
+.cName { width: 91px; height: 24px; line-height: 24px; text-align: center; font-size: 18px; color: #FFFFFF; }
+.cSub { width: 91px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; }
 </style>
 
 <script>

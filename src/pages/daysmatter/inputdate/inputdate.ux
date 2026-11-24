@@ -24,10 +24,10 @@
 <style>
 @import '../../../common/styles/theme.css';
 /* 滚轮高度决定可见行数（原版 HyperBox 同页 picker 高 140px、选中行 30px）；非选中行压暗 */
-.pkYear { position: absolute; left: 46px; top: 140px; width: 120px; height: 176px; color: rgba(255,255,255,0.35); font-size: 22px; selected-color: #FFFFFF; selected-font-size: 30px; selected-background-color: rgba(255,255,255,0.08); }
+.pkYear { position: absolute; left: 46px; top: 140px; width: 120px; height: 176px; color: rgba(255,255,255,0.55); font-size: 22px; selected-color: #FFFFFF; selected-font-size: 30px; selected-background-color: rgba(255,255,255,0.08); }
 .mdRow { position: absolute; left: 0px; top: 140px; width: 212px; height: 176px; flex-direction: row; align-items: center; justify-content: center; }
-.pkMd { width: 76px; height: 176px; color: rgba(255,255,255,0.35); font-size: 22px; selected-color: #FFFFFF; selected-font-size: 30px; selected-background-color: rgba(255,255,255,0.08); }
-.sep { width: 24px; text-align: center; font-size: 22px; color: rgba(255,255,255,0.35); }
+.pkMd { width: 76px; height: 176px; color: rgba(255,255,255,0.55); font-size: 22px; selected-color: #FFFFFF; selected-font-size: 30px; selected-background-color: rgba(255,255,255,0.08); }
+.sep { width: 24px; text-align: center; font-size: 22px; color: rgba(255,255,255,0.55); }
 .go { position: absolute; left: 58px; top: 404px; width: 96px; height: 52px; border-radius: 26px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goImg { width: 28px; height: 28px; }
 </style>

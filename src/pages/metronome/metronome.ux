@@ -46,20 +46,20 @@
 /* BPM 卡：整卡是命中区，点它进统一数字键盘页（pages/numinput）输入。
    卡内纵向两行：标题 + 大数值，16 + 54 = 70，卡高 112，上下各留 21px。 */
 .bpmBox { position: absolute; left: 3px; top: 96px; width: 206px; height: 112px; border-radius: 26px; background-color: #151515; flex-direction: column; align-items: center; justify-content: center; }
-.bpmLabel { width: 190px; height: 16px; line-height: 16px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.45); }
+.bpmLabel { width: 190px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 /* 大数值：16（标题行）+ 54（数值）= 70，卡高 112，上下各留 21px */
 .val { width: 190px; height: 54px; line-height: 54px; text-align: center; font-size: 46px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
 .status { position: absolute; left: 0px; top: 218px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
-.gapTxt { position: absolute; left: 0px; top: 242px; width: 212px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.4); }
+.gapTxt { position: absolute; left: 0px; top: 242px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 .pulse { position: absolute; left: 91px; top: 278px; width: 30px; height: 30px; border-radius: 15px; }
 .levels { position: absolute; left: 6px; top: 318px; width: 200px; height: 38px; flex-direction: row; align-items: center; border-radius: 19px; background-color: #1A1A1A; padding: 3px; }
-.lvLabel { width: 32px; height: 32px; line-height: 32px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.45); }
+.lvLabel { width: 32px; height: 32px; line-height: 32px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 .lv { flex: 1; height: 32px; margin-right: 4px; border-radius: 16px; align-items: center; justify-content: center; }
 .lvT { font-size: 14px; color: #FFFFFF; }
 .go { position: absolute; left: 26px; top: 378px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .goStop { background-color: #FF3B30; }
 .goT { font-size: 14px; color: #FFFFFF; }
-.hint { position: absolute; left: 16px; top: 436px; width: 180px; text-align: center; font-size: 13px; line-height: 20px; color: rgba(255,255,255,0.35); }
+.hint { position: absolute; left: 16px; top: 436px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>

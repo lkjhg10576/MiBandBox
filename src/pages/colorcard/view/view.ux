@@ -7,7 +7,7 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-.topHint { position: absolute; left: 0px; top: 44px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 13px; opacity: 0.75; }
+.topHint { position: absolute; left: 0px; top: 44px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; opacity: 0.85; }
 .hexT { position: absolute; left: 0px; top: 448px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 15px; opacity: 0.85; }
 </style>
 

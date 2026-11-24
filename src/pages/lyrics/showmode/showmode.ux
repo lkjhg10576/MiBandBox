@@ -27,9 +27,9 @@
 .optB { top: 200px; }
 .opt.on { background-color: rgba(13,110,255,0.24); }
 .oT { width: 140px; height: 30px; line-height: 30px; font-size: 17px; color: #FFFFFF; }
-.oS { width: 140px; height: 24px; line-height: 24px; font-size: 14px; color: rgba(255,255,255,0.5); }
+.oS { width: 140px; height: 24px; line-height: 24px; font-size: 14px; color: rgba(255,255,255,0.6); }
 .chk { position: absolute; right: 16px; top: 18px; font-size: 22px; color: #0D6EFF; }
-.tip { position: absolute; left: 0px; top: 320px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.tip { position: absolute; left: 0px; top: 320px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>

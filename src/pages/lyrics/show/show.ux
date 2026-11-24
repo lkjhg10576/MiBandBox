@@ -67,8 +67,8 @@
 .mRow2 { top: 164px; }
 .mRow3 { top: 244px; }
 .mT { font-size: 17px; color: #FFFFFF; }
-.mArrow { font-size: 20px; color: rgba(255,255,255,0.4); }
-.mTip { position: absolute; left: 0px; top: 340px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.mArrow { font-size: 20px; color: rgba(255,255,255,0.55); }
+.mTip { position: absolute; left: 0px; top: 340px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 /* 取消键：离页头命中区（y0..74）远，落在底部动作行那一档
    （band10 y420..464；band9 由 profiles/band9.json 里现成的 top: 420px 替换对改到 y390..434）。 */
 .mCancel { position: absolute; left: 3px; top: 420px; width: 206px; height: 44px; border-radius: 22px; background-color: #262626; align-items: center; justify-content: center; }

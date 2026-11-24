@@ -76,22 +76,22 @@
 .rim { position: absolute; left: 22px; top: 60px; width: 52px; height: 15px; border-radius: 8px; border-width: 3px; border-style: solid; border-color: #FF9500; }
 .ball { position: absolute; left: 41px; top: 84px; width: 16px; height: 16px; border-radius: 8px; background-color: #FF9500; }
 .cTitle1 { position: absolute; left: 84px; top: 18px; width: 114px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
-.cDesc1 { position: absolute; left: 84px; top: 48px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.6); }
-.cDesc2 { position: absolute; left: 84px; top: 70px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
+.cDesc1 { position: absolute; left: 84px; top: 48px; width: 114px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.7); }
+.cDesc2 { position: absolute; left: 84px; top: 70px; width: 114px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .cTitle2 { position: absolute; left: 84px; top: 18px; width: 114px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
-.cDesc3 { position: absolute; left: 84px; top: 48px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.6); }
-.cDesc4 { position: absolute; left: 84px; top: 70px; width: 114px; height: 20px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
-.hint { position: absolute; left: 6px; top: 322px; width: 200px; height: 60px; line-height: 20px; font-size: 12px; color: rgba(255,255,255,0.35); }
+.cDesc3 { position: absolute; left: 84px; top: 48px; width: 114px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.7); }
+.cDesc4 { position: absolute; left: 84px; top: 70px; width: 114px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.55); }
+.hint { position: absolute; left: 6px; top: 322px; width: 200px; height: 60px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.55); }
 /* 灵敏度三档：低 / 中 / 高 */
 .sensRow { position: absolute; left: 6px; top: 386px; width: 200px; height: 32px; flex-direction: row; align-items: center; border-radius: 16px; background-color: #1A1A1A; padding: 3px; }
-.sensLabel { width: 44px; height: 26px; line-height: 26px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.45); }
+.sensLabel { width: 44px; height: 26px; line-height: 26px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 .sn { flex: 1; height: 26px; margin-right: 4px; border-radius: 13px; align-items: center; justify-content: center; }
 .snT { font-size: 14px; color: #FFFFFF; }
 /* 统计卡：标题与两行数字，标签靠左、数值靠右 */
 .statCard1 { top: 90px; }
 .statCard2 { top: 206px; }
 .stTitle { position: absolute; left: 20px; top: 18px; width: 166px; height: 26px; line-height: 26px; font-size: 18px; color: #FFFFFF; }
-.stLabel { position: absolute; left: 20px; width: 120px; height: 20px; line-height: 20px; font-size: 13px; color: rgba(255,255,255,0.6); }
+.stLabel { position: absolute; left: 20px; width: 120px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.7); }
 .stL1 { top: 48px; }
 .stL2 { top: 70px; }
 .stVal { position: absolute; left: 120px; width: 66px; height: 20px; line-height: 20px; font-size: 16px; text-align: right; color: #FFFFFF; }

@@ -805,6 +805,7 @@ for (const f of walk('src', '.ux')) {
   const CARD_PAGES = [
     { rel: 'src/pages/set/set.ux', info: null },
     { rel: 'src/pages/toolact/toolact.ux', info: 'infoCard' },
+    { rel: 'src/pages/daysmatter/edit/edit.ux', info: null },
   ]
   for (const page of CARD_PAGES) {
     if (!fs.existsSync(path.join(ROOT, page.rel))) continue
@@ -1001,6 +1002,64 @@ for (const f of walk('src', '.ux')) {
           }
         }
       }
+    }
+  }
+}
+
+// ---------- R18 字号底线（<14px 一律拦下） ----------
+// 手环 1.6" 屏上 12~13px 的中文只有约 1mm 高，真机上发虚。2026-11-24 把全项目
+// 11/12/13px 全部抬到 ≥14px；这条门禁防止回退。唯一白名单是输入页的换行符按钮
+// （`.nlT` 是 30×24 按钮里的 ⏎ 字形，不是可读文本）。
+// 模板值（font-size: {{ ... }}px）与内联 style 里的模板值都跳过，只拦字面量。
+const R18_EXEMPT = {
+  'src/pages/input/input.ux|nlT': '换行符字形按钮（30×24 内的 ⏎ 字形，不是可读文本）'
+}
+for (const rel of walk('src', '.ux')) {
+  const raw = read(rel)
+  const styleM = raw.match(/<style>([\s\S]*?)<\/style>/)
+  if (styleM) {
+    const css = styleM[1].replace(/\/\*[\s\S]*?\*\//g, '')
+    const re = /([^{}]+)\{([^{}]*)\}/g
+    let m
+    while ((m = re.exec(css))) {
+      const fsM = m[2].match(/(?:^|;)\s*font-size\s*:\s*(\d+)px/)
+      if (!fsM) continue
+      const size = parseInt(fsM[1], 10)
+      if (size >= 14) continue
+      for (const s of m[1].split(',')) {
+        const cls = s.trim().replace(/^\./, '')
+        if (!cls || cls.includes(' ') || cls.includes('@')) continue
+        if (R18_EXEMPT[rel + '|' + cls]) continue
+        fail('R18', rel, `.${cls} 的 font-size = ${size}px（< 14px）—— ` +
+          '手环小屏上会发虚；抬到 ≥14px（提示/说明优先 15px），放不下先删字')
+      }
+    }
+  }
+  const inline = /style="[^"]*font-size\s*:\s*(\d+)px[^"]*"/g
+  let im
+  while ((im = inline.exec(raw))) {
+    if (parseInt(im[1], 10) < 14) {
+      fail('R18', rel, `内联 font-size = ${im[1]}px（< 14px）—— 同上，抬到 ≥14px`)
+    }
+  }
+}
+
+// ---------- R19 文字对比度（提醒，不阻断） ----------
+// 文字色只用三档：主 #FFFFFF / 次 0.72 / 提示 0.55；占位符与禁用态可到 0.45。
+// 低于 0.4 的白字在 #1A1A1A 卡片上对比度不足 2.5:1，读起来发灰 —— 只出提醒，
+// 因为禁用态/装饰性标签有合法用途，看到提醒请人工判一下是不是正文。
+for (const rel of walk('src', '.ux')) {
+  const styleM = read(rel).match(/<style>([\s\S]*?)<\/style>/)
+  if (!styleM) continue
+  const css = styleM[1].replace(/\/\*[\s\S]*?\*\//g, '')
+  // 只匹配独立的 color 声明（background-color / border-color 不会被命中：前缀是 '-'）
+  const re = /(?:^|;)\s*color\s*:\s*rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*0?\.(\d+)\s*\)/g
+  let m
+  while ((m = re.exec(css))) {
+    const a = parseFloat('0.' + m[1])
+    if (a < 0.4) {
+      warn('R19', rel, `有文字色的白透明度 = ${a}（< 0.4）：正文/提示请用 ≥0.55，` +
+        '只有占位符/禁用态/纯装饰才允许这么低')
     }
   }
 }

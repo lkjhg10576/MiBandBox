@@ -5,39 +5,83 @@
   <div class="page">
     <pagehead title="目标日" clock="{{ clock }}"></pagehead>
 
-    <div class="card" @click="openTitle">
-      <text class="f label">事件名称</text>
-      <text class="f value" if="{{ title }}">{{ title }}</text>
-      <text class="f iPlace" if="{{ !title }}">例如：考试、生日、旅行</text>
-    </div>
+    <scroll class="body" scroll-y="true" bounces="true">
+      <div class="inner" style="height: {{ innerH }}px;">
+        <div class="card" @click="openTitle">
+          <text class="f label">事件名称</text>
+          <text class="f value" if="{{ title }}">{{ title }}</text>
+          <text class="f iPlace" if="{{ !title }}">例如：考试、生日、旅行</text>
+        </div>
 
-    <div class="card card2" @click="pickDate">
-      <text class="f label">日期</text>
-      <text class="f value" style="color: #0D6EFF;">{{ date }}</text>
-    </div>
+        <div class="card" @click="pickDate">
+          <text class="f label">日期</text>
+          <text class="f value" style="color: #0D6EFF;">{{ date }}</text>
+        </div>
 
-    <text class="f delta">{{ deltaText }}</text>
+        <text class="f delta">{{ deltaText }}</text>
 
-    <div class="del" @click="del"><text class="f delT">{{ delStep === 0 ? '删除这个目标日' : '再次点击确认删除' }}</text></div>
+        <!-- 两张开关卡照功能设置页（toolact）的范式：整卡可点、卡底内联三元、状态字用 .swState。
+             开关只改草稿态，互斥收口在 homeEvents.saveEvent（保存时才落库）。 -->
+        <div class="card" style="background-color: {{ homeOn ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="toggleHome">
+          <div class="cardTop">
+            <text class="f cTitle">在主页显示</text>
+            <text class="f swState" style="color: {{ homeOn ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ homeOn ? '开' : '关' }}</text>
+          </div>
+          <text class="f cSub">{{ homeSubText }}</text>
+        </div>
 
-    <div class="save" @click="save"><text class="f actRowT">保存</text></div>
+        <div class="card" style="background-color: {{ compOn ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="toggleComp">
+          <div class="cardTop">
+            <text class="f cTitle">在桌面伴侣中显示</text>
+            <text class="f swState" style="color: {{ compOn ? '#0D6EFF' : 'rgba(255,255,255,0.4)' }};">{{ compOn ? '开' : '关' }}</text>
+          </div>
+          <text class="f cSub">{{ compSubText }}</text>
+        </div>
+
+        <div class="save" @click="save"><text class="f actRowT">保存</text></div>
+        <div class="del" @click="del"><text class="f delT">{{ delStep === 0 ? '删除这个目标日' : '再次点击确认删除' }}</text></div>
+        <div class="pad"></div>
+      </div>
+    </scroll>
     <backbtn></backbtn>
   </div>
 </template>
 
 <style>
 @import '../../../common/styles/theme.css';
-/* 保存独占一行（原来删除键的位置），删除键挪到最底下一行。
-   两键都不放页头 —— 页头整条是返回命中区，动作键压在里面真机上点不到。 */
-.save { position: absolute; left: 3px; top: 330px; width: 206px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
-.card { position: absolute; left: 3px; top: 82px; width: 206px; height: 76px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; }
-.card2 { top: 168px; }
-.label { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); }
+
+/* 页面改成「scroll + inner」结构（同设置页 / 功能设置页）：两张开关卡加进来后内容高
+   526px，超过任何机型的可视区。内容高必须显式写进 .inner（style="height: {{ innerH }}px;"），
+   Vela 的 scroll 不给内容高就按视口高裁 —— 卡片被 flex 压扁、整页滚不动。
+   .body 高 384 = 快应用画布底 466 − 页头顶 82，三个机型的画布底都是 466（键盘顶恒 y101
+   同源），所以这条高度不随 profile 变、不写进 profiles。
+   宽度 206 是唯一随 profile 物化的宽度令牌：band10 206 / Pro 330 / band9 186（左右各留 3px）。 */
+.body { position: absolute; left: 3px; top: 82px; width: 206px; height: 384px; }
+.inner { width: 206px; flex-direction: column; }
+.card { width: 206px; height: 76px; margin: 0px 0px 8px 0px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; flex-shrink: 0; }
+.label { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .value { width: 174px; height: 38px; line-height: 38px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.iPlace { width: 174px; height: 38px; line-height: 38px; font-size: 15px; color: rgba(255,255,255,0.3); text-overflow: ellipsis; lines: 1; }
-.delta { position: absolute; left: 0px; top: 258px; width: 212px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.55); }
-.del { position: absolute; left: 48px; top: 400px; width: 116px; height: 34px; border-radius: 17px; background-color: rgba(255,59,48,0.14); align-items: center; justify-content: center; }
+.iPlace { width: 174px; height: 38px; line-height: 38px; font-size: 15px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.cardTop { width: 174px; height: 30px; flex-direction: row; align-items: center; justify-content: space-between; }
+/* 标题 15px：最长的「在桌面伴侣中显示」8 个汉字 ×15 = 120；状态字宽 band10 40 / Pro 40 /
+   band9 24（profile 缩窄），最紧的 band9 是 120+24 = 144 ≤ 154（.cardTop 内容宽），留 10px。
+   16px 在 band9 只剩 2px 余量 —— 实机字宽略大于 1em 就会折行 / 裁切，所以降到 15px。
+   lines:1 + ellipsis + 状态字 flex-shrink:0 是兜底：真机字宽再大也只会让标题走省略号，
+   不会折成两行顶出 30px 的卡头，也不会把右侧「开/关」挤没。 */
+.cTitle { height: 30px; line-height: 30px; font-size: 15px; color: #FFFFFF; lines: 1; text-overflow: ellipsis; }
+/* 开关状态字：与设置页「工具分类」/ 功能设置页同一套写法（开 = 卡底染蓝 + 「开」，关 = 灰底 + 「关」）。
+   flex-shrink:0：标题行余量再紧也不压缩状态字（宽度由 profile 物化：band10/Pro 40、band9 24）。 */
+.swState { width: 40px; height: 30px; line-height: 30px; text-align: right; font-size: 16px; flex-shrink: 0; }
+/* 副标题 14px：开启态文案 9 个汉字 = 126；band9 的 .cSub 宽 154（profile 缩窄），留 28px。
+   别把开启态副标题写回 11 个字（154 正好贴满，只能靠 ellipsis 兜底）。 */
+.cSub { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.delta { width: 206px; height: 44px; margin: 0px 0px 8px 0px; line-height: 22px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.55); lines: 2; text-overflow: ellipsis; flex-shrink: 0; }
+.save { width: 206px; height: 48px; margin: 0px 0px 8px 0px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; flex-shrink: 0; }
+/* 删除窄钮用 margin-left 定位：48 是基线值，Pro 物化成 110、band9 物化成 38（与各自机身居中） */
+.del { width: 116px; height: 34px; margin-left: 48px; border-radius: 17px; background-color: rgba(255,59,48,0.14); align-items: center; justify-content: center; flex-shrink: 0; }
 .delT { font-size: 14px; color: #FF6B6B; }
+/* 宽度 212 是旧版全屏宽度令牌（band9 profile 的替换对仍引用它）；pad 只是末尾留白，宽度不参与布局 */
+.pad { width: 212px; height: 48px; flex-shrink: 0; }
 </style>
 
 <script>
@@ -49,7 +93,25 @@ import pickState from '../pickState'
 import homeEvents from '../../../utils/homeEvents'
 
 const PATH = 'internal://files/bandbox/events.json'
-const DIR = 'internal://files/bandbox/'
+
+/**
+ * 页面卡片几何常量：滚动内容高（innerH）= 4 张卡 + 倒计时文本 + 保存 / 删除 + 末尾留白。
+ *
+ * 约束（门禁 R17 逐条核对，改动要同步）：
+ *   1) CARD_H / CARD_GAP / PAD_H 必须与 CSS 的 .card / .pad 对得上；
+ *   2) CARD_COUNT 必须等于模板里 .card 的个数（名称 / 日期 / 在主页显示 / 在桌面伴侣中显示）；
+ *   3) INNER_H 的算式必须用上 CARD_COUNT / PAD_H，并把它绑到 .inner 的 height 上。
+ */
+const CARD_H = 76        // .card 高
+const CARD_GAP = 8       // .card 下外边距
+const CARD_COUNT = 4     // 模板里的 .card 个数
+const DELTA_H = 44       // .delta 高（两行倒计时说明）
+const DELTA_GAP = 8      // .delta 下外边距
+const SAVE_H = 48        // .save 高
+const SAVE_GAP = 8       // .save 下外边距
+const DEL_H = 34         // .del 高
+const PAD_H = 48         // .pad 高：末尾留白，保证滚到底时删除键完整可见
+const INNER_H = CARD_COUNT * (CARD_H + CARD_GAP) + DELTA_H + DELTA_GAP + SAVE_H + SAVE_GAP + DEL_H + PAD_H
 
 export default {
   protected: { id: '' },
@@ -59,10 +121,15 @@ export default {
     title: '',
     date: '',
     deltaText: '保存后会显示倒计时',
+    homeOn: false,
+    compOn: false,
+    homeSubText: '点按在首页顶部显示',
+    compSubText: '点按在伴侣右栏显示',
     delStep: 0,
     list: [],
+    event: null,
     loaded: false,
-    timer: null
+    innerH: INNER_H
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -96,25 +163,37 @@ export default {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
   load() {
-    g.fs.readText(PATH, (text) => {
-      let list = []
-      try {
-        list = text ? JSON.parse(text) : []
-      } catch (e) {
-        list = []
-      }
-      if (!Array.isArray(list)) list = []
-      this.list = list
-      this.loaded = true
-      if (this.id) {
-        const found = list.filter((it) => String(it.id) === String(this.id))[0]
-        if (found) {
-          this.title = found.title
-          this.date = found.date
-          this.refreshDelta()
+    const page = this
+    // 走数据层 load：与首页同一套口径（含旧数据迁移、home / companion 字段），
+    // 不在这里另读一份 events.json。
+    homeEvents.load((r) => {
+      if (!page.$valid) return
+      const list = (r && r.list) || []
+      page.list = list
+      if (!page.id) return
+      const id = String(page.id)
+      let found = null
+      for (let i = 0; i < list.length; i++) {
+        if (list[i] && String(list[i].id) === id) {
+          found = list[i]
+          break
         }
       }
+      if (!found) return
+      page.event = found
+      page.title = found.title || ''
+      page.date = found.date || ''
+      page.homeOn = found.home === 1
+      page.compOn = found.companion === 1
+      page.syncSubText()
+      page.refreshDelta()
     })
+  },
+  /** 两张开关卡的副标题：一处生成（开关状态本身由「开/关」与卡底染色表达） */
+  syncSubText() {
+    // 开启态统一 9 个字（14px×9=126）：band9 的 .cSub 只有 154 宽，11 个字会正好贴满
+    this.homeSubText = this.homeOn ? '保存后只显示这一条' : '点按在首页顶部显示'
+    this.compSubText = this.compOn ? '保存后只显示这一条' : '点按在伴侣右栏显示'
   },
   refreshDelta() {
     if (!this.date) return
@@ -146,6 +225,17 @@ export default {
     pickState.date = ''
     g.router.push('/pages/daysmatter/inputdate', { date: this.date })
   },
+  /** 只改草稿态：互斥与落库都交给 homeEvents.saveEvent（数据层收口） */
+  toggleHome() {
+    this.homeOn = !this.homeOn
+    g.haptic.short()
+    this.syncSubText()
+  },
+  toggleComp() {
+    this.compOn = !this.compOn
+    g.haptic.short()
+    this.syncSubText()
+  },
   save() {
     const title = this.title.trim()
     if (!title) {
@@ -156,28 +246,24 @@ export default {
       prompt.showToast({ message: '日期无效', duration: 1400 })
       return
     }
-    const list = this.list.slice()
-    const id = this.id || String(Date.now())
-    let found = false
-    const next = list.map((it) => {
-      if (String(it.id) === String(id)) {
-        found = true
-        return { id, title, date: this.date, createdAt: it.createdAt || Date.now() }
+    // 透传既有条目的全部字段（更新时不能重建对象，否则 home / companion 等新字段会丢）
+    const entry = Object.assign({}, this.event || {})
+    entry.id = this.id || String(Date.now())
+    entry.title = title
+    entry.date = this.date
+    if (!entry.createdAt) entry.createdAt = Date.now()
+    entry.home = this.homeOn ? 1 : 0
+    entry.companion = this.compOn ? 1 : 0
+    const page = this
+    homeEvents.saveEvent(entry, (res) => {
+      if (!page.$valid) return
+      if (!res || !res.ok) {
+        prompt.showToast({ message: '保存失败，请重试', duration: 1500 })
+        return
       }
-      return it
-    })
-    if (!found) next.push({ id, title, date: this.date, createdAt: Date.now() })
-    g.fs.ensureDir(DIR, () => {
-      g.fs.writeText(PATH, JSON.stringify(next), (ok) => {
-        if (!ok) {
-          prompt.showToast({ message: '保存失败，请重试', duration: 1500 })
-          return
-        }
-        g.haptic.short()
-        homeEvents.invalidate()
-        prompt.showToast({ message: '事件保存成功！', duration: 1300 })
-        g.router.back()
-      })
+      g.haptic.short()
+      prompt.showToast({ message: '事件保存成功！', duration: 1300 })
+      g.router.back()
     })
   },
   del() {

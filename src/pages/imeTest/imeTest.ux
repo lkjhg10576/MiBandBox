@@ -35,7 +35,7 @@
 .btn { position: absolute; left: 26px; top: 370px; width: 160px; height: 46px; border-radius: 23px; align-items: center; justify-content: center; }
 .qrBtn { top: 428px; }
 .btnT { font-size: 15px; color: #FFFFFF; }
-.hint { position: absolute; left: 0px; top: 484px; width: 212px; text-align: center; font-size: 13px; color: rgba(255,255,255,0.35); }
+.hint { position: absolute; left: 0px; top: 484px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>

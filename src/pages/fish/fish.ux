@@ -49,7 +49,7 @@
 .chipSlow { left: 97px; }
 .chipMid { left: 134px; }
 .chipFast { left: 171px; }
-.chipT { font-size: 13px; color: #FFFFFF; }
+.chipT { font-size: 14px; color: #FFFFFF; }
 .reset { position: absolute; left: 62px; top: 424px; width: 88px; height: 30px; border-radius: 15px; background-color: #262626; align-items: center; justify-content: center; }
 .resetT { font-size: 14px; color: rgba(255,255,255,0.55); }
 </style>

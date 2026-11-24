@@ -2,7 +2,7 @@
   "package": "com.lkjhg.bandbox",
   "name": "BandBox",
   "versionName": "0.1.3",
-  "versionCode": 286,
+  "versionCode": 290,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -305,6 +305,12 @@
       },
       "pages/colorcard/view": {
         "component": "view"
+      },
+      "pages/colorpick": {
+        "component": "colorpick"
+      },
+      "pages/colorpick/preset": {
+        "component": "preset"
       },
       "pages/companion": {
         "component": "companion"

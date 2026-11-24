@@ -31,7 +31,7 @@
 .state { position: absolute; left: 0px; top: 312px; width: 212px; height: 28px; line-height: 28px; text-align: center; font-size: 17px; }
 .btn { position: absolute; left: 48px; top: 352px; width: 116px; height: 42px; border-radius: 21px; background-color: #262626; align-items: center; justify-content: center; }
 .btnT { font-size: 14px; color: #FFFFFF; }
-.foot { position: absolute; left: 21px; top: 424px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.3); }
+.foot { position: absolute; left: 21px; top: 424px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>
