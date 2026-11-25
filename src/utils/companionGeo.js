@@ -118,6 +118,22 @@ export const PAD_MAX = 56
 export const FD_SRC_W = [61, 35, 61, 61, 61, 61, 61, 61, 61, 61]
 export const FD_CAP = 190
 
+/**
+ * 彩色底相对数字容器（= 遮罩图画布 = 墨迹盒）的**内缩量**（px）。
+ *
+ * 真机渲染器在图像的远边（右/下）做半纹素采样时，会把遮罩边缘与图像外的透明区混合 →
+ * 容器底色从 1px 边缘透出来，在数字右边缘/底边缘各显出一条 L 形彩色细线（2026-11-24 真机
+ * 照片报障；模拟器 1:1 渲染复现不出）。修法是让**彩色底比容器内缩 1px**：图像最外圈的
+ * 采样污染落在黑底（容器自身的 background-color = #000000）上，线就看不见了。
+ *
+ * 为什么不用「遮罩图加黑边 + 图放大到容器外」：2026-11-24 实测该做法在真机上触发了
+ * Vela 对**旋转容器里绝对定位子图**的裁剪 —— 字形上下各被削掉一块（2 的圆弧顶变平）。
+ * 图必须**正好铺满容器**（尺寸 = fw × digitH、不偏移、不做 absolute），不要再放大。
+ *
+ * 代价：字形在右/下最外 1px 没有底色（被黑底吃掉），是抗锯齿最外缘，肉眼基本看不出。
+ */
+export const FD_INSET = 1
+
 /** 最宽数字的源墨迹宽（时间行宽试算用） */
 const FD_MAX_SRC_W = Math.max.apply(null, FD_SRC_W)
 
@@ -363,6 +379,8 @@ function fancyMetrics(cap) {
 
   return {
     digitW,
+    // 彩色底（.fInk）的尺寸：比容器右/下各内缩 FD_INSET，图像远边的采样污染落在黑底上
+    inkH: Math.max(1, cap - FD_INSET),
     track,
     dotD,
     dotGap,
@@ -503,5 +521,5 @@ export function build() {
 
 export default {
   build, buildFancy, layoutFor, fancyFor, visibleHalfAt, fancyWidths,
-  FD_SRC_W, FD_CAP, PAD_MIN, PAD_MAX
+  FD_SRC_W, FD_CAP, FD_INSET, PAD_MIN, PAD_MAX
 }

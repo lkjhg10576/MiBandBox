@@ -87,10 +87,12 @@
                fbody(relative) → fTime/fInfo(absolute, 纵向用 layoutFancy 的 timeTop/infoTop 居中)
                → fDigit/fColon(absolute)。 -->
           <div class="fTime" style="left: 0px; top: {{ geoF.timeTop }}px; width: {{ geoF.timeRowW }}px; height: {{ geoF.digitH }}px;">
-            <div class="fDigit" style="left: {{ l1 }}px; top: 0px; width: {{ fw1 }}px; height: {{ geoF.digitH }}px; background-color: {{ digBg }};">
+            <div class="fDigit" style="left: {{ l1 }}px; top: 0px; width: {{ fw1 }}px; height: {{ geoF.digitH }}px;">
+              <div class="fInk" style="width: {{ fc1 }}px; height: {{ geoF.inkH }}px; background-color: {{ digBg }};"></div>
               <img class="fMask" src="/common/images/fdm_{{ h1 }}.png" style="width: {{ fw1 }}px; height: {{ geoF.digitH }}px;" oncomplete="maskReady" />
             </div>
-            <div class="fDigit" style="left: {{ l2 }}px; top: 0px; width: {{ fw2 }}px; height: {{ geoF.digitH }}px; background-color: {{ digBg }};">
+            <div class="fDigit" style="left: {{ l2 }}px; top: 0px; width: {{ fw2 }}px; height: {{ geoF.digitH }}px;">
+              <div class="fInk" style="width: {{ fc2 }}px; height: {{ geoF.inkH }}px; background-color: {{ digBg }};"></div>
               <img class="fMask" src="/common/images/fdm_{{ h2 }}.png" style="width: {{ fw2 }}px; height: {{ geoF.digitH }}px;" oncomplete="maskReady" />
             </div>
             <div class="fColon" style="left: {{ lc }}px; top: 0px; width: {{ geoF.colonW }}px; height: {{ geoF.digitH }}px;">
@@ -98,10 +100,12 @@
               <div class="fDotGap" style="width: 1px; height: {{ geoF.dotGap }}px;"></div>
               <div class="fDot" style="width: {{ geoF.dotD }}px; height: {{ geoF.dotD }}px; background-color: {{ digBg }};"></div>
             </div>
-            <div class="fDigit" style="left: {{ l3 }}px; top: 0px; width: {{ fw3 }}px; height: {{ geoF.digitH }}px; background-color: {{ digBg }};">
+            <div class="fDigit" style="left: {{ l3 }}px; top: 0px; width: {{ fw3 }}px; height: {{ geoF.digitH }}px;">
+              <div class="fInk" style="width: {{ fc3 }}px; height: {{ geoF.inkH }}px; background-color: {{ digBg }};"></div>
               <img class="fMask" src="/common/images/fdm_{{ m1 }}.png" style="width: {{ fw3 }}px; height: {{ geoF.digitH }}px;" oncomplete="maskReady" />
             </div>
-            <div class="fDigit" style="left: {{ l4 }}px; top: 0px; width: {{ fw4 }}px; height: {{ geoF.digitH }}px; background-color: {{ digBg }};">
+            <div class="fDigit" style="left: {{ l4 }}px; top: 0px; width: {{ fw4 }}px; height: {{ geoF.digitH }}px;">
+              <div class="fInk" style="width: {{ fc4 }}px; height: {{ geoF.inkH }}px; background-color: {{ digBg }};"></div>
               <img class="fMask" src="/common/images/fdm_{{ m2 }}.png" style="width: {{ fw4 }}px; height: {{ geoF.digitH }}px;" oncomplete="maskReady" />
             </div>
           </div>
@@ -181,13 +185,19 @@
 .fbody { position: relative; left: 0px; top: 0px; width: 384px; height: 196px; flex-direction: row; flex-shrink: 0; }
 /* 时间行：数字按各自墨迹宽紧排、左对齐；各数字的 left 由脚本按实际字宽算（防错位） */
 .fTime { position: absolute; flex-direction: row; align-items: center; justify-content: flex-start; }
-/* 数字容器：彩色底（背景色 = digBg = 运行时取色）。遮罩图叠在上面：不透明黑盖住底色，
-   只有字形的孔透出底色 → 合成出任意取色的字形。**不要加 overflow:hidden**：
-   Vela 按旋转前的盒子裁剪绝对子元素，遮罩图要正好铺满容器。 */
-.fDigit { position: absolute; }
-/* 遮罩图：铺满数字容器（object-fit:fill 兜住「按比例缩放」的引擎差异；
-   源图 61×190 与显示盒 53×165 的宽高比差 0.05%，「1」差 1.3%，差出来的边缘
-   与字形同色，看不出来） */
+/* 数字容器：**黑底**（背景色恒 #000000，不是取色）+ 内层彩色底 .fInk。
+   彩色底比容器左/右/下各内缩 FD_INSET(1px)：真机渲染器在遮罩图远边（右/下）的半纹素采样
+   会把图像边缘与图像外的透明区混合，band9 149px 缩放时左缘也会出现 1px 半透细线，
+   裸出来的边线落在黑底上就看不见了（同时保持左右笔重对称）。
+   遮罩图叠在彩色底上：不透明黑盖住底色，只有字形的孔透出底色 → 合成出任意取色的字形。
+   **不要加 overflow:hidden**（Vela 会按旋转前的盒子裁剪绝对子元素）；遮罩图必须**正好铺满
+   容器**、不做负偏移 —— 试过「图放大到容器外」，真机上被裁成上下削平（见 AGENTS.md）。 */
+.fDigit { position: absolute; background-color: #000000; }
+/* 彩色底：左/右/下各内缩 1px（left:1px，宽高由 fc* / geoF.inkH 内联给），躲在容器黑底里 */
+.fInk { position: absolute; left: 1px; top: 0px; }
+/* 遮罩图：**正好铺满容器**（尺寸 = fw × digitH，不要外扩、不要负 left/top、不要 absolute）。
+   图像远边的半纹素采样污染由「彩色底内缩 1px」兜住（见 .fDigit/.fInk）。
+   object-fit: fill 兜住「按比例缩放」的引擎差异。 */
 .fMask { object-fit: fill; }
 /* 冒号：两个圆点 div（颜色同数字），不占图片资产 */
 .fColon { position: absolute; flex-direction: column; align-items: center; justify-content: center; }
@@ -218,6 +228,9 @@ const G = companionGeo.build()
 // 精美样式几何（时间行 + 右栏）与每个数字在当前显示字高下的墨迹宽（「1」窄）
 const GF = companionGeo.buildFancy()
 const FD_W = companionGeo.fancyWidths(GF.digitH)
+// 彩色底（.fInk）每位的宽：比容器（= 墨迹盒）左右各内缩 FD_INSET（1px），
+// 让遮罩图远边及 band9 149px 缩放左缘的采样污染落在容器黑底上，同时保持左右笔重对称
+const FD_CW = FD_W.map((w) => Math.max(1, w - 2 * companionGeo.FD_INSET))
 
 /** 时间行内各段的 left（数字按实际墨迹宽紧排；「1」窄，后面的字自动左移）。
  *  返回 [l1, l2, lc(冒号), l3, l4]；调用方在每分钟换字时重算。 */
@@ -296,6 +309,11 @@ export default {
     fw2: FD_W[0],
     fw3: FD_W[0],
     fw4: FD_W[0],
+    // 每位数字的彩色底宽（含右缘内缩）—— 与容器宽 fw 区分开
+    fc1: FD_CW[0],
+    fc2: FD_CW[0],
+    fc3: FD_CW[0],
+    fc4: FD_CW[0],
     // 时间行各段的绝对 left（紧排；数字宽度变化时重算）
     l1: LEFT0[0],
     l2: LEFT0[1],
@@ -380,6 +398,10 @@ export default {
     this.fw2 = w2
     this.fw3 = w3
     this.fw4 = w4
+    this.fc1 = FD_CW[Number(hm.charAt(0))]
+    this.fc2 = FD_CW[Number(hm.charAt(1))]
+    this.fc3 = FD_CW[Number(hm.charAt(3))]
+    this.fc4 = FD_CW[Number(hm.charAt(4))]
     const lefts = digitLefts(w1, w2, w3)
     this.l1 = lefts[0]
     this.l2 = lefts[1]
