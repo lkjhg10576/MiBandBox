@@ -23,6 +23,9 @@
         </div>
         <text class="f rCheck">{{ $item.check }}</text>
       </list-item>
+      <list-item type="more" class="moreRow" if="{{ moreCount > 0 }}" @click="loadMore">
+        <text class="f moreT">显示更多（{{ moreCount }}）</text>
+      </list-item>
       <list-item type="empty" class="empty" if="{{ rows.length === 0 }}">
         <text class="f emptyT">未找到匹配城市</text>
         <text class="f emptyS">试试中文、拼音或 UTC+8</text>
@@ -52,6 +55,10 @@
 .rName { width: 152px; height: 22px; line-height: 22px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .rSub { width: 152px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
 .rCheck { width: 20px; height: 22px; line-height: 22px; text-align: center; font-size: 16px; color: #0D6EFF; }
+/* 城市词库 246 条，一次性建 246 个 list-item 在手表上要 8~25s；
+   首屏只渲染 40 行，其余点「显示更多」分批追加。 */
+.moreRow { width: 206px; height: 44px; margin: 0px 0px 6px 0px; border-radius: 22px; background-color: #262626; align-items: center; justify-content: center; }
+.moreT { font-size: 15px; color: #9FC4FF; }
 .empty { width: 206px; height: 220px; flex-direction: column; align-items: center; justify-content: center; }
 .emptyT { font-size: 16px; color: rgba(255,255,255,0.72); text-align: center; }
 .emptyS { margin-top: 6px; font-size: 14px; color: rgba(255,255,255,0.55); text-align: center; }
@@ -64,6 +71,8 @@ import timezone from '../../../utils/timezone'
 import inputResult from '../../../utils/inputResult'
 import tzSession from '../tzSession'
 
+const PAGE_ROWS = 40
+
 export default {
   protected: { slot: '', current: '' },
 
@@ -72,7 +81,10 @@ export default {
     clock: '--:--',
     titleText: '选择城市',
     query: '',
-    rows: []
+    matches: [],
+    rows: [],
+    shown: 0,
+    moreCount: 0
   },
 
   onShow() {
@@ -101,21 +113,38 @@ export default {
   },
 
   build() {
+    this.matches = timezone.searchCities(this.query, Date.now())
+    this.rows = []
+    this.shown = 0
+    this.moreCount = this.matches.length
+    this.appendRows(PAGE_ROWS)
+  },
+
+  /** 追加下一页城市行：只对真正要渲染的条目算当前时间，避免 246 条一次成行 */
+  appendRows(n) {
+    const end = Math.min(this.matches.length, this.shown + n)
+    if (end <= this.shown) return
     const nowMs = Date.now()
-    const list = timezone.searchCities(this.query, nowMs)
-    const rows = []
-    for (let i = 0; i < list.length; i++) {
-      const c = list[i]
+    const more = []
+    for (let i = this.shown; i < end; i++) {
+      const c = this.matches[i]
       const info = timezone.formatCityNow(c, nowMs)
       const utcPart = info.offset.isDst ? info.offset.utcLabel + '(夏)' : info.offset.utcLabel
-      rows.push({
+      more.push({
         id: c.id,
         title: c.city + ' · ' + c.country,
         sub: utcPart + ' · ' + info.time,
         check: c.id === this.current ? '✓' : ''
       })
     }
-    this.rows = rows
+    this.rows = this.rows.concat(more)
+    this.shown = end
+    this.moreCount = this.matches.length - end
+  },
+
+  loadMore() {
+    g.haptic.short()
+    this.appendRows(PAGE_ROWS)
   },
 
   openSearch() {

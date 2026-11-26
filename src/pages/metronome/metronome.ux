@@ -43,7 +43,7 @@
     <div class="go" if="{{ !playing }}" @click="toggle">
       <text class="f goT">开始节拍</text>
     </div>
-    <div class="go stop" if="{{ playing }}" @click="toggle">
+    <div class="go goStop" if="{{ playing }}" @click="toggle">
       <text class="f goT">停止</text>
     </div>
 
@@ -71,7 +71,7 @@
 .lv { width: 97px; height: 30px; border-radius: 15px; align-items: center; justify-content: center; }
 .lvT { font-size: 14px; }
 .go { position: absolute; left: 26px; top: 354px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
-.go.stop { background-color: #FF3B30; }
+.goStop { background-color: #FF3B30; }
 .goT { font-size: 17px; color: #FFFFFF; font-weight: bold; }
 .hint { position: absolute; left: 16px; top: 408px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
 </style>

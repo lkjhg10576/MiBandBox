@@ -15,7 +15,7 @@
       <div class="chip" for="{{ presets }}" @click="usePreset($item)"><text class="f chipT">{{ $item }}</text></div>
     </div>
 
-    <div class="go {{ text ? '' : 'off' }}" @click="generate"><text class="f goT">生成二维码</text></div>
+    <div class="go {{ text ? '' : 'goOff' }}" @click="generate"><text class="f goT">生成二维码</text></div>
     <text class="f hint">二维码仅在本机生成</text>
 
     <div class="favEntry" @click="openFavs"><text class="f favEntryT">我的收藏</text></div>
@@ -36,7 +36,7 @@
 .chip { width: 62px; height: 32px; border-radius: 16px; background-color: #1E1E1E; align-items: center; justify-content: center; }
 .chipT { font-size: 14px; color: rgba(255,255,255,0.7); }
 .go { position: absolute; left: 26px; top: 264px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
-.go.off { background-color: #2A2A2A; }
+.goOff { background-color: #2A2A2A; }
 .goT { font-size: 14px; color: #FFFFFF; }
 .hint { position: absolute; left: 16px; top: 330px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
 .favEntry { position: absolute; left: 26px; top: 372px; width: 160px; height: 40px; border-radius: 20px; background-color: #1E1E1E; align-items: center; justify-content: center; }

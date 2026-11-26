@@ -4,18 +4,18 @@
   <div class="page">
     <pagehead if="{{ !isBar }}" title="扫码查看" clock="{{ clock }}"></pagehead>
 
-    <div if="{{ !isBar }}">
-      <div class="qrCard" @click="back">
-        <qrcode class="qr" value="{{ qr }}"></qrcode>
-      </div>
-      <text class="f text" @click="back">{{ qr }}</text>
-      <div class="barBtn" if="{{ canBar }}" @click="toggleBar">
-        <text class="f barBtnT">切为横屏条形码</text>
-      </div>
-      <text class="f hint" if="{{ fav !== '1' }}" @click="back">轻触屏幕返回</text>
-      <div class="favBtn" if="{{ fav === '1' }}" @click="onFavTap">
-        <text class="f favT">{{ faved ? '已收藏' : '收藏' }}</text>
-      </div>
+    <!-- 每个可显示元素各自带 if + 完整几何类：不再用无几何的包装 div（Vela 不为其绝对定位
+         子元素布局，会整页空白），也不让包装层盖住页头返回命中区。 -->
+    <div class="qrCard" if="{{ !isBar }}" @click="back">
+      <qrcode class="qr" value="{{ qr }}"></qrcode>
+    </div>
+    <text class="f text" if="{{ !isBar }}" @click="back">{{ qr }}</text>
+    <div class="barBtn" if="{{ !isBar && canBar }}" @click="toggleBar">
+      <text class="f barBtnT">切为横屏条形码</text>
+    </div>
+    <text class="f hint" if="{{ !isBar && fav !== '1' }}" @click="back">轻触屏幕返回</text>
+    <div class="favBtn" if="{{ !isBar && fav === '1' }}" @click="onFavTap">
+      <text class="f favT">{{ faved ? '已收藏' : '收藏' }}</text>
     </div>
 
     <div class="landWrap" if="{{ isBar }}">
@@ -45,7 +45,7 @@
 .barBtn { position: absolute; left: 26px; top: 396px; width: 160px; height: 36px; border-radius: 18px; background-color: #14324F; align-items: center; justify-content: center; }
 .barBtnT { font-size: 14px; color: #FFFFFF; }
 .hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
-.favBtn { position: absolute; left: 26px; top: 442px; width: 160px; height: 36px; border-radius: 18px; background-color: #262626; align-items: center; justify-content: center; }
+.favBtn { position: absolute; left: 26px; top: 434px; width: 160px; height: 32px; border-radius: 16px; background-color: #262626; align-items: center; justify-content: center; }
 .favT { font-size: 14px; color: #4E87FF; }
 
 .landWrap { position: absolute; left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); padding: 12px 54px 12px 24px; align-items: center; justify-content: center; background-color: #000000; }

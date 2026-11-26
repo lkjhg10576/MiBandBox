@@ -258,11 +258,13 @@ function convertTime(fromId, toId, timeStr, now) {
 
   const diffMin = toOff.offsetMin - fromOff.offsetMin
   let relDiffText = '无时差'
+  let deltaText = '无时差'
   let diffText = toCity.city + '与' + fromCity.city + '无时差'
   if (diffMin !== 0) {
     const dir = diffMin > 0 ? '快' : '慢'
     const dur = formatDiffDuration(Math.abs(diffMin))
     relDiffText = '比' + fromCity.city + dir + ' ' + dur
+    deltaText = dir + ' ' + dur
     diffText = toCity.city + relDiffText
   }
 
@@ -277,6 +279,7 @@ function convertTime(fromId, toId, timeStr, now) {
     dayLabel: dayLabel,
     diffMin: diffMin,
     relDiffText: relDiffText,
+    deltaText: deltaText,
     diffText: diffText,
     utcMs: utcMs
   }

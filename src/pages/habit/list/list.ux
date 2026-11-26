@@ -21,7 +21,7 @@
         </div>
         <div class="cStat">
           <text class="f cCount" style="color: {{ $item.countColor }};">{{ $item.countText }}</text>
-          <text class="f cTag" style="color: {{ $item.done ? '#00C853' : 'rgba(255,255,255,0.45)' }};">{{ $item.done ? '已达标' : '点 +1' }}</text>
+          <text class="f cTag" style="color: {{ $item.done ? '#00C853' : 'rgba(255,255,255,0.55)' }};">{{ $item.done ? '已达标' : '点 +1' }}</text>
         </div>
       </list-item>
 
@@ -46,18 +46,20 @@
 .list { position: absolute; left: 0px; top: 82px; width: 212px; height: 408px; padding: 0px 3px 0px 3px; }
 .card { width: 206px; height: 76px; margin: 0px 0px 8px 0px; border-radius: 26px; background-color: #262626; flex-direction: row; align-items: center; padding: 0px 12px 0px 12px; }
 .bar { width: 4px; height: 42px; border-radius: 2px; margin-right: 10px; flex-shrink: 0; }
-.cMain { width: 108px; height: 52px; flex-direction: column; justify-content: center; }
-.cTitle { width: 108px; height: 26px; line-height: 26px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.cSub { width: 108px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; }
+/* 副标题用两行展示「连续 N 天 · 累计 N 天」：单行 108px 只放得下 7 个汉字，
+   两位数连击时必被截断；两行后 3 位数累计也能完整显示。 */
+.cMain { width: 108px; height: 60px; flex-direction: column; justify-content: center; }
+.cTitle { width: 108px; height: 24px; line-height: 24px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.cSub { width: 108px; height: 36px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 2; }
 .cStat { width: 60px; height: 50px; flex-direction: column; align-items: flex-end; justify-content: center; flex-shrink: 0; }
 .cCount { width: 60px; height: 26px; line-height: 26px; font-size: 18px; text-align: right; lines: 1; }
 .cTag { width: 60px; height: 18px; line-height: 18px; font-size: 14px; text-align: right; lines: 1; }
 .empty { width: 206px; height: 320px; align-items: center; justify-content: center; flex-direction: column; }
 .emptyImg { width: 80px; height: 80px; margin-bottom: 12px; }
 .emptyT { font-size: 17px; color: #FFFFFF; }
-.emptyS { font-size: 14px; color: rgba(255,255,255,0.45); }
+.emptyS { font-size: 14px; color: rgba(255,255,255,0.55); }
 .pad { width: 206px; height: 112px; padding-top: 10px; align-items: flex-start; justify-content: center; }
-.padTip { width: 190px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.45); }
+.padTip { width: 190px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
 .plus { position: absolute; left: 132px; top: 396px; width: 64px; height: 64px; }
 </style>
 
@@ -85,7 +87,7 @@ function decorate(raw) {
     totalDays: raw.totalDays,
     done: done,
     countText: raw.todayCount + '/' + raw.target,
-    sub: '连续 ' + raw.streak + ' 天 · 累计 ' + raw.totalDays + ' 天',
+    sub: '连续 ' + raw.streak + ' 天\n累计 ' + raw.totalDays + ' 天',
     barColor: done ? '#00C853' : started ? '#0D6EFF' : '#555555',
     countColor: done ? '#00C853' : started ? '#4E87FF' : 'rgba(255,255,255,0.75)'
   }

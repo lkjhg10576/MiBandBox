@@ -8,7 +8,7 @@
       <list-item type="transfer" class="card transferCard" @click="openImport">
         <div class="cMain">
           <text class="f cTitle">从手机接收</text>
-          <text class="f cSub">在手机助手「便签」发送</text>
+          <text class="f cSub">手机「便签」页发送</text>
         </div>
         <img class="enter" src="/common/enter.png" />
       </list-item>

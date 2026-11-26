@@ -549,7 +549,7 @@
       ["left: 26px", "left: 16px"],
       ["left: 20px; top: 258px; width: 172px;", "left: 10px; top: 258px; width: 172px;"],
       ["top: 396px", "top: 366px"],
-      ["top: 442px", "top: 412px"],
+      ["top: 434px", "top: 412px"],
       ["top: 448px", "top: 418px"],
       ["width: 170px", "width: 150px"],
       ["left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); padding: 12px 54px 12px 24px;", "left: 192px; top: 0px; width: 490px; height: 192px; transform-origin: 0 0; transform: rotate(90deg); padding: 8px 54px 8px 20px;"],

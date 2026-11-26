@@ -306,6 +306,8 @@ function upsert(entry, cb, todayKey) {
           nextList.push(list[i])
         }
       }
+    } else {
+      for (let i = 0; i < list.length; i++) nextList.push(list[i])
     }
     if (!saved) {
       if (list.length >= MAX_ITEMS) {

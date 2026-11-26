@@ -115,7 +115,7 @@ export default {
     const pair = timezone.defaultPair(now)
     this.fromId = pair.fromId
     this.toId = pair.toId
-    this.inputTime = g.time.formatClock(now)
+    this.syncNowFromSource()
   },
 
   onShow() {
@@ -153,6 +153,7 @@ export default {
         if (last && timezone.cityById(last.fromId) && timezone.cityById(last.toId)) {
           page.fromId = last.fromId
           page.toId = last.toId
+          page.syncNowFromSource()
           page.recompute()
         }
       })
@@ -175,6 +176,13 @@ export default {
     } catch (e) {}
   },
 
+  /** 输入时间的基准是「来源城市的当前时间」：来源不是本机时区时不能直接取设备时钟 */
+  syncNowFromSource() {
+    const city = timezone.cityById(this.fromId)
+    const now = timezone.formatCityNow(city, Date.now())
+    this.inputTime = now ? now.time : g.time.formatClock(new Date())
+  },
+
   recompute() {
     const res = timezone.convertTime(this.fromId, this.toId, this.inputTime, new Date())
     if (!res) return
@@ -188,7 +196,9 @@ export default {
     this.toTime = res.toTime
     this.dayLabel = res.dayLabel
     this.dayColor = res.dayDiff !== 0 ? '#FF9500' : 'rgba(255,255,255,0.65)'
-    this.diffText = res.diffText
+    // 只放方向 + 时长：带城市名的完整句在长名字 + 半小时时区时会超出单行宽度
+    // （196px 行只能放约 14 个汉字，曾把「9 小时 15 分」截成「9 小…」）
+    this.diffText = res.deltaText
   },
 
   openTimePad() {
@@ -224,7 +234,7 @@ export default {
 
   resetNow() {
     g.haptic.short()
-    this.inputTime = g.time.formatClock(new Date())
+    this.syncNowFromSource()
     this.recompute()
   }
 }

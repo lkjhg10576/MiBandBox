@@ -152,7 +152,7 @@ export default {
     })
     rows.push({
       title: '返回笔记本',
-      sub: '查看全部手机与本地笔记',
+      sub: '查看全部笔记',
       act: 'back',
       arrow: '>'
     })
