@@ -19,6 +19,7 @@ export const ACTIONS = [
   'tab-lyrics',
   'tab-otp',
   'tab-qr',
+  'tab-note',
   // 动态口令
   'otp-pull',
   'otp-add',
@@ -35,11 +36,15 @@ export const ACTIONS = [
   'otp-offset-dismiss',
   // 二维码导入
   'qr-send',
-  'qr-pick-png'
+  'qr-pick-png',
+  // 手机闪传便签
+  'note-toggle-conflict',
+  'note-send',
+  'note-clear'
 ]
 
 /** 带参数的动作前缀。 */
-const PREFIXES = ['pick-device:', 'otp-edit:', 'otp-del:', 'otp-field:', 'otp-uri:', 'qr-field:']
+const PREFIXES = ['pick-device:', 'otp-edit:', 'otp-del:', 'otp-field:', 'otp-uri:', 'qr-field:', 'note-field:']
 
 /** 极端情况下宿主可能把按钮文案当事件数据传回来，作为最后兜底。 */
 const LABEL_ACTIONS = {
@@ -50,8 +55,12 @@ const LABEL_ACTIONS = {
   '关闭诊断': 'toggle-debug',
   // Tab
   '歌词同步': 'tab-lyrics',
+  '歌词': 'tab-lyrics',
   '动态口令': 'tab-otp',
+  '口令': 'tab-otp',
   '二维码': 'tab-qr',
+  '扫码': 'tab-qr',
+  '便签': 'tab-note',
   // OTP
   '拉取数据': 'otp-pull',
   '添加账户': 'otp-add',

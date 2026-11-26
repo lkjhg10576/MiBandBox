@@ -87,6 +87,18 @@ test('二维码动作识别', () => {
 
 test('二维码动作文案兜底', () => {
   assert.equal(resolveAction('container-1', '二维码'), 'tab-qr')
+  assert.equal(resolveAction('container-1', '扫码'), 'tab-qr')
+})
+
+test('便签动作识别与文案兜底', () => {
+  assert.equal(resolveAction('tab-note', ''), 'tab-note')
+  assert.equal(resolveAction('note-toggle-conflict', ''), 'note-toggle-conflict')
+  assert.equal(resolveAction('note-send', ''), 'note-send')
+  assert.equal(resolveAction('note-clear', ''), 'note-clear')
+  assert.equal(resolveAction('note-field:title', ''), 'note-field:title')
+  assert.equal(resolveAction('note-field:body', ''), 'note-field:body')
+  assert.equal(resolveAction('container-note-send', ''), 'note-send')
+  assert.equal(resolveAction('container-1', '便签'), 'tab-note')
 })
 
 test('无法识别时返回空串', () => {

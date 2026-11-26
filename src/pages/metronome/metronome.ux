@@ -5,36 +5,48 @@
   <div class="page">
     <pagehead title="节拍器" clock="{{ clock }}"></pagehead>
 
-    <!-- BPM 卡：点一下（大数值 / 整张卡）进统一数字键盘页（pages/numinput）输入。
-         不用内置 <input-method>：它贴快应用画布底（466px）摆放、键盘顶边恒在 y101，
-         会把本页正文整块盖住；整页键盘不遮正文，回来用 numInputSession / inputResult 取结果。 -->
     <div class="bpmBox" @click="openBpmPad">
       <text class="f bpmLabel">BPM（40–240）</text>
       <text class="f val">{{ bpm }}</text>
     </div>
 
-    <text class="f status">{{ playing ? '运行中 · ' + bpm + ' BPM · ' + lvLabel : '已就绪 · ' + bpm + ' BPM · ' + lvLabel }}</text>
+    <text class="f status">{{ statusText }}</text>
     <text class="f gapTxt">每拍 {{ gap }} 毫秒</text>
 
-    <div class="pulse" style="background-color: {{ pulseOn ? '#0D6EFF' : '#333333' }};"></div>
-
-    <!-- 力度选择：弱（短振）/ 强（长振），默认强。摆在开始键正上方，点一下立刻按新档位振一记，方便直接比手感 -->
-    <div class="levels">
-      <text class="f lvLabel">力度</text>
-      <div class="lv" style="background-color: {{ level === 'weak' ? '#0D6EFF' : 'transparent' }};" @click="setLevel('weak')">
-        <text class="f lvT">弱</text>
+    <div class="beatRow">
+      <div class="pulse" if="{{ meter === 'none' }}" style="background-color: {{ pulseColor }};"></div>
+      <div class="beatDots" if="{{ meter !== 'none' }}">
+        <div class="bDot" for="{{ dots }}" style="background-color: {{ $item }};"></div>
       </div>
-      <div class="lv" style="background-color: {{ level === 'strong' ? '#0D6EFF' : 'transparent' }};" @click="setLevel('strong')">
-        <text class="f lvT">强</text>
+    </div>
+
+    <div class="meters">
+      <div
+        class="mt"
+        for="{{ meters }}"
+        style="background-color: {{ meter === $item.id ? '#0D6EFF' : '#262626' }};"
+        @click="setMeter($item.id)"
+      >
+        <text class="f mtT" style="color: {{ meter === $item.id ? '#FFFFFF' : 'rgba(255,255,255,0.65)' }};">{{ $item.label }}</text>
+      </div>
+    </div>
+
+    <div class="levels">
+      <div class="lv" style="background-color: {{ level === 'weak' ? '#0D6EFF' : '#262626' }};" @click="setLevel('weak')">
+        <text class="f lvT" style="color: {{ level === 'weak' ? '#FFFFFF' : 'rgba(255,255,255,0.6)' }};">弱</text>
+      </div>
+      <div class="lv" style="background-color: {{ level === 'strong' ? '#0D6EFF' : '#262626' }};" @click="setLevel('strong')">
+        <text class="f lvT" style="color: {{ level === 'strong' ? '#FFFFFF' : 'rgba(255,255,255,0.6)' }};">强</text>
       </div>
     </div>
 
     <div class="go" if="{{ !playing }}" @click="toggle">
-      <text class="f goT">开始</text>
+      <text class="f goT">开始节拍</text>
     </div>
-    <div class="go goStop" if="{{ playing }}" @click="toggle">
-      <text class="f goT">结束</text>
+    <div class="go stop" if="{{ playing }}" @click="toggle">
+      <text class="f goT">停止</text>
     </div>
+
     <text class="f hint">点数字改 BPM</text>
 
     <backbtn></backbtn>
@@ -43,32 +55,50 @@
 
 <style>
 @import '../../common/styles/theme.css';
-/* BPM 卡：整卡是命中区，点它进统一数字键盘页（pages/numinput）输入。
-   卡内纵向两行：标题 + 大数值，16 + 54 = 70，卡高 112，上下各留 21px。 */
-.bpmBox { position: absolute; left: 3px; top: 96px; width: 206px; height: 112px; border-radius: 26px; background-color: #151515; flex-direction: column; align-items: center; justify-content: center; }
+.bpmBox { position: absolute; left: 3px; top: 84px; width: 206px; height: 96px; border-radius: 26px; background-color: #151515; flex-direction: column; align-items: center; justify-content: center; }
 .bpmLabel { width: 190px; height: 18px; line-height: 18px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
-/* 大数值：16（标题行）+ 54（数值）= 70，卡高 112，上下各留 21px */
-.val { width: 190px; height: 54px; line-height: 54px; text-align: center; font-size: 46px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
-.status { position: absolute; left: 0px; top: 218px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
-.gapTxt { position: absolute; left: 0px; top: 242px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
-.pulse { position: absolute; left: 91px; top: 278px; width: 30px; height: 30px; border-radius: 15px; }
-.levels { position: absolute; left: 6px; top: 318px; width: 200px; height: 38px; flex-direction: row; align-items: center; border-radius: 19px; background-color: #1A1A1A; padding: 3px; }
-.lvLabel { width: 32px; height: 32px; line-height: 32px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
-.lv { flex: 1; height: 32px; margin-right: 4px; border-radius: 16px; align-items: center; justify-content: center; }
-.lvT { font-size: 14px; color: #FFFFFF; }
-.go { position: absolute; left: 26px; top: 378px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
-.goStop { background-color: #FF3B30; }
-.goT { font-size: 14px; color: #FFFFFF; }
-.hint { position: absolute; left: 16px; top: 436px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
+.val { width: 190px; height: 50px; line-height: 50px; text-align: center; font-size: 44px; color: #0D6EFF; text-overflow: ellipsis; lines: 1; }
+.status { position: absolute; left: 0px; top: 186px; width: 212px; text-align: center; font-size: 14px; color: #0D6EFF; }
+.gapTxt { position: absolute; left: 0px; top: 208px; width: 212px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
+.beatRow { position: absolute; left: 6px; top: 234px; width: 200px; height: 26px; flex-direction: row; align-items: center; justify-content: center; }
+.pulse { width: 24px; height: 24px; border-radius: 12px; }
+.beatDots { flex-direction: row; align-items: center; justify-content: center; }
+.bDot { width: 18px; height: 18px; border-radius: 9px; margin: 0px 4px; }
+.meters { position: absolute; left: 6px; top: 266px; width: 200px; height: 34px; flex-direction: row; align-items: center; justify-content: space-between; border-radius: 17px; background-color: #1A1A1A; padding: 3px; }
+.mt { width: 36px; height: 28px; border-radius: 14px; align-items: center; justify-content: center; }
+.mtT { font-size: 14px; lines: 1; }
+.levels { position: absolute; left: 6px; top: 308px; width: 200px; height: 36px; flex-direction: row; align-items: center; border-radius: 18px; background-color: #1A1A1A; padding: 3px; }
+.lv { width: 97px; height: 30px; border-radius: 15px; align-items: center; justify-content: center; }
+.lvT { font-size: 14px; }
+.go { position: absolute; left: 26px; top: 354px; width: 160px; height: 46px; border-radius: 23px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.go.stop { background-color: #FF3B30; }
+.goT { font-size: 17px; color: #FFFFFF; font-weight: bold; }
+.hint { position: absolute; left: 16px; top: 408px; width: 180px; text-align: center; font-size: 14px; line-height: 20px; color: rgba(255,255,255,0.55); }
 </style>
 
 <script>
 import g from '../../utils/g'
 import numInputSession from '../../utils/numInputSession'
 import inputResult from '../../utils/inputResult'
+import metronomeMeter from '../../utils/metronomeMeter'
 
 const BPM_MIN = 40
 const BPM_MAX = 240
+
+function buildDots(meterId, activeIndex, activeColor) {
+  const m = metronomeMeter.getMeter(meterId)
+  const out = []
+  for (let i = 0; i < m.beats; i++) {
+    out.push(i === activeIndex ? activeColor : '#333333')
+  }
+  return out
+}
+
+function buildStatus(playing, bpm, meterId, lvLabel) {
+  const head = playing ? '运行中' : '已就绪'
+  const tail = meterId !== 'none' ? meterId + ' 拍' : lvLabel
+  return head + ' · ' + bpm + ' BPM · ' + tail
+}
 
 export default {
   data: {
@@ -80,20 +110,22 @@ export default {
     timer: null,
     beatCount: 0,
     pulseOn: false,
-    // 振动力度档位：弱（短振）/ 强（长振），默认强
+    pulseColor: '#333333',
+    meter: 'none',
+    meters: metronomeMeter.METERS,
+    dots: [],
     level: 'strong',
     lvLabel: '强',
-    // 进键盘页前是否在跑：键盘页盖住本页时 onHide 必须停拍（否则页面藏在下面还在振），
-    // 回来后在 onShow 里按这个标记接着跑 —— 调速度不该打断节拍。
+    statusText: '已就绪 · 120 BPM · 强',
     resumeAfterPad: false
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
+    this.updateStatus()
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
 
-    // 接收统一数字键盘页（pages/numinput）返回的 BPM（优先内存同步读取，文件异步兜底）
     const syncRes = numInputSession.take('bpm')
     if (syncRes) {
       this.applyBpmInput(syncRes.value)
@@ -104,7 +136,6 @@ export default {
       })
     }
 
-    // 从键盘页回来：之前在跑就接着跑（刚才的停拍只是因为页面被盖住了）
     if (this.resumeAfterPad) {
       this.resumeAfterPad = false
       if (!this.playing) this.start()
@@ -118,28 +149,50 @@ export default {
     this.stop()
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
+  updateStatus() {
+    this.statusText = buildStatus(this.playing, this.bpm, this.meter, this.lvLabel)
+  },
   beat() {
     if (!this.playing) return
+    const meta = metronomeMeter.beatMeta(this.meter, this.beatCount, this.level)
     this.beatCount++
     this.pulseOn = !this.pulseOn
-    // 按所选力度振：弱=短振，强=长振
-    g.haptic.beat(this.level)
+    if (meta.totalBeats === 0) {
+      this.pulseColor = this.pulseOn ? '#0D6EFF' : '#333333'
+    } else {
+      const hex = meta.isAccent ? '#FF9500' : '#0D6EFF'
+      this.pulseColor = hex
+      this.dots = buildDots(this.meter, meta.dotIndex, hex)
+    }
+    g.haptic.beat(meta.level)
+  },
+  setMeter(mId) {
+    const m = metronomeMeter.getMeter(mId)
+    this.meter = m.id
+    this.beatCount = 0
+    this.dots = buildDots(m.id, -1, '')
+    this.pulseColor = '#333333'
+    this.updateStatus()
+    g.haptic.short()
+    if (this.playing) {
+      this.beat()
+      this.restartTimer()
+    }
   },
   setLevel(l) {
     if (!l || l === this.level) {
-      // 重复点当前档位也振一记，方便反复对比同一力度
       g.haptic.beat(l || this.level)
       return
     }
     this.level = l
     this.lvLabel = g.haptic.label(l)
-    // 立刻按新档位振一记，当场比手感
+    this.updateStatus()
     g.haptic.beat(l)
   },
   start() {
     this.playing = true
     this.beatCount = 0
-    // 常亮绑定运行时：bright:false 时 enter 完全同步，必须留在同步路径上
+    this.updateStatus()
     g.screen.enter({ bright: false, keepOn: true })
     this.beat()
     if (this.timer) clearInterval(this.timer)
@@ -151,23 +204,16 @@ export default {
     this.timer = null
     g.haptic.stop()
     this.pulseOn = false
+    this.pulseColor = '#333333'
+    this.dots = buildDots(this.meter, -1, '')
+    this.updateStatus()
     g.screen.leave()
   },
   toggle() {
     if (this.playing) this.stop()
     else this.start()
   },
-  /**
-   * 点 BPM 卡 → 统一数字键盘页（pages/numinput）：整页全屏键盘，本页正文不被遮挡；
-   * 结果经 numInputSession（内存快通道）+ inputResult（一次性文件兜底）回传。
-   *
-   * value 传空串而不是当前值：键盘页 maxLen=3 会把「已填满」的草稿判为超限，
-   * 预填 3 位 BPM 后按任何数字都只会被「已达最大长度限制」挡回来（想从 120 改成 140
-   * 得先退格三次）；当前值放进 hint 提示行，按「取消」则保留原值。
-   * 范围（40~240）由键盘页校验，本页 applyBpmInput 再 clamp 一层兜底。
-   */
   openBpmPad() {
-    // 键盘页盖住本页时 onHide 会停拍：先记下是否在跑，回来接着跑
     this.resumeAfterPad = this.playing
     g.haptic.short()
     g.router.push('/pages/numinput', {
@@ -183,7 +229,6 @@ export default {
       hint: BPM_MIN + ' ~ ' + BPM_MAX + '（当前 ' + this.bpm + '）'
     })
   },
-  /** 写回键盘页返回的 BPM（键盘页已按 40~240 校验，这里再 clamp 一层兜底）。 */
   applyBpmInput(val) {
     const v = parseInt(val, 10)
     if (isNaN(v)) return
@@ -194,9 +239,9 @@ export default {
   applyBpm(n) {
     this.bpm = n
     this.gap = Math.round(60000 / n)
+    this.updateStatus()
     if (this.playing) this.restartTimer()
   },
-  // 只重建 interval，不走 stop();start()，避免 setKeepScreenOn 异步乱序关掉常亮
   restartTimer() {
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => this.beat(), this.gap)

@@ -5,18 +5,15 @@
   <div class="page">
     <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
 
-    <!-- 列表视图（原 fav 页本体）。
-         Vela 4：同一父容器里动态插入/翻转显示的节点会沉到静态兄弟之下，
-         详情不能做成浮层压在列表上，只能用互斥 if 切视图。 -->
     <scroll class="body" scroll-y="true" bounces="true" if="{{ !detail }}">
-      <div class="inner">
+      <div class="inner" style="height: {{ listInnerH }}px;">
         <div class="itemWrap" for="{{ items }}">
           <div class="favCard" @click="tapItem($item)">
             <text class="f favText">{{ $item.short }}</text>
             <text class="f favMeta">{{ $item.meta }}</text>
           </div>
           <div class="favOps" @click="tapDetail($item)">
-            <text class="f favOpsT">详情 / 删除</text>
+            <text class="f favOpsT">备注 / 详情 / 删除</text>
           </div>
         </div>
         <div class="empty" if="{{ items.length === 0 }}">
@@ -27,16 +24,15 @@
       </div>
     </scroll>
 
-    <!-- 详情视图：原 qrcode/favdetail 子页并入本页（不再跳页，值不再跨页传）。
-         包裹层 .dWrap 必须带完整几何的类（position + left/top + width/height），
-         否则 Vela 不给里面的绝对定位子元素做布局；
-         left/top 钉在页面原点，子元素坐标即页面坐标。 -->
     <div class="dWrap" if="{{ detail }}">
       <scroll class="dBody" scroll-y="true" bounces="true">
-        <text class="f full">{{ detailText }}</text>
+        <text class="f full" style="height: {{ detailTextH }}px;">{{ detailText }}</text>
         <div class="dPad"></div>
       </scroll>
-      <div class="genBtn" @click="onRegen"><text class="f genT">重新生成二维码</text></div>
+      <div class="aliasBtn" @click="editAlias">
+        <text class="f aliasT">{{ detailLabel ? '备注：' + detailLabel : '设置备注名' }}</text>
+      </div>
+      <div class="genBtn" @click="onRegen"><text class="f genT">{{ detailKind === 'barcode' ? '以条形码查看' : '重新生成二维码' }}</text></div>
       <div class="delBtn" style="background-color: {{ armed ? '#FF3B30' : '#262626' }};" @click="tapDelete">
         <text class="f delT">{{ armed ? '再次点击以取消' : '取消收藏' }}</text>
       </div>
@@ -49,28 +45,25 @@
 
 <style>
 @import '../../../common/styles/theme.css';
-/* 列表视图：宽度/高度字面量与 profiles/{pro336,band9}.json 里 fav.ux 的替换对一一对应，勿动。 */
 .body { position: absolute; left: 0px; top: 82px; width: 212px; height: 438px; }
 .inner { width: 212px; flex-direction: column; }
-.itemWrap { width: 212px; flex-direction: column; }
-.favCard { width: 206px; margin: 0px 3px 6px 3px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; }
+.itemWrap { width: 212px; flex-direction: column; flex-shrink: 0; }
+.favCard { width: 206px; height: 64px; margin: 0px 3px 6px 3px; border-radius: 26px; background-color: #262626; padding: 10px 16px; flex-direction: column; flex-shrink: 0; }
 .favText { width: 174px; height: 24px; line-height: 24px; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.favMeta { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.55); }
-.favOps { width: 206px; margin: 0px 3px 8px 3px; height: 30px; border-radius: 15px; background-color: #1E1E1E; align-items: center; justify-content: center; }
+.favMeta { width: 174px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.55); text-overflow: ellipsis; lines: 1; }
+.favOps { width: 206px; margin: 0px 3px 8px 3px; height: 30px; border-radius: 15px; background-color: #1E1E1E; align-items: center; justify-content: center; flex-shrink: 0; }
 .favOpsT { font-size: 14px; color: rgba(255,255,255,0.55); }
-.empty { width: 212px; height: 200px; align-items: center; justify-content: center; flex-direction: column; }
+.empty { width: 212px; height: 200px; align-items: center; justify-content: center; flex-direction: column; flex-shrink: 0; }
 .emptyT { font-size: 16px; color: rgba(255,255,255,0.6); }
 .emptyS { margin-top: 10px; font-size: 14px; color: rgba(255,255,255,0.55); }
-.pad { width: 212px; height: 16px; }
+.pad { width: 212px; height: 48px; flex-shrink: 0; }
 
-/* 详情视图（原 qrcode/favdetail 子页）：收藏原文 scroll（原文最长 512 字节，完整展示）
-   + 重新生成二维码 + 取消收藏（两击确认）+ 底部「返回列表」。
-   三个动作键都不放页头 —— 页头整条是返回命中区，压在里面真机上点不到；
-   动作键一律落页面底部（band10 底 430 / Pro 底 430 / band9 底 400，均在安全区内）。 */
 .dWrap { position: absolute; left: 0px; top: 0px; width: 212px; height: 466px; }
-.dBody { position: absolute; left: 0px; top: 82px; width: 212px; height: 196px; }
+.dBody { position: absolute; left: 0px; top: 82px; width: 212px; height: 146px; }
 .full { width: 174px; margin: 12px 19px 0px 19px; font-size: 15px; line-height: 22px; color: rgba(255,255,255,0.85); }
 .dPad { width: 174px; height: 16px; }
+.aliasBtn { position: absolute; left: 3px; top: 236px; width: 206px; height: 42px; border-radius: 21px; background-color: #1A1A1A; padding: 0px 14px; align-items: center; justify-content: center; }
+.aliasT { width: 178px; font-size: 14px; color: #4E87FF; text-align: center; lines: 1; text-overflow: ellipsis; }
 .genBtn { position: absolute; left: 3px; top: 286px; width: 206px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; }
 .genT { font-size: 14px; color: #FFFFFF; }
 .delBtn { position: absolute; left: 3px; top: 342px; width: 206px; height: 40px; border-radius: 20px; background-color: #262626; align-items: center; justify-content: center; }
@@ -84,8 +77,13 @@ import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import qrFavStore from '../../../utils/qrFavStore'
 import qrBridge from '../../../utils/qrBridge'
+import inputResult from '../../../utils/inputResult'
+import textMetrics from '../../../utils/textMetrics'
+import { TEXT } from '../../../common/layout'
 
-/** 收藏时间显示：YYYY-MM-DD HH:MM（照 password.ux 的 fmtTime 口径）。 */
+const ITEM_ROW_H = 108
+const LIST_PAD_H = 48
+
 function fmtTime(ms) {
   if (!ms) return ''
   const d = new Date(ms)
@@ -102,11 +100,14 @@ export default {
     clock: '--:--',
     title: '二维码收藏',
     items: [],
+    listInnerH: 260,
     timer: null,
-    /* 详情视图状态：原 favdetail 子页并入本页后不再跨页传值，favState.js 已随子页一起删除。 */
     detail: false,
     detailId: '',
     detailText: '',
+    detailLabel: '',
+    detailKind: 'qr',
+    detailTextH: 48,
     armed: false
   },
   onShow() {
@@ -114,14 +115,22 @@ export default {
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
-    // 插件导入落库时列表实时刷新（qrBridge 写库会 notify）
     this._unsub = qrFavStore.subscribe(() => {
       if (page.$valid) page.loadItems()
     })
     this.armed = false
+    inputResult.take((r) => {
+      if (!r || r.field !== 'qrFavLabel' || !page.detailId) return
+      qrFavStore.updateMeta(page.detailId, { label: r.value }, (res) => {
+        if (!page.$valid) return
+        if (res && res.ok) {
+          page.detailLabel = res.item.label || ''
+          page.loadItems()
+          prompt.showToast({ message: page.detailLabel ? '备注名已保存' : '已清除备注名', duration: 1200 })
+        }
+      })
+    })
     this.loadItems()
-    // 认领启动期间缓冲的二维码推送（协议栈不在启动路径，进入本页时才接手），
-    // 回放落库后收藏列表立刻出现手机推来的二维码。
     qrBridge.init()
   },
   onHide() {
@@ -139,56 +148,84 @@ export default {
       this.items = all.map((it) => ({
         id: it.id,
         text: it.text,
-        short: it.text.slice(0, 20),
-        meta: (it.source === 'plugin' ? '来自手机' : '手环生成') + ' · ' + fmtTime(it.createdAt)
+        label: it.label || '',
+        kind: it.kind || 'qr',
+        short: it.label || it.text.slice(0, 20),
+        meta:
+          (it.source === 'plugin' ? '来自手机' : '手环生成') +
+          (it.kind === 'barcode' ? ' · 条码' : '') +
+          ' · ' + fmtTime(it.createdAt)
       }))
+      this.listInnerH = this.items.length > 0 ? this.items.length * ITEM_ROW_H + LIST_PAD_H : 260
+      if (this.detail && this.detailId) {
+        const latest = qrFavStore.getById(this.detailId)
+        if (latest) {
+          this.detailLabel = latest.label || ''
+          this.detailKind = latest.kind || 'qr'
+          this.detailText = latest.text || this.detailText
+          this.updateDetailHeight()
+        }
+      }
     })
   },
-  /**
-   * 点击条目 → show 页现场重新生成（fav='0'：已在收藏里，不再显示收藏按钮）。
-   */
+  updateDetailHeight() {
+    const h = textMetrics.textHeight(this.detailText, TEXT.inputW, 15, 22)
+    this.detailTextH = Math.max(24, h || 24)
+  },
   tapItem(item) {
     g.haptic.short()
-    g.router.push('/pages/qrcode/show', { qr: item.text, fav: '0' })
+    g.router.push('/pages/qrcode/show', {
+      qr: item.text,
+      fav: '0',
+      favId: item.id,
+      kind: item.kind || 'qr'
+    })
   },
-  /**
-   * 详情/删除入口：进本页详情视图（不再跳子页）。
-   * 点击区与条目卡是 for 内的两块兄弟节点，互不冒泡。
-   */
   tapDetail(item) {
     g.haptic.short()
     this.detailId = item.id
     this.detailText = item.text
+    this.detailLabel = item.label || ''
+    this.detailKind = item.kind || 'qr'
+    this.updateDetailHeight()
     this.armed = false
     this.detail = true
     this.title = '收藏详情'
   },
-  /** 复位详情视图（回列表；触感由调用方决定，删除后不再叠一次短振）。 */
   closeDetail() {
     this.detail = false
     this.armed = false
     this.title = '二维码收藏'
   },
-  /** 底部「返回列表」。 */
   backToList() {
     g.haptic.short()
     this.closeDetail()
   },
-  /**
-   * 现场重新生成：show 页以 fav='0' 打开（内容已在收藏里，不再显示收藏按钮）。
-   */
+  editAlias() {
+    if (!this.detailId) return
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'qrFavLabel',
+      inputTitle: '收藏备注名',
+      text: this.detailLabel || '',
+      max: qrFavStore.MAX_LABEL_LEN,
+      multiline: 0,
+      hint: '最多 ' + qrFavStore.MAX_LABEL_LEN + ' 字，留空则显示原文'
+    })
+  },
   onRegen() {
     if (!this.detailText) {
       prompt.showToast({ message: '收藏内容缺失，可能已被删除', duration: 1500 })
       return
     }
     g.haptic.short()
-    g.router.push('/pages/qrcode/show', { qr: this.detailText, fav: '0' })
+    g.router.push('/pages/qrcode/show', {
+      qr: this.detailText,
+      fav: '0',
+      favId: this.detailId,
+      kind: this.detailKind || 'qr'
+    })
   },
-  /**
-   * 两次点击确认取消收藏（同 sentence/favdetail 的 armed 模式）：
-   * 首次点按震动并把按钮转红提示；再次点按才删 qrFavs 并回列表刷新。
-   */
   tapDelete() {
     if (!this.armed) {
       g.haptic.short()

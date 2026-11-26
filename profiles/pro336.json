@@ -364,7 +364,11 @@
       ["width: 136px", "width: 196px"],
       ["height: 136px", "height: 196px"],
       ["left: 20px; top: 258px; width: 172px;", "left: 18px; top: 324px; width: 300px;"],
-      ["width: 170px", "width: 294px"]
+      ["width: 170px", "width: 294px"],
+      ["left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); padding: 12px 54px 12px 24px;", "left: 336px; top: 0px; width: 480px; height: 336px; transform-origin: 0 0; transform: rotate(90deg); padding: 16px 16px 16px 16px;"],
+      ["width: 420px; height: 184px;", "width: 420px; height: 256px;"],
+      ["width: 380px; height: 92px;", "width: 380px; height: 132px;"],
+      ["width: 352px; height: 72px;", "width: 352px; height: 112px;"]
     ],
     "src/pages/qrcode/wifi/wifi.ux": [
       ["top: 78px", "top: 24px"],
@@ -379,7 +383,8 @@
       ["width: 212px", "width: 336px"],
       ["height: 438px", "height: 398px"],
       ["width: 206px", "width: 330px"],
-      ["width: 174px", "width: 298px"]
+      ["width: 174px", "width: 298px"],
+      ["width: 178px", "width: 302px"]
     ],
     "src/pages/qrcode/import/import.ux": [
       ["width: 212px", "width: 336px"],
@@ -510,7 +515,6 @@
       ["width: 206px", "width: 330px"],
       ["width: 190px", "width: 314px"],
       ["width: 212px", "width: 336px"],
-      ["left: 91px", "left: 153px"],
       ["left: 6px", "left: 68px"],
       ["left: 26px", "left: 88px"],
       ["left: 16px", "left: 78px"]
@@ -756,6 +760,44 @@
       ["width: 50px", "width: 56px"],
       ["width: 152px", "width: 274px"],
       ["height: 344px", "height: 294px"]
+    ],
+    "src/pages/habit/list/list.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 408px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 108px", "width: 214px"],
+      ["width: 60px", "width: 78px"],
+      ["width: 190px", "width: 314px"],
+      ["left: 132px", "left: 256px"],
+      ["top: 396px", "top: 384px"]
+    ],
+    "src/pages/habit/edit/edit.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 174px", "width: 298px"],
+      ["margin-left: 30px", "margin-left: 92px"]
+    ],
+    "src/pages/reaction/reaction.ux": [
+      ["width: 200px", "width: 324px"],
+      ["width: 95px", "width: 157px"],
+      ["width: 120px", "width: 180px"],
+      ["width: 184px", "width: 308px"],
+      ["width: 176px", "width: 300px"]
+    ],
+    "src/pages/kinship/kinship.ux": [
+      ["width: 206px", "width: 330px"],
+      ["width: 182px", "width: 306px"],
+      ["width: 68px", "width: 96px"],
+      ["width: 132px", "width: 224px"],
+      ["width: 200px", "width: 324px"],
+      ["width: 47px", "width: 77px"]
+    ],
+    "src/pages/notebook/import/import.ux": [
+      ["width: 212px", "width: 336px"],
+      ["height: 520px", "height: 480px"],
+      ["height: 408px", "height: 358px"],
+      ["width: 206px", "width: 330px"],
+      ["width: 170px", "width: 294px"],
+      ["width: 140px", "width: 274px"]
     ]
   },
   "manifest": {}

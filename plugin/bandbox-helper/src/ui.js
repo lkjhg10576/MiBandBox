@@ -77,13 +77,15 @@ function textarea(value, inputId, height) {
  * 造一个 Tab 按钮行。
  */
 function tabBar(tab) {
-  const bar = el('DIV').flex().flexDirection('ROW').gap(8).widthFull()
+  const bar = el('DIV').flex().flexDirection('ROW').gap(6).widthFull()
   const lyricsBg = tab === 'lyrics' ? C.accent : '#33383D'
   const otpBg = tab === 'otp' ? C.accent : '#33383D'
   const qrBg = tab === 'qr' ? C.accent : '#33383D'
-  bar.child(button('歌词同步', 'tab-lyrics', lyricsBg).flexGrow(1))
-  bar.child(button('动态口令', 'tab-otp', otpBg).flexGrow(1))
-  bar.child(button('二维码', 'tab-qr', qrBg).flexGrow(1))
+  const noteBg = tab === 'note' ? C.accent : '#33383D'
+  bar.child(button('歌词', 'tab-lyrics', lyricsBg).flexGrow(1))
+  bar.child(button('口令', 'tab-otp', otpBg).flexGrow(1))
+  bar.child(button('扫码', 'tab-qr', qrBg).flexGrow(1))
+  bar.child(button('便签', 'tab-note', noteBg).flexGrow(1))
   return bar
 }
 
@@ -325,6 +327,43 @@ function renderQrTab(root, state) {
 }
 
 // ------------------------------------------------------------------
+// 手机闪传便签 Tab（0.1.3 新增）
+// ------------------------------------------------------------------
+
+function renderNoteTab(root, state) {
+  const infoLines = []
+  if (state.deviceName) {
+    infoLines.push(text('手环：' + state.deviceName + (state.watchOnline ? ' · 在线' : ''), C.text, 15))
+  } else {
+    infoLines.push(text('未检测到已连接的手环', C.dim, 15))
+    infoLines.push(text('请确认 AstroBox 已连接手环，并允许插件的设备权限', C.dim, 12))
+  }
+  root.child(card(infoLines))
+
+  root.child(card([text(state.noteStatusText, state.noteBusy ? C.accent : C.dim, 13)]))
+
+  root.child(text('标题（可选，最多 24 字；留空取正文首行）', C.dim, 12))
+  root.child(textarea(state.noteTitle, 'note-field:title', 44))
+
+  root.child(text('便签正文（最多 1000 字 / 3072 字节）', C.dim, 12))
+  root.child(textarea(state.noteBody, 'note-field:body', 132))
+
+  const conflictLabel = state.noteConflict === 'overwrite' ? '同名：直接覆盖' : '同名：自动重命名'
+  const tools = el('DIV').flex().flexDirection('ROW').gap(8).widthFull()
+  tools.child(button(conflictLabel, 'note-toggle-conflict', '#33383D').flexGrow(1))
+  tools.child(button('清空', 'note-clear', '#33383D').flexGrow(1))
+  root.child(tools)
+
+  root.child(button('发送到手表笔记本', 'note-send', state.noteBusy ? C.dim : C.accent))
+
+  root.child(text('单包直发笔记本；如离线请先在手环打开「笔记本 → 从手机接收」', C.dim, 12))
+
+  if (state.lastError) {
+    root.child(card([text(state.lastError, C.warn, 13)]))
+  }
+}
+
+// ------------------------------------------------------------------
 // 弹窗覆盖层（自绘 DIV，每次 repaint 整棵重建）
 // ------------------------------------------------------------------
 
@@ -415,6 +454,8 @@ export function renderUI(elementId, state) {
     renderOtpTab(root, state)
   } else if (state.tab === 'qr') {
     renderQrTab(root, state)
+  } else if (state.tab === 'note') {
+    renderNoteTab(root, state)
   } else {
     renderLyricsTab(root, state)
   }

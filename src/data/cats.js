@@ -18,9 +18,9 @@ const CATS = [
   { id: 'light',  name: '灯光字幕', icon: '/common/icons/catLight.png',  tools: ['fluorescence', 'flashlight', 'marquee', 'num', 'colorcard'] },
   { id: 'sound',  name: '声音振动', icon: '/common/icons/catSound.png',  tools: ['vibrate', 'metronome', 'tapTempo', 'morseCode'] },
   { id: 'code',   name: '编码安全', icon: '/common/icons/catCode.png',   tools: ['qrcode', 'otp', 'password'] },
-  { id: 'test',   name: '检测测量', icon: '/common/icons/catTest.png',   tools: ['level', 'cpsTest', 'performance', 'display', 'storage', 'system'] },
+  { id: 'test',   name: '检测测量', icon: '/common/icons/catTest.png',   tools: ['level', 'cpsTest', 'reaction', 'performance', 'display', 'storage', 'system'] },
   { id: 'play',   name: '趣味计数', icon: '/common/icons/catPlay.png',   tools: ['fish', 'motion', 'cubeTimer', 'scoreboard', 'counter'] },
-  { id: 'read',   name: '记录查询', icon: '/common/icons/catRead.png',   tools: ['notebook', 'lylist', 'sentence', 'history', 'dailytip', 'wasteSorting'] }
+  { id: 'read',   name: '记录查询', icon: '/common/icons/catRead.png',   tools: ['notebook', 'habit', 'lylist', 'sentence', 'history', 'dailytip', 'wasteSorting', 'kinship'] }
 ]
 
 /** 首页分类行：desc 用工具数，永远与成员表一致，不会随工具增减而说错 */

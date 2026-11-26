@@ -2,14 +2,37 @@
 
 <template>
   <div class="page">
-    <pagehead title="扫码查看" clock="{{ clock }}"></pagehead>
-    <div class="qrCard" @click="back">
-      <qrcode class="qr" value="{{ qr }}"></qrcode>
+    <pagehead if="{{ !isBar }}" title="扫码查看" clock="{{ clock }}"></pagehead>
+
+    <div if="{{ !isBar }}">
+      <div class="qrCard" @click="back">
+        <qrcode class="qr" value="{{ qr }}"></qrcode>
+      </div>
+      <text class="f text" @click="back">{{ qr }}</text>
+      <div class="barBtn" if="{{ canBar }}" @click="toggleBar">
+        <text class="f barBtnT">切为横屏条形码</text>
+      </div>
+      <text class="f hint" if="{{ fav !== '1' }}" @click="back">轻触屏幕返回</text>
+      <div class="favBtn" if="{{ fav === '1' }}" @click="onFavTap">
+        <text class="f favT">{{ faved ? '已收藏' : '收藏' }}</text>
+      </div>
     </div>
-    <text class="f text" @click="back">{{ qr }}</text>
-    <text class="f hint" if="{{ fav !== '1' }}" @click="back">轻触屏幕返回</text>
-    <div class="favBtn" if="{{ fav === '1' }}" @click="onFavTap">
-      <text class="f favT">{{ faved ? '已收藏' : '收藏' }}</text>
+
+    <div class="landWrap" if="{{ isBar }}">
+      <div class="barBox">
+        <div class="barCard" @click="toggleBar">
+          <barcode class="barcode" value="{{ qr }}" style="color: #000000; background-color: #FFFFFF;"></barcode>
+        </div>
+        <text class="f barText">{{ qr }}</text>
+        <div class="barActs">
+          <div class="barActBtn" @click="toggleBar">
+            <text class="f barActT">切回二维码</text>
+          </div>
+          <div class="barActBtn" style="background-color: #262626;" @click="back">
+            <text class="f barActT">返回</text>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -18,10 +41,21 @@
 @import '../../../common/styles/theme.css';
 .qrCard { position: absolute; left: 26px; top: 90px; width: 160px; height: 160px; border-radius: 26px; background-color: #FFFFFF; padding: 12px; align-items: center; justify-content: center; }
 .qr { width: 136px; height: 136px; background-color: #FFFFFF; }
-.text { position: absolute; left: 20px; top: 258px; width: 172px; font-size: 15px; line-height: 21px; color: rgba(255,255,255,0.75); text-align: center; }
+.text { position: absolute; left: 20px; top: 258px; width: 172px; font-size: 15px; line-height: 21px; color: rgba(255,255,255,0.75); text-align: center; lines: 4; text-overflow: ellipsis; }
+.barBtn { position: absolute; left: 26px; top: 396px; width: 160px; height: 36px; border-radius: 18px; background-color: #14324F; align-items: center; justify-content: center; }
+.barBtnT { font-size: 14px; color: #FFFFFF; }
 .hint { position: absolute; left: 21px; top: 448px; width: 170px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 .favBtn { position: absolute; left: 26px; top: 442px; width: 160px; height: 36px; border-radius: 18px; background-color: #262626; align-items: center; justify-content: center; }
 .favT { font-size: 14px; color: #4E87FF; }
+
+.landWrap { position: absolute; left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); padding: 12px 54px 12px 24px; align-items: center; justify-content: center; background-color: #000000; }
+.barBox { width: 420px; height: 184px; flex-direction: column; align-items: center; justify-content: space-between; }
+.barCard { width: 380px; height: 92px; border-radius: 16px; background-color: #FFFFFF; padding: 10px 14px; align-items: center; justify-content: center; }
+.barcode { width: 352px; height: 72px; background-color: #FFFFFF; }
+.barText { width: 400px; height: 22px; line-height: 22px; font-size: 16px; color: rgba(255,255,255,0.85); text-align: center; lines: 1; text-overflow: ellipsis; }
+.barActs { width: 280px; height: 36px; flex-direction: row; justify-content: space-between; align-items: center; }
+.barActBtn { width: 132px; height: 36px; border-radius: 18px; background-color: #0D6EFF; align-items: center; justify-content: center; }
+.barActT { font-size: 14px; color: #FFFFFF; }
 </style>
 
 <script>
@@ -31,17 +65,24 @@ import prompt from '@system.prompt'
 import qrFavStore from '../../../utils/qrFavStore'
 
 export default {
-  protected: { qr: '', fav: '' },
-  private: { clock: '--:--', timer: null, faved: false },
+  protected: { qr: '', fav: '', favId: '', kind: '' },
+  private: { clock: '--:--', timer: null, faved: false, canBar: false, isBar: false, activeFavId: '' },
   onShow() {
     this.clock = g.time.formatClock(new Date())
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
     brightness.setKeepScreenOn({ keepScreenOn: true, success: () => {}, fail: () => {} })
+
+    const eligible = qrFavStore.canEncodeBarcode(this.qr)
+    this.canBar = eligible && (this.fav === '1' || this.fav === '0')
+    this.isBar = this.canBar && this.kind === 'barcode'
+    this.activeFavId = this.favId || ''
+
     if (this.fav === '1') {
       g.kv.init(() => {
-        if (page.$valid) page.faved = qrFavStore.has(page.qr)
+        if (!page.$valid) return
+        page.faved = qrFavStore.has(page.qr)
       })
     }
   },
@@ -52,21 +93,27 @@ export default {
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   },
-  /**
-   * 收藏当前二维码（仅 fav=1 时可见）。show.ux 是 5 处复用的极简页，
-   * 其余 4 个来源（笔记/密码/OTP/诊断）行为不变：fav 为空不渲染按钮。
-   * 点击区收到 qrCard/text/hint 具体元素上，根 div 不再挂 @click，防收藏按钮冒泡误返回。
-   */
+  toggleBar() {
+    if (!this.canBar) return
+    g.haptic.short()
+    this.isBar = !this.isBar
+    const nextKind = this.isBar ? 'barcode' : 'qr'
+    if (this.activeFavId) {
+      qrFavStore.updateMeta(this.activeFavId, { kind: nextKind }, () => {})
+    }
+  },
   onFavTap() {
     if (this.faved) {
       prompt.showToast({ message: '已在收藏中', duration: 1200 })
       return
     }
     const page = this
+    const curKind = this.isBar ? 'barcode' : 'qr'
     qrFavStore.add(this.qr, 'local', (r) => {
       if (!page.$valid) return
       if (r && r.ok) {
         page.faved = true
+        if (r.item && r.item.id) page.activeFavId = r.item.id
         prompt.showToast({ message: r.duplicate ? '已在收藏中' : '已收藏', duration: 1200 })
       } else {
         prompt.showToast({
@@ -74,7 +121,7 @@ export default {
           duration: 1500
         })
       }
-    })
+    }, { kind: curKind })
   },
   back() {
     g.router.back()

@@ -1,0 +1,147 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="亲戚称呼" clock="{{ clock }}"></pagehead>
+
+    <div class="resCard">
+      <text class="f crumb">{{ breadcrumb }}</text>
+      <text class="f mainAns">{{ primaryTitle }}</text>
+      <text class="f subAns">{{ secondaryText }}</text>
+    </div>
+
+    <div class="ctrlRow">
+      <div class="sexBtn" style="background-color: {{ selfSex === 'F' ? '#8E3A59' : '#1E3554' }};" @click="toggleSex">
+        <text class="f ctrlT">我：{{ selfSex === 'F' ? '女' : '男' }}</text>
+      </div>
+      <div class="dirBtn" style="background-color: #262626;" @click="toggleDir">
+        <text class="f ctrlT">{{ dir === 'fwd' ? '模式：我叫TA' : '模式：TA叫我' }}</text>
+      </div>
+    </div>
+
+    <div class="pad">
+      <div class="kRow" for="{{ rows }}">
+        <div
+          class="kBtn"
+          for="{{ $item }}"
+          style="background-color: {{ $item.kind === 'fn' ? '#333333' : '#1E1E22' }};"
+          @click="onKey($item)"
+        >
+          <text class="f kT" style="font-size: {{ $item.kind === 'fn' ? 16 : 20 }}px; color: {{ $item.id === 'clear' ? '#FF6B6B' : '#FFFFFF' }};">{{ $item.text }}</text>
+        </div>
+      </div>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.resCard { position: absolute; left: 3px; top: 80px; width: 206px; height: 102px; border-radius: 22px; background-color: #1A1A1A; padding: 8px 12px; flex-direction: column; justify-content: space-between; }
+.crumb { width: 182px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.mainAns { width: 182px; height: 40px; line-height: 40px; font-size: 26px; font-weight: bold; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.subAns { width: 182px; height: 22px; line-height: 22px; font-size: 14px; color: #4E87FF; text-overflow: ellipsis; lines: 1; }
+.ctrlRow { position: absolute; left: 3px; top: 188px; width: 206px; height: 34px; flex-direction: row; justify-content: space-between; align-items: center; }
+.sexBtn { width: 68px; height: 34px; border-radius: 17px; align-items: center; justify-content: center; }
+.dirBtn { width: 132px; height: 34px; border-radius: 17px; align-items: center; justify-content: center; }
+.ctrlT { font-size: 14px; color: #FFFFFF; lines: 1; }
+.pad { position: absolute; left: 6px; top: 228px; width: 200px; height: 186px; flex-direction: column; justify-content: space-between; }
+.kRow { width: 200px; height: 58px; flex-direction: row; justify-content: space-between; align-items: center; }
+.kBtn { width: 47px; height: 58px; border-radius: 16px; align-items: center; justify-content: center; }
+.kT { font-weight: bold; lines: 1; }
+</style>
+
+<script>
+import g from '../../utils/g'
+import kinship from '../../utils/kinship'
+import prompt from '@system.prompt'
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    selfSex: 'M',
+    dir: 'fwd',
+    chain: [],
+    rows: kinship.KEYPAD_ROWS,
+    breadcrumb: '我',
+    primaryTitle: '自己',
+    secondaryText: '反查 TA 叫我：自己'
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    this.recalc()
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  toggleSex() {
+    g.haptic.short()
+    const nextSex = this.selfSex === 'M' ? 'F' : 'M'
+    const check = kinship.validateChain(this.chain, nextSex)
+    if (!check.ok && this.chain.length > 0) {
+      // 若原链对新性别失效，清空以防出现非法状态并提示用户
+      this.chain = []
+      prompt.showToast({ message: check.message + '，已重置链路', duration: 1500 })
+    }
+    this.selfSex = nextSex
+    this.recalc()
+  },
+  toggleDir() {
+    g.haptic.short()
+    this.dir = this.dir === 'fwd' ? 'rev' : 'fwd'
+    this.recalc()
+  },
+  onKey(item) {
+    if (!item) return
+    if (item.id === 'clear') {
+      if (this.chain.length === 0) return
+      g.haptic.short()
+      this.chain = []
+      this.recalc()
+      return
+    }
+    if (item.id === 'back') {
+      if (this.chain.length === 0) return
+      g.haptic.short()
+      this.chain = this.chain.slice(0, this.chain.length - 1)
+      this.recalc()
+      return
+    }
+    const res = kinship.canPush(this.chain, item.id, this.selfSex)
+    if (!res.ok) {
+      g.haptic.short()
+      prompt.showToast({ message: res.message, duration: 1400 })
+      return
+    }
+    g.haptic.short()
+    this.chain = this.chain.concat([item.id])
+    this.recalc()
+  },
+  recalc() {
+    const out = kinship.evaluate(this.chain, this.selfSex)
+    if (!out.ok) {
+      this.breadcrumb = kinship.formatBreadcrumb(this.chain)
+      this.primaryTitle = '关系冲突'
+      this.secondaryText = out.message
+      return
+    }
+    this.breadcrumb = out.breadcrumb
+    if (this.dir === 'fwd') {
+      this.primaryTitle = out.callTitle
+      this.secondaryText = 'TA 叫我：' + out.reverseTitle
+    } else {
+      this.primaryTitle = out.reverseTitle
+      this.secondaryText = '我叫 TA：' + out.callTitle
+    }
+  }
+}
+</script>

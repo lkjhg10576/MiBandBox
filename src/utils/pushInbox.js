@@ -43,7 +43,7 @@ function makeBucket() {
 
 if (!g[KEY]) {
   g[KEY] = {
-    buckets: { otp: makeBucket(), qr: makeBucket() },
+    buckets: { otp: makeBucket(), qr: makeBucket(), note: makeBucket() },
     linkStatus: 0,
     inited: false
   }
@@ -57,7 +57,7 @@ const st = g[KEY]
  */
 function classify(text) {
   if (typeof text !== 'string') return null
-  if (text.indexOf('"bandbox-otp"') < 0 && text.indexOf('"bandbox-qr"') < 0) {
+  if (text.indexOf('"bandbox-otp"') < 0 && text.indexOf('"bandbox-qr"') < 0 && text.indexOf('"bandbox-note"') < 0) {
     return null
   }
   let obj = null
@@ -69,6 +69,7 @@ function classify(text) {
   if (!obj || typeof obj !== 'object') return null
   if (obj.app === 'bandbox-otp') return { key: 'otp', chunk: obj.type === 'chunk' }
   if (obj.app === 'bandbox-qr') return { key: 'qr', chunk: false }
+  if (obj.app === 'bandbox-note') return { key: 'note', chunk: false }
   return null
 }
 

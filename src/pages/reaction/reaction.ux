@@ -1,0 +1,245 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="反应测验" clock="{{ clock }}"></pagehead>
+
+    <div class="modes">
+      <div class="modeBtn" style="background-color: {{ mode === 'visual' ? '#0D6EFF' : '#262626' }};" @click="selectMode('visual')">
+        <text class="f modeT" style="color: {{ mode === 'visual' ? '#FFFFFF' : 'rgba(255,255,255,0.65)' }};">视觉变色</text>
+      </div>
+      <div class="modeBtn" style="background-color: {{ mode === 'haptic' ? '#0D6EFF' : '#262626' }};" @click="selectMode('haptic')">
+        <text class="f modeT" style="color: {{ mode === 'haptic' ? '#FFFFFF' : 'rgba(255,255,255,0.65)' }};">触觉盲测</text>
+      </div>
+    </div>
+
+    <div class="tapZone" style="background-color: {{ zoneBg }};" @click="onZoneTap">
+      <div class="dots">
+        <div class="dot" for="{{ dotColors }}" style="background-color: {{ $item }};"></div>
+      </div>
+
+      <text class="f roundTxt">{{ roundText }}</text>
+      <text class="f mainTxt" style="font-size: {{ mainSize }}px; color: {{ mainColor }};">{{ mainText }}</text>
+      <text class="f subTxt">{{ subText }}</text>
+      <text class="f bestTxt">{{ bestText }}</text>
+    </div>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+.modes { position: absolute; left: 6px; top: 80px; width: 200px; height: 34px; border-radius: 17px; background-color: #1A1A1A; padding: 3px; flex-direction: row; align-items: center; justify-content: space-between; }
+.modeBtn { width: 95px; height: 28px; border-radius: 14px; align-items: center; justify-content: center; }
+.modeT { font-size: 14px; }
+.tapZone { position: absolute; left: 6px; top: 122px; width: 200px; height: 306px; border-radius: 26px; padding: 14px 12px; flex-direction: column; align-items: center; justify-content: space-between; }
+.dots { width: 120px; height: 14px; flex-direction: row; align-items: center; justify-content: space-between; }
+.dot { width: 12px; height: 12px; border-radius: 6px; }
+.roundTxt { width: 176px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.75); lines: 1; }
+.mainTxt { width: 184px; height: 64px; line-height: 64px; text-align: center; font-weight: bold; lines: 1; text-overflow: ellipsis; }
+.subTxt { width: 176px; height: 44px; line-height: 22px; text-align: center; font-size: 15px; color: #FFFFFF; lines: 2; }
+.bestTxt { width: 176px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.68); lines: 1; }
+</style>
+
+<script>
+import g from '../../utils/g'
+import reaction from '../../utils/reaction'
+
+const runState = {
+  timer: null,
+  model: reaction.createState('visual')
+}
+
+export default {
+  data: {
+    _ck: null,
+    clock: '--:--',
+    mode: 'visual',
+    zoneBg: '#1C1C1E',
+    dotColors: ['#3A3A3C', '#3A3A3C', '#3A3A3C', '#3A3A3C', '#3A3A3C'],
+    roundText: '共 5 轮测验',
+    mainText: '点击开始',
+    mainSize: 32,
+    mainColor: '#FFFFFF',
+    subText: '变绿后立刻点击屏幕',
+    bestText: '最佳纪录：暂无'
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+    g.kv.init(() => {
+      if (!page.$valid) return
+      const saved = g.kv.get(reaction.BEST_KV_KEY, null)
+      runState.model = reaction.createState(runState.model.mode, saved)
+      page.syncView()
+    })
+    this.syncView()
+  },
+  onHide() {
+    this.abortRun()
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    this.abortRun()
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  clearWaitTimer() {
+    if (runState.timer) {
+      clearTimeout(runState.timer)
+      runState.timer = null
+    }
+  },
+  abortRun() {
+    this.clearWaitTimer()
+    g.haptic.stop()
+    g.screen.leave()
+    runState.model = reaction.createState(runState.model.mode, runState.model.best)
+    if (this.$valid) this.syncView()
+  },
+  selectMode(m) {
+    if (m === runState.model.mode && runState.model.phase === 'idle') return
+    this.clearWaitTimer()
+    g.haptic.stop()
+    g.screen.leave()
+    g.haptic.short()
+    runState.model = reaction.setMode(runState.model, m)
+    this.syncView()
+  },
+  scheduleWait(delayMs) {
+    this.clearWaitTimer()
+    const page = this
+    runState.timer = setTimeout(() => {
+      runState.timer = null
+      if (!page.$valid || runState.model.phase !== 'waiting') return
+      runState.model = reaction.arm(runState.model, Date.now())
+      if (runState.model.mode === 'haptic') {
+        g.haptic.long()
+      }
+      page.syncView()
+    }, delayMs)
+  },
+  onZoneTap() {
+    const prevPhase = runState.model.phase
+    if (prevPhase === 'waiting') {
+      this.clearWaitTimer()
+      g.haptic.stop()
+      runState.model = reaction.tap(runState.model, Date.now())
+      g.screen.leave()
+      g.haptic.short()
+      this.syncView()
+      return
+    }
+
+    if (prevPhase === 'armed') {
+      const now = Date.now()
+      const next = reaction.tap(runState.model, now)
+      runState.model = next
+      if (next.phase === 'summary') {
+        g.screen.leave()
+        if (next.isNewBest) {
+          g.kv.set(reaction.BEST_KV_KEY, next.best)
+          g.kv.flush()
+        }
+      }
+      g.haptic.short()
+      this.syncView()
+      return
+    }
+
+    // idle / result / foul / summary → 进入下一轮 waiting
+    g.haptic.short()
+    runState.model = reaction.tap(runState.model, Date.now())
+    if (runState.model.round === 1 && (prevPhase === 'idle' || prevPhase === 'summary')) {
+      g.screen.enter({ bright: false, keepOn: true })
+    }
+    this.syncView()
+    this.scheduleWait(runState.model.waitMs)
+  },
+  syncView() {
+    const m = runState.model
+    this.mode = m.mode
+
+    const dots = []
+    for (let i = 0; i < m.totalRounds; i++) {
+      if (i < m.times.length) {
+        dots.push('#00C853')
+      } else if (i === m.round - 1 && m.phase === 'waiting') {
+        dots.push('#FF9500')
+      } else if (i === m.round - 1 && m.phase === 'armed') {
+        dots.push('#00C853')
+      } else if (i === m.round - 1 && m.phase === 'foul') {
+        dots.push('#FF3B30')
+      } else {
+        dots.push('#3A3A3C')
+      }
+    }
+    this.dotColors = dots
+
+    const curBest = m.best[m.mode] || 0
+    this.bestText = curBest > 0 ? '历史最佳均值：' + curBest + ' ms' : '历史最佳均值：暂无'
+
+    if (m.phase === 'idle') {
+      this.zoneBg = '#1C1C1E'
+      this.roundText = '共 5 轮测验 · ' + (m.mode === 'haptic' ? '触觉模式' : '视觉模式')
+      this.mainText = '点击开始'
+      this.mainSize = 32
+      this.mainColor = '#FFFFFF'
+      this.subText = m.mode === 'haptic' ? '手环一振立刻点击屏幕' : '屏幕变绿立刻点击卡片'
+      return
+    }
+
+    if (m.phase === 'waiting') {
+      this.zoneBg = m.mode === 'haptic' ? '#142238' : '#7A1C1C'
+      this.roundText = '第 ' + m.round + ' / ' + m.totalRounds + ' 轮'
+      this.mainText = '稳住…'
+      this.mainSize = 34
+      this.mainColor = '#FFFFFF'
+      this.subText = m.mode === 'haptic' ? '闭眼感受手环长振' : '变绿前请勿提前点击'
+      return
+    }
+
+    if (m.phase === 'armed') {
+      this.zoneBg = '#00A846'
+      this.roundText = '第 ' + m.round + ' / ' + m.totalRounds + ' 轮'
+      this.mainText = '现在点！'
+      this.mainSize = 34
+      this.mainColor = '#FFFFFF'
+      this.subText = m.mode === 'haptic' ? '感受到振动，快点击！' : '快点击本区域！'
+      return
+    }
+
+    if (m.phase === 'foul') {
+      this.zoneBg = '#4A2B0A'
+      this.roundText = '第 ' + m.round + ' / ' + m.totalRounds + ' 轮 · 抢跑'
+      this.mainText = '太快了'
+      this.mainSize = 32
+      this.mainColor = '#FF9500'
+      this.subText = '信号未到就点击\n轻触重测本轮'
+      return
+    }
+
+    if (m.phase === 'result') {
+      this.zoneBg = '#1C1C1E'
+      this.roundText = '第 ' + m.round + ' / ' + m.totalRounds + ' 轮完成'
+      this.mainText = m.lastMs + ' ms'
+      this.mainSize = 36
+      this.mainColor = '#4E87FF'
+      this.subText = '轻触继续第 ' + (m.round + 1) + ' 轮'
+      return
+    }
+
+    if (m.phase === 'summary') {
+      this.zoneBg = '#122922'
+      this.roundText = m.isNewBest ? '刷新最佳纪录！' : '5 轮成绩汇总'
+      this.mainText = m.avgMs + ' ms'
+      this.mainSize = 36
+      this.mainColor = '#00C853'
+      this.subText = '最快 ' + m.minMs + ' ms · 抢跑 ' + m.foulCount + ' 次\n轻触再测一组'
+    }
+  }
+}
+</script>

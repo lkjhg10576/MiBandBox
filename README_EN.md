@@ -3,7 +3,7 @@
 
   <h1>BandBox · The Xiaomi Band Toolbox</h1>
 
-  <p><b>41 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
+  <p><b>44 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
   <p>Fully offline · No fees · No accounts · No closed-source dependencies · MIT licensed</p>
 
   <p>
@@ -20,7 +20,7 @@
   <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.3</code> (versionCode 295) · Built with Vela JS Quick Apps</p>
 </div>
 
-<img src="assets/promo/BandBox 头图 1200x800.png" alt="BandBox: 41 local tools for Xiaomi Band" />
+<img src="assets/promo/BandBox 头图 1200x800.png" alt="BandBox: 44 local tools for Xiaomi Band" />
 
 ---
 
@@ -28,20 +28,20 @@
 
 BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 10 NFC / 11 / 11 NFC** (212 × 520 narrow strip display), the **Xiaomi Band 9 Pro / 10 Pro** (336 × 480 rectangular display) and the **Xiaomi Band 9** (192 × 490 capsule display). Each form factor ships as its own package (same app package name, pick the one for your band). Band 11 uses the same package as Band 10 (identical 212 × 520 geometry) and is supported since `0.1.2-271`.
 
-A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes 41 small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
+A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes 44 small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
 Everything stays on the band. **No network calls, no fees, no sign-up, no uploads.**
 
 | Highlights | Details |
 | --- | --- |
-| Tools | **41**, covering everyday, notes, fun and system-information use cases |
+| Tools | **44**, covering everyday, notes, fun and system-information use cases |
 | Network requests | **0** (no third-party APIs, no telemetry, no ads) |
 | Accounts / payments | **0** (no login, no subscription, no activation) |
 | Closed-source dependencies | **0** (nothing but the optional official AstroBox plugin) |
 | Bundled fonts | **0** (uses the Band 10/11 system fonts, MiSans / MiLan Pro) |
 | License | **MIT** |
 
-> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 41 tools work exactly the same.
+> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics, sync TOTP accounts, import QR codes and send quick notes to the band. Without it, all 44 tools work exactly the same.
 
 ---
 
@@ -101,8 +101,9 @@ The home screen supports switching between **two-column grid / single-column lis
 | Time left | Countdown for this minute / hour / day / week / year, with a progress bar |
 | Password generator | Length 8–32, pick your character sets, favourites |
 | Morse code | Text to dots-and-dashes, auto playback, manual tapping |
-| Quick QR code | Text / URL / Wi-Fi QR codes |
+| Quick QR code | Text / URL / Wi-Fi QR codes, favourite aliases, landscape Code128 barcode (≤20B ASCII), phone push |
 | Waste sorting | 200+ item lookup, five categories |
+| Kinship calculator | Chinese kinship chain calculator (up to 6 hops), forward & reverse titles, gender toggle and conflict guard |
 | Date calculator | Days between two dates; age from a birthday as years + days and a 4-decimal approximation |
 | Timezone converter | 230+ global cities (capitals & multi-timezone regions), 24h input, Chinese/pinyin/UTC search, automatic DST |
 | Counter | Big number in the center, "+" above and "−" below; each tap fires one long vibration and steps ±1, negatives allowed |
@@ -111,7 +112,8 @@ The home screen supports switching between **two-column grid / single-column lis
 
 | Tool | Description |
 | --- | --- |
-| Notebook | Create / edit / rename / share as QR code / delete |
+| Notebook | Create / edit / rename / share as QR code / delete, plus "Receive from phone" direct note push |
+| Habit tracker | Custom habits & daily targets, tap card +1, long press to edit, automatic daily rollover & streaks (up to 12 items) |
 | Countdown | Countdown and anniversary dates, two-step date picker, stored locally |
 | Scoreboard | Red-vs-blue scoreboard with a timer |
 | TOTP | On-device TOTP codes with a countdown ring; batch import / edit / delete and sync from the phone plugin (details below) |
@@ -132,9 +134,10 @@ The home screen supports switching between **two-column grid / single-column lis
 | Book of answers | A random answer, revealed with a fade |
 | Wooden fish | Hand-drawn wooden fish with daily and total counters, auto-strike |
 | Vibrator | Short / long / rhythmic patterns, adjustable interval |
-| Metronome | Set a BPM; a vibration on every beat, screen stays on while running; vibration strength is selectable (weak = short / strong = long), strong by default |
+| Metronome | Set BPM and time signature (none / 2/4 / 3/4 / 4/4 / 6/8); strong orange downbeat + weak blue offbeats, screen stays on |
 | Display test | 12 solid colours for dead pixels and colour cast |
 | CPS test | A dedicated "start" button, 5-second countdown and taps-per-second, no accidental restart after the result |
+| Reaction test | 5-round random-delay reaction timer with Visual & Haptic blind-test modes and per-mode best averages |
 | Tap tempo | Untimed: tap the screen along with the beat, live BPM from the last 8 intervals, freezes when you hit "stop"; tap feedback always uses weak strength (short vibration), not adjustable |
 | What to eat | Random "eat" and "drink" suggestions |
 | Random number | Adjustable range with a rolling draw |

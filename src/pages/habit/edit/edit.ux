@@ -1,0 +1,209 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ id ? '编辑打卡' : '新建打卡' }}" clock="{{ clock }}"></pagehead>
+
+    <scroll class="body" scroll-y="true" bounces="true">
+      <div class="inner" style="height: {{ innerH }}px;">
+        <div class="card" @click="openName">
+          <text class="f label">项目名称</text>
+          <text class="f value" if="{{ name }}">{{ name }}</text>
+          <text class="f iPlace" if="{{ !name }}">例如：喝水、背单词、早睡</text>
+        </div>
+
+        <div class="card" @click="openTarget">
+          <text class="f label">每日目标次数</text>
+          <text class="f value" style="color: #0D6EFF;">{{ target }} 次/天</text>
+        </div>
+
+        <div class="statCard" if="{{ !!id }}">
+          <div class="statTop">
+            <text class="f label">今日与统计</text>
+            <text class="f statNum">{{ todayCount }}/{{ target }} 次</text>
+          </div>
+          <text class="f statSub">连续 {{ streak }} 天 · 累计达标 {{ totalDays }} 天</text>
+          <div class="decBtn" @click="decToday">
+            <text class="f decT">今日误触减一 (-1)</text>
+          </div>
+        </div>
+
+        <div class="save" @click="save"><text class="f actRowT">保存</text></div>
+
+        <div class="del" if="{{ !!id }}" @click="del">
+          <text class="f delT">{{ delStep === 0 ? '删除这个打卡' : '再次点击确认删除' }}</text>
+        </div>
+
+        <div class="pad"></div>
+      </div>
+    </scroll>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+.body { position: absolute; left: 3px; top: 82px; width: 206px; height: 384px; }
+.inner { width: 206px; flex-direction: column; }
+.card { width: 206px; height: 76px; margin: 0px 0px 8px 0px; border-radius: 26px; background-color: #262626; padding: 8px 16px; flex-direction: column; flex-shrink: 0; }
+.label { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.55); }
+.value { width: 174px; height: 38px; line-height: 38px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.iPlace { width: 174px; height: 38px; line-height: 38px; font-size: 15px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.statCard { width: 206px; height: 108px; margin: 0px 0px 8px 0px; border-radius: 26px; background-color: #1A1A1A; padding: 10px 16px; flex-direction: column; flex-shrink: 0; }
+.statTop { width: 174px; height: 22px; flex-direction: row; align-items: center; justify-content: space-between; }
+.statNum { font-size: 15px; color: #4E87FF; }
+.statSub { width: 174px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.65); text-overflow: ellipsis; lines: 1; margin-top: 4px; }
+.decBtn { width: 174px; height: 32px; margin-top: 8px; border-radius: 16px; background-color: #2C2C2E; align-items: center; justify-content: center; }
+.decT { font-size: 14px; color: rgba(255,255,255,0.88); }
+.save { width: 206px; height: 48px; margin: 0px 0px 8px 0px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; flex-shrink: 0; }
+.del { width: 146px; height: 36px; margin-left: 30px; border-radius: 18px; background-color: rgba(255,59,48,0.16); align-items: center; justify-content: center; flex-shrink: 0; }
+.delT { font-size: 14px; color: #FF6B6B; }
+.pad { width: 206px; height: 48px; flex-shrink: 0; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import habitStore from '../../../utils/habitStore'
+import inputResult from '../../../utils/inputResult'
+import numInputSession from '../../../utils/numInputSession'
+import prompt from '@system.prompt'
+
+const CARD_H = 76
+const CARD_GAP = 8
+const STAT_H = 108
+const SAVE_H = 48
+const DEL_H = 36
+const PAD_H = 48
+
+function calcInnerH(isEdit) {
+  const base = 2 * (CARD_H + CARD_GAP) + (SAVE_H + CARD_GAP) + PAD_H
+  return isEdit ? base + (STAT_H + CARD_GAP) + DEL_H : base
+}
+
+export default {
+  protected: { id: '' },
+  private: {
+    _ck: null,
+    clock: '--:--',
+    name: '',
+    target: 1,
+    todayCount: 0,
+    streak: 0,
+    totalDays: 0,
+    delStep: 0,
+    loaded: false,
+    innerH: 384
+  },
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    this.innerH = calcInnerH(!!this.id)
+    const numVal = numInputSession.take('habitTarget')
+    if (numVal) {
+      const raw = typeof numVal === 'object' ? numVal.value : numVal
+      this.target = habitStore.clampTarget(raw)
+      inputResult.clear()
+    } else {
+      inputResult.take((r) => {
+        if (!r || !this.$valid) return
+        if (r.field === 'habitName') this.name = habitStore.cleanName(r.value)
+        else if (r.field === 'habitTarget') this.target = habitStore.clampTarget(r.value)
+      })
+    }
+
+    if (this.id && !this.loaded) {
+      this.loaded = true
+      habitStore.getById(this.id, (item) => {
+        if (!this.$valid || !item) return
+        this.name = item.name
+        this.target = item.target
+        this.todayCount = item.todayCount
+        this.streak = item.streak
+        this.totalDays = item.totalDays
+      })
+    }
+
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+  },
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+  openName() {
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'habitName',
+      inputTitle: '打卡项目名',
+      text: this.name,
+      max: habitStore.MAX_NAME_LEN,
+      multiline: 0,
+      hint: '最多 ' + habitStore.MAX_NAME_LEN + ' 字'
+    })
+  },
+  openTarget() {
+    g.haptic.short()
+    g.router.push('/pages/numinput', {
+      field: 'habitTarget',
+      title: '每日目标次数',
+      value: '',
+      type: 'int',
+      allowNegative: '0',
+      allowDecimal: '0',
+      min: habitStore.MIN_TARGET,
+      max: habitStore.MAX_TARGET,
+      maxLen: '2',
+      hint: '1 ~ 99（当前 ' + this.target + ' 次）'
+    })
+  },
+  decToday() {
+    if (!this.id) return
+    if (this.todayCount <= 0) {
+      prompt.showToast({ message: '今日已是 0 次', duration: 1000 })
+      return
+    }
+    g.haptic.short()
+    habitStore.tapDec(this.id, (res) => {
+      if (!res || !res.ok || !this.$valid) return
+      this.todayCount = res.item.todayCount
+      this.streak = res.item.streak
+      this.totalDays = res.item.totalDays
+      prompt.showToast({ message: '已退回至 ' + res.item.todayCount + '/' + res.item.target, duration: 1200 })
+    })
+  },
+  save() {
+    const clean = habitStore.cleanName(this.name)
+    if (!clean) {
+      prompt.showToast({ message: '请先输入项目名称', duration: 1500 })
+      return
+    }
+    habitStore.upsert({ id: this.id, name: clean, target: this.target }, (res) => {
+      if (!res || !res.ok) {
+        const msg = res && res.reason === 'max' ? '最多保留 12 个打卡项' : '保存失败'
+        prompt.showToast({ message: msg, duration: 1500 })
+        return
+      }
+      g.haptic.short()
+      prompt.showToast({ message: '已保存', duration: 1000 })
+      g.router.back()
+    })
+  },
+  del() {
+    if (!this.id) return
+    if (this.delStep === 0) {
+      this.delStep = 1
+      g.haptic.short()
+      return
+    }
+    habitStore.remove(this.id, () => {
+      g.haptic.short()
+      prompt.showToast({ message: '已删除', duration: 1000 })
+      g.router.back()
+    })
+  }
+}
+</script>

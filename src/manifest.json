@@ -102,6 +102,9 @@
       "pages/notebook/rename": {
         "component": "rename"
       },
+      "pages/notebook/import": {
+        "component": "import"
+      },
       "pages/fluorescence": {
         "component": "fluorescence"
       },
@@ -323,6 +326,18 @@
       },
       "pages/timezone/picker": {
         "component": "picker"
+      },
+      "pages/habit/list": {
+        "component": "list"
+      },
+      "pages/habit/edit": {
+        "component": "edit"
+      },
+      "pages/reaction": {
+        "component": "reaction"
+      },
+      "pages/kinship": {
+        "component": "kinship"
       }
     }
   }

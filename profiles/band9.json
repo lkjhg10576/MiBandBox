@@ -358,15 +358,18 @@
       ["left: 26px", "left: 16px"]
     ],
     "src/pages/metronome/metronome.ux": [
-      [".bpmBox { position: absolute; left: 3px; top: 96px; width: 206px;", ".bpmBox { position: absolute; left: 3px; top: 96px; width: 186px;"],
+      [".bpmBox { position: absolute; left: 3px; top: 84px; width: 206px;", ".bpmBox { position: absolute; left: 3px; top: 82px; width: 186px;"],
       [".bpmLabel { width: 190px;", ".bpmLabel { width: 170px;"],
       [".val { width: 190px;", ".val { width: 170px;"],
-      [".status { position: absolute; left: 0px; top: 218px; width: 212px;", ".status { position: absolute; left: 0px; top: 214px; width: 192px;"],
-      [".gapTxt { position: absolute; left: 0px; top: 242px; width: 212px;", ".gapTxt { position: absolute; left: 0px; top: 234px; width: 192px;"],
-      [".pulse { position: absolute; left: 91px; top: 278px; width: 30px;", ".pulse { position: absolute; left: 81px; top: 262px; width: 30px;"],
-      [".levels { position: absolute; left: 6px; top: 318px; width: 200px;", ".levels { position: absolute; left: 6px; top: 300px; width: 180px;"],
-      [".go { position: absolute; left: 26px; top: 378px;", ".go { position: absolute; left: 16px; top: 344px;"],
-      [".hint { position: absolute; left: 16px; top: 436px; width: 180px;", ".hint { position: absolute; left: 16px; top: 398px; width: 168px;"]
+      [".status { position: absolute; left: 0px; top: 186px; width: 212px;", ".status { position: absolute; left: 0px; top: 182px; width: 192px;"],
+      [".gapTxt { position: absolute; left: 0px; top: 208px; width: 212px;", ".gapTxt { position: absolute; left: 0px; top: 202px; width: 192px;"],
+      [".beatRow { position: absolute; left: 6px; top: 234px; width: 200px;", ".beatRow { position: absolute; left: 6px; top: 228px; width: 180px;"],
+      [".meters { position: absolute; left: 6px; top: 266px; width: 200px;", ".meters { position: absolute; left: 6px; top: 260px; width: 180px;"],
+      [".mt { width: 36px;", ".mt { width: 32px;"],
+      [".levels { position: absolute; left: 6px; top: 308px; width: 200px;", ".levels { position: absolute; left: 6px; top: 300px; width: 180px;"],
+      [".lv { width: 97px;", ".lv { width: 87px;"],
+      [".go { position: absolute; left: 26px; top: 354px;", ".go { position: absolute; left: 16px; top: 344px;"],
+      [".hint { position: absolute; left: 16px; top: 408px; width: 180px;", ".hint { position: absolute; left: 12px; top: 398px; width: 168px;"]
     ],
     "src/pages/morseCode/morseCode.ux": [
       ["width: 206px", "width: 186px"],
@@ -423,7 +426,7 @@
       ["height: 408px", "height: 378px"],
       ["width: 206px", "width: 186px"],
       ["width: 140px", "width: 130px"],
-      ["height: 320px", "height: 240px"],
+      ["height: 240px", "height: 200px"],
       ["left: 132px", "left: 112px"],
       ["top: 396px", "top: 366px"]
     ],
@@ -545,9 +548,15 @@
     "src/pages/qrcode/show/show.ux": [
       ["left: 26px", "left: 16px"],
       ["left: 20px; top: 258px; width: 172px;", "left: 10px; top: 258px; width: 172px;"],
+      ["top: 396px", "top: 366px"],
       ["top: 442px", "top: 412px"],
       ["top: 448px", "top: 418px"],
-      ["width: 170px", "width: 150px"]
+      ["width: 170px", "width: 150px"],
+      ["left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); padding: 12px 54px 12px 24px;", "left: 192px; top: 0px; width: 490px; height: 192px; transform-origin: 0 0; transform: rotate(90deg); padding: 8px 54px 8px 20px;"],
+      ["width: 420px; height: 184px;", "width: 390px; height: 168px;"],
+      ["width: 380px; height: 92px;", "width: 360px; height: 80px;"],
+      ["width: 352px; height: 72px;", "width: 332px; height: 60px;"],
+      ["width: 400px", "width: 376px"]
     ],
     "src/pages/qrcode/wifi/wifi.ux": [
       ["width: 212px", "width: 192px"],
@@ -562,7 +571,9 @@
       ["height: 438px", "height: 408px"],
       ["width: 206px", "width: 186px"],
       ["width: 174px", "width: 154px"],
-      ["height: 196px", "height: 166px"],
+      ["width: 178px", "width: 158px"],
+      ["height: 146px", "height: 116px"],
+      ["top: 236px", "top: 206px"],
       ["top: 286px", "top: 256px"],
       ["top: 342px", "top: 312px"],
       ["top: 390px", "top: 360px"]
@@ -763,6 +774,49 @@
       ["width: 50px", "width: 48px"],
       ["width: 152px", "width: 132px"],
       ["height: 344px", "height: 314px"]
+    ],
+    "src/pages/habit/list/list.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 108px", "width: 92px"],
+      ["width: 60px", "width: 56px"],
+      ["width: 190px", "width: 170px"],
+      ["height: 320px", "height: 240px"],
+      ["left: 132px", "left: 112px"],
+      ["top: 396px", "top: 366px"]
+    ],
+    "src/pages/habit/edit/edit.ux": [
+      ["height: 384px", "height: 354px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 174px", "width: 154px"],
+      ["margin-left: 30px", "margin-left: 20px"]
+    ],
+    "src/pages/reaction/reaction.ux": [
+      ["left: 6px; top: 80px; width: 200px;", "left: 6px; top: 80px; width: 180px;"],
+      ["width: 95px", "width: 85px"],
+      ["left: 6px; top: 122px; width: 200px; height: 306px;", "left: 6px; top: 120px; width: 180px; height: 282px;"],
+      ["width: 184px", "width: 164px"],
+      ["width: 176px", "width: 156px"]
+    ],
+    "src/pages/kinship/kinship.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 182px", "width: 162px"],
+      ["width: 68px", "width: 62px"],
+      ["width: 132px", "width: 118px"],
+      ["width: 200px", "width: 180px"],
+      ["width: 47px; height: 58px;", "width: 42px; height: 54px;"],
+      ["top: 228px", "top: 226px"],
+      ["height: 186px", "height: 174px"]
+    ],
+    "src/pages/notebook/import/import.ux": [
+      ["width: 212px", "width: 192px"],
+      ["height: 520px", "height: 490px"],
+      ["height: 408px", "height: 378px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 140px", "width: 130px"],
+      ["width: 170px", "width: 150px"],
+      ["top: 410px", "top: 380px"]
     ]
   },
   "manifest": {}

@@ -46,6 +46,7 @@ import otpProtocol from './otpProtocol.js'
 import otpSync from './otpSync.js'
 import qrProtocol from './qrProtocol.js'
 import qrImport from './qrImport.js'
+import noteProtocol from './noteProtocol.js'
 
 /** 等 ACK 的超时时间（毫秒） */
 const ACK_TIMEOUT = 20000
@@ -121,7 +122,15 @@ const state = {
   qrStatusText: '粘贴扫码文本后发送到手环',
   qrBusy: false, // 下发中
   qrPendingId: '', // 本次 qr_import 的 id（回执关联）
-  qrTimer: null // 二维码 ACK 超时 timer（与歌词/OTP 的 timer 互不复用）
+  qrTimer: null, // 二维码 ACK 超时 timer（与歌词/OTP 的 timer 互不复用）
+  // ---- 手机闪传便签（0.1.3 新增）----
+  noteTitle: '',
+  noteBody: '',
+  noteConflict: 'rename', // 'rename' | 'overwrite'
+  noteStatusText: '填写便签内容后发送到手表笔记本',
+  noteBusy: false,
+  notePendingId: '',
+  noteTimer: null
 }
 
 /**
@@ -311,7 +320,13 @@ function viewState() {
     // ---- 二维码导入 ----
     qrDraft: state.qrDraft,
     qrStatusText: state.qrStatusText,
-    qrBusy: state.qrBusy
+    qrBusy: state.qrBusy,
+    // ---- 手机闪传便签 ----
+    noteTitle: state.noteTitle,
+    noteBody: state.noteBody,
+    noteConflict: state.noteConflict,
+    noteStatusText: state.noteStatusText,
+    noteBusy: state.noteBusy
   }
 }
 
@@ -603,6 +618,19 @@ function stopQrTimer() {
 }
 
 /**
+ * 取消闪传便签 ACK 超时定时器。
+ */
+function stopNoteTimer() {
+  if (state.noteTimer === null || state.noteTimer === undefined) return
+  try {
+    clearTimer(state.noteTimer)
+  } catch (e) {
+    // 定时器可能已经触发，忽略
+  }
+  state.noteTimer = null
+}
+
+/**
  * 处理宿主 timer 事件。
  *
  * payload 经 protocol.unwrapTimerPayload 解包：兼容 JSON 信封
@@ -645,6 +673,18 @@ async function handleTimer(raw) {
     if (state.tab === 'qr') repaint()
     return
   }
+  // 手机闪传便签 ACK 超时（payload 前缀 note-ack:<id>）
+  if (typeof payload === 'string' && payload.indexOf('note-ack:') === 0) {
+    const noteId = payload.slice('note-ack:'.length)
+    if (noteId !== state.notePendingId) return
+    state.noteTimer = null
+    if (!state.noteBusy) return
+    state.noteBusy = false
+    state.notePendingId = ''
+    state.noteStatusText = '未收到手环确认，内容已保留，可重试'
+    if (state.tab === 'note') repaint()
+    return
+  }
   if (payload !== state.pendingId) return
   state.timer = null
   if (state.status !== 'sending') return
@@ -677,6 +717,8 @@ async function handleReply(raw) {
     await handleOtpReply(env)
   } else if (app === qrProtocol.APP_ID) {
     await handleQrReply(env)
+  } else if (app === noteProtocol.APP_ID) {
+    await handleNoteReply(env)
   } else {
     await handleLyricsReply(env)
   }
@@ -822,6 +864,24 @@ async function handleQrReply(env) {
     state.qrPendingId = ''
     if (state.tab === 'qr') repaint()
     return
+  }
+}
+
+/**
+ * 手机闪传便签协议回执。
+ */
+async function handleNoteReply(env) {
+  const parsed = noteProtocol.parse(env.data)
+  if (!parsed.ok) return
+  const msg = parsed.msg
+  if (msg.id && state.notePendingId && msg.id !== state.notePendingId) return
+
+  if (msg.type === 'note_ack' || msg.type === 'note_err') {
+    stopNoteTimer()
+    state.noteBusy = false
+    state.noteStatusText = noteProtocol.describeReply(msg).text
+    state.notePendingId = ''
+    if (state.tab === 'note') repaint()
   }
 }
 
@@ -1380,6 +1440,63 @@ async function doQrSend() {
   state.qrTimer = setHostTimeout(ACK_TIMEOUT, 'qr-ack:' + id)
 }
 
+/**
+ * 校验并单包发送便签到手表笔记本。
+ */
+async function doNoteSend() {
+  const checked = noteProtocol.validateNoteInput(state.noteTitle, state.noteBody)
+  if (!checked.ok) {
+    state.noteBusy = false
+    state.noteStatusText = noteProtocol.ERROR_TEXT[checked.reason] || '便签格式不符合要求'
+    repaint()
+    return
+  }
+
+  const dev = await otpPickDevice()
+  if (!dev) {
+    repaint()
+    return
+  }
+  const registered = await registerRecvAll()
+  if (!registered) {
+    state.noteStatusText = '注册手环消息接收失败'
+    repaint()
+    return
+  }
+
+  const id = noteProtocol.makeId('np')
+  const json = noteProtocol.notePushMessage({
+    id,
+    title: checked.title,
+    body: checked.body,
+    conflict: state.noteConflict
+  })
+  state.noteBusy = true
+  state.noteStatusText = '正在发送…'
+  state.notePendingId = id
+  repaint()
+
+  const targets = state.devices.length
+    ? state.devices.map((d) => d.addr)
+    : [dev.addr]
+  for (let i = 0; i < targets.length; i++) {
+    const res = await hostCall('sendQaicMessage', () =>
+      sendQaicMessage(targets[i], noteProtocol.TARGET_PKG, json)
+    )
+    if (!res.ok) {
+      state.noteBusy = false
+      state.notePendingId = ''
+      state.noteStatusText = '发送失败：' + res.error
+      stopNoteTimer()
+      repaint()
+      return
+    }
+  }
+
+  stopNoteTimer()
+  state.noteTimer = setHostTimeout(ACK_TIMEOUT, 'note-ack:' + id)
+}
+
 // ------------------------------------------------------------------
 // 导出给宿主的接口
 // ------------------------------------------------------------------
@@ -1448,6 +1565,9 @@ export const event = {
       repaint()
     } else if (action === 'tab-qr') {
       state.tab = 'qr'
+      repaint()
+    } else if (action === 'tab-note') {
+      state.tab = 'note'
       repaint()
     } else if (action === 'otp-pull') {
       await doOtpPull()
@@ -1582,6 +1702,24 @@ export const event = {
       if (field === 'text') {
         state.qrDraft = extractInputValue(eventPayload)
       }
+    } else if (action === 'note-send') {
+      await doNoteSend()
+    } else if (action === 'note-toggle-conflict') {
+      state.noteConflict = state.noteConflict === 'overwrite' ? 'rename' : 'overwrite'
+      repaint()
+    } else if (action === 'note-clear') {
+      stopNoteTimer()
+      state.noteTitle = ''
+      state.noteBody = ''
+      state.noteBusy = false
+      state.notePendingId = ''
+      state.noteStatusText = '已清空，填写便签内容后发送到手表笔记本'
+      repaint()
+    } else if (action && action.indexOf('note-field:') === 0) {
+      const field = action.slice('note-field:'.length)
+      const val = extractInputValue(eventPayload)
+      if (field === 'title') state.noteTitle = val
+      else if (field === 'body') state.noteBody = val
     } else if (state.debug) {
       repaint()
     }

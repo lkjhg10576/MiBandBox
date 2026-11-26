@@ -1,9 +1,10 @@
 /**
- * 二维码收藏存储胶水层：qrFavs 的唯一读写点（底座是 kv.js）。
+ * 二维码 / 条形码收藏存储胶水层：qrFavs 的唯一读写点（底座是 kv.js）。
  *
- * 收藏 = 二维码**原文本**（不存图片）。两个来源共用同一份数据：
- *   - 手环本地：show.ux 收藏按钮 add(text, 'local')
- *   - 手机插件：qrBridge 收到 qr_import 后 add(text, 'plugin')
+ * 收藏 = 原文本（不存图片），可选别名 label（≤24 字）与码制 kind（'qr' | 'barcode'）。
+ * 两个来源共用同一份数据：
+ *   - 手环本地：show.ux 收藏按钮 add(text, 'local', opts, cb)
+ *   - 手机插件：qrBridge 收到 qr_import 后 add(text, 'plugin', cb)
  * 页面与 qrBridge 只经此模块访问；写后立即 flush() 落盘（防杀进程丢收藏）。
  * notify() 用 slice().forEach + try/catch（照 app.ux 的 layoutState 范式）。
  */
@@ -12,6 +13,8 @@ import qrProtocol from './qrProtocol'
 
 const KEY = 'qrFavs'
 const MAX_ITEMS = 50
+export const MAX_LABEL_LEN = 24
+export const MAX_BARCODE_BYTES = 20
 
 const listeners = []
 
@@ -24,6 +27,28 @@ function notify() {
 }
 
 /**
+ * 校验文本是否可编码为 Vela <barcode>（Code128：可打印 ASCII 0x20–0x7E，1..20 字节）。
+ */
+export function canEncodeBarcode(text) {
+  if (typeof text !== 'string') return false
+  if (text.length < 1 || text.length > MAX_BARCODE_BYTES) return false
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i)
+    if (code < 0x20 || code > 0x7e) return false
+  }
+  return true
+}
+
+function normalizeLabel(label) {
+  if (typeof label !== 'string') return ''
+  return label.replace(/[\r\n]/g, ' ').trim().slice(0, MAX_LABEL_LEN)
+}
+
+function normalizeKind(kind, text) {
+  return kind === 'barcode' && canEncodeBarcode(text) ? 'barcode' : 'qr'
+}
+
+/**
  * 初始化（转发 kv.init，读盘完成后回调一次）。
  */
 function init(cb) {
@@ -31,7 +56,7 @@ function init(cb) {
 }
 
 /**
- * 归一化单条收藏：字段裁剪/降级照 otpStore 的口径 —— 非法条目直接丢弃。
+ * 归一化单条收藏：字段裁剪/降级照 otpStore 的口径 —— 非法条目直接丢弃；向后兼容老收藏数据。
  */
 function normalizeItem(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
@@ -42,7 +67,9 @@ function normalizeItem(raw) {
   if (!id) id = qrProtocol.makeId('qr')
   const source = raw.source === 'plugin' ? 'plugin' : 'local'
   const createdAt = Math.floor(Number(raw.createdAt) || 0)
-  return { id, text, source, createdAt }
+  const label = normalizeLabel(raw.label)
+  const kind = normalizeKind(raw.kind, text)
+  return { id, text, source, createdAt, label, kind }
 }
 
 /**
@@ -84,10 +111,16 @@ function has(text) {
 
 /**
  * 新增一条收藏（按 text 精确去重；新条目 unshift 置顶；上限 50）。
- * 内部经 g.kv.init 兜底（防常驻接收早于读盘完成时用空快照覆盖数据），
- * 结果通过 cb 回调：{ ok:true, duplicate, item } 或 { ok:false, reason }。
+ * 兼容 add(text, source, cb)、add(text, source, opts, cb) 与 add(text, source, cb, opts)。
  */
-function add(text, source, cb) {
+function add(text, source, optsOrCb, maybeCb) {
+  const opts =
+    typeof optsOrCb === 'object' && optsOrCb !== null
+      ? optsOrCb
+      : typeof maybeCb === 'object' && maybeCb !== null
+        ? maybeCb
+        : {}
+  const cb = typeof optsOrCb === 'function' ? optsOrCb : typeof maybeCb === 'function' ? maybeCb : null
   const run = () => {
     const t = String(text == null ? '' : text).trim()
     if (!t) {
@@ -109,7 +142,9 @@ function add(text, source, cb) {
       id: qrProtocol.makeId('qr'),
       text: t,
       source: source === 'plugin' ? 'plugin' : 'local',
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      label: normalizeLabel(opts.label),
+      kind: normalizeKind(opts.kind, t)
     }
     const next = [item].concat(all.slice(0, MAX_ITEMS - 1))
     g.kv.set(KEY, next)
@@ -118,6 +153,42 @@ function add(text, source, cb) {
     if (cb) cb({ ok: true, duplicate: false, item })
   }
   g.kv.init(run)
+}
+
+/**
+ * 更新指定收藏条目的元数据（label / kind）。
+ */
+function updateMeta(id, patch, cb) {
+  g.kv.init(() => {
+    const p = patch && typeof patch === 'object' ? patch : {}
+    const all = list()
+    let targetItem = null
+    const next = []
+    for (let i = 0; i < all.length; i++) {
+      const it = all[i]
+      if (it.id === id) {
+        if (p.kind === 'barcode' && !canEncodeBarcode(it.text)) {
+          if (cb) cb({ ok: false, reason: 'bad-barcode' })
+          return
+        }
+        targetItem = Object.assign({}, it, {
+          label: Object.prototype.hasOwnProperty.call(p, 'label') ? normalizeLabel(p.label) : it.label,
+          kind: Object.prototype.hasOwnProperty.call(p, 'kind') ? normalizeKind(p.kind, it.text) : it.kind
+        })
+        next.push(targetItem)
+      } else {
+        next.push(it)
+      }
+    }
+    if (!targetItem) {
+      if (cb) cb({ ok: false, reason: 'not-found' })
+      return
+    }
+    g.kv.set(KEY, next)
+    g.kv.flush()
+    notify()
+    if (cb) cb({ ok: true, item: targetItem })
+  })
 }
 
 /**
@@ -155,4 +226,16 @@ function subscribe(fn) {
   }
 }
 
-export default { init, list, getById, has, add, remove, subscribe }
+export default {
+  init,
+  list,
+  getById,
+  has,
+  add,
+  updateMeta,
+  remove,
+  subscribe,
+  canEncodeBarcode,
+  MAX_LABEL_LEN,
+  MAX_BARCODE_BYTES
+}

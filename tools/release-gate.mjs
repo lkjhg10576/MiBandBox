@@ -818,9 +818,6 @@ for (const f of walk('src', '.ux')) {
     'src/pages/notebook/edit/edit.ux|fBody': '笔记正文长文本：内容高待按字数估算（需按 profile 补文本框宽令牌）',
     'src/pages/notebook/show/show.ux|content': '笔记正文长文本：同上',
     'src/pages/otp/settings/settings.ux|inner': '卡片高度随提示文案行数变化，内容高待收口',
-    'src/pages/qrcode/fav/fav.ux|inner': '收藏列表条数不定（且条目副标题可能折行），内容高待收口',
-    'src/pages/qrcode/fav/fav.ux|full': '二维码详情长文本：内容高待按字数估算',
-    'src/pages/qrcode/wifi/wifi.ux|inner': '表单区内容高待显式给出（当前内容 244 < 视口 442，暂不影响显示）',
   }
   // ---- 1) 全量扫描：每个纵向 scroll 的直接子容器都要有显式高度 ----
   for (const rel of walk('src', '.ux')) {

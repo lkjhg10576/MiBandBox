@@ -43,18 +43,18 @@
 @import '../../../common/styles/theme.css';
 /* 表单整体放 scroll 里：一屏放不下往下翻（参照 notebook/edit 的滚动习惯） */
 .formScroll { position: absolute; left: 0px; top: 78px; width: 212px; height: 442px; }
-.inner { width: 212px; flex-direction: column; }
-.field { width: 206px; margin: 0px 3px 8px 3px; height: 40px; border-radius: 20px; background-color: #262626; padding: 4px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; }
+.inner { width: 212px; height: 268px; flex-direction: column; }
+.field { width: 206px; margin: 0px 3px 8px 3px; height: 40px; border-radius: 20px; background-color: #262626; padding: 4px 16px; flex-direction: column; border-width: 1px; border-style: solid; border-color: transparent; flex-shrink: 0; }
 .fLabel { width: 174px; height: 16px; line-height: 16px; font-size: 14px; color: rgba(255,255,255,0.55); }
 .fValue { width: 174px; height: 20px; line-height: 20px; font-size: 15px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
 .fPlace { width: 174px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.45); }
-.chips { margin: 4px 6px 0px 6px; height: 32px; flex-direction: row; justify-content: space-between; }
+.chips { margin: 4px 6px 0px 6px; height: 32px; flex-direction: row; justify-content: space-between; flex-shrink: 0; }
 .chip { width: 62px; height: 32px; border-radius: 16px; background-color: #1E1E1E; align-items: center; justify-content: center; }
 .chipT { font-size: 14px; color: #FFFFFF; }
-.hidCard { width: 206px; margin: 8px 3px 0px 3px; height: 44px; border-radius: 20px; background-color: #262626; padding: 0px 16px; flex-direction: row; align-items: center; justify-content: space-between; }
+.hidCard { width: 206px; margin: 8px 3px 0px 3px; height: 44px; border-radius: 20px; background-color: #262626; padding: 0px 16px; flex-direction: row; align-items: center; justify-content: space-between; flex-shrink: 0; }
 .hidLabel { font-size: 14px; color: rgba(255,255,255,0.7); }
 .hidVal { font-size: 14px; }
-.go { width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; margin: 12px 26px 0px 26px; }
+.go { width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; align-items: center; justify-content: center; margin: 12px 26px 0px 26px; flex-shrink: 0; }
 .goT { font-size: 14px; color: #FFFFFF; }
 </style>
 
