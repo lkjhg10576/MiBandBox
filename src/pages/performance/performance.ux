@@ -58,6 +58,16 @@ import g from '../../utils/g'
 import device from '@system.device'
 import perf from '../../data/perf'
 
+let runTimer = null
+let runSeq = 0
+
+function clearRunTimer() {
+  if (runTimer) {
+    clearTimeout(runTimer)
+    runTimer = null
+  }
+}
+
 export default {
   data: {
     _ck: null,
@@ -69,8 +79,7 @@ export default {
     rawTotal: 0,
     running: false,
     rows: perf.tests.map((t) => ({ name: t.name, ms: '—', percent: 0 })),
-    results: [],
-    timer: null
+    results: []
   },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -80,22 +89,35 @@ export default {
     this.model = ''
     device.getInfo({
       success: (d) => {
-        this.model = d.model || ''
+        if (page.$valid) page.model = d.model || ''
       },
       fail: () => {}
     })
   },
   onHide() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    this.cancelRun()
   },
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+    this.cancelRun()
+  },
+  cancelRun() {
+    runSeq++
+    clearRunTimer()
+    if (!this.running) return
+    this.running = false
+    this.score = perf.calibrated ? '待测' : '校准中'
+    this.compare = '已取消'
+    this.hint = perf.calibrated ? '分数受温度与后台影响' : '请记录四项 ms'
   },
   pfinfo() {
     g.router.push('/pages/PFinfo')
   },
   run() {
     if (this.running) return
+    clearRunTimer()
+    const seq = ++runSeq
     this.running = true
     g.haptic.short()
     this.rows = perf.tests.map((t) => ({ name: t.name, ms: '—', percent: 0 }))
@@ -104,27 +126,32 @@ export default {
     this.hint = perf.calibrated ? '分数受温度与后台影响' : '正在采集原始耗时...'
     this.rawTotal = 0
     this.results = []
-    this.next(0)
+    this.next(0, seq)
   },
-  next(index) {
+  next(index, seq) {
+    if (seq !== runSeq || !this.$valid) return
     if (index >= perf.tests.length) {
       this.finish()
       return
     }
-    setTimeout(() => {
+    const page = this
+    clearRunTimer()
+    runTimer = setTimeout(() => {
+      runTimer = null
+      if (seq !== runSeq || !page.$valid || !page.running) return
       const t = perf.tests[index]
-      const ms = this.measure(t.key)
+      const ms = page.measure(t.key)
       const ref = perf.calibrated && t.refMs > 0 ? t.refMs : 0
       const rawPercent = ref > 0 ? (ref / ms) * 100 : (1000 / ms) * 100
-      const rows = this.rows.slice()
+      const rows = page.rows.slice()
       rows[index] = {
         name: t.name,
         ms,
         percent: Math.max(6, Math.min(100, Math.round(rawPercent)))
       }
-      this.rows = rows
-      this.results.push({ key: t.key, ms, weight: t.weight })
-      this.next(index + 1)
+      page.rows = rows
+      page.results.push({ key: t.key, ms, weight: t.weight })
+      page.next(index + 1, seq)
     }, 60)
   },
   measure(key) {

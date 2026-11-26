@@ -56,6 +56,7 @@ import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import otpStore from '../../../utils/otpStore'
 import otp from '../../../utils/otp'
+import otpState from '../../../utils/otpState'
 import otpAccounts from '../../../utils/otpAccounts'
 import otpSession from '../otpSession'
 
@@ -153,7 +154,7 @@ export default {
     }
     this.name = account.issuer ? account.issuer + ' · ' + account.name : account.name || '未命名'
     const now = otp.epochSeconds()
-    const st = otp.resolveOtpState(account, now, otpStore.getTimeOffsetSec())
+    const st = otpState.resolve(account, now, otpStore.getTimeOffsetSec())
     if (!st.ok) {
       this.codeOk = false
       this.badText = st.reason === 'unsupported-algorithm' ? '算法暂不支持（M2 支持）' : '密钥无效，请检查'

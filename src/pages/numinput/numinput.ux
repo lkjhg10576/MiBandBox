@@ -33,7 +33,7 @@
         <div class="key {{ canNegative ? 'keySym' : 'keyDisabled' }}" @click="pressNeg"><text class="f keySymT">−</text></div>
       </div>
       <div class="padRow">
-        <div class="key {{ canDecimal ? 'keySym' : 'keyDisabled' }}" @click="pressDot"><text class="f keySymT">.</text></div>
+        <div class="key {{ symEnabled ? 'keySym' : 'keyDisabled' }}" @click="pressSym"><text class="f keySymT">{{ symLabel }}</text></div>
         <div class="key keyNum" @click="pressNum('0')"><text class="f keyNumT">0</text></div>
         <div class="key keyFn" @click="cancel"><text class="f keyFnT">取消</text></div>
         <div class="key keyOk" @click="confirm"><text class="f keyOkT">确定</text></div>
@@ -73,6 +73,7 @@ import g from '../../utils/g'
 import prompt from '@system.prompt'
 import numInputSession from '../../utils/numInputSession'
 import inputResult from '../../utils/inputResult'
+import timezone from '../../utils/timezone'
 
 export default {
   protected: {
@@ -95,9 +96,12 @@ export default {
     draft: '',
     displayVal: '',
     hintText: '',
+    isTime: false,
     isDecimal: true,
     canNegative: true,
     canDecimal: true,
+    symEnabled: true,
+    symLabel: '.',
     lenLimit: 12,
     minBound: null,
     maxBound: null
@@ -108,10 +112,13 @@ export default {
     inputResult.clear()
 
     this.titleText = this.title || '数字输入'
-    this.isDecimal = this.type !== 'int' && String(this.allowDecimal) !== '0'
+    this.isTime = this.type === 'time'
+    this.isDecimal = !this.isTime && this.type !== 'int' && String(this.allowDecimal) !== '0'
     this.canDecimal = this.isDecimal
-    this.canNegative = String(this.allowNegative) !== '0'
-    this.lenLimit = parseInt(this.maxLen, 10) || 12
+    this.canNegative = !this.isTime && String(this.allowNegative) !== '0'
+    this.symEnabled = this.isTime ? true : this.canDecimal
+    this.symLabel = this.isTime ? ':' : '.'
+    this.lenLimit = parseInt(this.maxLen, 10) || (this.isTime ? 5 : 12)
 
     if (this.min !== '' && this.min !== undefined && this.min !== null) {
       const mn = Number(this.min)
@@ -128,6 +135,8 @@ export default {
 
     if (this.hint) {
       this.hintText = this.hint
+    } else if (this.isTime) {
+      this.hintText = '请输入 24 小时时间 (HH:MM)'
     } else if (this.minBound !== null && this.maxBound !== null) {
       this.hintText = '范围 ' + this.minBound + ' ~ ' + this.maxBound
     } else if (!this.canDecimal) {
@@ -157,6 +166,18 @@ export default {
   },
 
   pressNum(k) {
+    if (this.isTime) {
+      const res = timezone.pushTimeKey(this.draft, k)
+      if (!res.ok) {
+        if (res.toast) prompt.showToast({ message: res.toast, duration: 1400 })
+        g.haptic.long()
+        return
+      }
+      this.draft = res.draft
+      this.updateDisplay()
+      g.haptic.short()
+      return
+    }
     if (this.draft.length >= this.lenLimit) {
       prompt.showToast({ message: '已达最大长度限制', duration: 1400 })
       g.haptic.long()
@@ -173,7 +194,15 @@ export default {
     g.haptic.short()
   },
 
-  pressDot() {
+  pressSym() {
+    if (this.isTime) {
+      const res = timezone.pushTimeKey(this.draft, ':')
+      if (!res.ok) return
+      this.draft = res.draft
+      this.updateDisplay()
+      g.haptic.short()
+      return
+    }
     if (!this.canDecimal) {
       prompt.showToast({ message: '当前仅支持整数', duration: 1400 })
       g.haptic.long()
@@ -192,7 +221,7 @@ export default {
 
   pressNeg() {
     if (!this.canNegative) {
-      prompt.showToast({ message: '当前不支持负数', duration: 1400 })
+      prompt.showToast({ message: this.isTime ? '时间不支持负号' : '当前不支持负数', duration: 1400 })
       g.haptic.long()
       return
     }
@@ -224,6 +253,20 @@ export default {
   },
 
   confirm() {
+    if (this.isTime) {
+      const v = timezone.validateTimeDraft(this.draft)
+      if (!v.ok) {
+        prompt.showToast({ message: v.message, duration: 1400 })
+        g.haptic.long()
+        return
+      }
+      numInputSession.set(this.field, v.value)
+      inputResult.save(this.field, v.value, () => {
+        g.router.back()
+      })
+      g.haptic.short()
+      return
+    }
     const s = this.draft.trim()
     if (s === '' || s === '-' || s === '.' || s === '-.') {
       prompt.showToast({ message: '请输入有效数值', duration: 1400 })

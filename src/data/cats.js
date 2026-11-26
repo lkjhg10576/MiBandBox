@@ -13,7 +13,7 @@ import apps from './apps.js'
 
 const CATS = [
   { id: 'calc',   name: '计算换算', icon: '/common/icons/catCalc.png',   tools: ['calculator', 'unitconvert', 'datecalc'] },
-  { id: 'time',   name: '时间日期', icon: '/common/icons/catTime.png',   tools: ['calendar', 'daysmatter', 'time', 'companion'] },
+  { id: 'time',   name: '时间日期', icon: '/common/icons/catTime.png',   tools: ['calendar', 'daysmatter', 'time', 'companion', 'timezone'] },
   { id: 'chance', name: '随机决定', icon: '/common/icons/catChance.png', tools: ['random', 'lightRandom', 'answer', 'diet'] },
   { id: 'light',  name: '灯光字幕', icon: '/common/icons/catLight.png',  tools: ['fluorescence', 'flashlight', 'marquee', 'num', 'colorcard'] },
   { id: 'sound',  name: '声音振动', icon: '/common/icons/catSound.png',  tools: ['vibrate', 'metronome', 'tapTempo', 'morseCode'] },

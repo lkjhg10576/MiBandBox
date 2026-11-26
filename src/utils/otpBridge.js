@@ -290,9 +290,21 @@ function init() {
   }
 }
 
+/**
+ * 退订当前页面 bundle 注册的连接状态监听，避免全局回调长期持有页面闭包。
+ */
+function disarm() {
+  if (statusUnsub) {
+    try {
+      statusUnsub()
+    } catch (e) {}
+    statusUnsub = null
+  }
+}
+
 /** 最近一次 hello 携带的手机时间（Unix 秒；0 = 从未收到）。 */
 function getLastHelloTime() {
   return st.lastHelloTime
 }
 
-export default { init, handle, announceReady, getLastHelloTime, onSync }
+export default { init, disarm, handle, announceReady, getLastHelloTime, onSync }

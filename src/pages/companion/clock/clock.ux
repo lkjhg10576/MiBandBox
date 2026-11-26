@@ -255,6 +255,7 @@ function normColor(c) {
 // 走时定时器与分级刷新缓存放模块作用域（本页同时只有一个实例）：onHide / onDestroy 都清。
 let alignTimer = null
 let tickTimer = null
+let minuteTimer = null
 let maskTimer = null
 let lastHM = null
 let lastSec = null
@@ -268,6 +269,10 @@ function stopTimers() {
   if (tickTimer) {
     clearInterval(tickTimer)
     tickTimer = null
+  }
+  if (minuteTimer) {
+    clearTimeout(minuteTimer)
+    minuteTimer = null
   }
   if (maskTimer) {
     clearTimeout(maskTimer)
@@ -359,12 +364,28 @@ export default {
         page.digBg = page.selColor
       }
     }, 400)
-    // 先对齐秒边界再起 1s 心跳：直接 setInterval 会带着进入时的毫秒相位，秒数跳变肉眼可见地不均
-    alignTimer = setTimeout(() => {
-      alignTimer = null
-      page.refresh()
-      tickTimer = setInterval(() => page.refresh(), 1000)
-    }, 1000 - (Date.now() % 1000))
+    const needSec = this.showSec === '1' && this.fancy !== '1'
+    if (needSec) {
+      // 先对齐秒边界再起 1s 心跳：直接 setInterval 会带着进入时的毫秒相位，秒数跳变肉眼可见地不均
+      alignTimer = setTimeout(() => {
+        alignTimer = null
+        if (!page.$valid) return
+        page.refresh()
+        tickTimer = setInterval(() => page.refresh(), 1000)
+      }, 1000 - (Date.now() % 1000))
+    } else {
+      // 分钟精度（精美样式 / 关秒模式）：对齐到下个整分 + 20ms，刷新后递归重排下个整分
+      const scheduleMinute = () => {
+        const delay = 60000 - (Date.now() % 60000) + 20
+        minuteTimer = setTimeout(() => {
+          minuteTimer = null
+          if (!page.$valid) return
+          page.refresh()
+          scheduleMinute()
+        }, delay)
+      }
+      scheduleMinute()
+    }
   },
   onHide() {
     stopTimers()

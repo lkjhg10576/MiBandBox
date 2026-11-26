@@ -398,6 +398,17 @@ Vela 的 `@system.sensor` 实测语义（band10 模拟器 E2E 判决，答案之
 - 图标生成器：`gen.py`（34 个 `icon_*` + `answerBig` + `--icon-preview`）、`gen_cats.py`（9 个分类）
   与 8 个单图脚本；它们共享 `MIN_W/DET_W/INK_W`，改线宽只改常量。
 
+## 内存与重启缓解约定（2026-11-26 起，勿回退）
+
+Vela 在部分系统接口上存在隐性内存泄漏且不提供内存/fps 查询 API；项目侧必须压低系统接口调用频次、原生回调持有、常驻对象体积与每秒分配抖动：
+
+- **KV 一进程读一次盘（`src/utils/kv.js`）**：`init()` 只在 `!ready` 时读盘，就绪后直接走内存；`reload(cb)` 作为显式强制重读逃生口保留。读盘返回若 `dirty || writing || pending`，只把磁盘值合并进未写过的键，避免启动早期「页面先写、读盘后到」冲掉新值。`set/remove/reset` 递增 `rev()` 供派生缓存失效。
+- **docs 列表/正文跨 bundle 缓存（`src/utils/docs.js`）**：全局 `__bbDocsRev` 在 `save/remove/rename` 成功后递增；`list(dir)` 缓存 `{dir, rev, docs}`（命中返回 `docs.slice()`），`read(dir, name)` 缓存最后一份 `{uri, rev, text}`。`pages/lyrics/**`、`pages/notebook/**` 禁止直接调 `g.fs.writeText/remove/rename`，所有写入必须走 `docs`（否则跨页列表缓存不失效）。
+- **互联层单例化与单次绑定（`src/utils/interconnectCore.js` + `src/utils/interconnect.js`）**：状态统一挂 `globalThis.__bbIC`；同一 `connect` 实例只绑定一次 `onmessage/subscribe/onopen/onclose/onerror`（`boundConnect === connect` 守卫），1006 断连重建新实例时也只绑一次。`otpBridge.disarm()` 在 `otp/list`、`otp/sync` 的 `disarm()`（`onHide`/`onDestroy`）中调用，避免全局状态回调长期持有页面 bundle 闭包。
+- **页面栈深度上限 6 层（`src/utils/router.js`）**：`MAX_STACK = 6`，`push()` 探测 `router.getLength() >= MAX_STACK` 时自动降级为 `replace()`（`back()` 逻辑不变），防止异常深链长期驻留多份页面实例。
+- **高频计算与长亮优化**：`otpStore.list()` 按 `g.kv.rev()` 缓存 normalized 列表；`otpState.resolve()` 按 `id + secret 尾6位 + secret 摘要 + counter + period + digits + algorithm` 缓存 TOTP 成功态（上限 64 条，超限整体清空），`otp/list` 与 `otp/detail` 每秒只重算 `remaining`；`pushInbox.classify()` 先做 `'"bandbox-otp"'` / `'"bandbox-qr"'` 字面量过滤再 `JSON.parse`；`companion/clock` 在精美样式或关秒模式走整分 +20ms 对齐的 `minuteTimer`（60 次/小时，不再每秒重绘）；`historyData` 月份缓存设 LRU 上限 3；`performance.ux` 测试链使用 `runTimer` + `runSeq` 并在 `onHide`/`onDestroy` 调用 `cancelRun()`。
+- **门禁 R20（内存卫生）**：`tools/release-gate.mjs`（支持 `--only-r20` 单独自查）强制检查：① `@system.file` 只允许在 `utils/fs.js`、`utils/kv.js`；② `@system.interconnect` 只允许在 `utils/interconnect.js`；③ 含 `setInterval(` 的文件必须含 `clearInterval(`；④ `pages/lyrics/**` 与 `pages/notebook/**` 禁止直接 `g.fs.writeText/remove/rename`。
+
 ## 其它硬约束（勿破坏）
 
 - 发行包内**不带性能埋点**：`src/utils/perf.js` 的 `ENABLED` 必须为 `false`，`src/app.ux` 不得 import 埋点模块。

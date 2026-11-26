@@ -1,32 +1,32 @@
 /**
  * 轻量 KV：整份 JSON 存一个文件，内存缓存 + 防抖落盘。
  *
- * L4 重写要点：
- *   - flush 只做**一次**全量序列化（原来 snapshot() 里 JSON.parse(JSON.stringify())
- *     再外层 JSON.stringify，每个 key 写一次就是 3 次全量遍历）
- *   - set 同值不置脏，避免无意义的落盘
- *   - 写入进行中再次触发 → 合并到写完之后的补写（pending），不排队
- *   - init 读盘窗口 80ms → 5000ms：单例化后读盘只发生在 app 启动，
- *     保留 5 秒兜底给「外部改了文件」的场景
+ * 读盘策略：
+ *   - 单例化后一进程只在首次 init() 读盘一次，就绪后直接走内存；
+ *     提供 reload(cb) 逃生口供显式强制重读
+ *   - 读盘返回时若已有本地未落盘改动（dirty / writing / pending），
+ *     只把磁盘值合并进未写过的键，避免启动早期「页面先写、读盘后到」冲掉新值
+ *   - rev() 在每次数据变更时递增，供 otpStore 等派生缓存按版本号失效
+ *   - flush 只做一次全量序列化；写入进行中再次触发合并到写完后的补写
  */
 import file from '@system.file'
 
 const PATH = 'internal://files/bandbox/store.json'
 
-// 同一次启动内，5 秒内的 init 复用内存数据（不再读盘）
-const READ_WINDOW_MS = 5000
 // 落盘防抖
 const FLUSH_DELAY_MS = 120
 
 let data = {}
 let ready = false
 let reading = false
-let lastRead = 0
 let timer = null
 let queue = []
 let dirty = false
 let writing = false
 let pending = false
+let revision = 0
+let unflushedKeys = Object.create(null)
+let unflushedReset = false
 
 function flush() {
   if (timer) {
@@ -60,6 +60,9 @@ function flush() {
           pending = false
           dirty = true
           flush()
+        } else if (!dirty) {
+          unflushedKeys = Object.create(null)
+          unflushedReset = false
         }
       },
       fail() {
@@ -89,33 +92,54 @@ function flushQueue() {
   })
 }
 
-function init(cb) {
-  if (cb) queue.push(cb)
-  if (reading) return
-  if (ready && Date.now() - lastRead < READ_WINDOW_MS) {
-    flushQueue()
-    return
-  }
+function readDisk() {
   reading = true
   file.readText({
     uri: PATH,
     success(res) {
       try {
         const parsed = JSON.parse(res.text)
-        if (parsed && typeof parsed === 'object') data = parsed
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          if (dirty || writing || pending) {
+            if (!unflushedReset) {
+              const keys = Object.keys(parsed)
+              for (let i = 0; i < keys.length; i++) {
+                const k = keys[i]
+                if (!unflushedKeys[k]) data[k] = parsed[k]
+              }
+            }
+          } else {
+            data = parsed
+          }
+          revision++
+        }
       } catch (e) {}
       ready = true
       reading = false
-      lastRead = Date.now()
       flushQueue()
     },
     fail() {
       ready = true
       reading = false
-      lastRead = Date.now()
       flushQueue()
     }
   })
+}
+
+function init(cb) {
+  if (cb) queue.push(cb)
+  if (reading) return
+  if (ready) {
+    flushQueue()
+    return
+  }
+  readDisk()
+}
+
+function reload(cb) {
+  if (cb) queue.push(cb)
+  if (reading) return
+  readDisk()
 }
 
 function get(key, def) {
@@ -126,15 +150,19 @@ function get(key, def) {
 function set(key, value) {
   if (data[key] === value) return value
   data[key] = value
+  unflushedKeys[key] = true
   dirty = true
+  revision++
   schedule()
   return value
 }
 
 function remove(key) {
-  if (data[key] === undefined) return
+  if (data[key] === undefined && ready && !reading) return
   delete data[key]
+  unflushedKeys[key] = true
   dirty = true
+  revision++
   schedule()
 }
 
@@ -144,8 +172,15 @@ function all() {
 
 function reset() {
   data = {}
+  unflushedReset = true
+  unflushedKeys = Object.create(null)
   dirty = true
+  revision++
   schedule()
 }
 
-export default { init, get, set, remove, all, reset, flush, PATH }
+function rev() {
+  return revision
+}
+
+export default { init, reload, get, set, remove, all, reset, flush, rev, PATH }

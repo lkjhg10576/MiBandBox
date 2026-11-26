@@ -3,7 +3,7 @@
 
   <h1>BandBox · The Xiaomi Band Toolbox</h1>
 
-  <p><b>40 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
+  <p><b>41 local tools, packed into the 212 × 520 strip screen on your wrist.</b></p>
   <p>Fully offline · No fees · No accounts · No closed-source dependencies · MIT licensed</p>
 
   <p>
@@ -17,10 +17,10 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.3</code> (versionCode 293) · Built with Vela JS Quick Apps</p>
+  <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.3</code> (versionCode 294) · Built with Vela JS Quick Apps</p>
 </div>
 
-<img src="assets/promo/BandBox 头图 1200x800.png" alt="BandBox: 40 local tools for Xiaomi Band" />
+<img src="assets/promo/BandBox 头图 1200x800.png" alt="BandBox: 41 local tools for Xiaomi Band" />
 
 ---
 
@@ -28,20 +28,20 @@
 
 BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 10 NFC / 11 / 11 NFC** (212 × 520 narrow strip display), the **Xiaomi Band 9 Pro / 10 Pro** (336 × 480 rectangular display) and the **Xiaomi Band 9** (192 × 490 capsule display). Each form factor ships as its own package (same app package name, pick the one for your band). Band 11 uses the same package as Band 10 (identical 212 × 520 geometry) and is supported since `0.1.2-271`.
 
-A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes forty small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
+A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes 41 small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
 Everything stays on the band. **No network calls, no fees, no sign-up, no uploads.**
 
 | Highlights | Details |
 | --- | --- |
-| Tools | **40**, covering everyday, notes, fun and system-information use cases |
+| Tools | **41**, covering everyday, notes, fun and system-information use cases |
 | Network requests | **0** (no third-party APIs, no telemetry, no ads) |
 | Accounts / payments | **0** (no login, no subscription, no activation) |
 | Closed-source dependencies | **0** (nothing but the optional official AstroBox plugin) |
 | Bundled fonts | **0** (uses the Band 10/11 system fonts, MiSans / MiLan Pro) |
 | License | **MIT** |
 
-> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 40 tools work exactly the same.
+> The phone side is a single **optional** AstroBox plugin, *BandBox辅助* ("BandBox Helper"), used to push LRC lyrics to the band and to sync TOTP accounts. Without it, all 41 tools work exactly the same.
 
 ---
 
@@ -104,6 +104,7 @@ The home screen supports switching between **two-column grid / single-column lis
 | Quick QR code | Text / URL / Wi-Fi QR codes |
 | Waste sorting | 200+ item lookup, five categories |
 | Date calculator | Days between two dates; age from a birthday as years + days and a 4-decimal approximation |
+| Timezone converter | 230+ global cities (capitals & multi-timezone regions), 24h input, Chinese/pinyin/UTC search, automatic DST |
 | Counter | Big number in the center, "+" above and "−" below; each tap fires one long vibration and steps ±1, negatives allowed |
 
 ### 📝 Notes & connectivity

@@ -1,11 +1,37 @@
 /**
  * 文档仓库：笔记本与歌词本共用。
  * 目录下每个 txt 为一个文档，标题取文件名。
+ *
+ * 缓存策略：
+ *   - 全局 __bbDocsRev 记录写操作版本号；save/remove/rename 成功后递增
+ *   - list(dir) 按 { dir, rev, docs } 缓存最近一次目录列表，命中返回副本
+ *   - read(dir, name) 按 { uri, rev, text } 缓存最后一份读到的正文
  */
 import g from './g.js'
 import { normalizeTitle } from './lyricsDoc.js'
 
 const ROOT = 'internal://files/bandbox/'
+
+const root =
+  typeof global !== 'undefined'
+    ? global
+    : typeof globalThis !== 'undefined'
+      ? globalThis
+      : {}
+
+let listCache = null
+let readCache = null
+
+function getRev() {
+  return root.__bbDocsRev || 0
+}
+
+function bump() {
+  root.__bbDocsRev = (root.__bbDocsRev || 0) + 1
+  listCache = null
+  readCache = null
+  return root.__bbDocsRev
+}
 
 /**
  * 稳健文件名编码：
@@ -35,9 +61,14 @@ function safeName(name) {
 }
 
 function list(dir, cb) {
+  const rev = getRev()
+  if (listCache && listCache.dir === dir && listCache.rev === rev) {
+    if (cb) cb(listCache.docs.slice())
+    return
+  }
   const uri = ROOT + dir + '/'
   g.fs.ensureDir(uri, () => {
-    g.fs.list(uri, (arr) => {
+    g.fs.list(uri, (arr, listErr) => {
       const seen = Object.create(null)
       const docs = []
       const fileList = arr || []
@@ -79,15 +110,26 @@ function list(dir, cb) {
       }
 
       docs.sort((a, b) => b.mtime - a.mtime)
-      cb(docs)
+      if (!listErr && getRev() === rev) {
+        listCache = { dir, rev, docs }
+      }
+      if (cb) cb(docs.slice())
     })
   })
 }
 
 function read(dir, name, cb) {
   const primary = join(dir, name)
+  const rev = getRev()
+  if (readCache && readCache.uri === primary && readCache.rev === rev) {
+    if (cb) cb(readCache.text, null)
+    return
+  }
   g.fs.readText(primary, (text, code) => {
     if (text !== null) {
+      if (getRev() === rev) {
+        readCache = { uri: primary, rev, text }
+      }
       if (cb) cb(text, null)
       return
     }
@@ -95,6 +137,9 @@ function read(dir, name, cb) {
     const legacy = joinLegacy(dir, name)
     if (legacy !== primary) {
       g.fs.readText(legacy, (legacyText, legacyCode) => {
+        if (legacyText !== null && getRev() === rev) {
+          readCache = { uri: primary, rev, text: legacyText }
+        }
         if (cb) cb(legacyText, legacyText !== null ? null : (legacyCode || code || 300))
       })
     } else {
@@ -158,6 +203,7 @@ function save(dir, name, text, cb) {
           if (legacy !== targetPath) {
             g.fs.remove(legacy, () => {})
           }
+          bump()
           if (cb) cb(true, null, clean)
           return
         }
@@ -174,6 +220,7 @@ function save(dir, name, text, cb) {
               if (legacy !== targetPath) {
                 g.fs.remove(legacy, () => {})
               }
+              bump()
               if (cb) cb(true, null, clean)
             } else {
               if (cb) cb(false, finalVerifyCode || 301, clean)
@@ -192,9 +239,11 @@ function remove(dir, name, cb) {
     if (legacy !== primary) {
       g.fs.remove(legacy, (okLegacy, codeLegacy) => {
         const ok = okPrimary || okLegacy
+        if (ok) bump()
         if (cb) cb(ok, ok ? null : (codePrimary || codeLegacy || 300))
       })
     } else {
+      if (okPrimary) bump()
       if (cb) cb(okPrimary, codePrimary)
     }
   })
@@ -218,6 +267,7 @@ function rename(dir, oldName, newName, cb) {
     g.fs.exists(srcPrimary, (hasPrimary) => {
       const srcUri = hasPrimary ? srcPrimary : srcLegacy
       g.fs.rename(srcUri, dstUri, (ok, code) => {
+        if (ok) bump()
         if (cb) cb(ok, code, clean)
       })
     })

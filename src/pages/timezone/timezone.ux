@@ -1,0 +1,231 @@
+<import name="pagehead" src="../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="时区换算" clock="{{ clock }}"></pagehead>
+
+    <!-- 卡片只做背景：前景文字/按钮必须是 .page 的直接子元素 -->
+    <div class="card from"></div>
+    <text class="f cityName" @click="pick('from')">{{ fromTitle }}</text>
+    <div class="chev" @click="pick('from')"><text class="f chevT">›</text></div>
+    <div class="metaBox">
+      <text class="f utcText">{{ fromUtc }}</text>
+      <text class="f dstText" if="{{ fromDst }}">夏令时</text>
+    </div>
+    <div class="timeBox" @click="openTimePad">
+      <text class="f timeVal">{{ inputTime }}</text>
+    </div>
+
+    <div class="sep"></div>
+
+    <div class="card to"></div>
+    <text class="f cityName cityNameTo" @click="pick('to')">{{ toTitle }}</text>
+    <div class="chev chevTo" @click="pick('to')"><text class="f chevT">›</text></div>
+    <div class="metaBox metaBoxTo">
+      <text class="f utcText">{{ toUtc }}</text>
+      <div class="tagRow">
+        <text class="f dayTag" style="color: {{ dayColor }};">{{ dayLabel }}</text>
+        <text class="f dstTag" if="{{ toDst }}">夏令时</text>
+      </div>
+    </div>
+    <div class="timeBox timeBoxTo">
+      <text class="f timeResult">{{ toTime }}</text>
+    </div>
+
+    <text class="f diffLine">{{ diffText }}</text>
+
+    <div class="btnRow">
+      <div class="actBtn swapBtn" @click="swapCities"><text class="f actT">交换</text></div>
+      <div class="actBtn nowBtn" @click="resetNow"><text class="f actT">现在</text></div>
+    </div>
+
+    <text class="f hint">点时间修改 · 点 › 换城市</text>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../common/styles/theme.css';
+
+.card { position: absolute; left: 3px; width: 206px; height: 104px; border-radius: 26px; background-color: #262626; }
+.from { top: 90px; }
+.to { top: 218px; }
+.cityName { position: absolute; left: 16px; top: 98px; width: 144px; height: 28px; line-height: 28px; font-size: 19px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.cityNameTo { top: 226px; }
+.chev { position: absolute; left: 165px; top: 98px; width: 28px; height: 28px; border-radius: 14px; background-color: rgba(255,255,255,0.1); align-items: center; justify-content: center; }
+.chevTo { top: 226px; }
+.chevT { width: 28px; height: 28px; line-height: 28px; text-align: center; font-size: 18px; color: #FFFFFF; }
+.metaBox { position: absolute; left: 16px; top: 134px; width: 84px; height: 48px; flex-direction: column; justify-content: center; }
+.metaBoxTo { top: 262px; }
+.utcText { width: 84px; height: 22px; line-height: 22px; font-size: 14px; color: rgba(255,255,255,0.72); text-overflow: ellipsis; lines: 1; }
+.dstText { width: 84px; height: 20px; line-height: 20px; font-size: 14px; color: #9FC4FF; text-overflow: ellipsis; lines: 1; }
+.tagRow { width: 84px; height: 20px; flex-direction: row; align-items: center; }
+.dayTag { height: 20px; line-height: 20px; font-size: 14px; }
+.dstTag { height: 20px; line-height: 20px; margin-left: 4px; font-size: 14px; color: #9FC4FF; }
+.timeBox { position: absolute; left: 100px; top: 132px; width: 94px; height: 50px; justify-content: center; }
+.timeBoxTo { top: 260px; }
+.timeVal { width: 94px; height: 46px; line-height: 46px; text-align: right; font-size: 32px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.timeResult { width: 94px; height: 46px; line-height: 46px; text-align: right; font-size: 32px; color: #9FC4FF; text-overflow: ellipsis; lines: 1; }
+.sep { position: absolute; left: 16px; top: 206px; width: 180px; height: 1px; background-color: rgba(255,255,255,0.12); }
+.diffLine { position: absolute; left: 8px; top: 330px; width: 196px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.72); text-overflow: ellipsis; lines: 1; }
+.btnRow { position: absolute; left: 3px; top: 362px; width: 206px; height: 44px; flex-direction: row; justify-content: space-between; }
+.actBtn { width: 99px; height: 44px; border-radius: 22px; align-items: center; justify-content: center; }
+.swapBtn { background-color: #262626; }
+.nowBtn { background-color: #0D6EFF; }
+.actT { font-size: 16px; color: #FFFFFF; }
+.hint { position: absolute; left: 8px; top: 414px; width: 196px; height: 20px; line-height: 20px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
+</style>
+
+<script>
+import g from '../../utils/g'
+import timezone from '../../utils/timezone'
+import tzSession from './tzSession'
+import numInputSession from '../../utils/numInputSession'
+import inputResult from '../../utils/inputResult'
+
+const KV_KEY = 'tzConvert.last'
+
+export default {
+  protected: {},
+
+  private: {
+    _ck: null,
+    clock: '--:--',
+    fromId: 'beijing',
+    toId: 'new_york',
+    fromTitle: '北京 · 中国',
+    toTitle: '纽约 · 美国',
+    fromUtc: 'UTC+8',
+    toUtc: 'UTC-5',
+    fromDst: false,
+    toDst: false,
+    inputTime: '00:00',
+    toTime: '--:--',
+    dayLabel: '今天',
+    dayColor: 'rgba(255,255,255,0.65)',
+    diffText: '',
+    kvLoaded: false,
+    cityChosen: false
+  },
+
+  onInit() {
+    const now = new Date()
+    const pair = timezone.defaultPair(now)
+    this.fromId = pair.fromId
+    this.toId = pair.toId
+    this.inputTime = g.time.formatClock(now)
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+
+    // 接收从 pages/numinput 返回的 24 小时时间（优先内存同步读取，文件异步兜底）
+    const syncRes = numInputSession.take('tzTime')
+    if (syncRes) {
+      this.inputTime = syncRes.value
+      inputResult.clear()
+    } else {
+      inputResult.take((r) => {
+        if (r && r.field === 'tzTime' && page.$valid) {
+          page.inputTime = r.value
+          page.recompute()
+        }
+      })
+    }
+
+    // 消费城市选择页结果（必须在 KV 异步读盘之前判断，避免被旧持久化覆盖）
+    const pending = tzSession.take()
+    if (pending && pending.cityId && timezone.cityById(pending.cityId)) {
+      this.cityChosen = true
+      if (pending.slot === 'to') this.toId = pending.cityId
+      else this.fromId = pending.cityId
+      this.saveLast()
+    } else if (!this.kvLoaded && !this.cityChosen) {
+      this.kvLoaded = true
+      g.kv.init(() => {
+        if (!page.$valid || page.cityChosen) return
+        const last = g.kv.get(KV_KEY, null)
+        if (last && timezone.cityById(last.fromId) && timezone.cityById(last.toId)) {
+          page.fromId = last.fromId
+          page.toId = last.toId
+          page.recompute()
+        }
+      })
+    }
+
+    this.recompute()
+  },
+
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  saveLast() {
+    try {
+      g.kv.set(KV_KEY, { fromId: this.fromId, toId: this.toId })
+    } catch (e) {}
+  },
+
+  recompute() {
+    const res = timezone.convertTime(this.fromId, this.toId, this.inputTime, new Date())
+    if (!res) return
+    this.fromTitle = res.fromCity.city + ' · ' + res.fromCity.country
+    this.toTitle = res.toCity.city + ' · ' + res.toCity.country
+    this.fromUtc = res.fromOffset.utcLabel
+    this.toUtc = res.toOffset.utcLabel
+    this.fromDst = res.fromOffset.isDst
+    this.toDst = res.toOffset.isDst
+    this.inputTime = res.fromTime
+    this.toTime = res.toTime
+    this.dayLabel = res.dayLabel
+    this.dayColor = res.dayDiff !== 0 ? '#FF9500' : 'rgba(255,255,255,0.65)'
+    this.diffText = res.diffText
+  },
+
+  openTimePad() {
+    g.haptic.short()
+    const fromCity = timezone.cityById(this.fromId)
+    g.router.push('/pages/numinput', {
+      field: 'tzTime',
+      title: (fromCity ? fromCity.city : '') + '时间',
+      value: '',
+      type: 'time',
+      allowNegative: '0',
+      allowDecimal: '1',
+      maxLen: '5',
+      hint: '当前 ' + this.inputTime + ' · 格式 HH:MM'
+    })
+  },
+
+  pick(slot) {
+    g.haptic.short()
+    const current = slot === 'to' ? this.toId : this.fromId
+    g.router.push('/pages/timezone/picker', { slot: slot, current: current })
+  },
+
+  swapCities() {
+    g.haptic.short()
+    const tmp = this.fromId
+    this.fromId = this.toId
+    this.toId = tmp
+    this.cityChosen = true
+    this.saveLast()
+    this.recompute()
+  },
+
+  resetNow() {
+    g.haptic.short()
+    this.inputTime = g.time.formatClock(new Date())
+    this.recompute()
+  }
+}
+</script>

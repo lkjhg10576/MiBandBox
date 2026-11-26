@@ -1,0 +1,146 @@
+<import name="pagehead" src="../../../components/PageHead.ux"></import>
+<import name="backbtn" src="../../../components/BackBtn.ux"></import>
+
+<template>
+  <div class="page">
+    <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
+
+    <div class="searchRow">
+      <div class="searchBox {{ query ? 'searchBoxNarrow' : '' }}" @click="openSearch">
+        <text class="f searchText" if="{{ query }}">{{ query }}</text>
+        <text class="f searchPlace" if="{{ !query }}">搜索城市 / 国家 / UTC</text>
+      </div>
+      <div class="clearBtn" if="{{ query }}" @click="clearSearch">
+        <text class="f clearT">清除</text>
+      </div>
+    </div>
+
+    <list class="cityList" bounces="true">
+      <list-item type="city" class="row" for="{{ rows }}" @click="choose($item)">
+        <div class="rMain">
+          <text class="f rName">{{ $item.title }}</text>
+          <text class="f rSub">{{ $item.sub }}</text>
+        </div>
+        <text class="f rCheck">{{ $item.check }}</text>
+      </list-item>
+      <list-item type="empty" class="empty" if="{{ rows.length === 0 }}">
+        <text class="f emptyT">未找到匹配城市</text>
+        <text class="f emptyS">试试中文、拼音或 UTC+8</text>
+      </list-item>
+      <list-item type="pad" class="listPad"></list-item>
+    </list>
+
+    <backbtn></backbtn>
+  </div>
+</template>
+
+<style>
+@import '../../../common/styles/theme.css';
+
+.searchRow { position: absolute; left: 3px; top: 90px; width: 206px; height: 44px; flex-direction: row; align-items: center; justify-content: space-between; }
+.searchBox { width: 206px; height: 44px; border-radius: 22px; background-color: #262626; padding: 0px 14px; justify-content: center; }
+.searchBoxNarrow { width: 150px; }
+.searchText { width: 100%; height: 22px; line-height: 22px; font-size: 15px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.searchPlace { width: 100%; height: 22px; line-height: 22px; font-size: 15px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.clearBtn { width: 50px; height: 44px; border-radius: 22px; background-color: #333333; align-items: center; justify-content: center; }
+.clearT { font-size: 14px; color: #FFFFFF; }
+
+/* 原生 list 自身 padding 提供内缩，子项不留横向 margin，避免抢占右滑返回 */
+.cityList { position: absolute; left: 0px; top: 142px; width: 212px; height: 344px; padding: 0px 3px 0px 3px; background-color: #000000; }
+.row { width: 206px; height: 56px; margin: 0px 0px 6px 0px; border-radius: 22px; background-color: #1A1A1A; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 14px; }
+.rMain { width: 152px; height: 44px; flex-direction: column; justify-content: center; }
+.rName { width: 152px; height: 22px; line-height: 22px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.rSub { width: 152px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.rCheck { width: 20px; height: 22px; line-height: 22px; text-align: center; font-size: 16px; color: #0D6EFF; }
+.empty { width: 206px; height: 220px; flex-direction: column; align-items: center; justify-content: center; }
+.emptyT { font-size: 16px; color: rgba(255,255,255,0.72); text-align: center; }
+.emptyS { margin-top: 6px; font-size: 14px; color: rgba(255,255,255,0.55); text-align: center; }
+.listPad { width: 206px; height: 48px; }
+</style>
+
+<script>
+import g from '../../../utils/g'
+import timezone from '../../../utils/timezone'
+import inputResult from '../../../utils/inputResult'
+import tzSession from '../tzSession'
+
+export default {
+  protected: { slot: '', current: '' },
+
+  private: {
+    _ck: null,
+    clock: '--:--',
+    titleText: '选择城市',
+    query: '',
+    rows: []
+  },
+
+  onShow() {
+    this.clock = g.time.formatClock(new Date())
+    const page = this
+    this._ck = (s) => { if (page.$valid) page.clock = s }
+    g.clock.sub(this._ck)
+
+    this.titleText = this.slot === 'to' ? '选择目标城市' : '选择来源城市'
+
+    inputResult.take((r) => {
+      if (!r || r.field !== 'tzSearch' || !page.$valid) return
+      page.query = String(r.value || '').trim()
+      page.build()
+    })
+
+    this.build()
+  },
+
+  onHide() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  onDestroy() {
+    if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
+  },
+
+  build() {
+    const nowMs = Date.now()
+    const list = timezone.searchCities(this.query, nowMs)
+    const rows = []
+    for (let i = 0; i < list.length; i++) {
+      const c = list[i]
+      const info = timezone.formatCityNow(c, nowMs)
+      const utcPart = info.offset.isDst ? info.offset.utcLabel + '(夏)' : info.offset.utcLabel
+      rows.push({
+        id: c.id,
+        title: c.city + ' · ' + c.country,
+        sub: utcPart + ' · ' + info.time,
+        check: c.id === this.current ? '✓' : ''
+      })
+    }
+    this.rows = rows
+  },
+
+  openSearch() {
+    g.haptic.short()
+    g.router.push('/pages/input', {
+      field: 'tzSearch',
+      inputTitle: '搜索城市',
+      text: this.query,
+      max: '16',
+      multiline: '0',
+      hint: '城市 / 国家 / 拼音'
+    })
+  },
+
+  clearSearch() {
+    g.haptic.short()
+    this.query = ''
+    this.build()
+  },
+
+  choose(item) {
+    if (!item || !item.id) return
+    g.haptic.short()
+    tzSession.pending = { slot: this.slot === 'to' ? 'to' : 'from', cityId: item.id }
+    g.router.back()
+  }
+}
+</script>

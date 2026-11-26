@@ -56,6 +56,10 @@ const st = g[KEY]
  * 解析失败或不是本项目的协议 → 不缓冲（歌词协议等由各自页面处理）。
  */
 function classify(text) {
+  if (typeof text !== 'string') return null
+  if (text.indexOf('"bandbox-otp"') < 0 && text.indexOf('"bandbox-qr"') < 0) {
+    return null
+  }
   let obj = null
   try {
     obj = JSON.parse(text)

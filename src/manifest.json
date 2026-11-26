@@ -2,7 +2,7 @@
   "package": "com.lkjhg.bandbox",
   "name": "BandBox",
   "versionName": "0.1.3",
-  "versionCode": 293,
+  "versionCode": 294,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
@@ -317,6 +317,12 @@
       },
       "pages/companion/clock": {
         "component": "clock"
+      },
+      "pages/timezone": {
+        "component": "timezone"
+      },
+      "pages/timezone/picker": {
+        "component": "picker"
       }
     }
   }

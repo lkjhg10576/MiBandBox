@@ -197,6 +197,7 @@ export default {
   },
 
   disarm() {
+    otpBridge.disarm()
     if (state.subscriber) {
       try { state.subscriber() } catch (e) {}
       state.subscriber = null

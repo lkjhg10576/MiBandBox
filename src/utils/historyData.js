@@ -3,7 +3,7 @@
  *
  * 外置原因（计划 L4-5）：原来 366 天的史实整份内联在 JS 里，
  * 页面首开会把整份数据物化进内存，bundle 也因此很大。
- * 现在按月读取（一次只读当月，约 8 KB），进程内缓存已读月份。
+ * 现在按月读取（一次只读当月，约 8 KB），进程内以容量 3 的 LRU 缓存最近访问月份。
  *
  * 注意：包内资源必须用 .txt（老版本 Vela file API 会拒绝打包的 .json）。
  */
@@ -12,11 +12,28 @@ import { tags, keyOf, normalizeItem, pickFrom, hashOf } from './historyPure'
 
 const DIR = '/common/data/history/'
 const TIPS_PATH = DIR + 'tips.txt'
+const MAX_MONTHS = 3
 
-// 已加载的月份缓存：{ '01': { '01-01': [...] } }
+// 已加载的月份缓存：{ '01.txt': { '01-01': [...] } }，按最近使用顺序记键
 const months = {}
+const monthOrder = []
 let tips = null
 let tipsLoading = false
+
+function touchMonth(name) {
+  const idx = monthOrder.indexOf(name)
+  if (idx >= 0) monthOrder.splice(idx, 1)
+  monthOrder.push(name)
+}
+
+function putMonth(name, obj) {
+  months[name] = obj
+  touchMonth(name)
+  while (monthOrder.length > MAX_MONTHS) {
+    const oldest = monthOrder.shift()
+    if (oldest !== undefined) delete months[oldest]
+  }
+}
 
 function parseMonth(text) {
   if (!text) return {}
@@ -52,7 +69,7 @@ function loadTips(cb) {
 }
 
 /**
- * 取某天的史实条目（异步：按月读盘）
+ * 取某天的史实条目（异步：按月读盘，LRU 缓存最多 3 个月）
  * @param {Number} month 1..12
  * @param {Number} day 1..31
  * @param {Function} cb 回调参数为条目数组
@@ -61,12 +78,14 @@ export function getByDate(month, day, cb) {
   const m = Number(month)
   const name = (m < 10 ? '0' + m : '' + m) + '.txt'
   if (months[name]) {
+    touchMonth(name)
     cb(pickFrom(months[name], m, day))
     return
   }
   g.fs.readText(DIR + name, (text) => {
-    months[name] = parseMonth(text)
-    cb(pickFrom(months[name], m, day))
+    const parsed = parseMonth(text)
+    putMonth(name, parsed)
+    cb(pickFrom(parsed, m, day))
   })
 }
 

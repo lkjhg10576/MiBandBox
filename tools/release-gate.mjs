@@ -40,6 +40,12 @@
  *                            几何常量与 CSS 一致、卡片数与模板一致；③ profile 的
  *                            layout.text 宽度令牌与 CSS 文本框宽度一致。已知未修的页面记在
  *                            R17_EXEMPT 表里（逐页收口，修好一页删一行）。
+ *   R20 内存卫生              抑制 Vela 系统接口泄漏与每页驻留/回调累计：
+ *                            (a) @system.file 只允许在 utils/fs.js、utils/kv.js；
+ *                            (b) @system.interconnect 只允许在 utils/interconnect.js；
+ *                            (c) 任何含 setInterval( 的文件必须含 clearInterval(；
+ *                            (d) pages/lyrics/** 与 pages/notebook/** 禁止直接
+ *                                g.fs.writeText/remove/rename（必须走 docs，保 rev 缓存）。
  *
  * 用法：
  *   node tools/release-gate.mjs          # 检查，失败退出码 1
@@ -252,6 +258,56 @@ if (process.argv.includes('--only-r15')) {
     process.exit(1)
   }
   console.log('R15 通过：页头命中区未压住任何可点元素')
+  process.exit(0)
+}
+
+// ---------- R20 内存卫生（扫描逻辑，规则本体在文件下方） ----------
+function scanMemoryHygiene() {
+  const problems = []
+  const files = walk('src', '.ux').concat(walk('src', '.js'))
+  for (const rel of files) {
+    const norm = rel.replace(/\\/g, '/')
+    const src = code(rel)
+    if (/@system\.file\b/.test(src) && norm !== 'src/utils/fs.js' && norm !== 'src/utils/kv.js') {
+      problems.push({
+        file: rel,
+        msg: '禁止直接引入 @system.file（只允许出现在 src/utils/fs.js 与 src/utils/kv.js）'
+      })
+    }
+    if (/@system\.interconnect\b/.test(src) && norm !== 'src/utils/interconnect.js') {
+      problems.push({
+        file: rel,
+        msg: '禁止直接引入 @system.interconnect（只允许出现在 src/utils/interconnect.js）'
+      })
+    }
+    if (/\bsetInterval\s*\(/.test(src) && !/\bclearInterval\s*\(/.test(src)) {
+      problems.push({
+        file: rel,
+        msg: '使用了 setInterval( 但文件内未调用 clearInterval(（必须成对清理，防定时器泄漏）'
+      })
+    }
+    if (
+      (norm.startsWith('src/pages/lyrics/') || norm.startsWith('src/pages/notebook/')) &&
+      /\bg\.fs\.(?:writeText|remove|rename)\b/.test(src)
+    ) {
+      problems.push({
+        file: rel,
+        msg: '歌词/笔记页面禁止直接调用 g.fs.writeText/remove/rename，必须统一走 docs.js（保 __bbDocsRev 缓存不陈旧）'
+      })
+    }
+  }
+  return problems
+}
+
+// 单独跑 R20（开发自查用）：node tools/release-gate.mjs --only-r20
+if (process.argv.includes('--only-r20')) {
+  const bad = scanMemoryHygiene()
+  if (bad.length) {
+    console.log('R20 不通过：内存卫生检查失败')
+    for (const b of bad) console.log(`  ✗ ${b.file}: ${b.msg}`)
+    process.exit(1)
+  }
+  console.log('R20 通过：内存卫生检查全部通过')
   process.exit(0)
 }
 
@@ -1062,6 +1118,11 @@ for (const rel of walk('src', '.ux')) {
         '只有占位符/禁用态/纯装饰才允许这么低')
     }
   }
+}
+
+// ---------- R20 内存卫生 ----------
+{
+  for (const b of scanMemoryHygiene()) fail('R20', b.file, b.msg)
 }
 
 // ---------- 输出 ----------

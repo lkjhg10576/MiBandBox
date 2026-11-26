@@ -734,6 +734,35 @@
       ["width: 206px", "width: 186px"],
       ["width: 178px", "width: 158px"],
       ["width: 48px", "width: 43px"]
+    ],
+    "src/pages/timezone/timezone.ux": [
+      ["width: 206px", "width: 186px"],
+      ["width: 144px", "width: 124px"],
+      ["left: 165px", "left: 145px"],
+      ["width: 84px", "width: 74px"],
+      ["left: 100px", "left: 92px"],
+      ["width: 94px", "width: 86px"],
+      ["font-size: 32px", "font-size: 28px"],
+      ["width: 180px", "width: 160px"],
+      ["width: 196px", "width: 176px"],
+      ["width: 99px", "width: 89px"],
+      [".sep { position: absolute; left: 16px; top: 206px;", ".sep { position: absolute; left: 16px; top: 200px;"],
+      [".to { top: 218px; }", ".to { top: 208px; }"],
+      [".cityNameTo { top: 226px; }", ".cityNameTo { top: 216px; }"],
+      [".chevTo { top: 226px; }", ".chevTo { top: 216px; }"],
+      [".metaBoxTo { top: 262px; }", ".metaBoxTo { top: 252px; }"],
+      [".timeBoxTo { top: 260px; }", ".timeBoxTo { top: 250px; }"],
+      ["top: 330px", "top: 320px"],
+      ["top: 362px", "top: 350px"],
+      ["top: 414px", "top: 402px"]
+    ],
+    "src/pages/timezone/picker/picker.ux": [
+      ["width: 212px", "width: 192px"],
+      ["width: 206px", "width: 186px"],
+      ["width: 150px", "width: 130px"],
+      ["width: 50px", "width: 48px"],
+      ["width: 152px", "width: 132px"],
+      ["height: 344px", "height: 314px"]
     ]
   },
   "manifest": {}

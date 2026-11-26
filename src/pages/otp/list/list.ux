@@ -61,6 +61,7 @@
 import g from '../../../utils/g'
 import otpStore from '../../../utils/otpStore'
 import otp from '../../../utils/otp'
+import otpState from '../../../utils/otpState'
 import otpBridge from '../../../utils/otpBridge'
 import otpSession from '../otpSession'
 
@@ -109,6 +110,7 @@ export default {
   },
 
   disarm() {
+    otpBridge.disarm()
     if (!state.armed) return
     state.armed = false
     if (state.subscriber) {
@@ -152,7 +154,7 @@ export default {
     const rows = []
     for (let i = 0; i < accounts.length; i++) {
       const a = accounts[i]
-      const st = otp.resolveOtpState(a, now, offset)
+      const st = otpState.resolve(a, now, offset)
       let codeText = ''
       let color = '#FFFFFF'
       if (!st.ok) {

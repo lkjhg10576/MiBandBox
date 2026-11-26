@@ -16,6 +16,8 @@ const OFFSET_MIN = -300
 const OFFSET_MAX = 300
 
 const listeners = []
+let cachedRev = -1
+let cachedList = null
 
 function notify() {
   listeners.slice().forEach((fn) => {
@@ -33,17 +35,31 @@ function init(cb) {
 }
 
 /**
- * 账户列表（normalized 副本；存储损坏时降级为空列表）。
+ * 账户列表（normalized 副本；按 g.kv.rev() 缓存，避免每秒重复 normalizeAccount）。
  */
 function list() {
+  const rev = typeof g.kv.rev === 'function' ? g.kv.rev() : -1
+  if (rev >= 0 && cachedList !== null && cachedRev === rev) {
+    return cachedList.slice()
+  }
   const raw = g.kv.get(KEY_ACCOUNTS, [])
-  if (!Array.isArray(raw)) return []
+  if (!Array.isArray(raw)) {
+    if (rev >= 0) {
+      cachedRev = rev
+      cachedList = []
+    }
+    return []
+  }
   const out = []
   for (let i = 0; i < raw.length; i++) {
     const n = otpAccounts.normalizeAccount(raw[i])
     if (n) out.push(n)
   }
-  return out
+  if (rev >= 0) {
+    cachedRev = rev
+    cachedList = out
+  }
+  return out.slice()
 }
 
 /**
@@ -58,6 +74,8 @@ function getById(id) {
 }
 
 function saveAccounts(next) {
+  cachedRev = -1
+  cachedList = null
   g.kv.set(KEY_ACCOUNTS, next)
   g.kv.flush()
   notify()
