@@ -17,7 +17,7 @@
     <a href="https://github.com/lkjhg10576/MiBandBox">GitHub</a>
   </p>
 
-  <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.3</code> (versionCode 300) · Built with Vela JS Quick Apps</p>
+  <p>Package <code>com.lkjhg.bandbox</code> · Version <code>0.1.3</code> (versionCode 305) · Built with Vela JS Quick Apps</p>
 </div>
 
 <img src="assets/promo/BandBox 头图 1200x800.png" alt="BandBox: 44 local tools for Xiaomi Band" />
@@ -26,7 +26,7 @@
 
 ## What is this?
 
-BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 10 NFC / 11 / 11 NFC** (212 × 520 narrow strip display), the **Xiaomi Band 9 Pro / 10 Pro** (336 × 480 rectangular display) and the **Xiaomi Band 9** (192 × 490 capsule display). Each form factor ships as its own package (same app package name, pick the one for your band). Band 11 uses the same package as Band 10 (identical 212 × 520 geometry) and is supported since `0.1.2-271`.
+BandBox is a **fully local** toolbox built for the **Xiaomi Band 10 / 10 NFC / 11 / 11 NFC** (212 × 520 narrow strip display), the **Xiaomi Band 9 Pro / 10 Pro** (336 × 480 rectangular display), the **Xiaomi Band 9** (192 × 490 capsule display), and the **REDMI Watch 5 / 5 eSIM / 6** (432 × 514 square display). Each form factor ships as its own package (same app package name, pick the one for your device). Band 11 uses the same package as Band 10 (identical 212 × 520 geometry) and is supported since `0.1.2-271`; REDMI Watch 5 / 5 eSIM / 6 (`rw432`) has completed full simulator UI and sensor E2E verification and ships with upcoming Beta builds.
 
 A band screen is narrow and tiny — usually it only shows the time and your steps. BandBox squeezes 44 small tools into that space: a calculator, a notebook, countdowns, a lunar calendar, QR codes, Morse code, a wooden fish, a marquee, local lyrics, TOTP codes…
 
@@ -320,7 +320,7 @@ You can reproduce the package size yourself: run `npm run build:jsc` and check `
 - Cold start in the simulator takes about 10 seconds due to a Vela runtime debugger discovery timeout; real devices usually start faster.
 - Simulator mouse/touch coordinates are offset from the picture by roughly 40 px, so automated screenshots need calibration; real touch is fine.
 - The Vela simulator image renders text unreliably: after reinstalling, Chinese text may occasionally turn into tofu blocks or misalign. Restarting the simulator (clearing the font cache) fixes it. This is a simulator-side issue; real watches are unaffected.
-- Only Xiaomi bands are supported: one package for the 212 × 520 strip display (Band 10 / 10 NFC / 11 / 11 NFC), one for the 336 × 480 rectangular display (9 Pro / 10 Pro) and one narrow package for the 192 × 490 capsule display (Band 9). Not for phones or tablets. Band 9 ships with Beta since 0.1.2-269 (Vela 4; designWidth and bottom safe area still awaiting on-device calibration, see the release notes). Band 11 is supported since 0.1.2-271 and shares the standard package with Band 10. Band 9 Pro is verified on the emulator so far; device-only items are flagged in the release notes.
+- Only Xiaomi bands and REDMI Watch models are supported: one package for the 212 × 520 strip display (Band 10 / 10 NFC / 11 / 11 NFC), one for the 336 × 480 rectangular display (9 Pro / 10 Pro), one narrow package for the 192 × 490 capsule display (Band 9), and one square package for the 432 × 514 display (REDMI Watch 5 / 5 eSIM / 6, `rw432`). Not for phones or tablets. Band 9 ships with Beta since 0.1.2-269 (Vela 4; designWidth and bottom safe area still awaiting on-device calibration, see the release notes). Band 11 is supported since 0.1.2-271 and shares the standard package with Band 10. Band 9 Pro and REDMI Watch 5/6 are verified on the emulator so far; device-only items are flagged in the release notes.
 
 ---
 

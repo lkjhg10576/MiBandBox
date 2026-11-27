@@ -5,6 +5,13 @@
   <div class="page">
     <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
 
+    <!-- 分页：每页固定 5 个城市，只给当前页建 list-item（整库 246 条一次物化要 8~25s） -->
+    <div class="pager pagerTop">
+      <div class="pgBtn" @click="prevPage"><text class="f pgArr" style="color: {{ page > 1 ? '#4E87FF' : 'rgba(255,255,255,0.3)' }};">‹</text></div>
+      <text class="f pgNum">{{ page }}/{{ pageCount }}</text>
+      <div class="pgBtn" @click="nextPage"><text class="f pgArr" style="color: {{ page < pageCount ? '#4E87FF' : 'rgba(255,255,255,0.3)' }};">›</text></div>
+    </div>
+
     <div class="searchRow">
       <div class="searchBox {{ query ? 'searchBoxNarrow' : '' }}" @click="openSearch">
         <text class="f searchText" if="{{ query }}">{{ query }}</text>
@@ -23,15 +30,17 @@
         </div>
         <text class="f rCheck">{{ $item.check }}</text>
       </list-item>
-      <list-item type="more" class="moreRow" if="{{ moreCount > 0 }}" @click="loadMore">
-        <text class="f moreT">显示更多（{{ moreCount }}）</text>
-      </list-item>
       <list-item type="empty" class="empty" if="{{ rows.length === 0 }}">
         <text class="f emptyT">未找到匹配城市</text>
         <text class="f emptyS">试试中文、拼音或 UTC+8</text>
       </list-item>
-      <list-item type="pad" class="listPad"></list-item>
     </list>
+
+    <div class="pager pagerBot">
+      <div class="pgBtn" @click="prevPage"><text class="f pgArr" style="color: {{ page > 1 ? '#4E87FF' : 'rgba(255,255,255,0.3)' }};">‹</text></div>
+      <text class="f pgNum">{{ page }}/{{ pageCount }}</text>
+      <div class="pgBtn" @click="nextPage"><text class="f pgArr" style="color: {{ page < pageCount ? '#4E87FF' : 'rgba(255,255,255,0.3)' }};">›</text></div>
+    </div>
 
     <backbtn></backbtn>
   </div>
@@ -40,29 +49,32 @@
 <style>
 @import '../../../common/styles/theme.css';
 
-.searchRow { position: absolute; left: 3px; top: 90px; width: 206px; height: 44px; flex-direction: row; align-items: center; justify-content: space-between; }
-.searchBox { width: 206px; height: 44px; border-radius: 22px; background-color: #262626; padding: 0px 14px; justify-content: center; }
+.pager { position: absolute; left: 3px; width: 206px; height: 36px; flex-direction: row; align-items: center; justify-content: space-between; }
+.pagerTop { top: 88px; }
+.pagerBot { top: 422px; }
+.pgBtn { width: 44px; height: 36px; border-radius: 18px; background-color: #1A1A1A; align-items: center; justify-content: center; }
+.pgArr { width: 44px; height: 36px; line-height: 36px; text-align: center; font-size: 22px; }
+.pgNum { width: 90px; height: 22px; line-height: 22px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.72); }
+
+.searchRow { position: absolute; left: 3px; top: 128px; width: 206px; height: 40px; flex-direction: row; align-items: center; justify-content: space-between; }
+.searchBox { width: 206px; height: 40px; border-radius: 20px; background-color: #262626; padding: 0px 14px; justify-content: center; }
 .searchBoxNarrow { width: 150px; }
-.searchText { width: 100%; height: 22px; line-height: 22px; font-size: 15px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.searchPlace { width: 100%; height: 22px; line-height: 22px; font-size: 15px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
-.clearBtn { width: 50px; height: 44px; border-radius: 22px; background-color: #333333; align-items: center; justify-content: center; }
+.searchText { width: 100%; height: 20px; line-height: 20px; font-size: 15px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.searchPlace { width: 100%; height: 20px; line-height: 20px; font-size: 15px; color: rgba(255,255,255,0.45); text-overflow: ellipsis; lines: 1; }
+.clearBtn { width: 50px; height: 40px; border-radius: 20px; background-color: #333333; align-items: center; justify-content: center; }
 .clearT { font-size: 14px; color: #FFFFFF; }
 
 /* 原生 list 自身 padding 提供内缩，子项不留横向 margin，避免抢占右滑返回 */
-.cityList { position: absolute; left: 0px; top: 142px; width: 212px; height: 344px; padding: 0px 3px 0px 3px; background-color: #000000; }
-.row { width: 206px; height: 56px; margin: 0px 0px 6px 0px; border-radius: 22px; background-color: #1A1A1A; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 14px; }
-.rMain { width: 152px; height: 44px; flex-direction: column; justify-content: center; }
-.rName { width: 152px; height: 22px; line-height: 22px; font-size: 17px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
-.rSub { width: 152px; height: 20px; line-height: 20px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
+.cityList { position: absolute; left: 0px; top: 172px; width: 212px; height: 246px; padding: 0px 3px 0px 3px; background-color: #000000; }
+/* 行高 42 + 间距 2 = 每页 5 行共 218px，正文视口 246px（Pro 224），一页正好不滚动 */
+.row { width: 206px; height: 42px; margin: 0px 0px 2px 0px; border-radius: 21px; background-color: #1A1A1A; flex-direction: row; align-items: center; justify-content: space-between; padding: 0px 14px; }
+.rMain { width: 152px; height: 42px; flex-direction: column; justify-content: center; }
+.rName { width: 152px; height: 22px; line-height: 22px; font-size: 16px; color: #FFFFFF; text-overflow: ellipsis; lines: 1; }
+.rSub { width: 152px; height: 18px; line-height: 18px; font-size: 14px; color: rgba(255,255,255,0.6); text-overflow: ellipsis; lines: 1; }
 .rCheck { width: 20px; height: 22px; line-height: 22px; text-align: center; font-size: 16px; color: #0D6EFF; }
-/* 城市词库 246 条，一次性建 246 个 list-item 在手表上要 8~25s；
-   首屏只渲染 40 行，其余点「显示更多」分批追加。 */
-.moreRow { width: 206px; height: 44px; margin: 0px 0px 6px 0px; border-radius: 22px; background-color: #262626; align-items: center; justify-content: center; }
-.moreT { font-size: 15px; color: #9FC4FF; }
 .empty { width: 206px; height: 220px; flex-direction: column; align-items: center; justify-content: center; }
 .emptyT { font-size: 16px; color: rgba(255,255,255,0.72); text-align: center; }
 .emptyS { margin-top: 6px; font-size: 14px; color: rgba(255,255,255,0.55); text-align: center; }
-.listPad { width: 206px; height: 48px; }
 </style>
 
 <script>
@@ -70,8 +82,7 @@ import g from '../../../utils/g'
 import timezone from '../../../utils/timezone'
 import inputResult from '../../../utils/inputResult'
 import tzSession from '../tzSession'
-
-const PAGE_ROWS = 40
+import pager from '../../../utils/pager'
 
 export default {
   protected: { slot: '', current: '' },
@@ -83,8 +94,8 @@ export default {
     query: '',
     matches: [],
     rows: [],
-    shown: 0,
-    moreCount: 0
+    page: 1,
+    pageCount: 1
   },
 
   onShow() {
@@ -114,37 +125,45 @@ export default {
 
   build() {
     this.matches = timezone.searchCities(this.query, Date.now())
-    this.rows = []
-    this.shown = 0
-    this.moreCount = this.matches.length
-    this.appendRows(PAGE_ROWS)
+    this.pageCount = pager.count(this.matches.length)
+    this.page = 1
+    this.renderPage()
   },
 
-  /** 追加下一页城市行：只对真正要渲染的条目算当前时间，避免 246 条一次成行 */
-  appendRows(n) {
-    const end = Math.min(this.matches.length, this.shown + n)
-    if (end <= this.shown) return
+  /** 只对当前页 5 条算当前时间，其余城市等翻到再算 */
+  renderPage() {
+    const start = pager.start(this.page)
+    const end = Math.min(this.matches.length, start + pager.SIZE)
     const nowMs = Date.now()
-    const more = []
-    for (let i = this.shown; i < end; i++) {
+    const rows = []
+    for (let i = start; i < end; i++) {
       const c = this.matches[i]
       const info = timezone.formatCityNow(c, nowMs)
       const utcPart = info.offset.isDst ? info.offset.utcLabel + '(夏)' : info.offset.utcLabel
-      more.push({
+      rows.push({
         id: c.id,
         title: c.city + ' · ' + c.country,
         sub: utcPart + ' · ' + info.time,
         check: c.id === this.current ? '✓' : ''
       })
     }
-    this.rows = this.rows.concat(more)
-    this.shown = end
-    this.moreCount = this.matches.length - end
+    this.rows = rows
   },
 
-  loadMore() {
+  prevPage() {
+    this.turn(-1)
+  },
+
+  nextPage() {
+    this.turn(1)
+  },
+
+  turn(delta) {
+    const next = this.page + delta
+    if (next < 1 || next > this.pageCount) return
     g.haptic.short()
-    this.appendRows(PAGE_ROWS)
+    this.page = next
+    this.renderPage()
   },
 
   openSearch() {

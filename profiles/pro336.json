@@ -668,9 +668,10 @@
     ],
     "src/pages/sentence/fav/fav.ux": [
       ["width: 212px", "width: 336px"],
-      ["height: 438px", "height: 358px"],
+      ["height: 290px", "height: 268px"],
       ["width: 206px", "width: 330px"],
-      ["width: 174px", "width: 298px"]
+      ["width: 174px", "width: 298px"],
+      ["top: 422px", "top: 400px"]
     ],
     "src/pages/sentence/favdetail/favdetail.ux": [
       ["top: 140px", "top: 115px"],
@@ -759,7 +760,8 @@
       ["width: 150px", "width: 266px"],
       ["width: 50px", "width: 56px"],
       ["width: 152px", "width: 274px"],
-      ["height: 344px", "height: 294px"]
+      ["height: 246px", "height: 224px"],
+      ["top: 422px", "top: 400px"]
     ],
     "src/pages/habit/list/list.ux": [
       ["width: 212px", "width: 336px"],

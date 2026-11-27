@@ -52,11 +52,18 @@ export default {
     device.getInfo({
       success: (d) => {
         const model = String(d.model || '')
-        this.devices = perf.devices.map((x) => ({
-          name: x.name,
-          score: x.score,
-          current: model && model.indexOf(x.name.replace('小米手环 ', '小米手环')) >= 0
-        }))
+        const modelUp = model.toUpperCase()
+        this.devices = perf.devices.map((x) => {
+          const target = x.name.replace('小米手环 ', '小米手环').toUpperCase()
+          const alias = x.name === 'REDMI Watch 5' ? (modelUp.indexOf('M2427W1') >= 0 || modelUp.indexOf('M2428W1') >= 0)
+            : x.name === 'REDMI Watch 6' ? modelUp.indexOf('M2523W1') >= 0
+            : false
+          return {
+            name: x.name,
+            score: x.score,
+            current: !!model && (modelUp.indexOf(target) >= 0 || alias)
+          }
+        })
       },
       fail: () => {}
     })

@@ -18,10 +18,12 @@
     <!-- 网格必须用 if：本渲染器对容器型 show 的动态翻转不可靠（Pro 真机首启网格不出现，
          逛一次目标日回来才显示）；if 在 layoutReady 翻转时全新建节点，规避该坑 -->
     <scroll class="apps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'grid' }}" scroll-y="true" bounces="true">
-      <div class="grid" style="height: {{ gridHeight }}px;">
-        <div class="f cell" for="{{ cells }}" @click="open($item)" @longpress="onLong($item)">
-          <img class="icon" src="{{ $item.icon }}" />
-          <text class="f name">{{ $item.name }}</text>
+      <div class="gridWrap" style="height: {{ gridHeight }}px;">
+        <div class="grid">
+          <div class="f cell" for="{{ cells }}" @click="open($item)" @longpress="onLong($item)">
+            <img class="icon" src="{{ $item.icon }}" />
+            <text class="f name">{{ $item.name }}</text>
+          </div>
         </div>
       </div>
     </scroll>
@@ -30,10 +32,12 @@
          band10/band9 的网格本就是两列、不会出现此模式。与 grid 分支同构，仅卡片用 .cell2（更宽）、
          内容高用 gridHeight2（固定两列）；if 而非 show（同上：容器型 show 的动态翻转不可靠） -->
     <scroll class="apps {{ showToday ? '' : 'appsUp' }}" if="{{ layoutReady && layout === 'grid2' }}" scroll-y="true" bounces="true">
-      <div class="grid" style="height: {{ gridHeight2 }}px;">
-        <div class="f cell2" for="{{ cells }}" @click="open($item)" @longpress="onLong($item)">
-          <img class="icon" src="{{ $item.icon }}" />
-          <text class="f name">{{ $item.name }}</text>
+      <div class="gridWrap" style="height: {{ gridHeight2 }}px;">
+        <div class="grid">
+          <div class="f cell2" for="{{ cells }}" @click="open($item)" @longpress="onLong($item)">
+            <img class="icon" src="{{ $item.icon }}" />
+            <text class="f name">{{ $item.name }}</text>
+          </div>
         </div>
       </div>
     </scroll>
@@ -126,6 +130,7 @@
   top: 182px;
   width: 212px;
   height: 304px;
+  flex-direction: column;
 }
 /* 不常驻模式且没有目标日：目标日卡不渲染，列表顶到卡片原位（top 92），高度补上卡片
    占用的 90px（88 高 + 2px 间距），底部与常驻态相同（band10 486 / Pro 440）。
@@ -138,11 +143,17 @@
   background-color: #000000;
   padding: 0px 6px 0px 6px;
 }
+.gridWrap {
+  width: 212px;
+  flex-direction: column;
+  flex-shrink: 0;
+}
 .grid {
   width: 212px;
   padding: 0px 3px 40px 3px;
   flex-direction: row;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 .cell {
   width: 97px;
@@ -154,6 +165,7 @@
   justify-content: flex-start;
   flex-direction: column;
   padding-top: 6px;
+  flex-shrink: 0;
 }
 /* 双栏网格卡片：仅 grid2 分支渲染。宽度 96 是 band10 基线占位（该机型不出此模式），
    Pro 由 profiles/pro336.json 替换为 159（(336-6-12)/2，flex-wrap 每行恰好两格）；
@@ -168,6 +180,7 @@
   justify-content: flex-start;
   flex-direction: column;
   padding-top: 6px;
+  flex-shrink: 0;
 }
 .icon {
   width: 32px;

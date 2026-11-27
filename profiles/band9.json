@@ -618,7 +618,6 @@
     ],
     "src/pages/sentence/fav/fav.ux": [
       ["width: 212px", "width: 192px"],
-      ["height: 438px", "height: 408px"],
       ["width: 206px", "width: 186px"],
       ["width: 174px", "width: 154px"]
     ],
@@ -772,8 +771,7 @@
       ["width: 206px", "width: 186px"],
       ["width: 150px", "width: 130px"],
       ["width: 50px", "width: 48px"],
-      ["width: 152px", "width: 132px"],
-      ["height: 344px", "height: 314px"]
+      ["width: 152px", "width: 132px"]
     ],
     "src/pages/habit/list/list.ux": [
       ["width: 212px", "width: 192px"],

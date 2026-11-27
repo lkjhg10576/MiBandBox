@@ -1,0 +1,2991 @@
+{
+  "id": "rw432",
+  "label": "REDMI Watch 5 / 5 eSIM / 6（432×514 方屏）",
+  "tag": "rw",
+  "baseline": false,
+  "screen": {
+    "w": 432,
+    "h": 514
+  },
+  "layout": {
+    "home": {
+      "cols": 3,
+      "rowH": 86,
+      "padBottom": 20
+    },
+    "marquee": {
+      "minCopyW": 200
+    },
+    "ime": {
+      "kbW": 432,
+      "containerH": 305
+    },
+    "companion": {
+      "drawableH": 466
+    },
+    "text": {
+      "inputW": 384,
+      "inputMultiW": 348,
+      "morseW": 384
+    }
+  },
+  "assets": {
+    "shadow": [
+      432,
+      84
+    ]
+  },
+  "manifest": {},
+  "files": {
+    "src/common/styles/theme.css": [
+      [
+        ".actRow { position: absolute; left: 3px; top: 400px; width: 206px;",
+        ".actRow { position: absolute; left: 8px; top: 436px; width: 416px;"
+      ],
+      [
+        "width: 212px",
+        "width: 432px"
+      ],
+      [
+        "height: 520px",
+        "height: 514px"
+      ],
+      [
+        "width: 206px",
+        "width: 416px"
+      ]
+    ],
+    "src/components/PageHead.ux": [
+      [
+        "width: 212px",
+        "width: 432px"
+      ]
+    ],
+    "src/components/InputMethod/InputMethod.ux": [
+      [
+        "top:82px;left:2px;",
+        "top:999px;left:0px;"
+      ],
+      [
+        "margin-left: {{(screenWidth - 192)/2}}px;",
+        "margin-left: 120px;"
+      ],
+      [
+        "padding-left: {{(screenWidth - 192)/2}}px;padding-right: {{(screenWidth - 192)/2}}px;",
+        "padding-left: 6px;padding-right: 6px;"
+      ],
+      [
+        "left: {{(screenWidth - 192)/2}}px;top: 0px;width: 192px;height: 110px;",
+        "left: 0px;top: 0px;width: 432px;height: 110px;"
+      ],
+      [
+        "left: {{(screenWidth - 192)/2}}px;width: 192px;height: 263px;",
+        "left: 0px;width: 432px;height: 263px;"
+      ],
+      [
+        "left: 3px; flex-direction: column;",
+        "left: 0px; flex-direction: column;"
+      ],
+      [
+        "margin-left: 0px;margin-top: 0px;height: 60px;",
+        "margin-left: 0px;margin-top: 0px;height: 52px;"
+      ],
+      [
+        "margin-left: 32px;margin-top: -5px;height: 60px;",
+        "margin-left: 10px;margin-top: 4px;height: 52px;"
+      ],
+      [
+        "margin-left: 64px;margin-top: -5px;height: 60px;",
+        "margin-left: 28px;margin-top: 4px;height: 52px;"
+      ],
+      [
+        "margin-left: 0px;margin-top: -5px;height: 60px;",
+        "margin-left: 0px;margin-top: 4px;height: 52px;"
+      ],
+      [
+        "width: 60px;height: 60px;",
+        "width: 54px;height: 50px;"
+      ],
+      [
+        "left: 3px;top: 47px;width: 186px;height: 60px;",
+        "left: 12px;top: 47px;width: 408px;height: 60px;"
+      ],
+      [
+        "left: 15px;top: 56px;width: 144px;height: 42px;",
+        "left: 24px;top: 56px;width: 332px;height: 42px;"
+      ],
+      [
+        "left: 120px;top: 57px;width: 60px;height: 40px;",
+        "left: 356px;top: 57px;width: 60px;height: 40px;"
+      ],
+      [
+        "top:0px;left:9px;width: 48px;height: 42px;",
+        "top:0px;left:24px;width: 56px;height: 42px;"
+      ],
+      [
+        "left: 70px;top: 0px;width: 52px;height: 42px;",
+        "left: 142px;top: 0px;width: 56px;height: 42px;"
+      ],
+      [
+        "top:0px;left:72px;width:48px;height:42px;",
+        "top:0px;left:248px;width:52px;height:42px;"
+      ],
+      [
+        "left: 135px;top: 0px;width: 48px;height: 42px;",
+        "left: 352px;top: 0px;width: 56px;height: 42px;"
+      ],
+      [
+        "width:186px;",
+        "width:408px;"
+      ],
+      [
+        "top:196px;left:56px;width: 80px;height: 60px;",
+        "top:196px;left:176px;width: 80px;height: 60px;"
+      ],
+      [
+        "width:178px;",
+        "width:432px;"
+      ],
+      [
+        ".calbtn66 {\n\tcolor:rgb(255,255,255);\n\tfont-size:32px;\n\tfont-weight:bold;\n\tbackground-color:rgb(38,38,38);\n\tmargin-right:3px;\n\twidth:60px;\n\theight:60px;\n\tborder-radius:30px;",
+        ".calbtn66 {\n\tcolor:rgb(255,255,255);\n\tfont-size:24px;\n\tfont-weight:bold;\n\tbackground-color:rgb(38,38,38);\n\tmargin-right:3px;\n\twidth:38px;\n\theight:50px;\n\tborder-radius:16px;"
+      ],
+      [
+        "left:3px;\n\ttop:0px;",
+        "left:12px;\n\ttop:0px;"
+      ],
+      [
+        "event.scrollX / 633",
+        "event.scrollX / 1"
+      ]
+    ],
+    "src/pages/home/home.ux": [
+      [
+        "left: 3px;\n  top: 92px;\n  width: 206px;",
+        "left: 8px;\n  top: 92px;\n  width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 108px;",
+        "width: 294px;"
+      ],
+      [
+        "width: 66px;",
+        "width: 90px;"
+      ],
+      [
+        "height: 304px;",
+        "height: 318px;"
+      ],
+      [
+        "height: 394px;",
+        "height: 408px;"
+      ],
+      [
+        "padding: 0px 6px 0px 6px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "padding: 0px 3px 40px 3px;",
+        "padding: 0px 3px 20px 15px;"
+      ],
+      [
+        ".cell {\n  width: 97px;\n  height: 70px;\n  margin: 3px;",
+        ".cell {\n  width: 126px;\n  height: 78px;\n  margin: 4px;"
+      ],
+      [
+        ".cell2 {\n  width: 96px;\n  height: 70px;\n  margin: 3px;",
+        ".cell2 {\n  width: 193px;\n  height: 78px;\n  margin: 4px;"
+      ],
+      [
+        ".icon {\n  width: 32px;\n  height: 32px;",
+        ".icon {\n  width: 36px;\n  height: 36px;"
+      ],
+      [
+        "width: 93px;",
+        "width: 120px;"
+      ],
+      [
+        "width: 200px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 128px;",
+        "width: 344px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ]
+    ],
+    "src/pages/hset/hset.ux": [
+      [
+        ".opt { position: absolute; left: 3px; width: 206px;",
+        ".opt { position: absolute; left: 8px; width: 416px;"
+      ],
+      [
+        "width: 100px;",
+        "width: 310px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        ".optB { top: 216px; }",
+        ".optB { top: 340px; }"
+      ],
+      [
+        "双栏网格",
+        "三栏网格"
+      ],
+      [
+        "gridCells: [1, 2, 3, 4]",
+        "gridCells: [1, 2, 3, 4, 5, 6]"
+      ],
+      [
+        ".miniCell { width: 16px;",
+        ".miniCell { width: 10px;"
+      ]
+    ],
+    "src/pages/set/set.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "margin: 0px 3px 8px 3px;",
+        "margin: 0px 8px 8px 8px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "'双栏网格'",
+        "'三栏网格'"
+      ]
+    ],
+    "src/pages/toolcat/toolcat.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "padding: 0px 6px 0px 6px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 200px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 128px;",
+        "width: 344px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ]
+    ],
+    "src/pages/toolfav/toolfav.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "padding: 0px 6px 0px 6px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 200px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 128px;",
+        "width: 344px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ]
+    ],
+    "src/pages/toolhide/toolhide.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "padding: 0px 6px 0px 6px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 200px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 128px;",
+        "width: 344px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ]
+    ],
+    "src/pages/toolact/toolact.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "margin: 0px 3px 8px 3px;",
+        "margin: 0px 8px 8px 8px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 134px;",
+        "width: 344px;"
+      ]
+    ],
+    "src/pages/companion/companion.ux": [
+      [
+        "left: 12px; top: 76px; width: 110px;",
+        "left: 16px; top: 76px; width: 220px;"
+      ],
+      [
+        "left: 122px; top: 76px; width: 78px;",
+        "left: 246px; top: 76px; width: 170px;"
+      ],
+      [
+        "left: 6px; top: 94px; width: 200px;",
+        "left: 8px; top: 94px; width: 416px;"
+      ],
+      [
+        "left: 6px; top: 136px; width: 200px;",
+        "left: 8px; top: 136px; width: 416px;"
+      ],
+      [
+        "width: 56px;",
+        "width: 96px;"
+      ],
+      [
+        "width: 84px;",
+        "width: 196px;"
+      ],
+      [
+        "left: 3px; width: 206px;",
+        "left: 8px; width: 416px;"
+      ],
+      [
+        "left: 3px; top: 344px; width: 206px;",
+        "left: 8px; top: 344px; width: 416px;"
+      ],
+      [
+        ".actRow { top: 400px; }",
+        ".actRow { top: 436px; }"
+      ]
+    ],
+    "src/pages/companion/clock/clock.ux": [
+      [
+        "left: 212px; top: 0px; width: 520px; height: 212px",
+        "left: 432px; top: 0px; width: 466px; height: 432px"
+      ],
+      [
+        "width: 384px; height: 196px",
+        "width: 438px; height: 416px"
+      ]
+    ],
+    "src/pages/calculator/calculator.ux": [
+      [
+        ".key { width: 44px;",
+        ".key { width: 99px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "width: 188px;",
+        "width: 408px;"
+      ],
+      [
+        "width: 192px;",
+        "width: 412px;"
+      ],
+      [
+        "margin: 4px 3px 0px 3px;",
+        "margin: 4px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 194px;",
+        "width: 404px;"
+      ],
+      [
+        "width: 116px;",
+        "width: 336px;"
+      ],
+      [
+        "exprW: 188,",
+        "exprW: 408,"
+      ],
+      [
+        "exprBaseW: 188,",
+        "exprBaseW: 408,"
+      ],
+      [
+        "scrollW: 188,",
+        "scrollW: 408,"
+      ],
+      [
+        "w < 188 ? 188 : w",
+        "w < 408 ? 408 : w"
+      ]
+    ],
+    "src/pages/calendar/calendar.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "left: 1px;",
+        "left: 16px;"
+      ],
+      [
+        "width: 210px;",
+        "width: 400px;"
+      ],
+      [
+        "width: 30px;",
+        "width: 57px;"
+      ],
+      [
+        "left: 10px;",
+        "left: 20px;"
+      ],
+      [
+        "width: 192px;",
+        "width: 392px;"
+      ],
+      [
+        ".dnum { width: 26px; height: 26px; line-height: 26px; margin: 3px 2px; border-radius: 13px;",
+        ".dnum { width: 45px; height: 28px; line-height: 28px; margin: 2px 6px; border-radius: 14px;"
+      ],
+      [
+        "left: 30px;",
+        "left: 116px;"
+      ],
+      [
+        "width: 152px;",
+        "width: 200px;"
+      ],
+      [
+        "width: 72px;",
+        "width: 94px;"
+      ],
+      [
+        "width: 68px;",
+        "width: 90px;"
+      ],
+      [
+        "left: 44px;",
+        "left: 96px;"
+      ],
+      [
+        "width: 124px;",
+        "width: 240px;"
+      ]
+    ],
+    "src/pages/input/input.ux": [
+      [
+        ".editorCard { position: absolute; left: 3px; top: 80px; width: 206px;",
+        ".editorCard { position: absolute; left: 8px; top: 80px; width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 138px;",
+        "width: 348px;"
+      ],
+      [
+        ".editorCardKb { height: 72px; }",
+        ".editorCardKb { top: 34px; height: 78px; }"
+      ],
+      [
+        ".eLabelKb {}",
+        ".eLabelKb { padding-left: 56px; width: 320px; }"
+      ]
+    ],
+    "src/pages/morseCode/morseCode.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        ".pBtn { width: 64px;",
+        ".pBtn { width: 132px;"
+      ],
+      [
+        ".tapArea { position: absolute; left: 26px; top: 322px; width: 160px;",
+        ".tapArea { position: absolute; left: 96px; top: 322px; width: 240px;"
+      ],
+      [
+        "width: 160px;",
+        "width: 240px;"
+      ],
+      [
+        "left: 12px;",
+        "left: 16px;"
+      ],
+      [
+        "width: 188px;",
+        "width: 400px;"
+      ],
+      [
+        ".mBtn { width: 44px;",
+        ".mBtn { width: 108px;"
+      ],
+      [
+        ".manual { width: 100px;",
+        ".manual { width: 148px;"
+      ]
+    ],
+    "src/pages/unitconvert/radix/radix.ux": [
+      [
+        "<text class=\"f eVal\">{{ dL2 }}</text>",
+        "<text class=\"f eVal\" if=\"{{ dL2 }}\">{{ dL2 }}</text>"
+      ],
+      [
+        ".editCardKb {}",
+        ".editCardKb { top: 74px; height: 27px; padding: 0px 12px; }"
+      ],
+      [
+        ".eLabel { width: 182px; height: 16px; line-height: 16px;",
+        ".eLabel { width: 392px; height: 0px; line-height: 0px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 182px;",
+        "width: 392px;"
+      ],
+      [
+        "width: 47px;",
+        "width: 98px;"
+      ],
+      [
+        "height: 40px;",
+        "height: 36px;"
+      ],
+      [
+        "top: 124px;",
+        "top: 116px;"
+      ],
+      [
+        "top: 200px;",
+        "top: 188px;"
+      ],
+      [
+        "height: 192px;",
+        "height: 168px;"
+      ],
+      [
+        "height: 60px;",
+        "height: 52px;"
+      ],
+      [
+        "height: 16px;",
+        "height: 14px;"
+      ],
+      [
+        "height: 22px;",
+        "height: 19px;"
+      ],
+      [
+        "height: 24px;",
+        "height: 26px;"
+      ],
+      [
+        "font-size: 18px;",
+        "font-size: 16px;"
+      ],
+      [
+        "font-size: 20px;",
+        "font-size: 17px;"
+      ]
+    ],
+    "src/pages/colorcard/colorcard.ux": [
+      [
+        ".eLabel { width: 182px; height: 18px; line-height: 18px;",
+        ".eLabel { width: 392px; height: 0px; line-height: 0px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 182px;",
+        "width: 392px;"
+      ],
+      [
+        "width: 120px;",
+        "width: 330px;"
+      ],
+      [
+        ".editCardKb {}",
+        ".editCardKb { top: 74px; height: 27px; padding: 0px 12px; }"
+      ]
+    ],
+    "src/pages/colorpick/colorpick.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 182px;",
+        "width: 392px;"
+      ],
+      [
+        "width: 142px;",
+        "width: 352px;"
+      ],
+      [
+        "width: 140px;",
+        "width: 350px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ]
+    ],
+    "src/pages/colorpick/preset/preset.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 106px;",
+        "width: 316px;"
+      ]
+    ],
+    "src/pages/numinput/numinput.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 178px;",
+        "width: 388px;"
+      ],
+      [
+        "width: 48px;",
+        "width: 98px;"
+      ]
+    ],
+    "src/pages/textShow/textShow.ux": [
+      [
+        "top: 160px;",
+        "top: 118px;"
+      ],
+      [
+        "left: 21px;",
+        "left: 36px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 360px;"
+      ],
+      [
+        "top: 462px;",
+        "top: 424px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 200px;",
+        "height: 230px;"
+      ],
+      [
+        "left: 212px;",
+        "left: 432px;"
+      ],
+      [
+        "width: 520px;",
+        "width: 466px;"
+      ],
+      [
+        "height: 212px;",
+        "height: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ]
+    ],
+    "src/pages/qrcode/show/show.ux": [
+      [
+        ".qrCard { position: absolute; left: 26px; top: 90px; width: 160px; height: 160px;",
+        ".qrCard { position: absolute; left: 116px; top: 86px; width: 200px; height: 200px;"
+      ],
+      [
+        ".qr { width: 136px; height: 136px;",
+        ".qr { width: 176px; height: 176px;"
+      ],
+      [
+        "left: 20px; top: 258px; width: 172px;",
+        "left: 16px; top: 296px; width: 400px;"
+      ],
+      [
+        ".barBtn { position: absolute; left: 26px; top: 396px; width: 160px;",
+        ".barBtn { position: absolute; left: 116px; top: 388px; width: 200px;"
+      ],
+      [
+        ".hint { position: absolute; left: 21px; top: 448px; width: 170px;",
+        ".hint { position: absolute; left: 36px; top: 438px; width: 360px;"
+      ],
+      [
+        ".favBtn { position: absolute; left: 26px; top: 434px; width: 160px;",
+        ".favBtn { position: absolute; left: 116px; top: 428px; width: 200px;"
+      ],
+      [
+        "left: 212px; top: 0px; width: 520px; height: 212px; transform-origin: 0 0; transform: rotate(90deg); padding: 12px 54px 12px 24px;",
+        "left: 432px; top: 0px; width: 466px; height: 432px; transform-origin: 0 0; transform: rotate(90deg); padding: 24px 36px 24px 36px;"
+      ],
+      [
+        "width: 420px; height: 184px;",
+        "width: 394px; height: 320px;"
+      ],
+      [
+        "width: 380px; height: 92px;",
+        "width: 380px; height: 180px;"
+      ],
+      [
+        "width: 352px; height: 72px;",
+        "width: 356px; height: 144px;"
+      ],
+      [
+        ".barText { width: 400px;",
+        ".barText { width: 394px;"
+      ]
+    ],
+    "src/pages/lyrics/show/show.ux": [
+      [
+        "width: 212px; height: 336px",
+        "width: 432px; height: 334px"
+      ],
+      [
+        "left: 212px; top: 0px; width: 520px; height: 212px",
+        "left: 432px; top: 0px; width: 466px; height: 432px"
+      ],
+      [
+        "width: 520px; height: 212px",
+        "width: 466px; height: 432px"
+      ],
+      [
+        "width: 188px",
+        "width: 408px"
+      ],
+      [
+        "width: 412px",
+        "width: 366px"
+      ],
+      [
+        "left: 18px",
+        "left: 16px"
+      ],
+      [
+        "width: 176px",
+        "width: 400px"
+      ],
+      [
+        "width: 84px",
+        "width: 192px"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px",
+        "width: 416px"
+      ],
+      [
+        "width: 212px",
+        "width: 432px"
+      ],
+      [
+        "height: 466px;",
+        "height: 514px;"
+      ]
+    ],
+    "src/pages/level/level.ux": [
+      [
+        "left: 16px;",
+        "left: 106px;"
+      ],
+      [
+        "width: 180px;",
+        "width: 220px;"
+      ],
+      [
+        "height: 180px;",
+        "height: 220px;"
+      ],
+      [
+        "border-radius: 90px;",
+        "border-radius: 110px;"
+      ],
+      [
+        "top: 92px;",
+        "top: 86px;"
+      ],
+      [
+        "left: 26px;",
+        "left: 116px;"
+      ],
+      [
+        "top: 181px;",
+        "top: 195px;"
+      ],
+      [
+        "width: 160px;",
+        "width: 200px;"
+      ],
+      [
+        "left: 105px;",
+        "left: 215px;"
+      ],
+      [
+        "top: 102px;",
+        "top: 96px;"
+      ],
+      [
+        "height: 160px;",
+        "height: 200px;"
+      ],
+      [
+        "left: 78px;",
+        "left: 188px;"
+      ],
+      [
+        "top: 154px;",
+        "top: 168px;"
+      ],
+      [
+        "top: 284px;",
+        "top: 316px;"
+      ],
+      [
+        "top: 312px;",
+        "top: 342px;"
+      ],
+      [
+        "left: 48px; top: 352px; width: 116px;",
+        "left: 146px; top: 376px; width: 140px;"
+      ],
+      [
+        "left: 21px; top: 424px; width: 170px;",
+        "left: 36px; top: 430px; width: 360px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "const MAX_OFFSET = 70",
+        "const MAX_OFFSET = 86"
+      ],
+      [
+        "const DOT_BASE_LEFT = 97",
+        "const DOT_BASE_LEFT = 207"
+      ],
+      [
+        "const DOT_BASE_TOP = 173",
+        "const DOT_BASE_TOP = 187"
+      ]
+    ],
+    "src/pages/motion/motion.ux": [
+      [
+        ".hint { position: absolute; left: 6px; top: 322px; width: 200px;",
+        ".hint { position: absolute; left: 8px; top: 322px; width: 416px;"
+      ],
+      [
+        ".card { position: absolute; left: 3px; width: 196px;",
+        ".card { position: absolute; left: 8px; width: 404px;"
+      ],
+      [
+        "width: 114px;",
+        "width: 300px;"
+      ],
+      [
+        "width: 200px;",
+        "width: 404px;"
+      ],
+      [
+        "left: 6px;",
+        "left: 8px;"
+      ],
+      [
+        "left: 120px;",
+        "left: 310px;"
+      ],
+      [
+        "left: 203px;",
+        "left: 420px;"
+      ]
+    ],
+    "src/pages/motion/gun/gun.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "left: 66px; top: 124px;",
+        "left: 176px; top: 124px;"
+      ],
+      [
+        "left: 102px;",
+        "left: 212px;"
+      ],
+      [
+        "left: 105px;",
+        "left: 215px;"
+      ],
+      [
+        "left: 74px;",
+        "left: 184px;"
+      ],
+      [
+        "left: 58px;",
+        "left: 168px;"
+      ],
+      [
+        "left: 78px;",
+        "left: 188px;"
+      ],
+      [
+        "left: 98px;",
+        "left: 208px;"
+      ],
+      [
+        "left: 118px;",
+        "left: 228px;"
+      ],
+      [
+        "left: 138px;",
+        "left: 248px;"
+      ],
+      [
+        "left: 48px; top: 286px; width: 116px;",
+        "left: 136px; top: 286px; width: 160px;"
+      ],
+      [
+        "left: 27px;",
+        "left: 137px;"
+      ],
+      [
+        "left: 147px;",
+        "left: 257px;"
+      ],
+      [
+        "left: 66px; top: 420px; width: 80px;",
+        "left: 156px; top: 416px; width: 120px;"
+      ]
+    ],
+    "src/pages/motion/hoop/hoop.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        ".board { position: absolute; left: 46px;",
+        ".board { position: absolute; left: 156px;"
+      ],
+      [
+        "left: 56px;",
+        "left: 166px;"
+      ],
+      [
+        "left: 76px;",
+        "left: 186px;"
+      ],
+      [
+        "left: 105px;",
+        "left: 215px;"
+      ],
+      [
+        "left: 134px;",
+        "left: 244px;"
+      ],
+      [
+        "left: 66px; top: 396px; width: 80px;",
+        "left: 156px; top: 396px; width: 120px;"
+      ],
+      [
+        "left: 86,",
+        "left: 196,"
+      ]
+    ],
+    "src/pages/cubeTimer/cubeTimer.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "left: 6px; top: 92px; width: 200px;",
+        "left: 8px; top: 92px; width: 408px;"
+      ],
+      [
+        ".rowWrap { position: absolute; left: 3px; top: 120px; width: 206px; height: 200px;",
+        ".rowWrap { position: absolute; left: 8px; top: 120px; width: 408px; height: 200px;"
+      ],
+      [
+        ".row { width: 206px; height: 36px;",
+        ".row { width: 408px; height: 36px;"
+      ],
+      [
+        ".avgCard { position: absolute; left: 3px; top: 320px; width: 206px; height: 86px;",
+        ".avgCard { position: absolute; left: 8px; top: 320px; width: 408px; height: 86px;"
+      ],
+      [
+        ".avgLabel { position: absolute; left: 18px; top: 10px; width: 120px;",
+        ".avgLabel { position: absolute; left: 24px; top: 10px; width: 220px;"
+      ],
+      [
+        ".avgVal { position: absolute; left: 18px; top: 32px; width: 140px;",
+        ".avgVal { position: absolute; left: 24px; top: 32px; width: 240px;"
+      ],
+      [
+        ".avgCount { position: absolute; left: 140px; top: 42px; width: 54px;",
+        ".avgCount { position: absolute; left: 310px; top: 42px; width: 80px;"
+      ],
+      [
+        ".mainBtn { position: absolute; left: 26px; top: 260px; width: 160px;",
+        ".mainBtn { position: absolute; left: 116px; top: 260px; width: 200px;"
+      ],
+      [
+        ".stopBtn { position: absolute; left: 66px; top: 265px; width: 80px;",
+        ".stopBtn { position: absolute; left: 166px; top: 265px; width: 100px;"
+      ],
+      [
+        ".clearBtn { position: absolute; left: 66px; top: 424px; width: 80px;",
+        ".clearBtn { position: absolute; left: 166px; top: 416px; width: 100px;"
+      ],
+      [
+        ".dots { position: absolute; left: 203px;",
+        ".dots { position: absolute; left: 422px;"
+      ]
+    ],
+    "src/pages/reaction/reaction.ux": [
+      [
+        "left: 6px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 200px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 95px;",
+        "width: 202px;"
+      ],
+      [
+        "width: 120px;",
+        "width: 180px;"
+      ],
+      [
+        "width: 184px;",
+        "width: 400px;"
+      ],
+      [
+        "width: 176px;",
+        "width: 392px;"
+      ]
+    ],
+    "src/pages/kinship/kinship.ux": [
+      [
+        ".resCard { position: absolute; left: 3px; top: 80px; width: 206px;",
+        ".resCard { position: absolute; left: 8px; top: 80px; width: 416px;"
+      ],
+      [
+        "width: 182px;",
+        "width: 392px;"
+      ],
+      [
+        ".ctrlRow { position: absolute; left: 3px; top: 188px; width: 206px;",
+        ".ctrlRow { position: absolute; left: 8px; top: 188px; width: 416px;"
+      ],
+      [
+        "width: 68px;",
+        "width: 130px;"
+      ],
+      [
+        "width: 132px;",
+        "width: 278px;"
+      ],
+      [
+        ".pad { position: absolute; left: 6px; top: 228px; width: 200px; height: 186px;",
+        ".pad { position: absolute; left: 8px; top: 228px; width: 416px; height: 220px;"
+      ],
+      [
+        ".kRow { width: 200px; height: 58px;",
+        ".kRow { width: 416px; height: 68px;"
+      ],
+      [
+        ".kBtn { width: 47px; height: 58px;",
+        ".kBtn { width: 98px; height: 66px;"
+      ]
+    ],
+    "src/pages/unitconvert/unitconvert.ux": [
+      [
+        "left: 3px; top: 88px; width: 206px; height: 378px;",
+        "left: 15px; top: 88px; width: 414px; height: 374px;"
+      ],
+      [
+        ".grid { width: 206px; height: 448px;",
+        ".grid { width: 414px; height: 350px;"
+      ],
+      [
+        "width: 97px;",
+        "width: 128px;"
+      ],
+      [
+        "width: 91px;",
+        "width: 122px;"
+      ]
+    ],
+    "src/pages/unitconvert/convert/convert.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "left: 165px;",
+        "left: 376px;"
+      ],
+      [
+        "width: 140px;",
+        "width: 340px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 380px;"
+      ],
+      [
+        "left: 16px; top: 206px; width: 180px;",
+        "left: 24px; top: 206px; width: 384px;"
+      ],
+      [
+        "left: 16px; top: 330px; width: 180px;",
+        "left: 36px; top: 330px; width: 360px;"
+      ]
+    ],
+    "src/pages/unitconvert/picker/picker.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 150px;",
+        "width: 360px;"
+      ],
+      [
+        "width: 100px;",
+        "width: 300px;"
+      ],
+      [
+        "width: 48px;",
+        "width: 56px;"
+      ]
+    ],
+    "src/pages/timezone/timezone.ux": [
+      [
+        ".card { position: absolute; left: 3px; width: 206px;",
+        ".card { position: absolute; left: 8px; width: 416px;"
+      ],
+      [
+        "width: 144px;",
+        "width: 340px;"
+      ],
+      [
+        "left: 165px;",
+        "left: 376px;"
+      ],
+      [
+        "width: 84px;",
+        "width: 190px;"
+      ],
+      [
+        "left: 100px;",
+        "left: 224px;"
+      ],
+      [
+        "width: 94px;",
+        "width: 186px;"
+      ],
+      [
+        "width: 180px;",
+        "width: 384px;"
+      ],
+      [
+        ".diffLine { position: absolute; left: 8px; top: 330px; width: 196px;",
+        ".diffLine { position: absolute; left: 8px; top: 330px; width: 416px;"
+      ],
+      [
+        ".btnRow { position: absolute; left: 3px; top: 362px; width: 206px;",
+        ".btnRow { position: absolute; left: 8px; top: 362px; width: 416px;"
+      ],
+      [
+        "width: 99px;",
+        "width: 202px;"
+      ]
+    ],
+    "src/pages/timezone/picker/picker.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 150px;",
+        "width: 350px;"
+      ],
+      [
+        "width: 50px;",
+        "width: 58px;"
+      ],
+      [
+        "width: 152px;",
+        "width: 360px;"
+      ],
+      [
+        "height: 246px;",
+        "height: 280px;"
+      ],
+      [
+        "top: 422px;",
+        "top: 456px;"
+      ]
+    ],
+    "src/pages/habit/list/list.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 108px;",
+        "width: 318px;"
+      ],
+      [
+        "width: 190px;",
+        "width: 396px;"
+      ],
+      [
+        "left: 132px;",
+        "left: 344px;"
+      ],
+      [
+        "top: 396px;",
+        "top: 386px;"
+      ]
+    ],
+    "src/pages/habit/edit/edit.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "height: 384px;",
+        "height: 418px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 146px; height: 36px; margin-left: 30px;",
+        "width: 200px; height: 36px; margin-left: 108px;"
+      ]
+    ],
+    "src/pages/daysmatter/list/list.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 90px;",
+        "width: 280px;"
+      ],
+      [
+        "width: 86px;",
+        "width: 106px;"
+      ],
+      [
+        "left: 132px;",
+        "left: 344px;"
+      ],
+      [
+        "top: 396px;",
+        "top: 386px;"
+      ]
+    ],
+    "src/pages/daysmatter/edit/edit.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "height: 384px;",
+        "height: 418px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "margin-left: 48px;",
+        "margin-left: 150px;"
+      ]
+    ],
+    "src/pages/daysmatter/inputdate/inputdate.ux": [
+      [
+        "left: 46px;",
+        "left: 156px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "left: 58px;",
+        "left: 168px;"
+      ]
+    ],
+    "src/pages/notebook/list/list.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 140px;",
+        "width: 350px;"
+      ],
+      [
+        "left: 132px;",
+        "left: 344px;"
+      ],
+      [
+        "top: 396px;",
+        "top: 386px;"
+      ]
+    ],
+    "src/pages/notebook/show/show.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "width: 188px;",
+        "width: 408px;"
+      ],
+      [
+        ".bar { position: absolute; left: 18px; top: 420px; width: 176px;",
+        ".bar { position: absolute; left: 16px; top: 420px; width: 400px;"
+      ],
+      [
+        ".btn { width: 84px;",
+        ".btn { width: 192px;"
+      ],
+      [
+        ".mRow { position: absolute; left: 3px; width: 206px;",
+        ".mRow { position: absolute; left: 8px; width: 416px;"
+      ],
+      [
+        ".mCancel { position: absolute; left: 3px; top: 388px; width: 206px;",
+        ".mCancel { position: absolute; left: 8px; top: 388px; width: 416px;"
+      ]
+    ],
+    "src/pages/notebook/edit/edit.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ]
+    ],
+    "src/pages/notebook/rename/rename.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "left: 74px;",
+        "left: 184px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ]
+    ],
+    "src/pages/notebook/import/import.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 140px;",
+        "width: 350px;"
+      ],
+      [
+        "left: 21px; top: 410px; width: 170px;",
+        "left: 36px; top: 404px; width: 360px;"
+      ]
+    ],
+    "src/pages/otp/list/list.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 130px;",
+        "width: 310px;"
+      ],
+      [
+        "width: 62px;",
+        "width: 120px;"
+      ]
+    ],
+    "src/pages/otp/detail/detail.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "left: 21px;",
+        "left: 36px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 360px;"
+      ],
+      [
+        "left: 51px;",
+        "left: 161px;"
+      ],
+      [
+        "width: 62px;",
+        "width: 120px;"
+      ],
+      [
+        "top: 416px;",
+        "top: 448px;"
+      ]
+    ],
+    "src/pages/otp/edit/edit.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "left: 21px;",
+        "left: 36px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 360px;"
+      ],
+      [
+        "top: 348px;",
+        "top: 380px;"
+      ],
+      [
+        "top: 416px;",
+        "top: 448px;"
+      ]
+    ],
+    "src/pages/otp/settings/settings.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "height: 438px;",
+        "height: 418px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 194px;",
+        "width: 404px;"
+      ]
+    ],
+    "src/pages/otp/sync/sync.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 140px;",
+        "width: 350px;"
+      ],
+      [
+        "left: 21px; top: 410px; width: 170px;",
+        "left: 36px; top: 404px; width: 360px;"
+      ]
+    ],
+    "src/pages/about/about.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "margin: 0px 3px 8px 3px;",
+        "margin: 0px 8px 8px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "margin-left: 78px;",
+        "margin-left: 188px;"
+      ],
+      [
+        "width: 180px;",
+        "width: 400px;"
+      ]
+    ],
+    "src/pages/PFinfo/PFinfo.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "margin: 0px 3px 7px 3px;",
+        "margin: 0px 8px 7px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 190px;",
+        "width: 400px;"
+      ]
+    ],
+    "src/pages/system/system.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 100px;",
+        "width: 300px;"
+      ]
+    ],
+    "src/pages/storage/storage.ux": [
+      [
+        "left: 22px;",
+        "left: 132px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 444px; width: 360px;"
+      ]
+    ],
+    "src/pages/performance/performance.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 190px;",
+        "width: 400px;"
+      ],
+      [
+        "width: 182px;",
+        "width: 392px;"
+      ],
+      [
+        "left: 26px; top: 350px; width: 160px;",
+        "left: 96px; top: 348px; width: 240px;"
+      ],
+      [
+        "left: 16px; top: 428px; width: 180px;",
+        "left: 36px; top: 428px; width: 360px;"
+      ]
+    ],
+    "src/pages/time/time.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 438px;",
+        "height: 418px;"
+      ],
+      [
+        "margin: 0px 3px 8px 3px;",
+        "margin: 0px 8px 8px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ]
+    ],
+    "src/pages/history/history.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 110px;",
+        "width: 300px;"
+      ],
+      [
+        "margin: 0px 3px 10px 3px;",
+        "margin: 0px 8px 10px 8px;"
+      ],
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 444px; width: 360px;"
+      ]
+    ],
+    "src/pages/dailytip/dailytip.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 380px;"
+      ],
+      [
+        "left: 26px; top: 374px; width: 160px;",
+        "left: 96px; top: 374px; width: 240px;"
+      ],
+      [
+        ".btn { width: 160px;",
+        ".btn { width: 240px;"
+      ],
+      [
+        "left: 6px; top: 440px; width: 200px;",
+        "left: 36px; top: 438px; width: 360px;"
+      ]
+    ],
+    "src/pages/cpsTest/cpsTest.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "left: 20px; top: 226px; width: 172px;",
+        "left: 36px; top: 226px; width: 360px;"
+      ],
+      [
+        "left: 26px; top: 272px; width: 160px;",
+        "left: 76px; top: 272px; width: 280px;"
+      ],
+      [
+        "left: 26px; top: 360px; width: 160px;",
+        "left: 96px; top: 360px; width: 240px;"
+      ],
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 438px; width: 360px;"
+      ]
+    ],
+    "src/pages/diet/diet.ux": [
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 444px; width: 360px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 380px;"
+      ],
+      [
+        "left: 26px; top: 392px; width: 160px;",
+        "left: 96px; top: 392px; width: 240px;"
+      ]
+    ],
+    "src/pages/random/random.ux": [
+      [
+        ".row { position: absolute; left: 3px; top: 84px; width: 206px;",
+        ".row { position: absolute; left: 8px; top: 84px; width: 416px;"
+      ],
+      [
+        "width: 110px;",
+        "width: 310px;"
+      ],
+      [
+        ".result { position: absolute; left: 3px; top: 246px; width: 206px;",
+        ".result { position: absolute; left: 8px; top: 246px; width: 416px;"
+      ],
+      [
+        "width: 190px;",
+        "width: 400px;"
+      ],
+      [
+        "left: 26px; top: 390px; width: 160px;",
+        "left: 96px; top: 390px; width: 240px;"
+      ],
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 444px; width: 360px;"
+      ]
+    ],
+    "src/pages/lightRandom/lightRandom.ux": [
+      [
+        "left: 21px; top: 444px; width: 170px;",
+        "left: 36px; top: 444px; width: 360px;"
+      ],
+      [
+        "left: 12px;",
+        "left: 16px;"
+      ],
+      [
+        ".modeCard { position: absolute; left: 3px; width: 206px;",
+        ".modeCard { position: absolute; left: 8px; width: 416px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 380px;"
+      ],
+      [
+        ".segs { position: absolute; left: 6px; top: 358px; width: 200px;",
+        ".segs { position: absolute; left: 8px; top: 358px; width: 416px;"
+      ],
+      [
+        "left: 26px; width: 160px;",
+        "left: 96px; width: 240px;"
+      ],
+      [
+        ".result { position: absolute; left: 3px; top: 150px; width: 206px;",
+        ".result { position: absolute; left: 8px; top: 150px; width: 416px;"
+      ],
+      [
+        "width: 190px;",
+        "width: 400px;"
+      ]
+    ],
+    "src/pages/wasteSorting/wasteSorting.ux": [
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 444px; width: 360px;"
+      ],
+      [
+        ".inputCard { position: absolute; left: 3px; top: 82px; width: 206px;",
+        ".inputCard { position: absolute; left: 8px; top: 82px; width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        ".chips { position: absolute; left: 6px; top: 170px; width: 200px;",
+        ".chips { position: absolute; left: 8px; top: 170px; width: 416px;"
+      ],
+      [
+        ".chip { width: 46px;",
+        ".chip { width: 96px;"
+      ],
+      [
+        ".result { position: absolute; left: 3px; top: 214px; width: 206px;",
+        ".result { position: absolute; left: 8px; top: 214px; width: 416px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 380px;"
+      ],
+      [
+        "left: 66px; top: 400px; width: 80px;",
+        "left: 136px; top: 400px; width: 160px;"
+      ]
+    ],
+    "src/pages/scoreboard/scoreboard.ux": [
+      [
+        ".timer { position: absolute; left: 3px; top: 82px; width: 206px;",
+        ".timer { position: absolute; left: 8px; top: 82px; width: 416px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "left: 41px;",
+        "left: 146px;"
+      ],
+      [
+        "width: 92px;",
+        "width: 200px;"
+      ],
+      [
+        ".red { left: 8px;",
+        ".red { left: 10px;"
+      ],
+      [
+        ".blue { left: 112px;",
+        ".blue { left: 222px;"
+      ],
+      [
+        "width: 66px;",
+        "width: 120px;"
+      ],
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 444px; width: 360px;"
+      ]
+    ],
+    "src/pages/num/num.ux": [
+      [
+        ".display { position: absolute; left: 3px; top: 80px; width: 206px;",
+        ".display { position: absolute; left: 8px; top: 80px; width: 416px;"
+      ],
+      [
+        ".chips { position: absolute; left: 6px; top: 276px; width: 200px;",
+        ".chips { position: absolute; left: 8px; top: 276px; width: 416px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 96px;",
+        "width: 202px;"
+      ],
+      [
+        "left: 26px; top: 370px; width: 160px;",
+        "left: 96px; top: 370px; width: 240px;"
+      ],
+      [
+        "left: 71px; top: 430px; width: 70px;",
+        "left: 166px; top: 428px; width: 100px;"
+      ]
+    ],
+    "src/pages/vibrate/vibrate.ux": [
+      [
+        "left: 6px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 200px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "left: 16px; top: 244px; width: 180px;",
+        "left: 36px; top: 244px; width: 360px;"
+      ],
+      [
+        ".wave { width: 8px;",
+        ".wave { width: 14px;"
+      ],
+      [
+        "left: 26px; top: 378px; width: 160px;",
+        "left: 96px; top: 378px; width: 240px;"
+      ],
+      [
+        "left: 16px; top: 436px; width: 180px;",
+        "left: 36px; top: 436px; width: 360px;"
+      ]
+    ],
+    "src/pages/fish/fish.ux": [
+      [
+        "left: 31px;",
+        "left: 141px;"
+      ],
+      [
+        "left: 36px;",
+        "left: 146px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        ".statCard { position: absolute; left: 3px; top: 268px; width: 206px;",
+        ".statCard { position: absolute; left: 8px; top: 268px; width: 416px;"
+      ],
+      [
+        "left: 24px;",
+        "left: 48px;"
+      ],
+      [
+        "left: 62px; top: 424px; width: 88px;",
+        "left: 156px; top: 422px; width: 120px;"
+      ],
+      [
+        "width: 60px;",
+        "width: 120px;"
+      ],
+      [
+        "left: 128px;",
+        "left: 264px;"
+      ],
+      [
+        "left: 4px;",
+        "left: 16px;"
+      ],
+      [
+        "width: 56px;",
+        "width: 80px;"
+      ],
+      [
+        "width: 35px;",
+        "width: 72px;"
+      ],
+      [
+        ".chipOff { left: 60px; }",
+        ".chipOff { left: 108px; }"
+      ],
+      [
+        ".chipSlow { left: 97px; }",
+        ".chipSlow { left: 188px; }"
+      ],
+      [
+        ".chipMid { left: 134px; }",
+        ".chipMid { left: 268px; }"
+      ],
+      [
+        ".chipFast { left: 171px; }",
+        ".chipFast { left: 348px; }"
+      ]
+    ],
+    "src/pages/display/display.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "left: 30px; top: 42px; width: 152px;",
+        "left: 36px; top: 42px; width: 360px;"
+      ],
+      [
+        ".name { width: 68px;",
+        ".name { width: 180px;"
+      ],
+      [
+        ".count { width: 36px;",
+        ".count { width: 64px;"
+      ],
+      [
+        "width: 106px;",
+        "width: 216px;"
+      ],
+      [
+        "left: 106px;",
+        "left: 216px;"
+      ],
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 442px; width: 360px;"
+      ]
+    ],
+    "src/pages/flashlight/flashlight.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ]
+    ],
+    "src/pages/fluorescence/fluorescence.ux": [
+      [
+        "left: 6px; top: 436px; width: 200px;",
+        "left: 36px; top: 436px; width: 360px;"
+      ],
+      [
+        "left: 12px;",
+        "left: 16px;"
+      ],
+      [
+        "left: 6px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 200px;",
+        "width: 416px;"
+      ],
+      [
+        "left: 26px; top: 368px; width: 160px;",
+        "left: 96px; top: 368px; width: 240px;"
+      ]
+    ],
+    "src/pages/fluorescence/play/play.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "left: 32px; top: 44px; width: 148px;",
+        "left: 36px; top: 44px; width: 360px;"
+      ],
+      [
+        ".btn { width: 44px;",
+        ".btn { width: 64px;"
+      ],
+      [
+        ".title { width: 60px;",
+        ".title { width: 160px;"
+      ],
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 442px; width: 360px;"
+      ]
+    ],
+    "src/pages/colorcard/view/view.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "top: 448px;",
+        "top: 440px;"
+      ]
+    ],
+    "src/pages/qrcode/qrcode.ux": [
+      [
+        ".inputCard { position: absolute; left: 3px; top: 78px; width: 206px;",
+        ".inputCard { position: absolute; left: 8px; top: 78px; width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 150px;",
+        "width: 350px;"
+      ],
+      [
+        "left: 6px; top: 200px; width: 200px;",
+        "left: 8px; top: 200px; width: 416px;"
+      ],
+      [
+        ".chip { width: 62px;",
+        ".chip { width: 132px;"
+      ],
+      [
+        "left: 26px; top: 264px; width: 160px;",
+        "left: 96px; top: 264px; width: 240px;"
+      ],
+      [
+        "left: 16px; top: 330px; width: 180px;",
+        "left: 36px; top: 330px; width: 360px;"
+      ],
+      [
+        "left: 26px; top: 372px; width: 160px;",
+        "left: 96px; top: 372px; width: 240px;"
+      ],
+      [
+        "left: 26px; top: 418px; width: 160px;",
+        "left: 96px; top: 418px; width: 240px;"
+      ]
+    ],
+    "src/pages/qrcode/wifi/wifi.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 442px;",
+        "height: 422px;"
+      ],
+      [
+        "margin: 0px 3px 8px 3px;",
+        "margin: 0px 8px 8px 8px;"
+      ],
+      [
+        "margin: 8px 3px 0px 3px;",
+        "margin: 8px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        ".chips { margin: 4px 6px 0px 6px;",
+        ".chips { margin: 4px 8px 0px 8px;"
+      ],
+      [
+        "width: 62px;",
+        "width: 132px;"
+      ],
+      [
+        "margin: 12px 26px 0px 26px;",
+        "margin: 12px 96px 0px 96px;"
+      ],
+      [
+        ".go { width: 160px;",
+        ".go { width: 240px;"
+      ]
+    ],
+    "src/pages/qrcode/fav/fav.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 438px;",
+        "height: 418px;"
+      ],
+      [
+        "margin: 0px 3px 6px 3px;",
+        "margin: 0px 8px 6px 8px;"
+      ],
+      [
+        "margin: 0px 3px 8px 3px;",
+        "margin: 0px 8px 8px 8px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 178px;",
+        "width: 388px;"
+      ],
+      [
+        "margin: 12px 19px 0px 19px;",
+        "margin: 12px 24px 0px 24px;"
+      ]
+    ],
+    "src/pages/qrcode/import/import.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 140px;",
+        "width: 350px;"
+      ],
+      [
+        "left: 21px; top: 410px; width: 170px;",
+        "left: 36px; top: 404px; width: 360px;"
+      ]
+    ],
+    "src/pages/marquee/marquee.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 190px;",
+        "width: 400px;"
+      ],
+      [
+        "width: 160px;",
+        "width: 350px;"
+      ]
+    ],
+    "src/pages/marqueeSet/marqueeSet.ux": [
+      [
+        ".inputCard { position: absolute; left: 3px; top: 80px; width: 206px;",
+        ".inputCard { position: absolute; left: 8px; top: 80px; width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 158px;",
+        "width: 344px;"
+      ],
+      [
+        "left: 6px; width: 200px;",
+        "left: 8px; width: 416px;"
+      ],
+      [
+        ".chip { width: 62px;",
+        ".chip { width: 132px;"
+      ],
+      [
+        "left: 12px; width: 188px;",
+        "left: 16px; width: 400px;"
+      ],
+      [
+        ".preview { position: absolute; left: 3px; top: 366px; width: 206px;",
+        ".preview { position: absolute; left: 8px; top: 366px; width: 416px;"
+      ],
+      [
+        "width: 190px;",
+        "width: 396px;"
+      ],
+      [
+        "left: 26px; top: 414px; width: 160px;",
+        "left: 96px; top: 414px; width: 240px;"
+      ]
+    ],
+    "src/pages/lylist/lylist.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 140px;",
+        "width: 350px;"
+      ],
+      [
+        "left: 132px;",
+        "left: 344px;"
+      ],
+      [
+        "top: 396px;",
+        "top: 386px;"
+      ]
+    ],
+    "src/pages/imeTest/imeTest.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "height: 268px;",
+        "height: 256px;"
+      ],
+      [
+        "height: 244px;",
+        "height: 232px;"
+      ],
+      [
+        "height: 240px;",
+        "height: 228px;"
+      ],
+      [
+        "left: 26px; top: 370px; width: 160px;",
+        "left: 96px; top: 370px; width: 240px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ]
+    ],
+    "src/pages/lyrics/edit/edit.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ]
+    ],
+    "src/pages/lyrics/showmode/showmode.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 140px;",
+        "width: 330px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ]
+    ],
+    "src/pages/lyrics/transfer/transfer.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 408px;",
+        "height: 418px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 140px;",
+        "width: 350px;"
+      ],
+      [
+        "left: 21px; top: 410px; width: 170px;",
+        "left: 36px; top: 404px; width: 360px;"
+      ]
+    ],
+    "src/pages/answer/answer.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "width: 130px; height: 180px;",
+        "width: 190px; height: 240px;"
+      ],
+      [
+        "left: 28px; top: 58px;",
+        "left: 112px; top: 38px;"
+      ],
+      [
+        "left: 54px; top: 50px;",
+        "left: 142px; top: 28px;"
+      ],
+      [
+        "left: 40px; top: 54px;",
+        "left: 126px; top: 32px;"
+      ],
+      [
+        "left: 32px; top: 42px; width: 148px; height: 204px;",
+        "left: 108px; top: 24px; width: 216px; height: 264px;"
+      ],
+      [
+        "width: 66px; height: 66px;",
+        "width: 84px; height: 84px;"
+      ],
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 438px; width: 360px;"
+      ]
+    ],
+    "src/pages/answer/a1/a1.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 380px;"
+      ],
+      [
+        "left: 26px; top: 356px; width: 160px;",
+        "left: 96px; top: 356px; width: 240px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ]
+    ],
+    "src/pages/metronome/metronome.ux": [
+      [
+        ".bpmBox { position: absolute; left: 3px; top: 84px; width: 206px;",
+        ".bpmBox { position: absolute; left: 8px; top: 84px; width: 416px;"
+      ],
+      [
+        "width: 190px;",
+        "width: 400px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "left: 6px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 200px;",
+        "width: 416px;"
+      ],
+      [
+        ".mt { width: 36px;",
+        ".mt { width: 76px;"
+      ],
+      [
+        ".lv { width: 97px;",
+        ".lv { width: 202px;"
+      ],
+      [
+        "left: 26px; top: 354px; width: 160px;",
+        "left: 96px; top: 354px; width: 240px;"
+      ],
+      [
+        "left: 16px; top: 408px; width: 180px;",
+        "left: 36px; top: 410px; width: 360px;"
+      ]
+    ],
+    "src/pages/tapTempo/tapTempo.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 520px;",
+        "height: 514px;"
+      ],
+      [
+        "left: 20px; top: 236px; width: 172px;",
+        "left: 36px; top: 236px; width: 360px;"
+      ],
+      [
+        "left: 91px;",
+        "left: 201px;"
+      ],
+      [
+        "left: 26px; top: 358px; width: 160px;",
+        "left: 96px; top: 358px; width: 240px;"
+      ],
+      [
+        "left: 16px; top: 424px; width: 180px;",
+        "left: 36px; top: 424px; width: 360px;"
+      ]
+    ],
+    "src/pages/datecalc/datecalc.ux": [
+      [
+        "left: 21px; top: 444px; width: 170px;",
+        "left: 36px; top: 440px; width: 360px;"
+      ],
+      [
+        "left: 12px;",
+        "left: 16px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 380px;"
+      ],
+      [
+        "left: 26px;",
+        "left: 96px;"
+      ],
+      [
+        "width: 160px;",
+        "width: 240px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ]
+    ],
+    "src/pages/counter/counter.ux": [
+      [
+        "left: 26px; width: 160px;",
+        "left: 96px; width: 240px;"
+      ],
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "left: 66px; top: 432px; width: 80px;",
+        "left: 156px; top: 428px; width: 120px;"
+      ]
+    ],
+    "src/pages/sentence/sentence.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 438px;",
+        "height: 418px;"
+      ],
+      [
+        "height: 414px;",
+        "height: 410px;"
+      ],
+      [
+        "margin: 0px 3px;",
+        "margin: 0px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 380px;"
+      ],
+      [
+        ".actions { margin: 20px 18px 0px 18px;",
+        ".actions { margin: 16px 24px 0px 24px;"
+      ],
+      [
+        ".btn { width: 84px;",
+        ".btn { width: 184px;"
+      ],
+      [
+        ".favEntry { margin: 14px 26px 0px 26px; width: 160px;",
+        ".favEntry { margin: 12px 96px 0px 96px; width: 240px;"
+      ]
+    ],
+    "src/pages/sentence/fav/fav.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "height: 290px;",
+        "height: 324px;"
+      ],
+      [
+        "margin: 0px 3px 6px 3px;",
+        "margin: 0px 8px 6px 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ],
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "top: 422px;",
+        "top: 456px;"
+      ]
+    ],
+    "src/pages/sentence/favdetail/favdetail.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 170px;",
+        "width: 380px;"
+      ],
+      [
+        "left: 26px; top: 410px; width: 160px;",
+        "left: 96px; top: 406px; width: 240px;"
+      ]
+    ],
+    "src/pages/password/password.ux": [
+      [
+        "width: 212px;",
+        "width: 432px;"
+      ],
+      [
+        "padding: 0px 3px 0px 3px;",
+        "padding: 0px 8px 0px 8px;"
+      ],
+      [
+        ".tabs { position: absolute; left: 6px; top: 82px; width: 200px;",
+        ".tabs { position: absolute; left: 8px; top: 82px; width: 416px;"
+      ],
+      [
+        ".pwdCard { position: absolute; left: 3px; top: 0px; width: 206px;",
+        ".pwdCard { position: absolute; left: 8px; top: 0px; width: 416px;"
+      ],
+      [
+        ".pwd { width: 190px;",
+        ".pwd { width: 400px;"
+      ],
+      [
+        ".lenRow { position: absolute; left: 12px; top: 230px; width: 188px;",
+        ".lenRow { position: absolute; left: 16px; top: 230px; width: 400px;"
+      ],
+      [
+        ".sets { position: absolute; left: 6px; top: 176px; width: 200px;",
+        ".sets { position: absolute; left: 8px; top: 176px; width: 416px;"
+      ],
+      [
+        ".set { width: 46px;",
+        ".set { width: 96px;"
+      ],
+      [
+        ".actions { position: absolute; left: 18px; top: 224px; width: 176px;",
+        ".actions { position: absolute; left: 16px; top: 224px; width: 400px;"
+      ],
+      [
+        ".btn { width: 84px;",
+        ".btn { width: 192px;"
+      ],
+      [
+        ".favCard { width: 206px;",
+        ".favCard { width: 416px;"
+      ],
+      [
+        ".empty { width: 206px;",
+        ".empty { width: 416px;"
+      ],
+      [
+        "width: 174px;",
+        "width: 384px;"
+      ]
+    ],
+    "src/pages/passwordDetail/passwordDetail.ux": [
+      [
+        "left: 3px;",
+        "left: 8px;"
+      ],
+      [
+        "width: 206px;",
+        "width: 416px;"
+      ],
+      [
+        "width: 186px;",
+        "width: 396px;"
+      ],
+      [
+        "left: 21px; top: 448px; width: 170px;",
+        "left: 36px; top: 442px; width: 360px;"
+      ]
+    ]
+  }
+}

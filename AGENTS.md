@@ -59,7 +59,7 @@
   ```bash
   # Beta（默认，development 模式；版本号不动，只升 versionCode）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta
-  # Beta（三包：band10 + band9 + pro336 一次出齐，同一产物目录）
+  # Beta（多包：band10 + band9 + pro336 + rw432 一次出齐，同一产物目录）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta --all-profiles
   # Beta（用户明确要求升版本号时：--ver 升版本号，versionCode 照旧 +1）
   NODE_OPTIONS="--require $PWD/tools/copyfile-shim.cjs" bash tools/make-release.sh --beta --ver 0.1.3 --all-profiles
@@ -146,8 +146,36 @@ Vela 的 `<scroll>` **必须显式给内容高**（子容器给 `height`）。�
   `INNER_H` 算式用上了 `CARD_COUNT` / `PAD_H`、`.card` 带 `flex-shrink:0`；
   ③ profile 的 `layout.text` 宽度令牌与 CSS 里的文本框宽度一致 —— 任一条不符直接拦下构建。
   **已知未修的页面记在 R17 的 `R17_EXEMPT` 表里**（同一类缺陷，逐页收口；修好一页删一行）：
-  歌词正文 ×3 / 笔记正文 ×2 / 口令设置卡片 / 收藏列表与详情 / WiFi 表单。
+  歌词正文 ×3 / 笔记正文 ×2 / 口令设置卡片 / WiFi 表单。
   （另：`parseUxTemplate` 解析前会先去掉 HTML 注释 —— 注释里出现 `<text>` 这类字面量会把标签配对打乱。）
+
+## 长列表分页（2026-11-28 起，勿破坏）
+
+收藏列表（`src/pages/sentence/fav/fav.ux`）与选城列表（`src/pages/timezone/picker/picker.ux`）
+原先一次物化全部条目 —— 收藏几十张卡、城市首屏 40 个 list-item，手环上首帧要 8~25s。
+两页统一改为**每页固定 5 项 + 上下翻页条**，只渲染当前页：
+
+- **页码口径唯一真源** `src/utils/pager.js`（`SIZE = 5` / `count` / `clamp` / `start`）。
+  页面不得各自写死 5 或另写一套页数算式；新增长列表页沿用同一套。
+- **翻页条**：正文上下各一条 `.pager`（左 `‹` 上一页 / 中 `x/y` / 右 `›` 下一页，按钮 44×36 圆钮），
+  位置类 `.pagerTop`（y88）/ `.pagerBot`。到头一侧的文字色置灰
+  （`rgba(255,255,255,0.3)`），可翻一侧 `#4E87FF`；成功翻页 `g.haptic.short()`。
+  `.pgNum` 固定宽 90、靠 `justify-content: space-between` 居中，宽度随 profile 自动换。
+  按钮做 44 宽（不是 36）是为了左键跨到 x≥40：模拟器的 x<40 触摸假象下，
+  自动化点 `x = pagerL + 40` 仍落在按钮里（左键 3..47），真机则整钮可点。
+- **收藏页**：`.body` top 128、底 = 翻页条顶 − 4；卡片 `padding: 10px 16px`、
+  `margin-bottom: 6px`（5 条短句正好一页）；`.inner` 高度只按**当前页 5 条**估算，
+  `all` 只存文本、`items` 才是当页卡片。条目本身超长时仍可在页内滚。
+- **选城页**：搜索行 128..168（高 40），列表 172 起、行高 42 + 间距 2（5 行 218px 一页）。
+  **不要再加「显示更多」或 40 行批渲染** —— 那等于把一次性物化的老问题带回来。
+- **翻页条与视口底随 profile**：`.pagerBot` top band10 / band9 `422`、pro336 `400`、
+  rw432 `456`（band9 底 458 < 466 可绘制底）；收藏正文高 290 / 290 / 268 / 324，
+  选城列表高 246 / 246 / 224 / 280（band10 / band9 / pro336 / rw432）。
+  改高度要同步三个 profile 的替换对，`tools/test-profile.mjs` 会校验漂移。
+- **E2E**：`.venv-emu/bin/python tools/test-pager-sim.py --profile <id> --rpk <包>` —— 起模拟器、
+  种子 12 条收藏、按像素判据核对（5 卡 / 5 行、末页禁用、x/y 随翻页变化）。
+  band9 的布局验收用 `Vela_Band9V5`（192×490、1:1）；`Vela_Band9V4` 是 466 画布，
+  `designWidth=device-width` 会被放大 2.4×，只用于引擎/API 验证（见 `docs/band9-vela4-spike.md`）。
 
 ## 首页双栏网格模式 grid2（2026-11-21 起，Pro 专属，勿破坏）
 
@@ -186,17 +214,18 @@ Vela 的 `<scroll>` **必须显式给内容高**（子容器给 `height`）。�
   - 模块级 `lastLongAt` 守卫（800ms）：长按触发时记录 `Date.now()`，`open(item)` 首行校验互斥，彻底防止长按抬手后系统补发 click 误进工具页面。
 - **三个新页面规范**：`toolact` / `toolfav` / `toolhide` 均严格遵守门禁规范——不使用 `data`（只用 `protected` + `private`，避开 Vela 黑屏坑）；可点元素必须 y≥92（严格遵守门禁 **R15**，不与页头返回命中区重叠）；并在 `src/manifest.json` 与 `profiles/pro336.json`、`profiles/band9.json` 中完整登记。
 
-## 设备 profile（2026-11-12 起；2026-11-20 增 band9，勿破坏）
+## 设备 profile（2026-11-12 起；2026-11-20 增 band9；2026-11-27 增 rw432，勿破坏）
 
-源码基线是 **band10（212×520 跑道屏）**；`pro336`（小米手环 9 Pro/10 Pro，336×480）与 `band9`（小米手环 9，192×490 胶囊屏，Vela 4）是构建期物化的另外两个包体，**同包名 `com.lkjhg.bandbox`、rpk 文件名分别带 `.pro.` / `.band9.` 段**：
+源码基线是 **band10（212×520 跑道屏）**；`pro336`（小米手环 9 Pro/10 Pro，336×480）、`band9`（小米手环 9，192×490 胶囊屏，Vela 4）与 `rw432`（REDMI Watch 5 / 5 eSIM / 6，432×514 方屏）是构建期物化的另外三个包体，**同包名 `com.lkjhg.bandbox`、rpk 文件名分别带 `.pro.` / `.band9.` / `.rw.` 段**（2026-11-27 用户定：REDMI Watch 的后缀统一写 `rw` 便于识别，profile `tag: "rw"`；`id` 仍是 `rw432`）：
 
-- `profiles/band10.json`（恒等基线）、`profiles/pro336.json` 与 `profiles/band9.json`（逐文件替换表）是唯一真源；布局改动先改基线，再在两个非基线 profile 里各加对应替换对，`tools/test-profile.mjs` 会校验漂移（band9 适配后为 4730 项）。
-- **band9 特有令牌**：`layout.companion.drawableH=436`（band10/Pro 为 466，这是**桌面伴侣**的画布高，与快应用画布不是一回事）、`assets.shadow=[192,84]`；键盘态「完成」栏在 InputMethod 组件内部（见下），**三机型几何一致**（键盘顶恒 y101），**不要再往页面模板里加 kbBar**。
+- `profiles/band10.json`（恒等基线）、`profiles/pro336.json`、`profiles/band9.json` 与 `profiles/rw432.json`（逐文件替换表）是唯一真源；布局改动先改基线，再在非基线 profile 里各加对应替换对，`tools/test-profile.mjs` 会校验漂移。
+- **band9 / rw432 特有令牌**：`band9` 的 `layout.companion.drawableH=436`（band10/Pro/rw432 为 466，这是**桌面伴侣**的画布高，与快应用画布不是一回事）、`assets.shadow=[192,84]`；`rw432` 的 `home.cols=3`（`rowH=86`、`padBottom=20`）、`ime.kbW=432`（全宽非滚动 10 列键盘）、`assets.shadow=[432,84]`。键盘态「完成」栏在 InputMethod 组件内部（见下），**四机型几何一致**（键盘顶恒 y101），**不要再往页面模板里加 kbBar**。
+- **rw432 真机可绘制高 = 全屏 514（2026-11-27 真机判决，勿再按 466 收口）**：用户真机（REDMI Watch 5）实测「手电筒 / 显示测试」白屏亮到最底边 —— 底部 48px「系统底栏」是 `vela-watch-5.0` **模拟器镜像**运行时自画的 UI，真机固件没有（band10 先例同款：模拟器 466、真机 ~500）。因此 rw432 的底部几何按**设计底 500**（离物理底 14px；R80 圆角从 y≈480 起才明显咬边）：首页 `.apps` 182..500 / `.appsUp` 92..500、网格垫底 20（`HOME.padBottom=20` 与 `.grid` CSS 一致）、卡片/列表页滚动视口一律 `top + 418`（top 78/142 的页对应 422/358）、`.actRow` top 436（theme.css 全局；companion 页面级覆盖对同值；otp/edit 与 otp/detail 的页面级底部行 380/448）。当初按 466 假设压出来的 `418/408/438→374` 压制对已清理。给 rw432 新增页面时底部按 500 设计，别回抄 band10 的 460/466 口径；横屏旋转容器（companion clock / textShow / qrcode show 466 宽）与键盘锚定（y101）暂未放宽，留待后续轮次。
 - **仓库里提交的源码永远必须是 band10 基线态**：物化只在构建瞬间发生，`make-release.sh` 退出时自动还原（trap）。手动物化后记得 `node tools/apply-profile.mjs band10` 还原，提交前用 `node tools/apply-profile.mjs --check band10` 确认。
 - 门禁 **R8**（源码树物化状态 == `BANDBOX_PROFILE`）与 **R9**（shadow.png 尺寸匹配 profile）随 R1–R7 一起跑；`npm run build:jsc` 的 prebuild 也会跑门禁，构建非 band10 包时必须带 `BANDBOX_PROFILE=<id>` 环境变量。
 - 门禁 **R10**（计算器几何常量与 CSS 自洽）：`src/pages/calculator/calculator.ux` 的滚动内容高度由 `EXPR_H`/`KEY_ROW_H`/`KEYS_PER_ROW` 等常量累加得出，改了 CSS 盒子（高度/宽度/每行键数）却没改常量，构建直接失败。**页面内容高度不要在 `profiles/*.json` 里按机型分别估**——那种覆盖对会随排版变化变陈旧（Pro 曾把 `ADV_H` 估成 408、实际 500，第三个开关被裁在视口外）。两机型排版一致就共用一套常量。
 - `src/common/layout.js` 是生成文件（勿手改）：JS 侧布局常量（首页网格列数/行高、跑马灯视口、IME、COMPANION.drawableH）由 `apply-profile.mjs` 按 profile 生成。
-- 模拟器：Pro 用 `Vela_BandPro` AVD，band9 用 `Vela_Band9V4`（Vela 4 引擎 + 192×490 皮肤；配方与实测坑见 `docs/band9-vela4-spike.md` 与 notes/0.1.2-band9.md；docs/ 不入库，仅本地）。**V4 AVD 两个已知假象**：① 触摸输入 x<40 一律不注册（README「触摸坐标 ≈40px 偏移」的具体化），自动化点按 x 必须 ≥40；② 布局视口高 466（y≥466 不绘制）。
+- 模拟器：Pro 用 `Vela_BandPro` AVD，band9 用 `Vela_Band9V4`（Vela 4 引擎 + 192×490 皮肤；配方与实测坑见 `docs/band9-vela4-spike.md` 与 notes/0.1.2-band9.md；docs/ 不入库，仅本地），REDMI Watch 用 `Vela_RedmiWatch` AVD（432×514，`redmi_watch` 皮肤，见 `docs/redmi-watch-spike.md`）。**V4 AVD 两个已知假象**：① 触摸输入 x<40 一律不注册（README「触摸坐标 ≈40px 偏移」的具体化），自动化点按 x 必须 ≥40；② 布局视口高 466（y≥466 不绘制）。
 
 ## 桌面伴侣「精美样式」第三版式（2026-11-23 起，勿破坏）
 
