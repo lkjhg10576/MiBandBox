@@ -2,7 +2,7 @@
   "package": "com.lkjhg.bandbox",
   "name": "BandBox",
   "versionName": "0.1.3",
-  "versionCode": 307,
+  "versionCode": 308,
   "minPlatformVersion": 1100,
   "simulationVersion": "default",
   "deviceTypeList": [
