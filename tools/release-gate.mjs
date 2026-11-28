@@ -373,8 +373,8 @@ function scanNavStoreContract() {
   if (!/preNap\s*\(/.test(routerSrc) || !/wakePrevious\s*\(/.test(routerSrc)) {
     problems.push({ file: 'src/utils/router.js', msg: 'router.js 未使用 preNap/wakePrevious（隐藏页的 awake 更新不生效，必须在离场前卸 UI）' })
   }
-  if (!/markBackgrounded\s*\(/.test(read('src/app.ux'))) {
-    problems.push({ file: 'src/app.ux', msg: 'app.ux 未在 onShow/onHide 标记导航日志的后台态' })
+  if (/markBackgrounded|consumeResume|resumeLast|navStore\.boot/.test(read('src/app.ux') + read('src/pages/home/home.ux') + read('src/utils/pageLife.js'))) {
+    problems.push({ file: 'src/utils/navStore.js', msg: '自动续页接口（boot/markBackgrounded/consumeResume/resumeLast）已整体移除（2026-11-28：正常退出被误判为崩溃、重开跳回最后页面），不得复用' })
   }
   for (const rel of walk('src', '.ux').concat(walk('src', '.js'))) {
     const norm = rel.replace(/\\/g, '/')

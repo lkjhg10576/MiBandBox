@@ -9,7 +9,6 @@ import g from './global'
 import interconnectUtil from './utils/interconnect'
 import pushInbox from './utils/pushInbox'
 import layoutFlag from './utils/layoutFlag'
-import navStore from './utils/navStore'
 import { rebalance } from './utils/pageLife'
 
 function normalizeLayout(mode) {
@@ -42,7 +41,6 @@ function notifyLayout() {
 
 export default {
   onCreate() {
-    try { navStore.boot() } catch (e) {}
     layoutState.mode = 'grid'
     layoutState.ready = false
     layoutState.watchers = []
@@ -107,28 +105,11 @@ export default {
     notifyLayout()
   },
   /**
-   * 生命周期标记：只写导航日志的后台态，不碰 KV。
-   * 崩溃续页只恢复「未进后台的异常退出」，正常退到后台/桌面不恢复。
-   */
-  onShow() {
-    try {
-      navStore.markBackgrounded(false)
-    } catch (e) {}
-  },
-  onHide() {
-    try {
-      navStore.markBackgrounded(true)
-    } catch (e) {}
-  },
-  /**
    * 应用退出兜底：把可能还开着的高亮/常亮会话收掉。
    * 页面自己的 onDestroy 可能来不及执行（从桌面直接划掉应用），亮度与常亮会永久留在页面的值上。
    * 只碰屏幕状态、不碰 KV（app.ux 既有约定：KV 只读不写）。
    */
   onDestroy() {
-    try {
-      navStore.markBackgrounded(true)
-    } catch (e) {}
     try {
       g.screen.leave()
     } catch (e) {}
