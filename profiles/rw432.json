@@ -1115,6 +1115,10 @@
         ".avgCount { position: absolute; left: 310px; top: 42px; width: 80px;"
       ],
       [
+        ".modeBtn { position: absolute; left: 26px; top: 92px; width: 160px;",
+        ".modeBtn { position: absolute; left: 116px; top: 92px; width: 200px;"
+      ],
+      [
         ".mainBtn { position: absolute; left: 26px; top: 260px; width: 160px;",
         ".mainBtn { position: absolute; left: 116px; top: 260px; width: 200px;"
       ],

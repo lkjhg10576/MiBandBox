@@ -716,6 +716,7 @@
       [".row { width: 206px; height: 36px;", ".row { width: 186px; height: 32px;"],
       ["left: 3px; top: 320px; width: 206px; height: 86px;", "left: 3px; top: 306px; width: 186px; height: 86px;"],
       ["left: 140px", "left: 120px"],
+      [".modeBtn { position: absolute; left: 26px;", ".modeBtn { position: absolute; left: 16px;"],
       ["left: 26px; top: 260px;", "left: 16px; top: 260px;"],
       ["left: 66px", "left: 56px"],
       ["top: 424px", "top: 394px"],

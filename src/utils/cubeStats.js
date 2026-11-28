@@ -11,6 +11,21 @@
 /** 存档键（g.kv） */
 export const KV_KEY = 'cubeStats'
 
+/** 计时模式偏好键（g.kv）：'flat' = 体感（StackMat），'cd' = 倒计时 */
+export const MODE_KEY = 'cubeMode'
+
+/**
+ * 清洗模式偏好：只认 'flat' / 'cd'，其余（含老版本无值）回默认体感。
+ *
+ * 两种模式的成绩共用同一存档、统计页不做模式标注（口径差异由用户自行掌握）。
+ *
+ * @param {*} raw KV 原值
+ * @returns {'flat'|'cd'}
+ */
+export function cleanMode(raw) {
+  return raw === 'cd' ? 'cd' : 'flat'
+}
+
 /** 最多保留多少条（平均按最近 30 次算） */
 export const MAX_KEEP = 30
 
@@ -124,6 +139,7 @@ export function clear() {
 
 export default {
   KV_KEY,
+  MODE_KEY,
   MAX_KEEP,
   RECENT_N,
   load,
@@ -131,5 +147,6 @@ export default {
   recent,
   avgMs,
   formatMs,
+  cleanMode,
   clear
 }

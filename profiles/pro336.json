@@ -591,6 +591,7 @@
       [".avgLabel { position: absolute; left: 18px; top: 10px; width: 120px;", ".avgLabel { position: absolute; left: 24px; top: 10px; width: 150px;"],
       [".avgVal { position: absolute; left: 18px; top: 32px; width: 140px;", ".avgVal { position: absolute; left: 24px; top: 32px; width: 160px;"],
       [".avgCount { position: absolute; left: 140px; top: 42px; width: 54px;", ".avgCount { position: absolute; left: 240px; top: 42px; width: 78px;"],
+      [".modeBtn { position: absolute; left: 26px; top: 92px;", ".modeBtn { position: absolute; left: 88px; top: 92px;"],
       [".mainBtn { position: absolute; left: 26px; top: 260px; width: 160px;", ".mainBtn { position: absolute; left: 88px; top: 260px; width: 160px;"],
       [".stopBtn { position: absolute; left: 66px; top: 265px; width: 80px;", ".stopBtn { position: absolute; left: 128px; top: 265px; width: 80px;"],
       [".clearBtn { position: absolute; left: 66px; top: 424px; width: 80px;", ".clearBtn { position: absolute; left: 128px; top: 410px; width: 80px;"],

@@ -7,18 +7,23 @@
 
     <!-- 计时视图 -->
     <div class="timerView" if="{{ !showStats }}">
+      <!-- 模式切换钮：两模式共用，常驻正文最顶（点按开始区从 y126 起避开这一行） -->
+      <div class="modeBtn" if="{{ showModeBtn }}" @click="onToggleMode">
+        <text class="f modeBtnT">{{ modeBtnText }}</text>
+      </div>
+
       <text class="f status" style="color: {{ statusColor }};">{{ status }}</text>
       <text class="f bigTime">{{ bigTime }}</text>
       <text class="f subInfo">{{ subInfo }}</text>
 
-      <div class="mainBtn" if="{{ phase !== 'running' }}" @click="onMainBtn">
+      <div class="mainBtn" if="{{ phase !== 'running' && !isCd }}" @click="onMainBtn">
         <text class="f mainBtnT">{{ mainBtnText }}</text>
       </div>
       <div class="stopBtn" if="{{ phase === 'running' }}" @click="onManualStop">
         <text class="f stopBtnT">手动结束</text>
       </div>
 
-      <text class="f hint1">平放待命 · 翻腕起表 · 再平放收表</text>
+      <text class="f hint1">{{ hint1Text }}</text>
       <text class="f hint2">上滑查看成绩</text>
     </div>
 
@@ -57,15 +62,18 @@
 @import '../../common/styles/theme.css';
 /* 计时视图 / 统计视图：两个包装层都要是「定位盒子」——
    Vela 里带 if 的 div 若没有尺寸与定位，里面的绝对定位子元素不会被布局（整屏空白）。
-   高度只包住各自正文（计时 386 / 统计 454），别超过可绘制高度 466：
+   高度只包住各自正文（计时 400 / 统计 460），别超过可绘制高度 466：
    页面根节点是竖向可拖的，包装层一旦超过视口，滑动翻页就会连页面一起拖走
    （标题被拖出屏幕顶）。motion.ux 的卡片就是按正文高度裁的。 */
 .timerView { position: absolute; left: 0px; top: 0px; width: 212px; height: 400px; }
 .statsView { position: absolute; left: 0px; top: 0px; width: 212px; height: 460px; }
 /* 计时视图 */
-.status { position: absolute; left: 0px; top: 92px; width: 212px; height: 26px; line-height: 26px; text-align: center; font-size: 16px; }
-.bigTime { position: absolute; left: 0px; top: 126px; width: 212px; height: 64px; line-height: 64px; text-align: center; font-size: 44px; color: #FFFFFF; }
-.subInfo { position: absolute; left: 0px; top: 198px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
+/* 模式切换钮：正文最顶 y92..122；倒计时模式的「点空白开始」从 y126 起判，避开这一行 */
+.modeBtn { position: absolute; left: 26px; top: 92px; width: 160px; height: 30px; border-radius: 15px; background-color: #262626; z-index: 20; align-items: center; justify-content: center; }
+.modeBtnT { font-size: 14px; color: rgba(255,255,255,0.7); }
+.status { position: absolute; left: 0px; top: 130px; width: 212px; height: 26px; line-height: 26px; text-align: center; font-size: 16px; }
+.bigTime { position: absolute; left: 0px; top: 162px; width: 212px; height: 64px; line-height: 64px; text-align: center; font-size: 44px; color: #FFFFFF; }
+.subInfo { position: absolute; left: 0px; top: 234px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 14px; color: rgba(255,255,255,0.55); }
 /* 主按钮：z-index 20 < 返回按钮的 99，不会挡住返回 */
 .mainBtn { position: absolute; left: 26px; top: 260px; width: 160px; height: 48px; border-radius: 24px; background-color: #0D6EFF; z-index: 20; align-items: center; justify-content: center; }
 .mainBtnT { font-size: 17px; font-weight: bold; color: #FFFFFF; }
@@ -106,6 +114,9 @@ const COLOR_READY = '#00C853'
 const COLOR_RUN = '#FFD166'
 const COLOR_WARN = '#FF9500'
 
+// 倒计时模式「点空白处开始」的下沿：modeBtn 带（y92..122）不参与，页头 0..74 本就不算
+const TAP_TOP = 126
+
 // 本页同时只有一个实例，内核与「上次写入」缓存放模块作用域。
 // 页面对象不能同时有 data 与 private（Vela 运行时会抛错），所以不用 private。
 let core = null
@@ -118,18 +129,24 @@ let lastStatus = ''
 let lastBig = ''
 let lastSub = ''
 let lastBtn = ''
+let modeCache = null  // 会话内已确认的模式（'flat'|'cd'）：热重进页即取即用，kv 读盘后校正
+let tapGuardUntil = 0 // 刚点开始后的连点保护窗：这段里的点不当作「取消」
 
 export default life({
   data: {
     clock: '--:--',
     pageTitle: '魔方计时',
     showStats: false,
+    isCd: false,
     phase: 'idle',
+    showModeBtn: true,
     status: '点下方按钮准备',
     statusColor: COLOR_IDLE,
     bigTime: '00.000',
     subInfo: '点「准备」后把手平放',
     mainBtnText: '准备开始',
+    modeBtnText: '切换倒计时模式',
+    hint1Text: '平放待命 · 翻腕起表 · 再平放收表',
     recentRows: [],
     avgText: '--',
     avgCount: '还没有成绩',
@@ -155,8 +172,8 @@ export default life({
     lastBig = ''
     lastSub = ''
     lastBtn = ''
-    core = cubeMotion.createCubeMotion()
-    this.resetView()
+    // 会话缓存即取即建（冷启动首访默认体感）；kv 读盘后若不一致会切过去
+    this.applyMode(modeCache || 'flat')
 
     // 读成绩存档
     g.kv.init(() => {
@@ -166,6 +183,13 @@ export default life({
         times = cubeStats.push(times, pending, Date.now())
         g.kv.set(cubeStats.KV_KEY, times)
         pending = null
+      }
+      // 模式偏好：冷启动首次读盘校正（切换钮写盘后热重进走 modeCache，不会到这里）
+      const m = cubeStats.cleanMode(g.kv.get(cubeStats.MODE_KEY, null))
+      if (m !== modeCache) {
+        modeCache = m
+        if (!page.$valid) return
+        page.applyMode(m)
       }
       if (!page.$valid) return
       page.applyStats()
@@ -194,13 +218,49 @@ export default life({
     if (ticker) { clearInterval(ticker); ticker = null }
     if (clearTimer) { clearTimeout(clearTimer); clearTimer = null }
   },
+  // 两套模式的空闲与提示文案（resetView / syncPhase 共用，别处别散写字面量）
+  modeTexts() {
+    if (this.isCd) {
+      return {
+        idleStatus: '点任意处开始',
+        idleSub: '3 秒倒计时 · 免平放待命',
+        hint1: '解完转腕屏幕朝上即停表',
+        modeBtn: '切回体感模式'
+      }
+    }
+    return {
+      idleStatus: '点下方按钮准备',
+      idleSub: '点「准备」后把手平放',
+      hint1: '平放待命 · 翻腕起表 · 再平放收表',
+      modeBtn: '切换倒计时模式'
+    }
+  },
+  // 建核 + 重置视图：进页与切换模式共用（this.isCd 是唯一模式真源，KV 只做持久化）
+  applyMode(m) {
+    this.isCd = m === 'cd'
+    if (core) core.abort()
+    core = cubeMotion.createCubeMotion(this.isCd ? { mode: 'countdown' } : null)
+    this.resetView()
+  },
+  // 模式切换钮：写盘持久化 + 换核重置（仅 idle/done 可点，模板已门控）
+  onToggleMode() {
+    const next = this.isCd ? 'flat' : 'cd'
+    modeCache = next
+    g.haptic.short()
+    g.kv.set(cubeStats.MODE_KEY, next)
+    this.applyMode(next)
+  },
   resetView() {
+    const m = this.modeTexts()
     this.phase = 'idle'
+    this.showModeBtn = true
     this.bigTime = '00.000'
     lastBig = '00.000'
-    this.setSub('点「准备」后把手平放')
+    this.setStatus(m.idleStatus, COLOR_IDLE)
+    this.setSub(m.idleSub)
     this.setBtn('准备开始')
-    this.setStatus('点下方按钮准备', COLOR_IDLE)
+    if (this.hint1Text !== m.hint1) this.hint1Text = m.hint1
+    if (this.modeBtnText !== m.modeBtn) this.modeBtnText = m.modeBtn
   },
   setStatus(text, color) {
     if (text === lastStatus) return
@@ -260,7 +320,32 @@ export default life({
     if (!core) return
     const st = core.state()
     if (this.phase !== st.phase) this.phase = st.phase
+    const wantModeBtn = st.phase === 'idle' || st.phase === 'done'
+    if (this.showModeBtn !== wantModeBtn) this.showModeBtn = wantModeBtn
     if (!sensorOk) return
+    if (this.isCd) {
+      if (st.phase === 'countdown') {
+        // 倒计时大字 3/2/1：帧驱动（GO 时刻由内核持有，显示只管倒数）
+        this.setStatus('倒计时…', COLOR_ARM)
+        const n = Math.max(1, Math.ceil(st.countdownLeft / 1000))
+        const txt = n > 3 ? '3' : String(n)
+        if (txt !== lastBig) {
+          this.bigTime = txt
+          lastBig = txt
+        }
+        this.setSub('点任意处取消')
+      } else if (st.phase === 'running') {
+        this.setStatus('计时中 · 抬腕收表', COLOR_RUN)
+        this.setSub('解拧中怎么转都不停表')
+      } else if (st.phase === 'done') {
+        this.setStatus('本次用时', COLOR_READY)
+      } else {
+        const m = this.modeTexts()
+        this.setStatus(m.idleStatus, COLOR_IDLE)
+        this.setSub(m.idleSub)
+      }
+      return
+    }
     if (st.phase === 'settling') {
       this.setStatus('请将手平放 · 保持静止', COLOR_ARM)
       this.setSub('正在识别平放姿态…')
@@ -275,8 +360,9 @@ export default life({
     } else if (st.phase === 'done') {
       this.setStatus('本次用时', COLOR_READY)
     } else {
-      this.setStatus('点下方按钮准备', COLOR_IDLE)
-      this.setSub('点「准备」后把手平放')
+      const m = this.modeTexts()
+      this.setStatus(m.idleStatus, COLOR_IDLE)
+      this.setSub(m.idleSub)
       this.setBtn('准备开始')
     }
   },
@@ -322,11 +408,12 @@ export default life({
   },
   finishRun(elapsed) {
     this.phase = 'done'
+    this.showModeBtn = true
     const txt = cubeStats.formatMs(elapsed)
     this.bigTime = txt
     lastBig = txt
-    this.setSub('点下方「再来一次」继续')
-    this.setBtn('再来一次')
+    this.setSub(this.isCd ? '点任意处再来一次' : '点下方「再来一次」继续')
+    if (!this.isCd) this.setBtn('再来一次')
     this.setStatus('本次用时', COLOR_READY)
     // 入库：读盘还没好就先挂着，读盘好了补写
     if (times) {
@@ -337,9 +424,9 @@ export default life({
     }
     this.applyStats()
   },
-  // 主按钮：准备 / 再来一次 / 取消
+  // 主按钮：准备 / 再来一次 / 取消（仅体感模式有主按钮；倒计时点空白处开始）
   onMainBtn() {
-    if (!core) return
+    if (!core || this.isCd) return
     const st = core.state()
     if (st.phase === 'idle' || st.phase === 'done') {
       // 准备：短振一次
@@ -360,7 +447,7 @@ export default life({
       this.setBtn('准备开始')
     }
   },
-  // 手动结束（判定失灵时的兜底）
+  // 手动结束（判定失灵时的兜底；两种模式通用）
   onManualStop() {
     if (!core) return
     const ev = core.manualStop(Date.now())
@@ -368,6 +455,28 @@ export default life({
     g.haptic.long()
     this.stopTicker()
     this.finishRun(ev.elapsed)
+  },
+  // 倒计时模式点空白处：空闲/结束 = 开始倒计时；倒计时中 = 取消；计时中不响应（兜底走「手动结束」钮）
+  onPageTap() {
+    if (!core || !this.isCd || this.showStats) return
+    const st = core.state()
+    if (st.phase === 'idle' || st.phase === 'done') {
+      const ev = core.startCountdown(Date.now())
+      if (!ev) return
+      g.haptic.short()
+      tapGuardUntil = Date.now() + 600
+      this.phase = 'countdown'
+      this.showModeBtn = false
+      this.bigTime = '3'
+      lastBig = '3'
+      this.setStatus('倒计时…', COLOR_ARM)
+      this.setSub('点任意处取消')
+    } else if (st.phase === 'countdown') {
+      if (Date.now() < tapGuardUntil) return   // 刚点开始的连点不当作取消
+      g.haptic.short()
+      core.abort()
+      this.resetView()
+    }
   },
   // 滑动翻页
   onTouchStart(e) {
@@ -384,8 +493,15 @@ export default life({
     this._sx = null
     this._sy = null
     // 纵向明显位移且远大于横向才算翻页：点按钮不受影响；方向不区分，小屏好命中
-    if (Math.abs(dy) < 60 || Math.abs(dy) < Math.abs(dx) * 1.5) return
-    this.toggleView()
+    if (Math.abs(dy) >= 60 && Math.abs(dy) >= Math.abs(dx) * 1.5) {
+      this.toggleView()
+      return
+    }
+    // 倒计时模式：点空白处 = 开始 / 取消。y126 以下才判（页头 0..74 与模式钮带 92..122 排除）
+    if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && t) {
+      const y = typeof t.pageY === 'number' ? t.pageY : t.clientY
+      if (y >= TAP_TOP) this.onPageTap()
+    }
   },
   toggleView() {
     g.haptic.short()
