@@ -67,12 +67,12 @@
 
 「设置」页「工具分类」开关卡：开 = 首页单栏显示 9 个工具类别，点进类别再单栏显示该类工具（两次点击直达）；关 = 回到上次记住的网格/列表样式。
 
-- **分类成员关系唯一真源 `src/data/cats.js`**（9 类/40 工具）；`src/data/apps.js` **一律不加 `cat` 字段**（数组顺序是模拟器脚本 `shoot-routes.py`/`motion-sim.py`/`cube-sim.py` 与 `perf-audit.mjs` 的 index 依据）。分类详情页路由 `pages/toolcat`，用 `protected: { cat }` 收类别 id。
+- **分类成员关系唯一真源 `src/data/cats.js`**（9 类/44 工具）；`src/data/apps.js` **一律不加 `cat` 字段**（数组顺序是模拟器脚本 `shoot-routes.py`/`motion-sim.py`/`cube-sim.py` 与 `perf-audit.mjs` 的 index 依据）。分类详情页路由 `pages/toolcat`，用 `protected: { cat }` 收类别 id。
 - **布局状态机四态** `'grid' | 'grid2' | 'list' | 'cat'`：`app.ux` normalizeLayout / `layoutFlag.js` read+write / `home.ux` applyLayout；复用既有状态机（KV `'home'` 键 + `layout.txt` 启动快标志 + watcher），**不另建一套**。KV 键 `'homeStyle'` 记上次非分类样式（关分类还原用，grid2 也参与）。
 - **三写范式**：任何布局变更 `app.setHomeLayout(mode)` → `layoutFlag.write(mode)` → `g.kv.set('home', mode)` + `g.kv.flush()` 三处同写。`set.ux` 的「恢复默认设置」必须补 `layoutFlag.write('grid')`。
 - 设置页开关卡**不能换 `<switch>`**（内联 style 三元 + 文字「开/关」，照 `calculator.ux` 的 `.swRow`）。设置页六张卡内容超两机型 body，`.body` 是 `<scroll>` + `.inner`（照 `about.ux` 结构）且 `.inner` 必须显式高度 —— **别改回普通 `<div>`**。
 - `set.ux` 的 `'双栏网格'` 字面量带单引号（pro336 替换对靠它命中），只许出现在 `layoutName()` 与 data 默认值两处；**全文件严禁 `'三栏网格'`**（注释也算，test-profile 按整文件子串匹配）。
-- **工具数唯一口径 = `apps.js` 条目数**（当前 40）：头图、README / README_EN、发布说明写「N 个工具」都以它为准。「进制转换」是「单位换算」第 13 类（radix 卡），不进首页网格不占名额；「体感手枪/空气投篮」是同一工具「体感游戏」。
+- **工具数唯一口径 = `apps.js` 条目数**（当前 44）：头图、README / README_EN、发布说明写「N 个工具」都以它为准。「进制转换」是「单位换算」第 13 类（radix 卡），不进首页网格不占名额；「体感手枪/空气投篮」是同一工具「体感游戏」。
 - **门禁 R16**：构建前核对 cats 成员并集 == apps 全部工具 id，无重复/未知 id/图标文件存在。新增工具漏挂分类会在分类模式静默消失（分类模式默认关，运行期无症状），构建期硬约束。
 
 ## 滚动内容高约定
