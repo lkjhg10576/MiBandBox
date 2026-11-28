@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
 
     <!-- 竖屏正文：菜单打开时整段让位。
@@ -36,7 +36,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -81,8 +81,9 @@ import docs from '../../../utils/docs'
 import { parseLyricsDoc } from '../../../utils/lyricsDoc'
 import brightness from '@system.brightness'
 import prompt from '@system.prompt'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   protected: { name: '' },
   private: { clock: '--:--', title: '歌词', docTitle: '歌词', body: '', mode: 'v', auto: false, timer: null, scrollTimer: null, showMenu: false, delStep: 0 },
   onShow() {
@@ -181,5 +182,5 @@ export default {
       }
     })
   }
-}
+})
 </script>

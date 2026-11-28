@@ -3,7 +3,7 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ title || '输入' }}" clock="{{ clock }}"></pagehead>
 
     <div class="editorCard {{ kbShow ? 'editorCardKb' : '' }}" @click="openKb">
@@ -23,7 +23,7 @@
     <div class="actRow" show="{{ !kbShow }}" @click="done"><text class="f actRowT">完成</text></div>
     <backbtn></backbtn>
     <input-method hide="{{ !kbShow }}" keyboardtype="QWERTY" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -52,6 +52,7 @@ import textInput from '../../utils/textInput'
 import textMetrics from '../../utils/textMetrics'
 import { TEXT } from '../../common/layout.js'
 import prompt from '@system.prompt'
+import life from '../../utils/pageLife'
 
 /** 预览文字的排版参数（与 CSS 的 .pv 对齐：字号 16 / 行高 21） */
 const PV_FONT = 16
@@ -59,7 +60,7 @@ const PV_LINE = 21
 /** 占位文案「点击输入」的高度（与 CSS 的 .pvPlace 对齐） */
 const PLACE_H = 40
 
-export default {
+export default life({
   protected: { field: '', inputTitle: '', text: '', max: '80', multiline: '0', hint: '' },
   private: {
     _ck: null,
@@ -156,5 +157,5 @@ export default {
       g.router.back()
     })
   }
-}
+})
 </script>

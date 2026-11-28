@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page" @touchstart="onTouchStart" @touchend="onTouchEnd">
+  <div class="page" @touchstart="onTouchStart" @touchend="onTouchEnd"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ pageTitle }}" clock="{{ clock }}"></pagehead>
 
     <!-- 计时视图 -->
@@ -50,7 +50,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -98,6 +98,7 @@ import sensor from '@system.sensor'
 import brightness from '@system.brightness'
 import cubeMotion from '../../utils/cubeMotion'
 import cubeStats from '../../utils/cubeStats'
+import life from '../../utils/pageLife'
 
 const COLOR_IDLE = 'rgba(255,255,255,0.45)'
 const COLOR_ARM = '#0D6EFF'
@@ -118,7 +119,7 @@ let lastBig = ''
 let lastSub = ''
 let lastBtn = ''
 
-export default {
+export default life({
   data: {
     clock: '--:--',
     pageTitle: '魔方计时',
@@ -438,5 +439,5 @@ export default {
     g.kv.set(cubeStats.KV_KEY, times)
     this.applyStats()
   }
-}
+})
 </script>

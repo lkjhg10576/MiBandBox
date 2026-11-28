@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="日常打卡" clock="{{ clock }}"></pagehead>
 
     <list class="list" bounces="true">
@@ -38,7 +38,7 @@
 
     <img class="plus" src="/common/plus.png" @click="create" />
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -67,6 +67,7 @@
 import g from '../../../utils/g'
 import habitStore from '../../../utils/habitStore'
 import prompt from '@system.prompt'
+import life from '../../../utils/pageLife'
 
 const uiState = {
   unsub: null,
@@ -93,7 +94,7 @@ function decorate(raw) {
   }
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -182,5 +183,5 @@ export default {
     }
     g.router.push('/pages/habit/edit', { id: '' })
   }
-}
+})
 </script>

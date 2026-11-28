@@ -24,6 +24,7 @@
 import g from '../../../utils/g'
 import fluoroState from '../fluoroState'
 import { PALETTE } from '../../../utils/fluoroPalette'
+import life from '../../../utils/pageLife'
 
 // 计时器与当前色索引放模块作用域（本页同时只有一个实例）：
 // Vela 页面对象不允许 data 与 private 并存。
@@ -34,7 +35,7 @@ import { PALETTE } from '../../../utils/fluoroPalette'
 let timer = null
 let offset = 0
 
-export default {
+export default life({
   data: {
     color: PALETTE[0],
     paused: false,
@@ -101,5 +102,5 @@ export default {
     g.haptic.short()
     g.router.back()
   }
-}
+})
 </script>

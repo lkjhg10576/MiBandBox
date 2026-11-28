@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="今日饮食" clock="{{ clock }}"></pagehead>
     <div class="card" @click="rollEat">
       <text class="f cLabel">吃什么</text>
@@ -19,7 +19,7 @@
     <div class="go" @click="rollBoth"><text class="f goT">都换一换</text></div>
     <text class="f hint">选择困难时，交给随机</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -37,8 +37,9 @@
 <script>
 import g from '../../utils/g'
 import food from '../../data/food'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -140,5 +141,5 @@ export default {
     this.rollEat()
     this.rollDrink()
   }
-}
+})
 </script>

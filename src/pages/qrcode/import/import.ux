@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="从手机导入" clock="{{ clock }}"></pagehead>
 
     <list class="list" bounces="true">
@@ -18,7 +18,7 @@
 
     <text class="f tip">保持本页打开，在手机插件的「二维码」页粘贴文本并发送</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -44,6 +44,7 @@ import qrFavStore from '../../../utils/qrFavStore'
 import qrBridge from '../../../utils/qrBridge'
 import prompt from '@system.prompt'
 import brightness from '@system.brightness'
+import life from '../../../utils/pageLife'
 
 /**
  * 二维码「从手机导入」接收页：UI 骨架与 otp/sync、lyrics/transfer 同一套。
@@ -80,7 +81,7 @@ function newId(prefix) {
   return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6)
 }
 
-export default {
+export default life({
   data: {
     clock: '--:--',
     rows: [],
@@ -394,5 +395,5 @@ export default {
       g.router.back()
     }
   }
-}
+})
 </script>

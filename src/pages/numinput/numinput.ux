@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
 
     <!-- 上方显示输入内容 -->
@@ -41,7 +41,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -74,8 +74,9 @@ import prompt from '@system.prompt'
 import numInputSession from '../../utils/numInputSession'
 import inputResult from '../../utils/inputResult'
 import timezone from '../../utils/timezone'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   protected: {
     field: '',
     title: '',
@@ -305,5 +306,5 @@ export default {
     })
     g.haptic.short()
   }
-}
+})
 </script>

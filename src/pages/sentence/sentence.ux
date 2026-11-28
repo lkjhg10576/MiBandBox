@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="每日一言" clock="{{ clock }}"></pagehead>
     <scroll class="body" scroll-y="true" bounces="true">
       <div class="inner">
@@ -21,7 +21,7 @@
       </div>
     </scroll>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -48,6 +48,7 @@ import quotesData from '../../utils/quotesData'
 import { shuffledDeck } from '../../utils/seedRandom'
 import prompt from '@system.prompt'
 import crypto from '@system.crypto'
+import life from '../../utils/pageLife'
 
 function randInt(max) {
   try {
@@ -60,7 +61,7 @@ function randInt(max) {
   return Math.floor(Math.random() * max)
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -145,5 +146,5 @@ export default {
     this.favCount = arr.length
     this.faved = arr.indexOf(this.quote) >= 0
   }
-}
+})
 </script>

@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="亲戚称呼" clock="{{ clock }}"></pagehead>
 
     <div class="resCard">
@@ -34,7 +34,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -57,8 +57,9 @@
 import g from '../../utils/g'
 import kinship from '../../utils/kinship'
 import prompt from '@system.prompt'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -143,5 +144,5 @@ export default {
       this.secondaryText = '我叫 TA：' + out.callTitle
     }
   }
-}
+})
 </script>

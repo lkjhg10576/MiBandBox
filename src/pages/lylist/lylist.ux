@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="歌词本" clock="{{ clock }}"></pagehead>
     <list class="list" bounces="true">
       <list-item type="transfer" class="card transferCard" @click="openTransfer">
@@ -29,7 +29,7 @@
 
     <img class="plus" src="/common/plus.png" @click="create" />
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -53,6 +53,7 @@
 <script>
 import g from '../../utils/g'
 import docs from '../../utils/docs'
+import life from '../../utils/pageLife'
 
 function sizeText(n) {
   if (!n && n !== 0) return '0 B'
@@ -66,7 +67,7 @@ function dateText(ms) {
   return (d.getMonth() + 1) + '月' + d.getDate() + '日'
 }
 
-export default {
+export default life({
   data: { clock: '--:--', items: [], timer: null },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -102,5 +103,5 @@ export default {
     g.haptic.short()
     g.router.push('/pages/lyrics/edit', { name: '' })
   }
-}
+})
 </script>

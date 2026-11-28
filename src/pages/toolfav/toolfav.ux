@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="收藏功能" clock="{{ clock }}"></pagehead>
     <list class="tools" bounces="true">
       <list-item type="tool" class="rowCell" for="{{ items }}" @click="open($item)" @longpress="onLong($item)">
@@ -19,7 +19,7 @@
       <list-item type="pad" class="listPad"></list-item>
     </list>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -41,10 +41,11 @@
 import g from '../../utils/g'
 import apps from '../../data/apps'
 import homeTools from '../../utils/homeTools'
+import life from '../../utils/pageLife'
 
 let lastLongAt = 0
 
-export default {
+export default life({
   protected: {},
   private: { clock: '--:--', items: [], _ck: null },
   onShow() {
@@ -85,5 +86,5 @@ export default {
     g.haptic.short()
     g.router.push('/pages/toolact', { id: item.id })
   }
-}
+})
 </script>

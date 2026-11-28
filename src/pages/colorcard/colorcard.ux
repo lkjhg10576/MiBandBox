@@ -3,7 +3,7 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="快捷色卡" clock="{{ clock }}"></pagehead>
 
     <!-- 模式段选：键面进页即固定（watchKeyboardTypePropsChange 是空函数），编辑中不切模式。
@@ -53,7 +53,7 @@
          hex 面打不出逗号、rgb 面打不出字母，越权键由页面 onKey 过滤 + toast（radix 同款）。 -->
     <input-method hide="{{ !kbShow || mode !== 'hex' }}" keyboardtype="hex" maxlength="6" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
     <input-method hide="{{ !kbShow || mode !== 'rgb' }}" keyboardtype="rgb" maxlength="11" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -89,6 +89,7 @@ import g from '../../utils/g'
 import prompt from '@system.prompt'
 import color from '../../utils/color'
 import { SCREEN } from '../../common/layout.js'
+import life from '../../utils/pageLife'
 
 const KV_KEY = 'colorcardCfg'
 
@@ -106,7 +107,7 @@ let draftStore = ''
  */
 let savedHex = ''
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -323,5 +324,5 @@ export default {
     this.saveCfg(v.hex)
     g.router.push('/pages/colorcard/view', { color: v.hex, bright: this.bright ? '1' : '0', keepOn: this.keepOn ? '1' : '0' })
   }
-}
+})
 </script>

@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="水平仪" clock="{{ clock }}"></pagehead>
 
     <div class="dial"></div>
@@ -17,7 +17,7 @@
     <div class="btn" @click="calibrate"><text class="f btnT">校准为零</text></div>
     <text class="f foot">放平设备，圆点回到中心</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -39,6 +39,7 @@ import g from '../../utils/g'
 import levelUtil from '../../utils/level'
 import sensor from '@system.sensor'
 import brightness from '@system.brightness'
+import life from '../../utils/pageLife'
 
 const RAD2DEG = 180 / Math.PI
 const MAX_ANGLE = 45
@@ -68,7 +69,7 @@ function formatAngle(v) {
   return (v > 0 ? '+' : '') + v.toFixed(1) + '°'
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -192,5 +193,5 @@ export default {
     this.pitch = 0
     this.apply()
   }
-}
+})
 </script>

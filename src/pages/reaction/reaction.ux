@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="反应测验" clock="{{ clock }}"></pagehead>
 
     <div class="modes">
@@ -26,7 +26,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -46,13 +46,14 @@
 <script>
 import g from '../../utils/g'
 import reaction from '../../utils/reaction'
+import life from '../../utils/pageLife'
 
 const runState = {
   timer: null,
   model: reaction.createState('visual')
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -241,5 +242,5 @@ export default {
       this.subText = '最快 ' + m.minMs + ' ms · 抢跑 ' + m.foulCount + ' 次\n轻触再测一组'
     }
   }
-}
+})
 </script>

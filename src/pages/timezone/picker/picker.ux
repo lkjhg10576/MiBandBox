@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
 
     <!-- 分页：每页固定 5 个城市，只给当前页建 list-item（整库 246 条一次物化要 8~25s） -->
@@ -43,7 +43,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -83,8 +83,9 @@ import timezone from '../../../utils/timezone'
 import inputResult from '../../../utils/inputResult'
 import tzSession from '../tzSession'
 import pager from '../../../utils/pager'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   protected: { slot: '', current: '' },
 
   private: {
@@ -190,5 +191,5 @@ export default {
     tzSession.pending = { slot: this.slot === 'to' ? 'to' : 'from', cityId: item.id }
     g.router.back()
   }
-}
+})
 </script>

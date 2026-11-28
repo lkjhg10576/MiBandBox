@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="史载今日" clock="{{ clock }}"></pagehead>
     <div class="dateRow">
       <div class="arrowBtn" @click="prevDay"><text class="f arrowT"><</text></div>
@@ -27,7 +27,7 @@
 
     <text class="f foot">公共领域历史与科技事实</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -52,6 +52,7 @@
 <script>
 import g from '../../utils/g'
 import historyData from '../../utils/historyData'
+import life from '../../utils/pageLife'
 
 function estimateInnerHeight(items) {
   if (!items || items.length === 0) return 300
@@ -77,7 +78,7 @@ function estimateInnerHeight(items) {
   return Math.max(300, total)
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -150,5 +151,5 @@ export default {
   nextDay() {
     this.shift(1)
   }
-}
+})
 </script>

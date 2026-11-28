@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="收藏详情" clock="{{ clock }}"></pagehead>
     <div class="card">
       <text class="f quoteMark">“</text>
@@ -12,7 +12,7 @@
       <text class="f delT">{{ armed ? '再次点击以取消' : '取消收藏' }}</text>
     </div>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -29,8 +29,9 @@
 import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import favState from '../favState'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -83,5 +84,5 @@ export default {
       g.router.back()
     })
   }
-}
+})
 </script>

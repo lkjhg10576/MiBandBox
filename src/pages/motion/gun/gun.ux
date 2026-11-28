@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="体感手枪" clock="{{ clock }}"></pagehead>
 
     <text class="f status" style="color: {{ statusColor }};">{{ status }}</text>
@@ -33,7 +33,7 @@
     <div class="reset" @click="resetCount"><text class="f resetT">{{ armed ? '再次点击确认' : '清零射击数' }}</text></div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -71,6 +71,7 @@ import motionCore from '../../../utils/motionCore'
 import motionGun from '../../../utils/motionGun'
 import motionSensitivity from '../../../utils/motionSensitivity'
 import motionStats from '../../../utils/motionStats'
+import life from '../../../utils/pageLife'
 
 const RELOAD_KEY = 'motionGunReload'
 const COLOR_IDLE = '#0D6EFF'
@@ -98,7 +99,7 @@ function now() {
   return Date.now()
 }
 
-export default {
+export default life({
   data: {
     clock: '--:--',
     status: '举枪待命',
@@ -332,5 +333,5 @@ export default {
     gun.resetShots()
     this.apply()
   }
-}
+})
 </script>

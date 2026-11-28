@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="设置" clock="{{ clock }}"></pagehead>
     <scroll class="body" scroll-y="true" bounces="true">
       <div class="inner" style="height: {{ innerH }}px;">
@@ -52,7 +52,7 @@
       </div>
     </scroll>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -83,6 +83,7 @@ import layoutFlag from '../../utils/layoutFlag'
 import homeToday from '../../utils/homeToday'
 import homeTools from '../../utils/homeTools'
 import prompt from '@system.prompt'
+import life from '../../utils/pageLife'
 
 /**
  * 设置页卡片几何常量：滚动内容高（innerH）= 卡片数 ×(卡高+卡间距) + 末尾留白。
@@ -109,7 +110,7 @@ function layoutName(mode) {
   return '双栏网格'
 }
 
-export default {
+export default life({
   data: {
     clock: '--:--',
     layoutText: '双栏网格',
@@ -246,5 +247,5 @@ export default {
     this.hideCountText = '未隐藏任何工具'
     prompt.showToast({ message: '已恢复默认设置', duration: 1600 })
   }
-}
+})
 </script>

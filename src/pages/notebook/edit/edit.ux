@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="编辑笔记" clock="{{ clock }}"></pagehead>
 
     <div class="field {{ active === 'title' ? 'on' : '' }}" @click="openTitle">
@@ -23,7 +23,7 @@
 
     <div class="actRow" @click="save"><text class="f actRowT">保存</text></div>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -45,8 +45,9 @@ import g from '../../../utils/g'
 import docs from '../../../utils/docs'
 import prompt from '@system.prompt'
 import inputResult from '../../../utils/inputResult'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   protected: { name: '' },
   private: {
     _ck: null,
@@ -142,5 +143,5 @@ export default {
       else g.router.back()
     })
   }
-}
+})
 </script>

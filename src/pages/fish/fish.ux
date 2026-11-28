@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="木鱼" clock="{{ clock }}"></pagehead>
 
     <div class="fishBox" @click="knock">
@@ -27,7 +27,7 @@
 
     <div class="reset" @click="reset"><text class="f resetT">{{ delStep === 0 ? '功德归零' : '再次点击确认' }}</text></div>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -57,7 +57,8 @@
 <script>
 
 import g from '../../utils/g'
-export default {
+import life from '../../utils/pageLife'
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -211,5 +212,5 @@ export default {
     this.delStep = 0
     g.haptic.long()
   }
-}
+})
 </script>

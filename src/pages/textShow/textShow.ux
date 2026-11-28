@@ -81,6 +81,7 @@
 import g from '../../utils/g'
 import marqueeState from '../../utils/marqueeState'
 import brightness from '@system.brightness'
+import life from '../../utils/pageLife'
 
 // 滚动步进：每 TICK_MS 走 step 像素，step 由速度档换算（3→2 / 6→4 / 12→8）
 const TICK_MS = 50
@@ -89,7 +90,7 @@ const TICK_MS = 50
 const COPIES = []
 for (let i = 0; i < marqueeState.COPY_COUNT; i++) COPIES.push(i)
 
-export default {
+export default life({
   protected: {
     text: 'BandBox',
     size: '30',
@@ -195,5 +196,5 @@ export default {
   back() {
     g.router.back()
   }
-}
+})
 </script>

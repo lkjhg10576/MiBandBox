@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="荧光棒" clock="{{ clock }}"></pagehead>
 
     <text class="f label l1">变色速度</text>
@@ -27,7 +27,7 @@
     <div class="go" @click="start"><text class="f goT">启动</text></div>
     <text class="f hint">选择参数后点启动进入荧光棒</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -50,8 +50,9 @@
 <script>
 import g from '../../utils/g'
 import fluoroState from './fluoroState'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -110,5 +111,5 @@ export default {
       g.router.push('/pages/fluorescence/play')
     })
   }
-}
+})
 </script>

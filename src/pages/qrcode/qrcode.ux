@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="快捷生码" clock="{{ clock }}"></pagehead>
     <div class="inputCard" @click="openInput">
       <text class="f iLabel">文本内容</text>
@@ -22,7 +22,7 @@
     <div class="importEntry" @click="openImport"><text class="f importEntryT">从手机导入</text></div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -49,8 +49,9 @@
 import g from '../../utils/g'
 import prompt from '@system.prompt'
 import inputResult from '../../utils/inputResult'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -114,5 +115,5 @@ export default {
     // fav='1'：本次生成的二维码在 show 页带收藏按钮；其余 4 个复用来源不带
     g.router.push('/pages/qrcode/show', { qr: this.text, fav: '1' })
   }
-}
+})
 </script>

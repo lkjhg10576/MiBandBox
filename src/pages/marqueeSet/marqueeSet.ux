@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="跑马灯设置" clock="{{ clock }}"></pagehead>
     <div class="inputCard" @click="openInput">
       <text class="f iLabel">滚动文字</text>
@@ -42,7 +42,7 @@
     <div class="go" @click="save"><text class="f goT">保存并播放</text></div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -72,8 +72,9 @@ import textInput from '../../utils/textInput'
 import marqueeState from '../../utils/marqueeState'
 import prompt from '@system.prompt'
 import inputResult from '../../utils/inputResult'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -167,5 +168,5 @@ export default {
     } catch (e) {}
     g.router.push('/pages/textShow', m)
   }
-}
+})
 </script>

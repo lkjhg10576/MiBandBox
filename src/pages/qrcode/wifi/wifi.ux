@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="WiFi 二维码" clock="{{ clock }}"></pagehead>
 
     <scroll class="formScroll" scroll-y="true" bounces="true">
@@ -36,7 +36,7 @@
     </scroll>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -63,8 +63,9 @@ import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import wifi from '../../../utils/wifi'
 import inputResult from '../../../utils/inputResult'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -152,5 +153,5 @@ export default {
     g.haptic.short()
     g.router.push('/pages/qrcode/show', { qr: str, fav: '1' })
   }
-}
+})
 </script>

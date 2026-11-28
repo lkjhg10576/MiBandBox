@@ -2,7 +2,7 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="精美样式颜色" clock="{{ clock }}"></pagehead>
 
     <!-- 模式段选：本页所有可点元素一律 y≥92（新页面 R15 口径比老色卡页严，色卡页的段选在 y76）。
@@ -51,7 +51,7 @@
          hex 面打不出逗号、rgb 面打不出字母，越权键由页面 onKey 过滤 + toast（色卡页同款）。 -->
     <input-method hide="{{ !kbShow || mode !== 'hex' }}" keyboardtype="hex" maxlength="6" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
     <input-method hide="{{ !kbShow || mode !== 'rgb' }}" keyboardtype="rgb" maxlength="11" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="closeKb"></input-method>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -87,6 +87,7 @@
 import g from '../../utils/g'
 import prompt from '@system.prompt'
 import color from '../../utils/color'
+import life from '../../utils/pageLife'
 
 /** companion 配置键：与 companion.ux 同一个 KV 键。
  *  注意 companion.ux 的 saveCfg 是**整份覆写**，所以本页写 color 时必须先读旧 cfg
@@ -131,7 +132,7 @@ function takeSession() {
   return s
 }
 
-export default {
+export default life({
   // 新页面一律 protected + private，不用 data（Vela 对 data 与 private 共存直接抛错黑屏）。
   // 本页无路由参数，protected 留空占位。
   protected: {},
@@ -333,5 +334,5 @@ export default {
     prompt.showToast({ message: '已应用', duration: 1200 })
     g.router.back()
   }
-}
+})
 </script>

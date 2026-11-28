@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
 
     <scroll class="list" scroll-y="true" bounces="true">
@@ -21,7 +21,7 @@
     </scroll>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -52,8 +52,9 @@
 import g from '../../../utils/g'
 import units from '../../../utils/units'
 import unitSession from '../unitSession'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   /** 入口参数：类别、要改的槽位（from/to）、当前选中单位。 */
   protected: { type: '', slot: '', current: '' },
 
@@ -113,5 +114,5 @@ export default {
     unitSession.pending = { slot: this.slot === 'to' ? 'to' : 'from', unitId: item.id }
     g.router.back()
   }
-}
+})
 </script>

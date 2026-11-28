@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="跑马灯" clock="{{ clock }}"></pagehead>
     <!-- 预览用静态文字（与设置页一致）：播放页用的是横向滚动实现，
          这里不滚动才不会让人误以为播放效果是静止的。 -->
@@ -24,7 +24,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -42,8 +42,9 @@
 <script>
 import g from '../../utils/g'
 import marqueeState from '../../utils/marqueeState'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -99,5 +100,5 @@ export default {
     } catch (e) {}
     g.router.push('/pages/textShow', m)
   }
-}
+})
 </script>

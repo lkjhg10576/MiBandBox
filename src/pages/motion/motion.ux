@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page" @touchstart="onTouchStart" @touchend="onTouchEnd">
+  <div class="page" @touchstart="onTouchStart" @touchend="onTouchEnd"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ pageTitle }}" clock="{{ clock }}"></pagehead>
 
     <div class="card cardGun" if="{{ !showStats }}" @click="openGun">
@@ -61,7 +61,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -106,8 +106,9 @@
 import g from '../../utils/g'
 import motionSensitivity from '../../utils/motionSensitivity'
 import motionStats from '../../utils/motionStats'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     clock: '--:--',
     pageTitle: '体感游戏',
@@ -198,5 +199,5 @@ export default {
     g.haptic.short()
     g.router.push('/pages/motion/hoop')
   }
-}
+})
 </script>

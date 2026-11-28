@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="数字滚动" clock="{{ clock }}"></pagehead>
     <div class="display" @click="toggle">
       <text class="f num {{ display.length >= 6 ? 'small' : '' }}">{{ display }}</text>
@@ -20,7 +20,7 @@
     <div class="go" @click="toggle"><text class="f goT">{{ running ? '暂停' : '开始滚动' }}</text></div>
     <div class="reset" @click="reset"><text class="f resetT">归零</text></div>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -43,13 +43,14 @@
 <script>
 
 import g from '../../utils/g'
+import life from '../../utils/pageLife'
 function pad(n) {
   let s = String(n)
   while (s.length < 5) s = '0' + s
   return s
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -116,5 +117,5 @@ export default {
     this.value = 0
     this.display = '00000'
   }
-}
+})
 </script>

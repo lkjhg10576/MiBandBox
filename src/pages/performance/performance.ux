@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="性能测试" clock="{{ clock }}"></pagehead>
 
     <div class="scoreCard">
@@ -26,7 +26,7 @@
     <text class="f ref" @click="pfinfo">参考</text>
     <text class="f hint">{{ hint }}</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -57,6 +57,7 @@
 import g from '../../utils/g'
 import device from '@system.device'
 import perf from '../../data/perf'
+import life from '../../utils/pageLife'
 
 let runTimer = null
 let runSeq = 0
@@ -68,7 +69,7 @@ function clearRunTimer() {
   }
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -216,5 +217,5 @@ export default {
     this.running = false
     g.haptic.pattern(3, 140)
   }
-}
+})
 </script>

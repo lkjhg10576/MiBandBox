@@ -1,7 +1,7 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="预置颜色" clock="{{ clock }}"></pagehead>
 
     <!-- 单列预置色列表：第一条从 y92 起（新页面可点元素一律 y≥92）。
@@ -17,7 +17,7 @@
         <text class="f pCur">{{ $item.cur ? '当前' : '' }}</text>
       </div>
     </div>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -36,6 +36,7 @@
 <script>
 import g from '../../../utils/g'
 import color from '../../../utils/color'
+import life from '../../../utils/pageLife'
 
 /** 预置色常量（钉死，别随手改）：与 companion.ux 的缺省色 #B9E7DD 同一口径。
  *  hex 一律 6 位大写不带 '#'（与 color.parse 的 hex 同单位）。 */
@@ -64,7 +65,7 @@ function stripHash(s) {
   return t.charAt(0) === '#' ? t.slice(1) : t
 }
 
-export default {
+export default life({
   protected: { current: '' },
 
   private: {
@@ -117,5 +118,5 @@ export default {
     g.haptic.short()
     g.router.back()
   }
-}
+})
 </script>

@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="动态口令" clock="{{ clock }}"></pagehead>
 
     <list class="list" bounces="true" if="{{ rows.length > 0 }}">
@@ -34,7 +34,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -64,6 +64,7 @@ import otp from '../../../utils/otp'
 import otpState from '../../../utils/otpState'
 import otpBridge from '../../../utils/otpBridge'
 import otpSession from '../otpSession'
+import life from '../../../utils/pageLife'
 
 /**
  * 页面内部状态：定时器与订阅句柄放模块闭包，不进 data 响应式代理。
@@ -76,7 +77,7 @@ const state = {
   armed: false
 }
 
-export default {
+export default life({
   data: {
     clock: '--:--',
     rows: []
@@ -199,5 +200,5 @@ export default {
     g.haptic.short()
     g.router.push('/pages/otp/settings')
   }
-}
+})
 </script>

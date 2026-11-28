@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="剩余时间" clock="{{ clock }}"></pagehead>
     <scroll class="body" scroll-y="true" bounces="true">
       <div class="inner">
@@ -41,7 +41,7 @@
       </div>
     </scroll>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -73,6 +73,7 @@
 <script>
 
 import g from '../../utils/g'
+import life from '../../utils/pageLife'
 function hms(sec) {
   const d = g.time.splitDuration(sec)
   return g.time.pad2(d.hours) + ':' + g.time.pad2(d.minutes) + ':' + g.time.pad2(d.seconds)
@@ -83,7 +84,7 @@ function hms(sec) {
 let lastHour = null
 let lastDay = null
 
-export default {
+export default life({
   data: {
     clock: '--:--',
     minuteSec: 0,
@@ -151,5 +152,5 @@ export default {
       this.dateText = now.getFullYear() + '年' + (now.getMonth() + 1) + '月' + now.getDate() + '日'
     }
   }
-}
+})
 </script>

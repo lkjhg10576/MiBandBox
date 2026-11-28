@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="答案之书" clock="{{ clock }}"></pagehead>
     <div class="stack" @click="open">
       <div class="sheet s1"></div>
@@ -17,7 +17,7 @@
 
     <text class="f hint">摇一摇翻开</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -40,6 +40,7 @@ import g from '../../utils/g'
 import accelHub from '../../utils/accelHub'
 import motionCore from '../../utils/motionCore'
 import motionShake from '../../utils/motionShake'
+import life from '../../utils/pageLife'
 
 // 本页同时只有一个实例：内核与处理器放模块作用域（体感页的既有做法）。
 // 页面对象不能同时有 data 与 private（Vela 运行时会抛错），所以不用 private。
@@ -48,7 +49,7 @@ let shake = null
 let myHandler = null   // 挂进 accelHub 的帧消费者（引用存模块级，摘除时传同一个）
 let opening = false    // 摇一摇触发 push 的防重入标志
 
-export default {
+export default life({
   data: { clock: '--:--', timer: null },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -103,5 +104,5 @@ export default {
     // 防重入已经挡住了马达共振与同摇余波
     g.router.push('/pages/answer/a1')
   }
-}
+})
 </script>

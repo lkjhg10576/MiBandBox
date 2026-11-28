@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="功能设置" clock="{{ clock }}"></pagehead>
     <scroll class="body" scroll-y="true" bounces="true">
       <div class="inner" style="height: {{ innerH }}px;">
@@ -42,7 +42,7 @@
       </div>
     </scroll>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -75,6 +75,7 @@ import g from '../../utils/g'
 import apps from '../../data/apps'
 import homeTools from '../../utils/homeTools'
 import prompt from '@system.prompt'
+import life from '../../utils/pageLife'
 
 /**
  * 页面卡片几何常量：滚动内容高（innerH）= 信息卡 + 设置卡 ×个数 + 末尾留白。
@@ -92,7 +93,7 @@ const CARD_COUNT = 3    // 模板里的 .card 个数（功能置顶 / 功能收�
 const PAD_H = 16        // .pad 高
 const INNER_H = INFO_H + INFO_GAP + CARD_COUNT * (CARD_H + CARD_GAP) + PAD_H
 
-export default {
+export default life({
   protected: { id: '' },
   private: {
     clock: '--:--',
@@ -217,5 +218,5 @@ export default {
       page.syncSubText()
     })
   }
-}
+})
 </script>

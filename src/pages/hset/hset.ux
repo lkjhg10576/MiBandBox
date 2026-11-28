@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="首页样式" clock="{{ clock }}"></pagehead>
     <div class="opt optA" style="background-color: {{ current === 'grid' ? 'rgba(13,110,255,0.24)' : '#262626' }};" @click="pick('grid')">
       <div class="optIcon">
@@ -42,7 +42,7 @@
     </div>
     <text class="f hint" if="{{ !hasDual }}">{{ catOn ? '选样式将关闭分类模式' : '选择后立即生效' }}</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -78,8 +78,9 @@ import g from '../../utils/g'
 import layoutApi from '../../utils/homeLayout'
 import layoutFlag from '../../utils/layoutFlag'
 import { HOME } from '../../common/layout.js'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   // hasDual：网格不是两列的机型（Pro 三栏）才出「双栏」选项；g2Name 拆开拼接是因为
   // pro336 对本文件的标题文案有全量替换（换成三栏叫法），grid2 行必须保持两栏叫法
   data: {
@@ -144,5 +145,5 @@ export default {
       g.router.back()
     })
   }
-}
+})
 </script>

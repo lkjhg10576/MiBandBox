@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="摩斯密码" clock="{{ clock }}"></pagehead>
     <div class="inputCard" @click="openInput">
       <text class="f iLabel">文本</text>
@@ -39,7 +39,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -76,6 +76,7 @@ import textMetrics from '../../utils/textMetrics'
 import inputResult from '../../utils/inputResult'
 import { TEXT } from '../../common/layout.js'
 import prompt from '@system.prompt'
+import life from '../../utils/pageLife'
 
 const DOT = 180
 const DASH = 540
@@ -88,7 +89,7 @@ const MORSE_FONT = 18
 const MORSE_LINE = 26
 const MORSE_SPACING = 1
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -245,5 +246,5 @@ export default {
     this.flash = ''
     g.haptic.short()
   }
-}
+})
 </script>

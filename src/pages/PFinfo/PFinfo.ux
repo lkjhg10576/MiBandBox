@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="参考分数" clock="{{ clock }}"></pagehead>
     <scroll class="body" scroll-y="true">
       <div class="listInner" style="height: 940px;">
@@ -16,7 +16,7 @@
       </div>
     </scroll>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -36,8 +36,9 @@
 import g from '../../utils/g'
 import perf from '../../data/perf'
 import device from '@system.device'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -74,5 +75,5 @@ export default {
   onDestroy() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
   }
-}
+})
 </script>

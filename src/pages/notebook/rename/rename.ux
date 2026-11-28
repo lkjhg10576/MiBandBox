@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="重命名" clock="{{ clock }}"></pagehead>
     <div class="card" @click="openInput">
       <text class="f label">新名称</text>
@@ -14,7 +14,7 @@
     <text class="f tip">名称最多 20 个字</text>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -33,8 +33,9 @@ import g from '../../../utils/g'
 import docs from '../../../utils/docs'
 import prompt from '@system.prompt'
 import inputResult from '../../../utils/inputResult'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   protected: { docName: '' },
   private: { clock: '--:--', value: '', oldName: '', loaded: false, timer: null },
   onShow() {
@@ -100,5 +101,5 @@ export default {
       })
     })
   }
-}
+})
 </script>

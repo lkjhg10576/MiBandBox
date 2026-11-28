@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="目标日" clock="{{ clock }}"></pagehead>
 
     <scroll class="body" scroll-y="true" bounces="true">
@@ -44,7 +44,7 @@
       </div>
     </scroll>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -91,6 +91,7 @@ import textInput from '../../../utils/textInput'
 import inputResult from '../../../utils/inputResult'
 import pickState from '../pickState'
 import homeEvents from '../../../utils/homeEvents'
+import life from '../../../utils/pageLife'
 
 const PATH = 'internal://files/bandbox/events.json'
 
@@ -113,7 +114,7 @@ const DEL_H = 34         // .del 高
 const PAD_H = 48         // .pad 高：末尾留白，保证滚到底时删除键完整可见
 const INNER_H = CARD_COUNT * (CARD_H + CARD_GAP) + DELTA_H + DELTA_GAP + SAVE_H + SAVE_GAP + DEL_H + PAD_H
 
-export default {
+export default life({
   protected: { id: '' },
   private: {
     _ck: null,
@@ -287,5 +288,5 @@ export default {
       g.router.replace('/pages/daysmatter/list')
     })
   }
-}
+})
 </script>

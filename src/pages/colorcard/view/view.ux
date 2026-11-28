@@ -1,8 +1,8 @@
 <template>
-  <div class="page" style="background-color: {{ bg }};" @click="exit">
+  <div class="page" style="background-color: {{ bg }};" @click="exit"><div class="napWrap" if="{{ awake }}">
     <text class="f topHint" style="color: {{ fg }};">轻触退出 · 也可右滑</text>
     <text class="f hexT" style="color: {{ fg }};">#{{ hex }}</text>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -14,8 +14,9 @@
 <script>
 import g from '../../../utils/g'
 import color from '../../../utils/color'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   protected: { color: '', bright: '1', keepOn: '1' },
   private: {
     bg: '#000000',
@@ -46,5 +47,5 @@ export default {
   onDestroy() {
     g.screen.leave()
   }
-}
+})
 </script>

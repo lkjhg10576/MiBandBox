@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
 
     <!-- 卡片只做背景：前景文字/按钮必须是 .page 的直接子元素，
@@ -27,7 +27,7 @@
     <text class="f hint">点数值输入 · 点 › 换单位</text>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -56,10 +56,11 @@ import units from '../../../utils/units'
 import unitSession from '../unitSession'
 import numInputSession from '../../../utils/numInputSession'
 import inputResult from '../../../utils/inputResult'
+import life from '../../../utils/pageLife'
 
 const KV_KEY = 'unitConvert.last'
 
-export default {
+export default life({
   /** 入口参数：类别 id。跨页选中结果走 globalThis 会话态，不走 KV 传值。 */
   protected: { type: '' },
 
@@ -186,5 +187,5 @@ export default {
     const current = slot === 'to' ? this.toId : this.fromId
     g.router.push('/pages/unitconvert/picker', { type: this.catId, slot: slot, current: current })
   }
-}
+})
 </script>

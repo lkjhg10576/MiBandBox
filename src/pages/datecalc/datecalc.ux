@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ headTitle }}" clock="{{ clock }}"></pagehead>
 
     <!-- 选择态：两个子功能 -->
@@ -49,7 +49,7 @@
     <text class="f change" show="{{ stage !== 'choose' }}" @click="backToChoose">换功能</text>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -89,8 +89,9 @@ import g from '../../utils/g'
 import prompt from '@system.prompt'
 import dateCalc from '../../utils/dateCalc'
 import pickState from '../daysmatter/pickState'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -215,5 +216,5 @@ export default {
     this.ageTotal = '共 ' + r.totalDays + ' 天'
     this.ageFont = r.years >= 100 ? 30 : 40
   }
-}
+})
 </script>

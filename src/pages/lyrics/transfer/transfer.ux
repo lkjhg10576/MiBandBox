@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="从手机传输" clock="{{ clock }}"></pagehead>
 
     <list class="list" bounces="true">
@@ -18,7 +18,7 @@
 
     <text class="f tip">保持本页打开，并在手机上打开 AstroBox 的「BandBox辅助」插件</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -41,6 +41,7 @@ import interconnectUtil from '../../../utils/interconnect'
 import transfer from '../../../utils/lyricsTransfer'
 import prompt from '@system.prompt'
 import brightness from '@system.brightness'
+import life from '../../../utils/pageLife'
 
 /**
  * 页面内部状态：定时器、订阅句柄、分片会话、心跳状态。
@@ -68,7 +69,7 @@ function newId(prefix) {
   return prefix + '-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6)
 }
 
-export default {
+export default life({
   data: {
     clock: '--:--',
     rows: [],
@@ -437,5 +438,5 @@ export default {
       g.router.back()
     }
   }
-}
+})
 </script>

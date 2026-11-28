@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="随机数" clock="{{ clock }}"></pagehead>
 
     <div class="row">
@@ -23,7 +23,7 @@
     <text class="f hint">点数值输入 · 包含两端</text>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -45,8 +45,9 @@ import g from '../../utils/g'
 import prompt from '@system.prompt'
 import numInputSession from '../../utils/numInputSession'
 import inputResult from '../../utils/inputResult'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -135,5 +136,5 @@ export default {
       }
     }, 60)
   }
-}
+})
 </script>

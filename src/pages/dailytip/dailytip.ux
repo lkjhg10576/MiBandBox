@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="每日新知" clock="{{ clock }}"></pagehead>
     <div class="card">
       <text class="f cLabel">{{ label }}</text>
@@ -14,7 +14,7 @@
     </div>
     <text class="f hint">每天一条 · 换一条仅本次生效</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -32,8 +32,9 @@
 <script>
 import g from '../../utils/g'
 import historyData from '../../utils/historyData'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -89,5 +90,5 @@ export default {
     this.label = '随手一读'
     this.showTip(i)
   }
-}
+})
 </script>

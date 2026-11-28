@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <!-- 打拍区：全屏，运行中点任意处都算一拍。所有显示元素都是它的子节点 -->
     <div class="tapZone" @click="onTap">
       <!-- pagehead 在 tapZone 内：头部命中区必须退出返回（noback），否则打拍会误退出 -->
@@ -29,7 +29,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -49,11 +49,12 @@
 <script>
 import g from '../../utils/g'
 import tapTempo from '../../utils/tapTempo'
+import life from '../../utils/pageLife'
 
 /* 连拍快于此值时圆点保持常亮，正是想要的效果 */
 const PULSE_MS = 120
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -145,5 +146,5 @@ export default {
     // 结束双响同样走弱档（两记短振）
     g.haptic.pattern(2, 160)
   }
-}
+})
 </script>

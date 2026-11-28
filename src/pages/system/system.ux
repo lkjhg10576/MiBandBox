@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="系统信息" clock="{{ clock }}"></pagehead>
     <div class="card">
       <text class="f cardTitle">本机信息</text>
@@ -13,7 +13,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -28,6 +28,7 @@
 <script>
 import g from '../../utils/g'
 import device from '@system.device'
+import life from '../../utils/pageLife'
 
 function gb(n) {
   if (!n && n !== 0) return '—'
@@ -47,7 +48,7 @@ function mask(s) {
   return str.slice(0, 4) + '••' + str.slice(-4)
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -119,5 +120,5 @@ export default {
       }
     })
   }
-}
+})
 </script>

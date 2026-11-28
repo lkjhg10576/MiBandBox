@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ isNew ? '添加账户' : '编辑账户' }}" clock="{{ clock }}"></pagehead>
 
     <div class="field" @click="openName">
@@ -33,7 +33,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -60,13 +60,14 @@ import otpStore from '../../../utils/otpStore'
 import otpAccounts from '../../../utils/otpAccounts'
 import inputResult from '../../../utils/inputResult'
 import otpSession from '../otpSession'
+import life from '../../../utils/pageLife'
 
 const state = {
   delArmAt: 0,
   timer: null
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -203,5 +204,5 @@ export default {
     prompt.showToast({ message: '已删除', duration: 1200 })
     g.router.back()
   }
-}
+})
 </script>

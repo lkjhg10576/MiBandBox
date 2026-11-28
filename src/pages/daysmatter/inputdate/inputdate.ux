@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ headTitle }}" clock="{{ clock }}"></pagehead>
 
     <!-- 第一步：选年（单列滚轮，复刻系统定时器“设置 小时”样式） -->
@@ -18,7 +18,7 @@
     <div class="go" if="{{ step === 1 }}" @click="nextStep"><img class="goImg" src="/common/arrow.png"></img></div>
     <div class="go" if="{{ step === 2 }}" @click="confirm"><img class="goImg" src="/common/arrow.png"></img></div>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -35,6 +35,7 @@
 <script>
 import g from '../../../utils/g'
 import pickState from '../pickState'
+import life from '../../../utils/pageLife'
 
 /**
  * 取 picker 当前选中的下标。
@@ -58,7 +59,7 @@ function pickIndex(e, range) {
   return isNaN(num) ? -1 : num
 }
 
-export default {
+export default life({
   protected: { date: '' },
   private: {
     _ck: null,
@@ -146,5 +147,5 @@ export default {
     g.haptic.short()
     g.router.back()
   }
-}
+})
 </script>

@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="我的收藏" clock="{{ clock }}"></pagehead>
     <div class="pager pagerTop">
       <div class="pgBtn" @click="prevPage"><text class="f pgArr" style="color: {{ page > 1 ? '#4E87FF' : 'rgba(255,255,255,0.3)' }};">‹</text></div>
@@ -26,7 +26,7 @@
       <div class="pgBtn" @click="nextPage"><text class="f pgArr" style="color: {{ page < pageCount ? '#4E87FF' : 'rgba(255,255,255,0.3)' }};">›</text></div>
     </div>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -52,6 +52,7 @@
 import g from '../../../utils/g'
 import favState from '../favState'
 import pager from '../../../utils/pager'
+import life from '../../../utils/pageLife'
 
 function estimateInnerHeight(texts) {
   if (!texts || texts.length === 0) return 300
@@ -82,7 +83,7 @@ function estimateInnerHeight(texts) {
   return total
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -147,5 +148,5 @@ export default {
     favState.item = { index, text: item.text }
     g.router.push('/pages/sentence/favdetail')
   }
-}
+})
 </script>

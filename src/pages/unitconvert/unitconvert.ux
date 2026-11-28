@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="单位换算" clock="{{ clock }}"></pagehead>
 
     <scroll class="cats" scroll-y="true" bounces="true">
@@ -15,7 +15,7 @@
     </scroll>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -41,6 +41,7 @@
 <script>
 import g from '../../utils/g'
 import units from '../../utils/units'
+import life from '../../utils/pageLife'
 
 /** 12 类卡片：中文名 + 该类基准单位，进入换算页时把类别 id 作为路由参数。
  * 进制不在 units.js 里（独立子页），concat 手工追加第 13 卡，不污染内核。 */
@@ -49,7 +50,7 @@ const CATS = units.CATEGORIES.map((cat) => {
   return { id: cat.id, name: cat.name, sub: '基准 ' + b.symbol }
 }).concat([{ id: 'radix', name: '进制', sub: '2 · 8 · 10 · 16' }])
 
-export default {
+export default life({
   data: {
     clock: '--:--',
     cats: CATS
@@ -79,5 +80,5 @@ export default {
     }
     g.router.push('/pages/unitconvert/convert', { type: item.id })
   }
-}
+})
 </script>

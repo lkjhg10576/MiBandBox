@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="节拍器" clock="{{ clock }}"></pagehead>
 
     <div class="bpmBox" @click="openBpmPad">
@@ -50,7 +50,7 @@
     <text class="f hint">点数字改 BPM</text>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -81,6 +81,7 @@ import g from '../../utils/g'
 import numInputSession from '../../utils/numInputSession'
 import inputResult from '../../utils/inputResult'
 import metronomeMeter from '../../utils/metronomeMeter'
+import life from '../../utils/pageLife'
 
 const BPM_MIN = 40
 const BPM_MAX = 240
@@ -100,7 +101,7 @@ function buildStatus(playing, bpm, meterId, lvLabel) {
   return head + ' · ' + bpm + ' BPM · ' + tail
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -246,5 +247,5 @@ export default {
     if (this.timer) clearInterval(this.timer)
     this.timer = setInterval(() => this.beat(), this.gap)
   }
-}
+})
 </script>

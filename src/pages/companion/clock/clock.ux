@@ -10,7 +10,7 @@
        （彩色底容器 + 反相遮罩位图 fdm_*.png，颜色随 color 路由参数 = 设置页取色）
        + 右栏信息列（周几几号 / 目标日倒计时 / 分隔线 / 电量），固定 HH:MM，秒钟开关不作用；
        几何在 companionGeo 的 layoutFancy（geoF）。 -->
-  <div class="page" @click="back">
+  <div class="page" @click="back"><div class="napWrap" if="{{ awake }}">
     <div class="landWrap">
       <div class="clockCol" style="width: {{ geo.stripW }}px; height: {{ geo.stripH }}px;">
         <!-- ===== 矮横条：左日期列 / 右时间列（简洁样式） ===== -->
@@ -134,7 +134,7 @@
         <text class="f exitHint" style="width: {{ geo.stripW }}px; height: {{ geo.hintH }}px; line-height: {{ geo.hintH }}px; font-size: {{ geo.hintFont }}px;">轻触退出</text>
       </div>
     </div>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -222,6 +222,7 @@ import g from '../../../utils/g'
 import companionGeo from '../../../utils/companionGeo'
 import homeEvents from '../../../utils/homeEvents'
 import battery from '@system.battery'
+import life from '../../../utils/pageLife'
 
 // 几何在模块求值时算好（首帧即正确，不会先按默认布局闪一帧）
 const G = companionGeo.build()
@@ -280,7 +281,7 @@ function stopTimers() {
   }
 }
 
-export default {
+export default life({
   // showSec 由设置页传入：'1' = 显示秒钟（默认），'0' = 只显示时分。
   // fancy 由设置页传入：'1' = 精美样式（固定 HH:MM，秒钟开关不作用）
   // color 由设置页传入：精美样式的数字/冒号颜色（'#RRGGBB'，缺省薄荷绿 #B9E7DD）
@@ -515,5 +516,5 @@ export default {
   back() {
     g.router.back()
   }
-}
+})
 </script>

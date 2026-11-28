@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="记分牌" clock="{{ clock }}"></pagehead>
     <div class="timer">
       <text class="f tVal">{{ timerText }}</text>
@@ -28,7 +28,7 @@
 
     <text class="f hint">点击 + / - 记分</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -54,6 +54,7 @@
 <script>
 
 import g from '../../utils/g'
+import life from '../../utils/pageLife'
 function hms(sec) {
   const h = Math.floor(sec / 3600)
   const m = Math.floor((sec % 3600) / 60)
@@ -62,7 +63,7 @@ function hms(sec) {
   return p(h) + ':' + p(m) + ':' + p(s)
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -124,5 +125,5 @@ export default {
     this.seconds = 0
     this.timerText = '00:00:00'
   }
-}
+})
 </script>

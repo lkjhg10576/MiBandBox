@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="垃圾分类" clock="{{ clock }}"></pagehead>
     <!-- 物品名称走通用输入页（/pages/input），本页不再挂输入法组件 -->
     <div class="inputCard" @click="openInput">
@@ -25,7 +25,7 @@
     <text class="f foot">分类口径以当地规定为准</text>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -50,8 +50,9 @@
 import g from '../../utils/g'
 import waste from '../../data/waste'
 import inputResult from '../../utils/inputResult'
+import life from '../../utils/pageLife'
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -129,5 +130,5 @@ export default {
     this.tip = r.tip
     g.haptic.short()
   }
-}
+})
 </script>

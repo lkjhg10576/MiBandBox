@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <!-- 计数区：只负责「运行中」的点击计数，启动由独立的开始按钮负责 -->
     <div class="tapZone" @click="onTap">
     <!-- pagehead 在 tapZone 内：头部命中区必须退出返回（noback），否则连点会误退出 -->
@@ -26,7 +26,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -46,9 +46,10 @@
 <script>
 
 import g from '../../utils/g'
+import life from '../../utils/pageLife'
 const DURATION = 5000
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -159,5 +160,5 @@ export default {
     this.hint = '点按钮再测一次'
     g.haptic.pattern(2, 160)
   }
-}
+})
 </script>

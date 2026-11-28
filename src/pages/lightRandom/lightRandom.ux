@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ headTitle }}" clock="{{ clock }}"></pagehead>
 
     <!-- 选择态：三模式 + 骰子单/双（仅骰子模式显示） -->
@@ -39,7 +39,7 @@
     <text class="f change" show="{{ stage === 'draw' }}" @click="backToChoose">换模式</text>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -69,11 +69,12 @@
 <script>
 import g from '../../utils/g'
 import lightRandom from '../../utils/lightRandom'
+import life from '../../utils/pageLife'
 
 const ROLL_MS = 60
 const ROLL_TICKS = 50  // 60 × 50 = 3000ms
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -177,5 +178,5 @@ export default {
       }
     }, ROLL_MS)
   }
-}
+})
 </script>

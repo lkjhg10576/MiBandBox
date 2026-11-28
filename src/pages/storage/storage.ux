@@ -4,7 +4,7 @@
 <import name="ring" src="../../components/Ring.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="存储空间" clock="{{ clock }}"></pagehead>
     <div class="ringWrap">
       <ring percent="{{ percent }}" color="{{ color }}" size="{{ 168 }}" label="{{ percentText }}"></ring>
@@ -28,7 +28,7 @@
 
     <text class="f hint">{{ hint }}</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -45,6 +45,7 @@
 <script>
 import g from '../../utils/g'
 import device from '@system.device'
+import life from '../../utils/pageLife'
 
 function gb(n) {
   if (!n && n !== 0) return '—'
@@ -58,7 +59,7 @@ function gb(n) {
   return (Math.round(v * 10) / 10) + ' ' + units[i]
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -136,5 +137,5 @@ export default {
       this.hint = '暂时无法读取可用空间'
     }
   }
-}
+})
 </script>

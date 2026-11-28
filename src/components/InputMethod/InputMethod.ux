@@ -395,7 +395,9 @@ export default {
     this.setResultListAll();
   },
   setResultListAll() {
-    // 首页展示序列：整词在前，单字随后，截断到 maxlength
+    // 首页展示序列：整词在前，单字随后，截断到 maxlength。候选行视口宽由 profile 物化
+    // （band10/band9 144px / pro336 264px 下 5 个候选已铺满或可横滚）；rw432 的候选视口
+    // 宽 332px，5 个只占约六成，构建期把这里的数量上限放宽到 7（见 profiles/rw432.json）。
     const cap = parseInt(this.maxlength);
     let row0 = [];
     let row0IsWord = [];

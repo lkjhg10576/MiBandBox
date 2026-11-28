@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
 
     <scroll class="body" scroll-y="true" bounces="true" if="{{ !detail }}">
@@ -40,7 +40,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -80,6 +80,7 @@ import qrBridge from '../../../utils/qrBridge'
 import inputResult from '../../../utils/inputResult'
 import textMetrics from '../../../utils/textMetrics'
 import { TEXT } from '../../../common/layout'
+import life from '../../../utils/pageLife'
 
 const ITEM_ROW_H = 108
 const LIST_PAD_H = 48
@@ -93,7 +94,7 @@ function fmtTime(ms) {
   )
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     _unsub: null,
@@ -241,5 +242,5 @@ export default {
       page.loadItems()
     })
   }
-}
+})
 </script>

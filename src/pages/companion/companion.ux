@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="桌面伴侣" clock="{{ clock }}"></pagehead>
 
     <text class="f label">屏幕亮度</text>
@@ -57,7 +57,7 @@
 
     <div class="actRow" @click="start"><text class="f actRowT">开始</text></div>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -101,6 +101,7 @@
 <script>
 import g from '../../utils/g'
 import color from '../../utils/color'
+import life from '../../utils/pageLife'
 
 // 十档亮度（0..255）。档 1 不取 0：桌面伴侣是「长亮显示」，全黑没有意义。
 const LEVELS = [40, 64, 88, 112, 136, 160, 183, 207, 231, 255]
@@ -129,7 +130,7 @@ function valueOf(level) {
   return LEVELS[clampLevel(level) - 1]
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -277,5 +278,5 @@ export default {
       })
     })
   }
-}
+})
 </script>

@@ -1,7 +1,7 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead if="{{ !isBar }}" title="扫码查看" clock="{{ clock }}"></pagehead>
 
     <!-- 每个可显示元素各自带 if + 完整几何类：不再用无几何的包装 div（Vela 不为其绝对定位
@@ -34,7 +34,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -63,8 +63,9 @@ import g from '../../../utils/g'
 import brightness from '@system.brightness'
 import prompt from '@system.prompt'
 import qrFavStore from '../../../utils/qrFavStore'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   protected: { qr: '', fav: '', favId: '', kind: '' },
   private: { clock: '--:--', timer: null, faved: false, canBar: false, isBar: false, activeFavId: '' },
   onShow() {
@@ -126,5 +127,5 @@ export default {
   back() {
     g.router.back()
   }
-}
+})
 </script>

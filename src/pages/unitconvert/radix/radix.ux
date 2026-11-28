@@ -3,7 +3,7 @@
 <import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="进制转换" clock="{{ clock }}"></pagehead>
 
     <!-- 进制 chips：点按切换输入进制（数值守恒重解释）。键盘态隐藏：键面固定为 hex，切了无意义。
@@ -46,7 +46,7 @@
     <!-- 整页固定 hex 键面（watchKeyboardTypePropsChange 是空函数，运行时换键面无效）；
          bin/oct/dec 下多出的键由 pushKey 过滤 + toast 提示 -->
     <input-method hide="{{ !kbShow }}" keyboardtype="hex" maxlength="5" vibratemode="short" screentype="pill-shaped" @complete="onKey" @delete="onDel" @close="doneEdit"></input-method>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -75,6 +75,7 @@ import g from '../../../utils/g'
 import prompt from '@system.prompt'
 import radix from '../../../utils/radix'
 import { SCREEN } from '../../../common/layout.js'
+import life from '../../../utils/pageLife'
 
 const KV_KEY = 'unitRadix.lastBase'
 
@@ -117,7 +118,7 @@ function emptyRows(selectedId) {
   return out
 }
 
-export default {
+export default life({
   data: {
     _ck: null,
     clock: '--:--',
@@ -277,5 +278,5 @@ export default {
     }
     g.haptic.long()
   }
-}
+})
 </script>

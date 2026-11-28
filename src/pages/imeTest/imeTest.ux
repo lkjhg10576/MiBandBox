@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="输入法诊断" clock="{{ clock }}"></pagehead>
 
     <div class="card">
@@ -22,7 +22,7 @@
     <text class="f hint">把屏幕内容或二维码发给开发者</text>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -41,6 +41,7 @@
 <script>
 
 import g from '../../utils/g'
+import life from '../../utils/pageLife'
 function typeOf(v) {
   if (v === undefined) return 'undefined'
   if (v === null) return 'null'
@@ -89,7 +90,7 @@ function compactValue(v) {
   }
 }
 
-export default {
+export default life({
   private: {
     _ck: null,
     clock: '--:--',
@@ -179,5 +180,5 @@ export default {
     if (!this.qr) return
     g.router.push('/pages/qrcode/show', { qr: this.qr })
   }
-}
+})
 </script>

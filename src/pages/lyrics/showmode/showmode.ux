@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="显示方式" clock="{{ clock }}"></pagehead>
     <div class="opt optA {{ mode === 'v' ? 'on' : '' }}" @click="pick('v')">
       <text class="f oT">竖屏</text>
@@ -17,7 +17,7 @@
 
     <text class="f tip">返回播放页后生效</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -35,7 +35,8 @@
 <script>
 
 import g from '../../../utils/g'
-export default {
+import life from '../../../utils/pageLife'
+export default life({
   data: { clock: '--:--', mode: 'v', timer: null },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -61,5 +62,5 @@ export default {
     g.haptic.short()
     g.router.back()
   }
-}
+})
 </script>

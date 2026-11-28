@@ -157,6 +157,10 @@
       [
         "event.scrollX / 633",
         "event.scrollX / 1"
+      ],
+      [
+        "const cap = parseInt(this.maxlength);",
+        "const cap = Math.max(parseInt(this.maxlength) || 0, 7);"
       ]
     ],
     "src/pages/home/home.ux": [

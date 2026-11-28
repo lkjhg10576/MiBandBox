@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="时区换算" clock="{{ clock }}"></pagehead>
 
     <!-- 卡片只做背景：前景文字/按钮必须是 .page 的直接子元素 -->
@@ -43,7 +43,7 @@
     <text class="f hint">点时间修改 · 点 › 换城市</text>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -84,10 +84,11 @@ import timezone from '../../utils/timezone'
 import tzSession from './tzSession'
 import numInputSession from '../../utils/numInputSession'
 import inputResult from '../../utils/inputResult'
+import life from '../../utils/pageLife'
 
 const KV_KEY = 'tzConvert.last'
 
-export default {
+export default life({
   protected: {},
 
   private: {
@@ -237,5 +238,5 @@ export default {
     this.syncNowFromSource()
     this.recompute()
   }
-}
+})
 </script>

@@ -1,7 +1,7 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="BandBox" clock="{{ clock }}" noback="{{ true }}"></pagehead>
 
     <!-- 不常驻模式（设置页开关）下没有目标日时整张卡不渲染，让出空间给工具列表：
@@ -66,7 +66,7 @@
       <list-item type="pad" class="listPad"></list-item>
     </list>
 
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -256,6 +256,7 @@ import homeEvents from '../../utils/homeEvents'
 import homeToday from '../../utils/homeToday'
 import homeTools from '../../utils/homeTools'
 import { gridHeight, HOME } from '../../common/layout.js'
+import life from '../../utils/pageLife'
 
 const SETTINGS_TILE = {
   id: '__settings__',
@@ -280,7 +281,54 @@ function dualGridHeight(count) {
 let layoutWatcher = null
 let lastLongAt = 0
 
-export default {
+/**
+ * 异常重启续页：navStore 的日志只在不正常退出时保留。
+ * 等日志读完（最多 1s），按日志重建最多 2 帧；恢复失败就留在首页。
+ */
+function resumeLast() {
+  const root = typeof globalThis !== 'undefined' ? globalThis : null
+  if (!root || root.__bbResumeDone) return
+  root.__bbResumeDone = true
+  const ns = root.__bbNav
+  if (!ns || typeof ns.consumeResume !== 'function') return
+  let tries = 0
+  const attempt = () => {
+    const r = ns.consumeResume()
+    if (!r || !r.frames || !r.frames.length) {
+      if (++tries < 10) setTimeout(attempt, 100)
+      return
+    }
+    const frames = []
+    for (let i = 0; i < r.frames.length; i++) {
+      const f = r.frames[i]
+      if (f && f.route && f.route !== '/pages/home') frames.push(f)
+    }
+    if (!frames.length) return
+    let i = frames.length > 2 ? frames.length - 2 : 0
+    const step = () => {
+      if (i >= frames.length) return
+      const f = frames[i++]
+      const go = () => {
+        try {
+          g.router.push(f.route, f.params || {})
+        } catch (e) {}
+        setTimeout(step, 180)
+      }
+      if (f.frozen && f.id && typeof ns.loadCapsule === 'function') {
+        ns.loadCapsule(f.id, (cap) => {
+          if (cap) ns.setPending({ id: f.id, route: f.route })
+          go()
+        })
+      } else {
+        go()
+      }
+    }
+    setTimeout(step, 80)
+  }
+  attempt()
+}
+
+export default life({
   data: {
     clock: '--:--',
     dateText: '',
@@ -314,6 +362,7 @@ export default {
     const page = this
     this._ck = (s) => { if (page.$valid) page.clock = s }
     g.clock.sub(this._ck)
+    resumeLast()
   },
   onHide() {
     if (this._ck) { g.clock.unsub(this._ck); this._ck = null }
@@ -464,5 +513,5 @@ export default {
   openDays() {
     g.router.push('/pages/daysmatter/list')
   }
-}
+})
 </script>

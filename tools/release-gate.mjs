@@ -311,6 +311,106 @@ if (process.argv.includes('--only-r20')) {
   process.exit(0)
 }
 
+// ---------- R21 页面小睡契约 ----------
+const NAP_EXEMPT = new Set(['display', 'flashlight', 'fluorescence/play', 'textShow'])
+function scanNapContract() {
+  const problems = []
+  for (const rel of walk('src/pages', '.ux')) {
+    const src = read(rel)
+    let route = rel
+      .replace(/\\/g, '/')
+      .replace(/^src\/pages\//, '')
+      .replace(/\.ux$/, '')
+    const segs = route.split('/')
+    if (segs.length > 1 && segs[segs.length - 1] === segs[segs.length - 2]) {
+      segs.pop()
+      route = segs.join('/')
+    }
+    const tplStart = src.indexOf('<template>')
+    const tplEnd = src.indexOf('</template>', tplStart)
+    const tpl = tplStart >= 0 && tplEnd >= 0 ? src.slice(tplStart, tplEnd) : ''
+    const cleaned = tpl.replace(/<!--[\s\S]*?-->/g, (m) => ' '.repeat(m.length))
+    const root = /<div\b[^>]*\bclass="page(?:\s[^"]*)?"[^>]*>/.exec(cleaned)
+    if (!root) {
+      problems.push({ file: rel, msg: '找不到根节点 <div class="page">（R21 需要根节点内部有 napWrap）' })
+      continue
+    }
+    if (/if="\{\{\s*awake\s*\}\}"/.test(root[0])) {
+      problems.push({ file: rel, msg: 'if="{{ awake }}" 不能放在页面根节点上（Vela 的 scene root 不能是 DomIfFragment）' })
+    }
+    if (!NAP_EXEMPT.has(route) && !/class="napWrap"[^>]*if="\{\{\s*awake\s*\}\}"/.test(cleaned)) {
+      problems.push({ file: rel, msg: '根节点内部缺少 <div class="napWrap" if="{{ awake }}">（页面被覆盖时无法卸下 UI 树）' })
+    }
+    if (!/export\s+default\s+life\s*\(\s*\{/.test(src)) {
+      problems.push({ file: rel, msg: '页面未用 life({...}) 包装导出，onShow/onHide 不会维护冷热状态' })
+    }
+    if (!/import\s+life\s+from\s+['"][^'"]*utils\/pageLife['"]/.test(src)) {
+      problems.push({ file: rel, msg: '缺少 import life（路径应指向 utils/pageLife）' })
+    }
+    if (/\bshow="\{\{\s*awake\s*\}\}"/.test(src)) {
+      problems.push({ file: rel, msg: 'awake 不能用 show（只隐藏不销毁，不释放 UI 树）' })
+    }
+  }
+  return problems
+}
+
+// ---------- R22 导航胶囊/日志契约 ----------
+function scanNavStoreContract() {
+  const problems = []
+  const routerSrc = read('src/utils/router.js')
+  if (!/const\s+MAX_STACK\s*=\s*5\b/.test(routerSrc)) {
+    problems.push({ file: 'src/utils/router.js', msg: 'MAX_STACK 必须是 5（页面栈上限 + 1 层溢出余量）' })
+  }
+  if (!/from\s+['"]\.\/navStore['"]/.test(routerSrc) || !/from\s+['"]\.\/pageLife['"]/.test(routerSrc)) {
+    problems.push({ file: 'src/utils/router.js', msg: 'router.js 必须接入 navStore 与 pageLife' })
+  }
+  if (!/freezeCurrent\s*\(/.test(routerSrc) || !/thaw\s*\(/.test(routerSrc)) {
+    problems.push({ file: 'src/utils/router.js', msg: 'router.js 未使用 freezeCurrent/thaw（溢出页不会被冻结/恢复）' })
+  }
+  if (!/preNap\s*\(/.test(routerSrc) || !/wakePrevious\s*\(/.test(routerSrc)) {
+    problems.push({ file: 'src/utils/router.js', msg: 'router.js 未使用 preNap/wakePrevious（隐藏页的 awake 更新不生效，必须在离场前卸 UI）' })
+  }
+  if (!/markBackgrounded\s*\(/.test(read('src/app.ux'))) {
+    problems.push({ file: 'src/app.ux', msg: 'app.ux 未在 onShow/onHide 标记导航日志的后台态' })
+  }
+  for (const rel of walk('src', '.ux').concat(walk('src', '.js'))) {
+    const norm = rel.replace(/\\/g, '/')
+    const src = code(rel)
+    if (/from\s+['"][^'"]*navStore['"]/.test(src) && norm !== 'src/app.ux' && norm !== 'src/utils/router.js') {
+      problems.push({ file: rel, msg: 'navStore 只允许 app.ux / router.js 引入；页面经 globalThis.__bbNav 访问（否则每页都打进 fs）' })
+    }
+    if (/internal:\/\/files\/bandbox\/nav/.test(src) && norm !== 'src/utils/navStore.js') {
+      problems.push({ file: rel, msg: '导航日志路径只能出现在 src/utils/navStore.js' })
+    }
+  }
+  if (/from\s+['"][^'"]*navStore['"]/.test(read('src/utils/pageLife.js'))) {
+    problems.push({ file: 'src/utils/pageLife.js', msg: 'pageLife 不得直接 import navStore（会让每个页面 bundle 带入 fs）' })
+  }
+  return problems
+}
+
+if (process.argv.includes('--only-r21')) {
+  const bad = scanNapContract()
+  if (bad.length) {
+    console.log('R21 不通过：页面小睡契约检查失败')
+    for (const b of bad) console.log(`  ✗ ${b.file}: ${b.msg}`)
+    process.exit(1)
+  }
+  console.log('R21 通过：页面小睡契约完整')
+  process.exit(0)
+}
+
+if (process.argv.includes('--only-r22')) {
+  const bad = scanNavStoreContract()
+  if (bad.length) {
+    console.log('R22 不通过：导航胶囊/日志契约检查失败')
+    for (const b of bad) console.log(`  ✗ ${b.file}: ${b.msg}`)
+    process.exit(1)
+  }
+  console.log('R22 通过：导航胶囊/日志契约完整')
+  process.exit(0)
+}
+
 // ---------- R1 PNG 完整性 ----------
 {
   const PNG_SIG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
@@ -1120,6 +1220,16 @@ for (const rel of walk('src', '.ux')) {
 // ---------- R20 内存卫生 ----------
 {
   for (const b of scanMemoryHygiene()) fail('R20', b.file, b.msg)
+}
+
+// ---------- R21 页面小睡 ----------
+{
+  for (const b of scanNapContract()) fail('R21', b.file, b.msg)
+}
+
+// ---------- R22 导航胶囊/日志 ----------
+{
+  for (const b of scanNavStoreContract()) fail('R22', b.file, b.msg)
 }
 
 // ---------- 输出 ----------

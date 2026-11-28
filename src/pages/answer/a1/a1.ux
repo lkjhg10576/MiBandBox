@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="答案" clock="{{ clock }}"></pagehead>
     <div class="card {{ shown ? 'show' : '' }}">
       <text class="f mark">“</text>
@@ -13,7 +13,7 @@
     <div class="again" @click="again"><text class="f againT">再问一次</text></div>
     <text class="f close" @click="close">合上书 · 仅供参考</text>
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -34,6 +34,7 @@ import accelHub from '../../../utils/accelHub'
 import motionCore from '../../../utils/motionCore'
 import motionShake from '../../../utils/motionShake'
 import answers from '../../../data/answers'
+import life from '../../../utils/pageLife'
 
 // 答案页摇一摇 = 再问一次（与「再问一次」按键同义）。
 // 上膛 800ms：从封面摇进来时，用户的摇动尾巴 + 进页提示振都打在新内核上 ——
@@ -46,7 +47,7 @@ let core = null
 let shake = null
 let myHandler = null   // 挂进 accelHub 的帧消费者（帧来自封面持有的订阅，本页不订阅）
 
-export default {
+export default life({
   data: { clock: '--:--', answer: '…', shown: false, timer: null },
   onShow() {
     this.clock = g.time.formatClock(new Date())
@@ -101,5 +102,5 @@ export default {
     // 不退订 —— 订阅归封面（栈底传感器页）持有；回封面后封面 onShow 重新接管消费者槽
     g.router.back()
   }
-}
+})
 </script>

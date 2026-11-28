@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ id ? '编辑打卡' : '新建打卡' }}" clock="{{ clock }}"></pagehead>
 
     <scroll class="body" scroll-y="true" bounces="true">
@@ -40,7 +40,7 @@
     </scroll>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -69,6 +69,7 @@ import habitStore from '../../../utils/habitStore'
 import inputResult from '../../../utils/inputResult'
 import numInputSession from '../../../utils/numInputSession'
 import prompt from '@system.prompt'
+import life from '../../../utils/pageLife'
 
 const CARD_H = 76
 const CARD_GAP = 8
@@ -82,7 +83,7 @@ function calcInnerH(isEdit) {
   return isEdit ? base + (STAT_H + CARD_GAP) + DEL_H : base
 }
 
-export default {
+export default life({
   protected: { id: '' },
   private: {
     _ck: null,
@@ -205,5 +206,5 @@ export default {
       g.router.back()
     })
   }
-}
+})
 </script>

@@ -48,6 +48,7 @@
 <script>
 
 import g from '../../utils/g'
+import life from '../../utils/pageLife'
 // color 仅作元数据留档，实际显示由 CSS 里写死的 .fill0~.fill4 决定。
 const MODES = [
   { name: '红光', color: '#FF0000', fg: '#FFFFFF', hint: '高亮红光，适合夜间' },
@@ -60,7 +61,7 @@ const MODES = [
 // 「关闭」档的序号：判断关灯用序号而不是字符串比色，避免误判
 const OFF_INDEX = 4
 
-export default {
+export default life({
   data: {
     index: 0,
     name: MODES[0].name,
@@ -96,5 +97,5 @@ export default {
     g.haptic.short()
     g.router.back()
   }
-}
+})
 </script>

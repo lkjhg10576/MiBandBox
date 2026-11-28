@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page"><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
 
     <!-- 正文视图：菜单打开时整段让位。
@@ -28,7 +28,7 @@
     </div>
 
     <backbtn></backbtn>
-  </div>
+  </div></div>
 </template>
 
 <style>
@@ -59,8 +59,9 @@
 import g from '../../../utils/g'
 import docs from '../../../utils/docs'
 import prompt from '@system.prompt'
+import life from '../../../utils/pageLife'
 
-export default {
+export default life({
   protected: { name: '' },
   private: { clock: '--:--', title: '笔记', content: '', loaded: false, timer: null, showMenu: false, delStep: 0 },
   onShow() {
@@ -150,5 +151,5 @@ export default {
       }
     })
   }
-}
+})
 </script>
