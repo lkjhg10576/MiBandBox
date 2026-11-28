@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <!-- 打拍区：全屏，运行中点任意处都算一拍。所有显示元素都是它的子节点 -->
     <div class="tapZone" @click="onTap">
       <!-- pagehead 在 tapZone 内：头部命中区必须退出返回（noback），否则打拍会误退出 -->

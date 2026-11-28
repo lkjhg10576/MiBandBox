@@ -1,7 +1,7 @@
 <import name="pagehead" src="../../components/PageHead.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="BandBox" clock="{{ clock }}" noback="{{ true }}"></pagehead>
 
     <!-- 不常驻模式（设置页开关）下没有目标日时整张卡不渲染，让出空间给工具列表：

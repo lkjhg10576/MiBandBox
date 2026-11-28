@@ -3,7 +3,7 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ title || '输入' }}" clock="{{ clock }}"></pagehead>
 
     <div class="editorCard {{ kbShow ? 'editorCardKb' : '' }}" @click="openKb">

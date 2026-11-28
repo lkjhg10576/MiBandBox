@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="跑马灯" clock="{{ clock }}"></pagehead>
     <!-- 预览用静态文字（与设置页一致）：播放页用的是横向滚动实现，
          这里不滚动才不会让人误以为播放效果是静止的。 -->

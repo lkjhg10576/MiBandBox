@@ -13,6 +13,9 @@
 .page { width: 212px; height: 520px; background-color: #000000; overflow: hidden; }
 /* 页面小睡容器：与 .page 同尺寸，awake=false 时整棵子树被销毁 */
 .napWrap { position: absolute; left: 0px; top: 0px; width: 212px; height: 520px; }
+/* 小睡占位提示：页面被休眠后返回时、重建完成前显示（!awake 反相门控），
+   避免深路径返回时整屏空黑被误以为重启；width 212 由 profile 裸字面量对自动物化成各机型宽 */
+.napLoadT { position: absolute; left: 0px; top: 250px; width: 212px; height: 22px; line-height: 22px; text-align: center; font-size: 15px; color: rgba(255,255,255,0.55); }
 
 /* 页面头部：时钟 16px / 标题 18px，整体位于 y=22..72 */
 .clock { position: absolute; left: 0px; top: 22px; width: 212px; height: 20px; line-height: 20px; text-align: center; font-size: 16px; color: rgba(255,255,255,0.72); }

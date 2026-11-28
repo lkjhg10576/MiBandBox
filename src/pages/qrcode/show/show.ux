@@ -1,7 +1,7 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead if="{{ !isBar }}" title="扫码查看" clock="{{ clock }}"></pagehead>
 
     <!-- 每个可显示元素各自带 if + 完整几何类：不再用无几何的包装 div（Vela 不为其绝对定位

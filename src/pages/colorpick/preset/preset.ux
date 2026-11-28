@@ -1,7 +1,7 @@
 <import name="pagehead" src="../../../components/PageHead.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="预置颜色" clock="{{ clock }}"></pagehead>
 
     <!-- 单列预置色列表：第一条从 y92 起（新页面可点元素一律 y≥92）。

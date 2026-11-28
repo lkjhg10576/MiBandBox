@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="振动器" clock="{{ clock }}"></pagehead>
     <div class="modes">
       <div class="mode" style="background-color: {{ mode === 'short' ? '#0D6EFF' : 'transparent' }};" @click="setMode('short')"><text class="f modeT">短振</text></div>

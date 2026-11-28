@@ -3,7 +3,7 @@
 <import name="input-method" src="../../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="进制转换" clock="{{ clock }}"></pagehead>
 
     <!-- 进制 chips：点按切换输入进制（数值守恒重解释）。键盘态隐藏：键面固定为 hex，切了无意义。

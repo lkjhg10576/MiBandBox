@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ title }}" clock="{{ clock }}"></pagehead>
 
     <!-- 竖屏正文：菜单打开时整段让位。

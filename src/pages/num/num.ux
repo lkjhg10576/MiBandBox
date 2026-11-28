@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="数字滚动" clock="{{ clock }}"></pagehead>
     <div class="display" @click="toggle">
       <text class="f num {{ display.length >= 6 ? 'small' : '' }}">{{ display }}</text>

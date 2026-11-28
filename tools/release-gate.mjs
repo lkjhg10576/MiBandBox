@@ -341,6 +341,9 @@ function scanNapContract() {
     if (!NAP_EXEMPT.has(route) && !/class="napWrap"[^>]*if="\{\{\s*awake\s*\}\}"/.test(cleaned)) {
       problems.push({ file: rel, msg: '根节点内部缺少 <div class="napWrap" if="{{ awake }}">（页面被覆盖时无法卸下 UI 树）' })
     }
+    if (!NAP_EXEMPT.has(route) && !/class="napWrap"[^>]*if="\{\{\s*!awake\s*\}\}"/.test(cleaned)) {
+      problems.push({ file: rel, msg: '根节点内部缺少小睡占位层 <div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div>（深路径返回重建期间整屏空黑像重启）' })
+    }
     if (!/export\s+default\s+life\s*\(\s*\{/.test(src)) {
       problems.push({ file: rel, msg: '页面未用 life({...}) 包装导出，onShow/onHide 不会维护冷热状态' })
     }

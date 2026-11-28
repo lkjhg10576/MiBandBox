@@ -10,7 +10,7 @@
        （彩色底容器 + 反相遮罩位图 fdm_*.png，颜色随 color 路由参数 = 设置页取色）
        + 右栏信息列（周几几号 / 目标日倒计时 / 分隔线 / 电量），固定 HH:MM，秒钟开关不作用；
        几何在 companionGeo 的 layoutFancy（geoF）。 -->
-  <div class="page" @click="back"><div class="napWrap" if="{{ awake }}">
+  <div class="page" @click="back"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <div class="landWrap">
       <div class="clockCol" style="width: {{ geo.stripW }}px; height: {{ geo.stripH }}px;">
         <!-- ===== 矮横条：左日期列 / 右时间列（简洁样式） ===== -->

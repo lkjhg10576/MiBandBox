@@ -4,7 +4,7 @@
 <import name="ring" src="../../components/Ring.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="存储空间" clock="{{ clock }}"></pagehead>
     <div class="ringWrap">
       <ring percent="{{ percent }}" color="{{ color }}" size="{{ 168 }}" label="{{ percentText }}"></ring>

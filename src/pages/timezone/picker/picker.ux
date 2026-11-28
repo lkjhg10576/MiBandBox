@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
 
     <!-- 分页：每页固定 5 个城市，只给当前页建 list-item（整库 246 条一次物化要 8~25s） -->

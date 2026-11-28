@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ titleText }}" clock="{{ clock }}"></pagehead>
 
     <!-- 卡片只做背景：前景文字/按钮必须是 .page 的直接子元素，

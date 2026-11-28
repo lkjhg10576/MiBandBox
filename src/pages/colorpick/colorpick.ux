@@ -2,7 +2,7 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="精美样式颜色" clock="{{ clock }}"></pagehead>
 
     <!-- 模式段选：本页所有可点元素一律 y≥92（新页面 R15 口径比老色卡页严，色卡页的段选在 y76）。

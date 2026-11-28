@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <!-- 计数区：只负责「运行中」的点击计数，启动由独立的开始按钮负责 -->
     <div class="tapZone" @click="onTap">
     <!-- pagehead 在 tapZone 内：头部命中区必须退出返回（noback），否则连点会误退出 -->

@@ -3,7 +3,7 @@
 <import name="input-method" src="../../components/InputMethod/InputMethod.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="快捷色卡" clock="{{ clock }}"></pagehead>
 
     <!-- 模式段选：键面进页即固定（watchKeyboardTypePropsChange 是空函数），编辑中不切模式。

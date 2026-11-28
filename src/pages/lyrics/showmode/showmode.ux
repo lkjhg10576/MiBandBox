@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="显示方式" clock="{{ clock }}"></pagehead>
     <div class="opt optA {{ mode === 'v' ? 'on' : '' }}" @click="pick('v')">
       <text class="f oT">竖屏</text>

@@ -3,7 +3,7 @@
 <import name="ring" src="../../../components/Ring.ux"></import>
 
 <template>
-  <div class="page"><div class="napWrap" if="{{ awake }}">
+  <div class="page"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="验证码" clock="{{ clock }}"></pagehead>
 
     <text class="f aName">{{ name }}</text>

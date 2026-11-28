@@ -2,7 +2,7 @@
 <import name="backbtn" src="../../components/BackBtn.ux"></import>
 
 <template>
-  <div class="page" @touchstart="onTouchStart" @touchend="onTouchEnd"><div class="napWrap" if="{{ awake }}">
+  <div class="page" @touchstart="onTouchStart" @touchend="onTouchEnd"><div class="napWrap" if="{{ !awake }}"><text class="napLoadT">加载中…</text></div><div class="napWrap" if="{{ awake }}">
     <pagehead title="{{ pageTitle }}" clock="{{ clock }}"></pagehead>
 
     <!-- 计时视图 -->
