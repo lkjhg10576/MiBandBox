@@ -8,7 +8,8 @@
  *
  * 约定：
  *   - 页面用 life({...}) 包装导出，自动注入 awake 字段并接管 onShow/onDestroy；
- *   - router.push 在原生 push 前调用 preNap()（此时页面仍可见，awake 更新会生效）；
+ *   - router.push 在原生 push 前调用 preNap(len)（此时页面仍可见，awake 更新会生效；
+ *     栈深 <3 不睡——首页与一级页保持 UI 树，返回免整树重建，真机不再黑屏一瞬）；
  *   - router.js 每次导航后调用 rebalance()，back() 前调用 markBack()；
  *   - App 退后台/息屏不走 preNap，当前页 UI 保持。
  */
@@ -69,8 +70,13 @@ function rebalance() {
   else wake(e.page)
 }
 
-function preNap() {
+function preNap(len) {
   if (!enabled()) return
+  // 浅栈不睡（2026-11-28 真机修复）：栈深 <3 时当前页保持 UI 树，返回免整树重建——
+  // 真机整树重建比返回转场慢，表现为先黑屏一下再亮起。首页与一级页（栈深 1/2）
+  // 因此常驻 UI 树、返回秒显；栈深 ≥3 才卸当前页，常驻 UI 上限收敛在 3 棵。
+  // len 缺省按旧语义必睡（单测与未知栈深兜底走保守路径）。
+  if (typeof len === 'number' && len < 3) return
   const e = store.stack.length ? store.stack[store.stack.length - 1] : null
   if (!e) return
   e.preNapped = true

@@ -42,7 +42,9 @@ function push(uri, params) {
   }
 
   navStore.pushFrame(uri, params)
-  preNap()
+  // 传原生栈深：栈深 <3 不睡，首页/一级页保持 UI 树，返回免整树重建
+  //（真机重建比返回转场慢，会先黑屏一瞬再亮起——2026-11-28 报障）
+  preNap(len)
   try {
     router.push({ uri, params: params || {} })
   } catch (e) {
